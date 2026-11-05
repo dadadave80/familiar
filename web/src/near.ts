@@ -89,6 +89,40 @@ export function guestIdentity(
   storage.setItem(storageKey, JSON.stringify(identity));
   return identity;
 }
+export function commitRecoveredGuest(
+  storage: Pick<Storage, "getItem" | "setItem">,
+  current: Required<Guest>,
+  recovered: Required<Guest>,
+) {
+  const old = storage.getItem(storageKey);
+  const saved = old ? (JSON.parse(old) as Guest) : null;
+  if (
+    !saved ||
+    saved.secret !== current.secret ||
+    saved.accountId !== current.accountId ||
+    saved.root !== current.root ||
+    recovered.secret !== current.secret ||
+    recovered.root !== current.root ||
+    !current.root.endsWith(".testnet") ||
+    !/^p-[0-9]+$/.test(
+      recovered.accountId.slice(0, -(current.root.length + 1)),
+    ) ||
+    !recovered.accountId.endsWith(`.${current.root}`)
+  )
+    throw new Error(
+      "Your guest pass changed during recovery. It has not been replaced.",
+    );
+  const backupKey = `familiar.guest.backup.v1:${current.root}:${current.accountId}`;
+  const backup = storage.getItem(backupKey);
+  if (backup && backup !== old)
+    throw new Error(
+      "A different guest pass is already saved. Keep this browser data and contact the builder.",
+    );
+  // Save the funded sponsor pass before changing the active player; never delete either key.
+  storage.setItem(backupKey, old!);
+  storage.setItem(storageKey, JSON.stringify(recovered));
+  return recovered;
+}
 export function savings(value: string) {
   const amount = BigInt(value || "0");
   const whole = amount / 10n ** 24n;
@@ -110,8 +144,10 @@ export function inputAmount(value: string): bigint {
 }
 
 export class FamiliarClient {
+  readonly rpcUrl =
+    import.meta.env.VITE_NEAR_RPC_URL ?? "https://rpc.testnet.near.org";
   readonly provider = new JsonRpcProvider({
-    url: import.meta.env.VITE_NEAR_RPC_URL ?? "https://rpc.testnet.near.org",
+    url: this.rpcUrl,
   });
   readonly relayerUrl = (import.meta.env.VITE_RELAYER_URL ?? "/api").replace(
     /\/$/,

@@ -6,6 +6,13 @@
   "scripts": {
     "dev": "bun --bun vite --host 127.0.0.1",
     "build": "bun --bun vite build",
-    "preview": "bun --bun vite preview --host 127.0.0.1"
+    "preview": "bun --bun vite preview --host 127.0.0.1",
+    "dev:auth": "bun --bun vite --host localhost --port 3000 --strictPort"
+  },
+  "dependencies": {
+    "@fast-auth-near/browser-sdk": "1.4.2",
+    "@fast-auth-near/javascript-provider": "1.4.1",
+    "buffer": "6.0.3",
+    "near-api-js-legacy": "npm:near-api-js@5.1.1"
   }
 }
