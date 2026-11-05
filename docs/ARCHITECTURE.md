@@ -1,6 +1,6 @@
 # Familiar architecture
 
-This describes the implementation currently in the repository. Live deployment is a separate evidence gate.
+This describes the implementation currently in the repository. Contracts are deployed on testnet and local services have passed real-chain checks; public backend hosting remains a separate evidence gate.
 
 ```mermaid
 flowchart TD

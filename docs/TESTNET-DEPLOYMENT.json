@@ -1,0 +1,126 @@
+{
+  "at": "2026-11-05T16:38:28.563Z",
+  "network": "testnet",
+  "root": "familiar-1105-28522e.testnet",
+  "config": {
+    "relayer": "relayer.familiar-1105-28522e.testnet",
+    "pet_code_hash": "7qp1sWajb7RYJncGAN3PpoUa16BS4o37ncrGFiRMhihK",
+    "items": "items.familiar-1105-28522e.testnet",
+    "bakery": "bakery.familiar-1105-28522e.testnet",
+    "market": "market.familiar-1105-28522e.testnet",
+    "pool": "kiln.pool.f863973.m0"
+  },
+  "contracts": [
+    {
+      "account": "familiar-1105-28522e.testnet",
+      "codeHash": "HZBLDjfXbBLssDwKLhbk5qtbUVgPpd4a8DnUKuSKAAqA",
+      "bytes": 326635
+    },
+    {
+      "account": "items.familiar-1105-28522e.testnet",
+      "codeHash": "GnjJNTJtejLmHNPeBEATMkgDPFMCJVzg8iVdNL1hNXPD",
+      "bytes": 245428
+    },
+    {
+      "account": "bakery.familiar-1105-28522e.testnet",
+      "codeHash": "B4A3WggKCRyMGnNEbJVo5S7v7rWiMSST8qMkoEz29gg7",
+      "bytes": 111246
+    },
+    {
+      "account": "market.familiar-1105-28522e.testnet",
+      "codeHash": "CVEQkViDvRaeLf2pknrULb5YadBHt11XGnUgpKxW4PTk",
+      "bytes": 233698
+    }
+  ],
+  "npcPermission": {
+    "FunctionCall": {
+      "allowance": "997249978716554800000000",
+      "method_names": [
+        "set_quotes"
+      ],
+      "receiver_id": "market.familiar-1105-28522e.testnet"
+    }
+  },
+  "transactions": [
+    {
+      "method": "create_account",
+      "account": "relayer.familiar-1105-28522e.testnet",
+      "hash": "Hr2gKgCRsraGm1RkSxC8K7yXLRtsZbFuzwPWqBERLWcA"
+    },
+    {
+      "method": "create_account",
+      "account": "bram.familiar-1105-28522e.testnet",
+      "hash": "4MNm8yCqHZVr99SPrGYmvJqygRZS8mZy3Puy6gebkoVA"
+    },
+    {
+      "method": "create_account",
+      "account": "den-1.familiar-1105-28522e.testnet",
+      "hash": "9DciMeynnxEVVS7En89PeSsK9vRuseqiSUpxDahpZqxN"
+    },
+    {
+      "method": "create_account",
+      "account": "den-2.familiar-1105-28522e.testnet",
+      "hash": "9Q9Fra93k4f3FHmcuM9b2MYSZBDTA26EeK3bNWn13sKn"
+    },
+    {
+      "method": "create_account",
+      "account": "den-3.familiar-1105-28522e.testnet",
+      "hash": "3k19fNooCZYHd47j2p2udtX87fXc3o5fv8gshyfj7fvA"
+    },
+    {
+      "method": "create_account",
+      "account": "den-4.familiar-1105-28522e.testnet",
+      "hash": "F7yvCpuWn12nwGMfCEDZWNbhY3GmFbFVmkBUyJUnzMvb"
+    },
+    {
+      "method": "publish_global_pet",
+      "account": "familiar-1105-28522e.testnet",
+      "hash": "9TsMSwpeS2TwUCR7n3JRZbsbRSFqJTpLVWqb7RKNL9nB"
+    },
+    {
+      "method": "create_account",
+      "account": "items.familiar-1105-28522e.testnet",
+      "hash": "9riFM5UHe1rwMywYcZW4N82nKo2t4TjiDuyTcDd7nQy4"
+    },
+    {
+      "method": "create_account",
+      "account": "bakery.familiar-1105-28522e.testnet",
+      "hash": "9SjMKWtrkmaVmM1fZdxRtfVNnwnZuHJatf1Z1MLHpjje"
+    },
+    {
+      "method": "create_account",
+      "account": "market.familiar-1105-28522e.testnet",
+      "hash": "FAHYmvsN9jV8HbThHpAqRcsSEcuCX9exkjCuz9hEuex"
+    },
+    {
+      "method": "deploy_items",
+      "account": "items.familiar-1105-28522e.testnet",
+      "hash": "54zYtGNo8BkrAd9jGhxiqjkmn2LjGsKeBuSzD9fyG9Mf"
+    },
+    {
+      "method": "deploy_bakery",
+      "account": "bakery.familiar-1105-28522e.testnet",
+      "hash": "6qygfM5KFwXeSsK52L26LsgDoZmt8vPoTDwXu2Ssvqqe"
+    },
+    {
+      "method": "deploy_market",
+      "account": "market.familiar-1105-28522e.testnet",
+      "hash": "6BcSSibbjFjx6Ayw8qA5EPuAePiTAoJ84K9KhshkCSr"
+    },
+    {
+      "method": "deploy_root",
+      "account": "familiar-1105-28522e.testnet",
+      "hash": "FgUDFutmCPn1d2tBpSwx4to6szVD5T4vvXJJX38aehSm"
+    },
+    {
+      "method": "bram_scoped_key",
+      "account": "bram.familiar-1105-28522e.testnet",
+      "hash": "JArrVH5MThPauBKhJK86eLM98MKT3CahqUUCYQV5S3Tz"
+    },
+    {
+      "method": "npc_deposit",
+      "account": "market.familiar-1105-28522e.testnet",
+      "hash": "jZv6FuwbsNbnGM7xLNTctyvaH7UUyoq6CUe4STahtSs"
+    }
+  ]
+}

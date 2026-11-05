@@ -2,7 +2,7 @@
 
 Familiar is a harbor-town pet game for NEAR testnet. Each pet is a keyless named account represented by an NFT; its inventory and savings stay with the account when ownership changes.
 
-Preview: [familiar-two.vercel.app](https://familiar-two.vercel.app). The static frontend is public; play is paused because live contracts and services are not deployed. The complete contract loop runs locally with no supplied secrets; the responsive interface also runs at `http://127.0.0.1:5173` after `bun run dev`. See [PROGRESS.md](PROGRESS.md) for live versus local evidence.
+Preview: [familiar-two.vercel.app](https://familiar-two.vercel.app). The static frontend is public; play is paused while public backend hosting is pending. Contracts are deployed on NEAR testnet and the local Bun services have passed real-chain readiness and browser checks. The complete contract loop also runs locally with no supplied secrets. See [PROGRESS.md](PROGRESS.md) for live versus local evidence.
 
 ## The problem
 
@@ -26,6 +26,8 @@ To inspect the interface, run `bun install --frozen-lockfile`, then `bun run rel
 
 For a funded deployment, run `bun run deploy:testnet -- --check` first. `bun run e2e:testnet` uses a public Post Office and independently verifies its transaction hashes through testnet RPC. It fails if no live endpoint is configured. `bun run e2e:testnet -- --stake` also stakes and unstakes; resume withdrawal after real epochs with `bun --env-file=.env.e2e scripts/e2e.ts --withdraw`. The ignored `.env.e2e` keeps that judge's generated guest pass, never an operator key.
 
+Backend hosts receive only the relayer key or Bram's quote-only key. Keep root/admin keys local. Monitor testnet operating funds: the relayer stops below its 0.2 NEAR liquid floor; Bram needs gas balance and remaining function-key allowance. Refill or renew locally when needed. Initial deployment funding does not establish hosted uptime.
+
 ## How NEAR is used
 
 | Feature | Mechanic | File | Command |
@@ -47,11 +49,13 @@ Run the full local checks with `bun run test`, `bun run test:contracts`, `bun ru
 
 **Stubbed only in explicit test harnesses:** the controllable sandbox staking pool and browser fixtures. Production paths do not use them.
 
+**Checked on real testnet:** four deployed contract code hashes, immutable global pet code, scoped Bram key, initial market funding and all 16 deployment transactions. A real browser through the local relayer adopted a keyless pet, fed it, collected flour, staked 0.01 testnet NEAR with `kiln.pool.f863973.m0` and requested unstaking. Returned receipts were independently checked through RPC. Deployment records are in [TESTNET-DEPLOYMENT.json](docs/TESTNET-DEPLOYMENT.json); gameplay receipts are in [TESTNET-GAMEPLAY.json](docs/TESTNET-GAMEPLAY.json). These checks do not establish public service uptime.
+
 **Implemented with local checks, awaiting live verification:** Google retention/recovery client. Tests verify authenticated canonical signing requests, MPC signatures before key grants, nonces, ownership, retry and backup behavior. Actual SDK imports work in development and production browsers. No successful user OAuth session or real Auth/MPC recovery transaction is claimed.
 
-**Not completed:** live contract deployment and public services, real pool reward/epoch/withdrawal evidence, live Google verification, cosmetic loot distribution, installable offline PWA caching, reproducible Docker Wasm builds, 24-hour hosted stability and a video. The manifest is present. Both DAO-seat and postcard stretches remain gated and unbuilt. David approved only the compiled static preview; Rust and service source were not uploaded. The published preview is the earlier frozen build before weekly scores and Google client integration, with play paused.
+**Not completed:** public service hosting, real pool reward/epoch/withdrawal evidence, live Google verification, cosmetic loot distribution, installable offline PWA caching, reproducible Docker Wasm builds, 24-hour hosted stability and a video. The manifest is present. Both DAO-seat and postcard stretches remain gated and unbuilt. David approved only the compiled static preview upload; Rust and service source were not uploaded to a hosting provider. The published preview is the earlier frozen build before weekly scores and Google client integration, with play paused.
 
-Live testnet account creation is verified; that is not a deployed-game claim. The selected pool `kiln.pool.f863973.m0` was an active, non-slashed testnet validator and answered the balance interface on Nov 5. Two measured epoch boundaries remain outstanding.
+Registry `familiar-1105-28522e.testnet` was [deployed and initialized](https://testnet.nearblocks.io/txns/FgUDFutmCPn1d2tBpSwx4to6szVD5T4vvXJJX38aehSm) on Nov 5. The selected pool was active and non-slashed at deployment; real stake/unstake succeeded. The smoke pet's release epoch is 5420. Withdrawal and two measured epoch boundaries remain outstanding. The retired `rpc.testnet.near.org` endpoint began returning deprecation errors after deployment; defaults now use the [officially listed public FastNear testnet RPC](https://docs.near.org/api/rpc/providers), `https://test.rpc.fastnear.com`.
 
 Testnet NEAR is play money. Mainnet use requires a separate security and economic review; it is not enabled by a config switch.
 
@@ -68,6 +72,8 @@ Art: [Kenney Tiny Town 1.1](https://kenney.nl/assets/tiny-town), CC0; downloaded
 NEAR Auth's shared testnet client accepts `http://localhost:3000`; the checked 5173/5178 origins fail its callback policy. `bun run dev:auth` opens that supported local address. The relayer must allow it in `WEB_ORIGINS`, as in `.env.example`, and a funded deployment is required for real play. Public Google remains disabled by default. A separately registered public client can be supplied as `VITE_NEAR_AUTH_CLIENT_ID`; its provider must allow the exact callback/web origin. SDK 5 and SDK 7 exchange canonical serialized bytes only, checked by tests. Linking proves the Google-derived key before adding it to the player; pet accounts remain keyless. Recovery finds the pet by short name and backs up this browser's previous pass under `familiar.guest.backup.v1:<root>:<accountId>` before changing the active player. No existing key is deleted; keep browser data until live recovery is verified.
 
 The optional NEAR AI base URL is `https://cloud-api.near.ai/v1`; no model or API key is invented, and the shipped default is scripted.
+
+For NEAR AI credentials, complete a profile at [NEAR Builders](https://nearbuilders.org/join) and claim the $10 offer advertised in the [hackathon rules](https://nearhackathon.com/HACKATHON.md). Generate a key in the [NEAR AI Cloud dashboard](https://cloud.near.ai/) under API Keys. Put it directly in ignored `.env` as `NEAR_AI_API_KEY`, with the exact available model ID in `NEAR_AI_MODEL`; neither value belongs in a `VITE_` setting. [Official setup steps](https://docs.near.ai/cloud/quickstart).
 
 ## Tracks
 

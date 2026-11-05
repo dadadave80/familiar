@@ -35,4 +35,4 @@ Google retention uses a player-signed, additive FullAccess key after authenticat
 
 ## Outstanding verification
 
-Live deployment, full testnet staking rewards/unbonding/withdrawal, two measured epoch boundaries, hosted uptime through the requested dates, browser-based Google recovery, container builds and general callback-failure recovery are not verified. A hosted frontend preview is not evidence that the contracts or services are deployed. Mainnet, force-pushes, public repository visibility and submission remain outside the current authorization.
+Contracts are deployed on testnet; local services and a real browser completed adoption/care/forage/stake/unbond checks. Public service hosting, actual rewards/withdrawal, two measured epoch boundaries, hosted uptime through the requested dates, browser-based Google recovery, container builds and general callback-failure recovery remain unverified. The public frontend is still the frozen static preview with play paused. Mainnet, force-pushes, public repository visibility and submission remain outside the current authorization.
