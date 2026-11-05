@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   DeliveryError,
+  commitRecoveredGuest,
   FamiliarClient,
   inputAmount,
   savings,
@@ -21,6 +22,13 @@ import { dens, itemIds, rules, validName } from "./rules";
 import { Icon, type IconName } from "./Icon";
 import { Pet } from "./Pet";
 import { Town } from "./Town";
+import {
+  googleRecoveryAvailable,
+  keepWithGoogle,
+  recoverWithGoogle,
+  RecoveryError,
+  signInGoogle,
+} from "./auth";
 
 const client = new FamiliarClient();
 const spots = [
@@ -29,6 +37,12 @@ const spots = [
   { id: "orchard", name: "The orchard", item: "berries", icon: "leaf" },
 ] as const;
 type Tab = "town" | "bag" | "market" | "nap" | "den";
+type DenScore = {
+  den: number;
+  bread: string;
+  week: string;
+  weekly_bread: string;
+};
 const tabs: { id: Tab; name: string; icon: IconName }[] = [
   { id: "town", name: "Town", icon: "home" },
   { id: "bag", name: "Bag", icon: "bag" },
@@ -68,10 +82,16 @@ export function App() {
   const [accessory, setAccessory] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [readsAvailable, setReadsAvailable] = useState(true);
-  const [denScores, setDenScores] = useState<{ den: number; bread: string }[]>(
-    [],
-  );
+  const [denScores, setDenScores] = useState<DenScore[]>([]);
   const [denFees, setDenFees] = useState<string[]>([]);
+  const [denWeek, setDenWeek] = useState("");
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryName, setRecoveryName] = useState("");
+  const [googleKept, setGoogleKept] = useState(false);
+  const googleAvailable = googleRecoveryAvailable(
+    location.origin,
+    import.meta.env.VITE_NEAR_AUTH_CLIENT_ID || undefined,
+  );
   const audio = useRef<AudioContext | null>(null);
   const receiptNode = useRef<HTMLElement>(null);
 
@@ -96,16 +116,18 @@ export function App() {
         account_id: id,
         token_ids: [...itemIds],
       }),
-      client.view<{ quotes: Quote[]; balance: string; den_fees: string[] }>(
-        state.market,
-        "get_npc",
-      ),
+      client.view<{
+        quotes: Quote[];
+        balance: string;
+        week: string;
+        weekly_fees: string[];
+      }>(state.market, "get_npc"),
       client.view<Listing[]>(state.market, "get_listings"),
       client.view<string>(state.pool, "get_account_staked_balance", {
         account_id: id,
       }),
       client.view<string>(state.market, "get_claim", { account_id: id }),
-      client.view<{ den: number; bread: string }[]>(client.root, "get_dens"),
+      client.view<DenScore[]>(client.root, "get_dens"),
     ]);
     setReadsAvailable(
       results
@@ -118,7 +140,8 @@ export function App() {
       const market = results[1].value;
       setQuotes(market.quotes);
       setBram((b) => ({ ...b, balance: market.balance }));
-      setDenFees(market.den_fees);
+      setDenFees(market.weekly_fees);
+      setDenWeek(market.week);
     }
     if (results[2].status === "fulfilled" && results[2].value)
       setListings(results[2].value);
@@ -302,6 +325,72 @@ export function App() {
   const selectedListing = listings.find((l) => l.token_id === petId);
   const receiptCopy = receipt ? receiptFor(receipt.receiptSentenceKey) : null;
 
+  async function google(recovering: boolean) {
+    if (busy || !ready || !googleAvailable) return;
+    if (recovering && !validName(recoveryName)) {
+      setError("Enter your pet’s short name to find its home.");
+      return;
+    }
+    setError("");
+    setBusy("Checking your Google pass…");
+    try {
+      const session = await signInGoogle(client.rpcUrl);
+      const guest = await client.ensureGuest();
+      if (!guest.accountId || !guest.root) throw new Error("Guest unavailable");
+      const current = {
+        secret: guest.secret,
+        accountId: guest.accountId,
+        root: guest.root,
+      };
+      let hash: string;
+      if (recovering) {
+        const recovered = await recoverWithGoogle(
+          recoveryName,
+          current,
+          client.provider,
+          session,
+        );
+        client.guest = commitRecoveredGuest(
+          localStorage,
+          current,
+          recovered.guest,
+        );
+        hash = recovered.hash;
+        setPet(null);
+        setPetId("");
+        setPets([]);
+        setRecoveryOpen(false);
+      } else {
+        hash = (await keepWithGoogle(current, client.provider, session)).hash;
+      }
+      setGoogleKept(true);
+      setReceipt({
+        hash,
+        receiptSentenceKey: recovering ? "recover_google" : "keep_google",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
+      cue("receipt");
+      try {
+        await refresh();
+      } catch {
+        setReadsAvailable(false);
+      }
+    } catch (error) {
+      setError(
+        error instanceof RecoveryError
+          ? error.message
+          : error instanceof DeliveryError
+            ? errorCopy(error.code)
+            : "Google did not finish. Keep this browser’s data; your original guest pass still works.",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
   return (
     <div className={`app-shell${pet ? " has-pet" : ""}`}>
       <a className="skip-link" href="#play">
@@ -432,6 +521,52 @@ export function App() {
                   No sign-up. Just you and a small new friend.
                 </p>
               </form>
+              <button
+                type="button"
+                className="text-button"
+                aria-expanded={recoveryOpen}
+                onClick={() => setRecoveryOpen(!recoveryOpen)}
+                disabled={Boolean(busy)}
+              >
+                Coming back? Find your companion
+              </button>
+              {recoveryOpen && (
+                <form
+                  className="recovery-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void google(true);
+                  }}
+                >
+                  <label htmlFor="recovery-name">Your pet’s short name</label>
+                  <input
+                    id="recovery-name"
+                    value={recoveryName}
+                    onChange={(event) =>
+                      setRecoveryName(event.target.value.toLowerCase())
+                    }
+                    minLength={2}
+                    maxLength={24}
+                    required
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    placeholder="e.g. mochi"
+                  />
+                  <button
+                    type="submit"
+                    className="secondary"
+                    disabled={!ready || Boolean(busy) || !googleAvailable}
+                  >
+                    Continue with Google
+                  </button>
+                  <p className="fine">
+                    {googleAvailable
+                      ? "Use the Google account you kept your pass with. Your previous guest pass stays on this device."
+                      : "Google recovery is not connected in this town yet. Keep your existing browser data."}
+                  </p>
+                </form>
+              )}
             </section>
           ) : (
             <>
@@ -923,24 +1058,33 @@ export function App() {
                     )}
                     {denScores.length > 0 && (
                       <div className="den-scores">
-                        <h3>A little friendly company</h3>
+                        <h3>This week in the dens</h3>
                         <div className="den-score-heading">
                           <span>Den</span>
                           <span>Bread baked</span>
                           <span>Fees earned</span>
                         </div>
-                        {denScores.map((score) => (
-                          <div key={score.den} className="den-score">
-                            <strong>{dens[score.den - 1]}</strong>
-                            <span>{score.bread}</span>
-                            <span>
-                              {savings(denFees[score.den - 1] ?? "0")}
-                            </span>
-                          </div>
-                        ))}
+                        {denWeek &&
+                        denScores.every((score) => score.week === denWeek) ? (
+                          denScores.map((score) => (
+                            <div key={score.den} className="den-score">
+                              <strong>{dens[score.den - 1]}</strong>
+                              <span>{score.weekly_bread}</span>
+                              <span>
+                                {savings(denFees[score.den - 1] ?? "0")}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="fine">
+                            Weekly records changed while you were looking.
+                            Refresh the town.
+                          </p>
+                        )}
                         <p className="fine">
-                          Cumulative bread and market fees, read from the town’s
-                          records. Fees are in testnet NEAR.
+                          Bread and fees earned since Monday, 00:00 UTC. Scores
+                          reset each week; treasury savings stay put. Fees are
+                          in testnet NEAR.
                         </p>
                       </div>
                     )}
@@ -1053,7 +1197,21 @@ export function App() {
               <p>
                 Your guest pass lives in this browser. Keep its data to come
                 back to your companion.
-                <span>Google recovery is not connected yet.</span>
+                <span>
+                  {googleKept
+                    ? "Your Google pass is confirmed. Your original browser pass still works."
+                    : googleAvailable
+                      ? "Keep a Google pass so you can return on another device. Uses a little of your player’s testnet funds."
+                      : "Google recovery is not connected in this town yet."}
+                </span>
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={paused || !googleAvailable || googleKept}
+                  onClick={() => void google(false)}
+                >
+                  {googleKept ? "Kept with Google" : "Keep with Google"}
+                </button>
               </p>
             </aside>
           )}

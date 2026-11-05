@@ -34,7 +34,7 @@ Fraunces Variable gives names and headings the soft, slightly wonky character of
 - Town/pet: Experience. Pet and authored town lead; minimal surrounding chrome. DOM labels and buttons mirror all canvas locations.
 - Pet sheet, bag, market and dens: Operate. Inline tab panels, labeled quantities, explicit disabled reasons, consistent rows and real prices denominated as testnet savings rather than token-price speculation.
 - Receipt/X-ray: Read. Off-white thermal paper, perforated edge, structured one-sentence explanation, status and optional technical details. Never a transient toast.
-- Onboarding: one name field, a procedural pet preview, and Adopt. First feed and errand remain visible. The first errand introduces the receipt; the Google retention prompt appears only after that and explains that recovery is not connected yet.
+- Onboarding: one name field, a procedural pet preview, and Adopt. First feed and errand remain visible. The first errand introduces the receipt; Google retention appears only after that. A quiet “Coming back?” control reveals name-based recovery for returning players. Unsupported origins explain that Google is not connected; no successful recovery is implied.
 
 ## Motion and states
 UI transitions use 180ms ease-out. Pet breathing lasts 2.4 seconds. No repeated bounce or confetti spam. Pending, rejected, offline, quota-exhausted, empty inventory, no liquidity, insufficient energy, unbonding, and unknown transaction outcome all have explicit copy and recovery. Do not silently reset guest keys. Sound stays off unless enabled.

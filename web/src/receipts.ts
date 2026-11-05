@@ -1,6 +1,17 @@
 const paid =
   "That was a real transaction; the Post Office paid the fee for you.";
 export const receipts = {
+  keep_google: {
+    sentence:
+      "Your player pass is kept with Google. Your original browser pass still works.",
+    detail:
+      "Google proved its recovery key before that key received access to your player account. The pet’s account stays keyless; your player paid a small testnet fee.",
+  },
+  recover_google: {
+    sentence: "Welcome back. This browser can guide your companion again.",
+    detail:
+      "Your Google pass restored access to the existing player account. This browser’s previous guest pass stays saved as a backup; the pet’s belongings stay in its own account.",
+  },
   cancel_listing: {
     sentence: "Your pet’s adoption notice has been taken down.",
     detail: paid,

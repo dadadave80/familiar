@@ -34,6 +34,7 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     let adopted = false,
       online = true;
+    let marketWeek = "2966";
     const requests: string[] = [];
     const state = {
       registry: root,
@@ -168,11 +169,18 @@ try {
                       quotes,
                       balance: "1000000000000000000000000",
                       den_fees: ["0", "0", "0", "0"],
+                      week: marketWeek,
+                      weekly_fees: ["2000000000000000000000", "0", "0", "0"],
                     }
                   : method === "get_listings"
                     ? []
                     : method === "get_dens"
-                      ? [1, 2, 3, 4].map((den) => ({ den, bread: "0" }))
+                      ? [1, 2, 3, 4].map((den) => ({
+                          den,
+                          bread: "999",
+                          week: "2966",
+                          weekly_bread: "7",
+                        }))
                       : "0";
         result = {
           result: Array.from(new TextEncoder().encode(JSON.stringify(value))),
@@ -199,6 +207,34 @@ try {
       fullPage: true,
     });
     const input = page.getByLabel("Your companion’s name");
+    await page
+      .getByRole("button", { name: "Coming back? Find your companion" })
+      .click();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Continue with Google" })
+        .isDisabled(),
+      true,
+      "unsupported Google origin is honest",
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
+    assert(
+      (await page
+        .getByRole("button", { name: "Continue with Google" })
+        .boundingBox())!.height >= 44,
+    );
+    await page.screenshot({
+      path: `web/screenshots/${label}-recovery-fixture.png`,
+      fullPage: true,
+    });
+    await page
+      .getByRole("button", { name: "Coming back? Find your companion" })
+      .click();
     await input.fill("items");
     await page.getByRole("button", { name: "Adopt", exact: true }).click();
     await page.getByRole("alert").waitFor();
@@ -207,6 +243,13 @@ try {
     await page.getByRole("button", { name: "Adopt", exact: true }).click();
     await page.getByRole("heading", { name: "mochi." }).waitFor();
     await page.getByText("TESTNET · CONFIRMED", { exact: true }).waitFor();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Keep with Google", exact: true })
+        .count(),
+      0,
+      "retention waits for the first errand",
+    );
     await page.getByRole("button", { name: "Share a snack" }).click();
     await page
       .getByText("A full belly, a better mood.", { exact: false })
@@ -220,6 +263,12 @@ try {
       })
       .waitFor();
     await page.getByRole("button", { name: "X-ray on" }).click();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Keep with Google", exact: true })
+        .isDisabled(),
+      true,
+    );
     assert.match(
       (await page
         .getByRole("link", { name: "Read the public record" })
@@ -236,6 +285,49 @@ try {
     );
     for (const tab of ["Bag", "Market", "Nap", "Den", "Town"]) {
       await page.getByRole("button", { name: tab, exact: true }).click();
+      if (tab === "Den") {
+        await page
+          .getByRole("heading", { name: "This week in the dens" })
+          .waitFor();
+        assert.equal(
+          await page
+            .locator(".den-score")
+            .first()
+            .locator("span")
+            .first()
+            .textContent(),
+          "7",
+        );
+        assert.equal(
+          await page
+            .locator(".den-score")
+            .first()
+            .locator("span")
+            .last()
+            .textContent(),
+          "0.002",
+        );
+        marketWeek = "2967";
+        await page.getByRole("button", { name: "Town", exact: true }).click();
+        await page.getByRole("button", { name: "Refresh town" }).click();
+        await page.getByRole("button", { name: "Den", exact: true }).click();
+        await page
+          .getByText(
+            "Weekly records changed while you were looking. Refresh the town.",
+            { exact: true },
+          )
+          .waitFor();
+        assert.equal(
+          await page.locator(".den-score").count(),
+          0,
+          "different weekly snapshots are never combined",
+        );
+        marketWeek = "2966";
+        await page.getByRole("button", { name: "Town", exact: true }).click();
+        await page.getByRole("button", { name: "Refresh town" }).click();
+        await page.getByRole("button", { name: "Den", exact: true }).click();
+        await page.locator(".den-score").first().waitFor();
+      }
       assert.equal(
         await page.evaluate(
           () => document.documentElement.scrollWidth > innerWidth,

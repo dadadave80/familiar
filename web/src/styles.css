@@ -346,6 +346,12 @@ svg {
 .adoption {
   margin-top: 28px;
 }
+.recovery-form {
+  margin-top: 16px;
+}
+.recovery-form .secondary {
+  margin-top: 12px;
+}
 .adopt-intro {
   display: flex;
   gap: 16px;

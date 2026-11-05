@@ -4,13 +4,14 @@ Scope: hackathon-scale testnet prototype, hundreds of players and tens of concur
 
 | Boundary | What it may do | Enforcement / remaining trust |
 | --- | --- | --- |
-| Browser | Sign the owner's commands | Guest key remains in localStorage; requests contain public keys or signed delegates. XSS or a compromised frontend can steal a guest key. Clearing browser data currently loses access because Google recovery is unfinished. |
+| Browser | Sign the owner's commands | Guest key remains in localStorage; requests contain public keys or signed delegates. XSS or a compromised frontend can steal a guest key. Preserve browser data while Google recovery remains unverified. |
 | Relayer | Pay fees and forward allowed signed commands | Ed25519/Borsh verification, live nonce/key checks, method/receiver/deposit/gas/expiry limits and quotas. It cannot forge a player signature. It can censor/delay and is trusted for liveness. |
 | Registry | Authorize the current NFT owner | Predecessor-based checks, action/transfer busy locks, standard approvals and resolver. Root/market/items deployer keys remain present on testnet and their operator is trusted. |
 | Pet | Spend its own funds and inventory through fixed actions | No access keys, pinned global code hash, registry-only executor, fixed pool/buildings, level/reserve/energy/mood checks. No arbitrary call or transfer method. |
 | Buildings | Mint/burn/transfer game items | Registered building permissions, fixed IDs and bounded batches; atomic recipes and authenticated inventory movement. Buildings are trusted game logic. |
 | Bram service | Set bounded prices | NPC predecessor plus actual quote-only function-call key; deploy script checks method/receiver/allowance before funding and reads it back. LLM output cannot contain prices or actions. |
 | Pool | Hold and return testnet staking funds | One configured active pool, success-only bookkeeping and actual pool balance views. Pool correctness, validator operation, rewards and withdrawal availability remain external dependencies. |
+| NEAR Auth / MPC | Additive recovery authority for the player account | Google session, canonical transaction claims and MPC signature checked before key grants. Auth0, deployed JWT guard, MPC and public RPC remain trusted. The original browser key is retained; pet accounts remain keyless. Actual live sign-in/recovery is unverified. |
 
 ## Funds and asynchronous operations
 
@@ -29,6 +30,8 @@ Rate counters and request-result caches are per process. Restarting a service re
 The relayer's ordinary funding, NPC administration and root deployment keys belong only in ignored environment files or host secrets. The NPC runtime receives its scoped key, not its administrative key. The frontend receives only `VITE_` public configuration. No server logs an original key-bearing exception. Deployment `.env` creation is exclusive and mode 0600; setup refuses to overwrite it. The live judge command saves its generated guest key once in ignored `.env.e2e` before requesting funding.
 
 Public RPC, hosting and optional NEAR AI may fail or throttle requests. UI state is retained and play pauses; a timeout is not a completed receipt. A confirmed transaction remains displayed even if the subsequent view refresh fails. The judge command independently verifies relayer outcomes through public RPC. Browser fixture captures are explicitly separated from chain evidence.
+
+Google retention uses a player-signed, additive FullAccess key after authenticated possession proof; a failed proof cannot grant access. Recovery sponsors only a fixed testnet Auth call, then checks exact bytes, stable Google subject/key, issuer/audience/client/expiry, Ed25519 signature, fresh nonce and final owner/key read-back. Failed attempts do not switch the local identity. A previously successful AddKey with uncertain read-back can be reconciled on retry. The canonical pass changes only after its current identity is checked and backed up; a failed write retains the active pass. Neither original nor recovery keys are removed. Backup passes remain sensitive browser data. Auth/SDK browser import checks and unit fixtures do not prove the deployed OAuth/MPC service works; public default recovery stays disabled until its origin is registered and a live flow succeeds.
 
 ## Outstanding verification
 
