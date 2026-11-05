@@ -94,6 +94,7 @@ export function App() {
   );
   const audio = useRef<AudioContext | null>(null);
   const receiptNode = useRef<HTMLElement>(null);
+  const panelNode = useRef<HTMLElement>(null);
 
   const refresh = useCallback(async (chosen?: string) => {
     const owned = await client.owned();
@@ -422,76 +423,88 @@ export function App() {
         </div>
       </header>
       <main id="play">
-        <section className="welcome" aria-labelledby="town-title">
-          {pet ? (
-            <>
+        <div className="town-column">
+          <section className="welcome" aria-labelledby="town-title">
+            {pet ? (
+              <>
+                <div className="companion-portrait">
+                  <Pet
+                    sleeping={pet.sleeping}
+                    accessory={accessory}
+                    className="header-pet"
+                  />
+                </div>
+                <div>
+                  <h1 id="town-title">
+                    {petId.split(".")[0]}
+                    <span className="name-period">.</span>
+                  </h1>
+                  <p>
+                    {pet.sleeping
+                      ? "Dreaming of something lovely."
+                      : pet.mood >= 60
+                        ? "A good day for a little adventure."
+                        : pet.mood >= 20
+                          ? "Could use a snack and some company."
+                          : "A little sleepy. Never a lost cause."}
+                  </p>
+                </div>
+              </>
+            ) : (
               <div>
                 <h1 id="town-title">
-                  {petId.split(".")[0]}
-                  <span className="name-period">.</span>
+                  Littleharbor<span className="name-period">.</span>
                 </h1>
-                <p>
-                  {pet.sleeping
-                    ? "Dreaming of something lovely."
-                    : pet.mood >= 60
-                      ? "A good day for a little adventure."
-                      : pet.mood >= 20
-                        ? "Could use a snack and some company."
-                        : "A little sleepy. Never a lost cause."}
-                </p>
+                <p>Small errands. A little company.</p>
               </div>
-              <Pet
-                sleeping={pet.sleeping}
-                accessory={accessory}
-                className="header-pet"
-              />
-            </>
-          ) : (
-            <>
-              <div>
-                <h1 id="town-title">Name your companion.</h1>
-                <p>Pick a name to give them a home in Littleharbor.</p>
-              </div>
-              <Pet className="header-pet" />
-            </>
-          )}
-          {pet && (
-            <div className="pet-stats">
-              <span>
-                <Icon name="heart" size={16} />
-                {pet.mood}/{rules.MOOD_MAX}
-                <span className="sr-only"> mood</span>
-              </span>
-              <span
-                className="energy"
-                aria-label={`${pet.energy} of ${rules.ENERGY_MAX} errands available`}
-              >
-                {Array.from({ length: rules.ENERGY_MAX }, (_, i) => (
-                  <i key={i} className={i < pet.energy ? "full" : ""} />
-                ))}
-                <span>errands</span>
-              </span>
-              <span>Level {pet.level}</span>
-              {pet.streak > 0 && (
+            )}
+            {pet && (
+              <div className="pet-stats">
                 <span>
-                  {pet.streak} day{pet.streak === 1 ? "" : "s"} together
+                  <Icon name="heart" size={16} />
+                  <strong>
+                    {pet.mood}/{rules.MOOD_MAX}
+                  </strong>{" "}
+                  mood
                 </span>
-              )}
+                <span
+                  className="energy"
+                  aria-label={`${pet.energy} of ${rules.ENERGY_MAX} errands available`}
+                >
+                  {Array.from({ length: rules.ENERGY_MAX }, (_, i) => (
+                    <i key={i} className={i < pet.energy ? "full" : ""} />
+                  ))}
+                  <span>errands</span>
+                </span>
+                <span>Level {pet.level}</span>
+                {pet.streak > 0 && (
+                  <span>
+                    {pet.streak} day{pet.streak === 1 ? "" : "s"} together
+                  </span>
+                )}
+              </div>
+            )}
+          </section>
+          <div className="harbor-view">
+            <Town destination={destination} sleeping={pet?.sleeping ?? false} />
+            <div className="town-caption">
+              <span>
+                <span className="sun-dot" /> Golden hour in Littleharbor
+              </span>
+              <span>Take your time.</span>
             </div>
-          )}
-        </section>
-        <div className="harbor-view">
-          <Town destination={destination} sleeping={pet?.sleeping ?? false} />
-          <div className="town-caption">
-            <span>
-              <span className="sun-dot" /> Golden hour in Littleharbor
-            </span>
-            <span>Take your time.</span>
           </div>
         </div>
         <div className="play-column">
           {!pet ? (
             <section className="adoption narrow" aria-label="Adopt a companion">
+              <div className="adoption-preview">
+                <Pet />
+              </div>
+              <div className="adoption-heading">
+                <h2>Name your companion.</h2>
+                <p>Pick a name to give them a home in Littleharbor.</p>
+              </div>
               <form onSubmit={adopt} className="adopt-form">
                 <label htmlFor="pet-name">Your companion’s name</label>
                 <div className="name-input">
@@ -577,7 +590,20 @@ export function App() {
                     type="button"
                     aria-pressed={tab === t.id}
                     className={tab === t.id ? "selected" : ""}
-                    onClick={() => setTab(t.id)}
+                    onClick={() => {
+                      setTab(t.id);
+                      if (matchMedia("(max-width: 999px)").matches)
+                        requestAnimationFrame(() =>
+                          panelNode.current?.scrollIntoView({
+                            block: "start",
+                            behavior: matchMedia(
+                              "(prefers-reduced-motion: reduce)",
+                            ).matches
+                              ? "instant"
+                              : "smooth",
+                          }),
+                        );
+                    }}
                   >
                     <Icon name={t.icon} />
                     <span>{t.name}</span>
@@ -585,6 +611,7 @@ export function App() {
                 ))}
               </nav>
               <section
+                ref={panelNode}
                 className="play-panel narrow"
                 aria-label={tabs.find((t) => t.id === tab)?.name}
               >
@@ -607,7 +634,7 @@ export function App() {
                   <>
                     <div className="panel-heading">
                       <div>
-                        <h2>A small plan for today</h2>
+                        <h2>A little care, a little adventure.</h2>
                         <p>Good company. Useful errands. Maybe bread.</p>
                       </div>
                       <button
@@ -634,7 +661,7 @@ export function App() {
                       <Icon name="arrow" />
                     </button>
                     <div className="errands-heading">
-                      <h3>Take the scenic route</h3>
+                      <h3>Out for an errand</h3>
                       <span>1 energy each</span>
                     </div>
                     <div className="errand-list">

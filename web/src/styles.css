@@ -22,6 +22,7 @@
 html {
   background: var(--paper);
   scroll-behavior: smooth;
+  scroll-padding-block: 20px 100px;
   scrollbar-color: var(--line) var(--paper);
 }
 body {
@@ -116,8 +117,9 @@ h2 {
   letter-spacing: -0.035em;
 }
 h1 {
-  font-size: 64px;
-  line-height: 1.05;
+  font-size: 52px;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
 }
 h2 {
   font-size: 28px;
@@ -137,7 +139,7 @@ svg {
   vertical-align: middle;
 }
 .app-shell {
-  max-width: 800px;
+  max-width: 1360px;
   margin: 0 auto;
   padding: 0 40px;
 }
@@ -153,6 +155,25 @@ svg {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
+}
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(380px, 2fr);
+  gap: 40px;
+  align-items: start;
+  padding-top: 32px;
+}
+.town-column {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+.play-column {
+  min-width: 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
 }
 .wordmark {
   min-height: 44px;
@@ -209,36 +230,45 @@ svg {
   background: #d8cbba55;
 }
 .welcome {
-  padding: 36px 0 24px;
-  position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
+  gap: 0 20px;
+  padding: 0 0 24px;
+}
+.app-shell:not(.has-pet) .welcome {
+  display: block;
+  padding: 8px 0 28px;
 }
 .welcome p {
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 16px;
-}
-.mobile-break {
-  display: none;
+  font-size: 14px;
+  max-width: 40ch;
 }
 .name-period {
   color: var(--sea);
 }
-.header-pet {
-  width: 96px;
+.companion-portrait {
+  width: 88px;
   height: 88px;
-  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ede3cd;
+  display: grid;
+  place-items: center;
+}
+.header-pet {
+  width: 92px;
+  height: 84px;
 }
 .pet-stats {
+  grid-column: 1 / -1;
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
+  padding-top: 20px;
   font-size: 12px;
   color: var(--muted);
 }
@@ -273,10 +303,16 @@ svg {
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 10px;
   background: #88b775;
   isolation: isolate;
-  box-shadow: 0 12px 36px #4b32151a;
+
+}
+.harbor-view {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 8px;
+  box-shadow: var(--shadow);
 }
 .town-canvas {
   position: absolute;
@@ -287,6 +323,7 @@ svg {
   height: 100% !important;
   display: block;
   image-rendering: pixelated;
+  filter: saturate(0.72) brightness(1.03);
 }
 .town-sign {
   position: absolute;
@@ -329,7 +366,8 @@ svg {
   justify-content: space-between;
   font-size: 11px;
   color: var(--muted);
-  padding: 12px 2px 0;
+  padding: 14px 8px 8px;
+  gap: 12px;
 }
 .town-caption > span:first-child {
   display: flex;
@@ -344,31 +382,43 @@ svg {
   background: #a16511;
 }
 .adoption {
-  margin-top: 28px;
+  margin: 0;
+}
+.adoption-preview {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  margin: 0 0 16px;
+  background: #eee7d6;
+  border-radius: 12px;
+}
+.adoption-preview .pet {
+  width: 160px;
+  height: 145px;
+}
+.adoption-heading {
+  margin-bottom: 28px;
+}
+.adoption-heading h2 {
+  font-size: 36px;
+}
+.adoption-heading p {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 12px 0 0;
+  max-width: 32ch;
+}
+.adoption > .text-button {
+  display: block;
+  margin: 20px auto 0;
 }
 .recovery-form {
   margin-top: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
 }
 .recovery-form .secondary {
   margin-top: 12px;
-}
-.adopt-intro {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.adopt-intro .pet {
-  width: 84px;
-  flex-shrink: 0;
-}
-.adopt-intro h2 {
-  font-size: 26px;
-}
-.adopt-intro p {
-  color: var(--muted);
-  font-size: 14px;
-  margin: 8px 0 0;
 }
 .name-input {
   display: flex;
@@ -423,14 +473,16 @@ svg {
 }
 .play-nav {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   border-bottom: 1px solid var(--line);
-  margin-top: 24px;
-  gap: 8px;
+  padding-bottom: 16px;
+  margin-top: 0;
+  gap: 4px;
 }
 .play-nav button {
   background: none;
   border: 0;
+  border-radius: 10px;
   min-height: 64px;
   display: flex;
   flex-direction: column;
@@ -439,29 +491,22 @@ svg {
   gap: 6px;
   font-size: 12px;
   color: var(--muted);
-  position: relative;
-  padding: 8px 4px 14px;
+  padding: 8px 4px;
+  transition: background 180ms ease-out, color 180ms ease-out;
 }
 .play-nav .selected {
-  color: var(--sea);
+  color: var(--card);
+  background: var(--sea);
   font-weight: 650;
 }
-.play-nav .selected:after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: 22%;
-  right: 22%;
-  height: 3px;
-  background: var(--sea);
-  border-radius: 4px;
-}
-.play-nav button:hover {
+.play-nav button:not(.selected):hover {
+  background: #eee7d6;
   color: var(--sea);
 }
 .play-panel {
   padding-top: 24px;
   min-height: 220px;
+  scroll-margin-top: 20px;
 }
 .panel-heading {
   display: flex;
@@ -488,15 +533,19 @@ svg {
   align-items: center;
   gap: 16px;
   min-height: 84px;
-  background: var(--card);
+  background: var(--sea);
+  color: var(--card);
   border: 0;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 16px 20px;
-  box-shadow: var(--shadow);
+  transition: background 180ms ease-out;
   text-align: left;
 }
+.care-button:not(:disabled):hover {
+  background: #245b57;
+}
 .care-icon {
-  color: var(--coral-dark);
+  color: #f1cf86;
   display: flex;
 }
 .care-button > span:nth-child(2) {
@@ -514,14 +563,17 @@ svg {
 .listing small {
   display: block;
 }
-.care-button small,
 .errand-list small,
 .craft-button small {
   color: var(--muted);
   margin-top: 3px;
 }
+.care-button small {
+  color: #e1eddf;
+  margin-top: 4px;
+}
 .care-button > svg:last-child {
-  color: var(--sea);
+  color: var(--card);
 }
 .errands-heading {
   margin: 28px 0 12px;
@@ -549,6 +601,10 @@ svg {
   gap: 16px;
   text-align: left;
   padding: 12px 4px;
+  transition: background 180ms ease-out;
+}
+.errand-list button:not(:disabled):hover {
+  background: #f0eadc;
 }
 .errand-list button > svg:first-child {
   color: var(--sea);
@@ -614,6 +670,9 @@ svg {
   text-underline-offset: 4px;
 }
 .bram-quote {
+  padding: 20px;
+  background: #f1e9d7;
+  border-radius: 12px;
   font-family: "Fraunces Variable", serif;
   font-size: 21px;
   line-height: 1.5;
@@ -717,7 +776,9 @@ svg {
   justify-content: center;
   gap: 24px;
   margin: 20px 0 24px;
-  padding: 24px 0;
+  padding: 24px 12px;
+  background: #eeebf1;
+  border-radius: 12px;
 }
 .nap-scene .pet {
   width: 130px;
@@ -984,7 +1045,7 @@ svg {
   gap: 16px;
   padding: 40px 0 24px;
   margin-top: 20px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
 }
 .site-footer a {
@@ -1032,65 +1093,115 @@ svg {
 }
 
 @media (min-width: 1000px) {
-  .app-shell.has-pet {
-    max-width: 1280px;
+  .has-pet .welcome h1 {
+    font-size: clamp(32px, 3.6vw, 48px);
+  }
+  .app-shell:not(.has-pet) .play-column {
+    margin-top: 8px;
+  }
+}
+@media (max-width: 999px) {
+  .app-shell {
+    max-width: 760px;
     padding: 0 24px;
   }
-  .has-pet main {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    column-gap: 32px;
-    align-items: start;
+  .app-shell.has-pet {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
-  .has-pet .welcome {
-    grid-column: 1 / -1;
+  main {
+    display: block;
+    padding-top: 24px;
   }
-  .has-pet .harbor-view {
-    position: sticky;
-    top: 24px;
-  }
-  .has-pet .play-nav {
-    margin-top: 0;
+  .town-column {
+    position: static;
   }
   .play-column {
-    min-width: 0;
-  }
-  .app-shell {
-    padding: 0;
-    max-width: 720px;
-  }
-  .welcome {
-    padding: 24px 0 20px;
+    margin-top: 24px;
   }
   .site-header {
     height: 72px;
   }
   .welcome h1 {
-    font-size: 48px;
+    font-size: 40px;
   }
-  .welcome p {
-    margin-top: 8px;
-    font-size: 14px;
+  .welcome {
+    grid-template-columns: 64px minmax(0, 1fr);
+    padding-bottom: 20px;
   }
-  .town {
-    margin-top: 4px;
+  .companion-portrait {
+    width: 64px;
+    height: 64px;
+  }
+  .header-pet {
+    width: 72px;
+    height: 66px;
+  }
+  .pet-stats {
+    padding-top: 14px;
+  }
+  .narrow {
+    max-width: none;
+  }
+  .play-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    background: var(--card);
+    gap: 4px;
+  }
+  .play-nav button {
+    min-height: 56px;
+    gap: 4px;
+  }
+  .play-panel {
+    padding-top: 0;
   }
   .adoption {
-    margin-top: 20px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px;
+    gap: 0 20px;
   }
-  .adopt-intro {
-    display: none;
+  .adoption-preview {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+    align-self: start;
+    margin: 0;
+    border-radius: 50%;
+  }
+  .adoption-preview .pet {
+    width: 96px;
+    height: 96px;
+  }
+  .adoption-heading {
+    grid-column: 1;
+    grid-row: 1;
+    margin-bottom: 24px;
+  }
+  .adoption-heading h2 {
+    font-size: 32px;
+  }
+  .adopt-form, .adoption > .text-button, .recovery-form {
+    grid-column: 1 / -1;
   }
   .site-footer {
-    padding-top: 48px;
+    padding-top: 16px;
   }
 }
 @media (max-width: 600px) {
   .app-shell {
-    padding: 0 20px;
+    padding: 0 16px;
   }
   .site-header {
-    height: 72px;
+    height: 64px;
   }
   .wordmark {
     font-size: 25px;
@@ -1107,40 +1218,39 @@ svg {
     font-size: 10px;
     gap: 5px;
   }
-  .icon-button {
-    width: 44px;
+  main {
+    padding-top: 20px;
   }
   .welcome {
-    padding: 28px 0 20px;
-    gap: 12px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 0 12px;
+    padding-bottom: 20px;
   }
-  h1 {
-    font-size: 44px;
-    line-height: 1.07;
-    letter-spacing: -0.035em;
+  .app-shell:not(.has-pet) .welcome {
+    padding: 0 0 20px;
   }
-  .mobile-break {
-    display: block;
+  .welcome h1 {
+    font-size: 34px;
   }
   .welcome p {
     font-size: 13px;
-    margin-top: 12px;
-    max-width: 28ch;
+    margin-top: 6px;
+  }
+  .companion-portrait {
+    width: 64px;
+    height: 64px;
   }
   .header-pet {
-    width: 80px;
-    height: 80px;
+    width: 72px;
+    height: 66px;
   }
   .pet-stats {
-    gap: 12px;
+    gap: 8px 12px;
     font-size: 11px;
+    padding-top: 14px;
   }
-  .pet-stats > span:last-child {
-    margin-left: 0;
-  }
-  .town {
-    width: calc(100% + 16px);
-    margin-left: -8px;
+  .harbor-view {
+    padding: 6px;
     border-radius: 12px;
   }
   .town-sign {
@@ -1154,55 +1264,49 @@ svg {
     font-size: 19px;
   }
   .town-caption {
-    font-size: 9px;
-    padding-top: 10px;
+    font-size: 10px;
+    padding: 10px 4px 4px;
+    gap: 8px;
+  }
+  .play-column {
+    margin-top: 20px;
+    padding: 20px 16px;
+    border-radius: 12px;
   }
   .adoption {
-    margin-top: 24px;
+    grid-template-columns: minmax(0, 1fr) 72px;
+    column-gap: 12px;
   }
-  .adopt-intro {
-    gap: 12px;
-    margin-bottom: 16px;
+  .adoption-heading h2 {
+    font-size: 28px;
   }
-  .adopt-intro .pet {
-    width: 66px;
+  .adoption-heading p {
+    font-size: 13px;
+    margin-top: 8px;
   }
-  .adopt-intro h2 {
-    font-size: 23px;
-  }
-  .adopt-intro p {
-    font-size: 12px;
-    max-width: 27ch;
-  }
-  .adopt-form label {
-    font-size: 12px;
+  .adoption-preview .pet {
+    width: 72px;
+    height: 72px;
   }
   .name-input .primary {
     padding: 10px 16px;
     gap: 8px;
   }
-  .name-input input {
-    font-size: 14px;
+  input, select {
+    font-size: 16px;
   }
   .fine {
-    font-size: 11px;
-  }
-  .play-nav {
-    margin-top: 20px;
-    gap: 4px;
-  }
-  .play-panel {
-    padding-top: 20px;
+    font-size: 12px;
   }
   .panel-heading {
     gap: 8px;
     margin-bottom: 20px;
   }
   .panel-heading h2 {
-    font-size: 26px;
+    font-size: 27px;
   }
   .panel-heading p {
-    font-size: 12px;
+    font-size: 13px;
   }
   .panel-heading > svg {
     width: 24px;
@@ -1211,9 +1315,8 @@ svg {
     padding: 16px;
     gap: 12px;
   }
-  .care-button small,
-  .errand-list small {
-    font-size: 11px;
+  .care-button small, .errand-list small {
+    font-size: 12px;
   }
   .errands-heading {
     margin-top: 24px;
@@ -1222,50 +1325,51 @@ svg {
     font-size: 15px;
   }
   .errands-heading > span {
-    font-size: 10px;
+    font-size: 11px;
   }
   .craft-button {
     gap: 10px;
     padding: 14px 12px;
   }
   .craft-button > span:last-child {
-    font-size: 10px;
+    font-size: 11px;
   }
   .craft-button small {
-    font-size: 10px;
+    font-size: 11px;
   }
-  .market-table-head,
-  .market-row {
-    grid-template-columns: minmax(0, 1fr) 68px 68px;
+  .market-table-head, .market-row {
+    grid-template-columns: minmax(0, 1fr) 64px 64px;
     gap: 6px;
   }
   .market-row button {
-    font-size: 11px;
+    font-size: 12px;
   }
   .market-row small {
-    font-size: 9px;
+    font-size: 10px;
   }
-  .inline-form .primary,
-  .inline-form .secondary {
+  .inline-form .primary, .inline-form .secondary {
     padding: 10px 14px;
     font-size: 12px;
     gap: 8px;
   }
   .nap-scene {
-    gap: 16px;
-    padding: 12px 0;
+    gap: 12px;
+    padding: 16px 8px;
   }
   .nap-scene .pet {
-    width: 110px;
+    width: 92px;
   }
   .nap-scene strong {
-    font-size: 38px;
+    font-size: 36px;
   }
   .nap-scene small {
-    font-size: 10px;
+    font-size: 11px;
+  }
+  .den-score, .den-score-heading {
+    grid-template-columns: minmax(0, 1fr) 60px 64px;
   }
   .receipt {
-    padding: 20px;
+    padding: 20px 16px;
     margin-top: 24px;
   }
   .receipt h2 {
@@ -1278,17 +1382,16 @@ svg {
     font-size: 8px;
   }
   .site-footer {
-    font-size: 9px;
-    padding-top: 32px;
+    font-size: 10px;
     gap: 8px;
   }
-  .feedback {
-    margin-top: 16px;
+  .feedback:empty {
+    margin: 0;
   }
 }
 @media (max-width: 360px) {
-  .app-shell {
-    padding: 0 16px;
+  .wordmark {
+    font-size: 23px;
   }
   .header-controls {
     gap: 0;
@@ -1297,17 +1400,17 @@ svg {
     max-width: 100px;
   }
   .welcome h1 {
-    font-size: 40px;
-  }
-  .pet-stats {
-    gap: 9px;
+    font-size: 30px;
   }
   .panel-heading h2 {
-    font-size: 24px;
+    font-size: 25px;
   }
-  .market-table-head,
-  .market-row {
-    grid-template-columns: minmax(0, 1fr) 62px 62px;
+  .play-nav {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .market-table-head, .market-row {
+    grid-template-columns: minmax(0, 1fr) 58px 58px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
