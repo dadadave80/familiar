@@ -56,6 +56,8 @@ pub struct Contract {
     busy: LookupSet<TokenId>,
     pet_dens: LookupMap<TokenId, u8>,
     den_bread: [u128; 4],
+    bread_week: u64,
+    weekly_bread: [u128; 4],
     budget_day: u64,
     guests_today: u16,
     adoptions_today: u16,
@@ -107,6 +109,8 @@ impl Contract {
             busy: LookupSet::new(b"busy".as_slice()),
             pet_dens: LookupMap::new(b"dens".as_slice()),
             den_bread: [0; 4],
+            bread_week: week_at(env::block_timestamp() / 1_000_000_000),
+            weekly_bread: [0; 4],
             budget_day: 0,
             guests_today: 0,
             adoptions_today: 0,
@@ -121,9 +125,15 @@ impl Contract {
         self.pet_dens.get(&token_id).copied()
     }
     pub fn get_dens(&self) -> near_sdk::serde_json::Value {
+        let week = week_at(env::block_timestamp() / 1_000_000_000);
+        let weekly = if self.bread_week == week {
+            self.weekly_bread
+        } else {
+            [0; 4]
+        };
         json!(
             (1u8..=4)
-                .map(|den| json!({"den":den,"bread":U128(self.den_bread[usize::from(den-1)])}))
+                .map(|den| json!({"den":den,"bread":U128(self.den_bread[usize::from(den-1)]),"week":U64(week),"weekly_bread":U128(weekly[usize::from(den-1)])}))
                 .collect::<Vec<_>>()
         )
     }
@@ -367,6 +377,12 @@ impl Contract {
             if crafted && let Some(d) = self.pet_dens.get(&token_id) {
                 let i = usize::from(d.saturating_sub(1)).min(3);
                 self.den_bread[i] = self.den_bread[i].saturating_add(1);
+                let week = week_at(env::block_timestamp() / 1_000_000_000);
+                if self.bread_week != week {
+                    self.bread_week = week;
+                    self.weekly_bread = [0; 4];
+                }
+                self.weekly_bread[i] = self.weekly_bread[i].saturating_add(1);
             }
         }
         success
@@ -851,6 +867,62 @@ mod tests {
         assert!(c.on_adopted(pet.clone()).is_none());
         assert_eq!(c.reserved_storage, reserve);
         assert!(!c.adoptions.get(&pet).unwrap().registration_inflight);
+    }
+    #[test]
+    fn weekly_bread_rolls_over_lazily_and_only_counts_successful_unique_callbacks() {
+        let mut c = contract();
+        let pet = "mochi.root.testnet".to_string();
+        c.pet_dens.insert(pet.clone(), 2);
+        c.den_bread[1] = 7;
+        c.weekly_bread[1] = 3;
+        c.bread_week = week_at(1_794_182_399);
+        let mut sunday = context("root.testnet", 0);
+        sunday.block_timestamp(1_794_182_399 * 1_000_000_000);
+        testing_env!(
+            sunday.build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            vec![near_sdk::PromiseResult::Successful(b"true".to_vec())]
+        );
+        c.busy.insert(pet.clone());
+        assert!(c.on_action(pet.clone(), None, true));
+        assert_eq!(c.den_bread[1], 8);
+        assert_eq!(c.get_dens()[1]["weekly_bread"], "4");
+        let old_week = c.bread_week;
+        let mut monday = context("root.testnet", 0);
+        monday.block_timestamp(1_794_182_400 * 1_000_000_000);
+        testing_env!(monday.build());
+        assert_eq!(c.get_dens()[1]["weekly_bread"], "0");
+        assert_eq!(c.get_dens()[1]["bread"], "8");
+        assert_eq!(c.bread_week, old_week);
+        assert_eq!(c.weekly_bread[1], 4);
+        testing_env!(
+            monday.build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            vec![near_sdk::PromiseResult::Failed]
+        );
+        c.busy.insert(pet.clone());
+        assert!(!c.on_action(pet.clone(), None, true));
+        assert_eq!(c.den_bread[1], 8);
+        assert_eq!(c.bread_week, old_week);
+        testing_env!(
+            monday.build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            vec![near_sdk::PromiseResult::Successful(b"true".to_vec())]
+        );
+        c.busy.insert(pet.clone());
+        assert!(c.on_action(pet.clone(), None, true));
+        assert_eq!(c.weekly_bread, [0, 1, 0, 0]);
+        assert_eq!(c.den_bread[1], 9);
+        assert_eq!(c.bread_week, week_at(1_794_182_400));
+        assert!(!c.on_action(pet, None, true));
+        assert_eq!(c.weekly_bread[1], 1);
+        assert_eq!(c.get_dens()[1]["week"], week_at(1_794_182_400).to_string());
     }
 }
 

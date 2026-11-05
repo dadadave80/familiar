@@ -55,6 +55,10 @@ pub fn valid_name(name: &str) -> bool {
     }
     !separator
 }
+pub fn week_at(timestamp_secs: u64) -> u64 {
+    // The Unix epoch was a Thursday; shift three days to start weeks on Monday.
+    (timestamp_secs / 86_400 + 3) / 7
+}
 pub fn streak_at(streak: u32, last: Option<u32>, day: u32, freeze: bool) -> (u32, bool) {
     match last {
         None => (1, freeze),
@@ -67,6 +71,16 @@ pub fn streak_at(streak: u32, last: Option<u32>, day: u32, freeze: bool) -> (u32
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn weeks_change_at_monday_midnight_utc() {
+        assert_eq!(week_at(1_794_182_399) + 1, week_at(1_794_182_400));
+        assert_eq!(
+            week_at(1_794_182_400),
+            week_at(1_794_182_400 + 7 * 86_400 - 1)
+        );
+        assert_eq!(week_at(4 * 86_400 - 1), 0);
+        assert_eq!(week_at(4 * 86_400), 1);
+    }
     #[test]
     fn refill_preserves_partial_time() {
         assert_eq!(energy_at(0, 0, 28_799), 0);

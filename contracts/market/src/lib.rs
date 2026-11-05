@@ -61,6 +61,8 @@ pub struct NpcState {
     pub recent_trades: Vec<TradeRecord>,
     pub dens: [AccountId; 4],
     pub den_fees: [U128; 4],
+    pub week: U64,
+    pub weekly_fees: [U128; 4],
 }
 
 #[near(contract_state)]
@@ -85,6 +87,8 @@ pub struct Contract {
     paying: LookupMap<AccountId, u128>,
     recent_trades: Vec<TradeRecord>,
     den_fees: [u128; 4],
+    fees_week: u64,
+    weekly_fees: [u128; 4],
 }
 #[near]
 impl Contract {
@@ -141,6 +145,8 @@ impl Contract {
             paying: LookupMap::new(b"p"),
             recent_trades: vec![],
             den_fees: [0; 4],
+            fees_week: week_at(env::block_timestamp() / 1_000_000_000),
+            weekly_fees: [0; 4],
         }
     }
     #[payable]
@@ -236,6 +242,7 @@ impl Contract {
         vec![U128(0); amounts.len()]
     }
     pub fn get_npc(&self) -> NpcState {
+        let week = week_at(env::block_timestamp() / 1_000_000_000);
         NpcState {
             quotes: self
                 .quotes
@@ -256,6 +263,12 @@ impl Contract {
             recent_trades: self.recent_trades.clone(),
             dens: self.dens.clone(),
             den_fees: self.den_fees.map(U128),
+            week: U64(week),
+            weekly_fees: if self.fees_week == week {
+                self.weekly_fees.map(U128)
+            } else {
+                [U128(0); 4]
+            },
         }
     }
     pub fn get_listings(&self) -> Vec<Listing> {
@@ -629,6 +642,12 @@ impl Contract {
     fn fee(&mut self, den: Option<u8>, amount: u128) {
         let i = usize::from(den.unwrap_or(1).saturating_sub(1)).min(3);
         self.den_fees[i] = self.den_fees[i].saturating_add(amount);
+        let week = week_at(env::block_timestamp() / 1_000_000_000);
+        if self.fees_week != week {
+            self.fees_week = week;
+            self.weekly_fees = [0; 4];
+        }
+        self.weekly_fees[i] = self.weekly_fees[i].saturating_add(amount);
         let account = self.dens[i].clone();
         self.credit(&account, amount);
         self.pay(&account);
@@ -821,6 +840,85 @@ mod tests {
             1,
             "{\"price\":\"100\"}".into(),
         );
+    }
+    #[test]
+    fn weekly_fees_reset_only_scores_and_failed_or_duplicate_trades_add_nothing() {
+        let mut c = contract();
+        let den = id("den-2.root.testnet");
+        let pet = id("mochi.root.testnet");
+        let mut sunday = ctx("market.root.testnet", 0);
+        sunday.block_timestamp(1_794_182_399 * 1_000_000_000);
+        testing_env!(sunday.build());
+        c.fee(Some(2), 100);
+        assert_eq!(c.get_npc().weekly_fees[1], U128(100));
+        assert_eq!(c.den_fees[1], 100);
+        let paying = *c.paying.get(&den).unwrap();
+        let old_week = c.fees_week;
+        let mut monday = ctx("market.root.testnet", 0);
+        monday.block_timestamp(1_794_182_400 * 1_000_000_000);
+        testing_env!(monday.build());
+        assert_eq!(c.get_npc().week, U64(week_at(1_794_182_400)));
+        assert_eq!(c.get_npc().weekly_fees, [U128(0); 4]);
+        assert_eq!(c.den_fees[1], 100);
+        assert_eq!(c.fees_week, old_week);
+        assert_eq!(c.paying.get(&den), Some(&paying));
+        c.fee(Some(2), 50);
+        assert_eq!(c.weekly_fees, [0, 50, 0, 0]);
+        assert_eq!(c.den_fees[1], 150);
+        assert_eq!(c.paying.get(&den), Some(&paying));
+        assert_eq!(c.get_claim(den.clone()), U128(50));
+        c.npc_near_balance = 898;
+        c.active_trades = 1;
+        c.trades.insert(
+            pet.clone(),
+            Trade {
+                pet: pet.clone(),
+                item: "flour".into(),
+                quantity: U128(1),
+                gross: U128(101),
+                buy: false,
+                den: Some(2),
+                reserved_bytes: 0,
+            },
+        );
+        testing_env!(
+            monday.build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            vec![PromiseResult::Failed]
+        );
+        assert!(!c.on_trade(pet.clone()));
+        assert_eq!(c.npc_near_balance, 999);
+        assert_eq!(c.den_fees[1], 150);
+        assert_eq!(c.weekly_fees[1], 50);
+        c.npc_near_balance -= 101;
+        c.active_trades = 1;
+        c.trades.insert(
+            pet.clone(),
+            Trade {
+                pet: pet.clone(),
+                item: "flour".into(),
+                quantity: U128(1),
+                gross: U128(101),
+                buy: false,
+                den: Some(2),
+                reserved_bytes: 0,
+            },
+        );
+        testing_env!(
+            monday.build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            vec![PromiseResult::Successful(b"true".to_vec())]
+        );
+        assert!(c.on_trade(pet.clone()));
+        assert_eq!(c.den_fees[1], 152);
+        assert_eq!(c.weekly_fees[1], 52);
+        assert!(!c.on_trade(pet));
+        assert_eq!(c.weekly_fees[1], 52);
+        assert_eq!(c.paying.get(&den), Some(&paying));
     }
 }
 
