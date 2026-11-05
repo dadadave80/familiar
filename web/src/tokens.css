@@ -1,0 +1,15 @@
+:root {
+  --paper: #f6efe3;
+  --ink: #1e1a17;
+  --sea: #2e6f6a;
+  --sun: #f2a541;
+  --coral: #e26d5a;
+  --coral-dark: #9a4637;
+  --moss: #5c7a3a;
+  --dusk: #5b4e8a;
+  --muted: #695d51;
+  --line: #d8cbba;
+  --card: #fff9ef;
+  --radius: 16px;
+  --shadow: 0 8px 28px #4b321514;
+}

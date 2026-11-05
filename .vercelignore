@@ -1,0 +1,9 @@
+.env
+.env.*
+HANDOFF.md
+.data/
+contracts/target/
+node_modules/
+web/screenshots/
+web/dist/
+.git/

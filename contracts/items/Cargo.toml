@@ -1,0 +1,15 @@
+[package]
+name = "familiar-items"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+familiar-common.workspace = true
+near-sdk-contract-tools.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

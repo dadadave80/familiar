@@ -1,0 +1,10 @@
+[package]
+name = "familiar-common"
+version = "0.1.0"
+edition = "2024"
+[dependencies]
+near-sdk.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

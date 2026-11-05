@@ -1,0 +1,11 @@
+{
+  "name": "@familiar/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --bun vite --host 127.0.0.1",
+    "build": "bun --bun vite build",
+    "preview": "bun --bun vite preview --host 127.0.0.1"
+  }
+}

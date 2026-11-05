@@ -1,0 +1,9 @@
+{
+  "name": "Familiar",
+  "short_name": "Familiar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6EFE3",
+  "theme_color": "#F6EFE3",
+  "icons": [{ "src": "/pet.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

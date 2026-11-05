@@ -1,0 +1,49 @@
+{
+  "name": "familiar",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "web",
+    "services/relayer",
+    "services/npc"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd web dev",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "build": "bun run typecheck && bun run --cwd web build",
+    "test:contracts": "cargo test --manifest-path contracts/Cargo.toml --workspace",
+    "test:sandbox": "cargo test --manifest-path contracts/Cargo.toml -p familiar-root --test sandbox -- --ignored --nocapture",
+    "test:browser": "bun scripts/test-browser.ts",
+    "build:contracts": "bash scripts/build-contracts.sh",
+    "setup:testnet": "bash scripts/setup-testnet.sh",
+    "deploy:testnet": "bash scripts/deploy.sh",
+    "e2e:testnet": "bun scripts/e2e.ts",
+    "rules:export": "cargo run --manifest-path contracts/Cargo.toml -p rules-export > web/src/rules.json",
+    "relayer": "bun services/relayer/src/index.ts",
+    "npc": "bun services/npc/src/index.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/figtree": "5.3.0",
+    "@fontsource-variable/fraunces": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "borsh": "2.0.0",
+    "hono": "4.13.16",
+    "near-api-js": "7.4.0",
+    "phaser": "3.90.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/bun": "1.4.4",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.6"
+  }
+}

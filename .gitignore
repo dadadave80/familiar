@@ -1,0 +1,16 @@
+node_modules/
+target/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+coverage/
+playwright-report/
+test-results/
+.vercel/
+.impeccable/cache/
+*.log
+submission*.json
+HANDOFF.md
+.data/
