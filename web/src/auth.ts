@@ -301,10 +301,7 @@ export async function signInGoogle(
     );
   try {
     check(
-      [
-        "https://rpc.testnet.near.org",
-        "https://test.rpc.fastnear.com",
-      ].includes(rpcUrl.replace(/\/$/, "")),
+      rpcUrl.replace(/\/$/, "") === "https://test.rpc.fastnear.com",
       "Google recovery requires a verified public testnet connection.",
     );
     const { openGoogleSession } = await import("./auth-sdk");

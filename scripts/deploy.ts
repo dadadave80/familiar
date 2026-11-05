@@ -48,7 +48,7 @@ if (
 )
   throw new Error("Dev account IDs do not match this root.");
 const rpc = new JsonRpcProvider({
-  url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org",
+  url: process.env.NEAR_RPC_URL ?? "https://test.rpc.fastnear.com",
 });
 if ((await rpc.getNetworkId()) !== "testnet")
   throw new Error("Refusing a non-testnet RPC.");

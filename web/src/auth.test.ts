@@ -196,15 +196,18 @@ describe("Google retention and recovery trust boundary", () => {
     expect(legacy.actions[0].addKey).toBeDefined();
     expect([...legacy.blockHash]).toEqual([...tx.blockHash]);
   });
-  test("shared OAuth client is limited to its verified localhost origin and refuses a mainnet RPC", async () => {
+  test("shared OAuth client is limited to its verified localhost origin and public testnet RPC", async () => {
     expect(googleRecoveryAvailable("http://localhost:3000")).toBe(true);
     expect(googleRecoveryAvailable("http://localhost:5173")).toBe(false);
     expect(googleRecoveryAvailable("https://familiar.example")).toBe(false);
     await expect(
-      signInGoogle("https://rpc.testnet.near.org", "http://localhost:5173"),
+      signInGoogle("https://test.rpc.fastnear.com", "http://localhost:5173"),
     ).rejects.toThrow("not connected for this address");
     await expect(
       signInGoogle("https://rpc.mainnet.near.org", "http://localhost:3000"),
+    ).rejects.toThrow("verified public testnet");
+    await expect(
+      signInGoogle("https://rpc.testnet.near.org", "http://localhost:3000"),
     ).rejects.toThrow("verified public testnet");
   });
   test("adds only a recovery key, retaining the original guest key", async () => {

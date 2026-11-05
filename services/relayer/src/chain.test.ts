@@ -82,7 +82,7 @@ test("concurrent delivery retries submit once and never share another signed pay
       root,
       `relayer.${root}`,
       key.toString(),
-      "https://rpc.testnet.near.org",
+      "https://test.rpc.fastnear.com",
     );
     const encoded = await make(`p-1.${root}`);
     const [a, b] = await Promise.all([

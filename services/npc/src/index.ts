@@ -10,7 +10,7 @@ const root = process.env.NEAR_ROOT;
 const npcId = process.env.NPC_ID;
 const key = process.env.NPC_PRIVATE_KEY;
 const provider = new JsonRpcProvider({
-  url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org",
+  url: process.env.NEAR_RPC_URL ?? "https://test.rpc.fastnear.com",
 });
 if (
   (root && !root.endsWith(".testnet")) ||

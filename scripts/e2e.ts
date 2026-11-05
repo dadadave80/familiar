@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { confirmedValue } from "../services/relayer/src/outcome";
+import { assertStakedPrincipal } from "./staking";
 import {
   Account,
   actions,
@@ -24,7 +25,7 @@ if (!/^https:\/\//.test(base))
     "Set PUBLIC_RELAYER_URL to the deployed Post Office HTTPS endpoint. This command never substitutes fixtures or sandbox results.",
   );
 const rpc = new JsonRpcProvider({
-  url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org",
+  url: process.env.NEAR_RPC_URL ?? "https://test.rpc.fastnear.com",
 });
 if ((await rpc.getNetworkId()) !== "testnet")
   throw new Error("Refusing a non-testnet RPC.");
@@ -177,14 +178,13 @@ if (withdraw) {
       await act({ kind: "sleep", amount: nearToYocto("0.01").toString() }),
       true,
     );
-    assert(
-      BigInt(
-        (await rpc.callFunction<string>({
-          contractId: config.pool,
-          method: "get_account_staked_balance",
-          args: { account_id: pet },
-        })) ?? "0",
-      ) >= nearToYocto("0.01"),
+    assertStakedPrincipal(
+      await rpc.callFunction({
+        contractId: config.pool,
+        method: "get_account",
+        args: { account_id: pet },
+      }),
+      nearToYocto("0.01"),
     );
     assert.equal(await act({ kind: "wake" }), true);
     console.info(

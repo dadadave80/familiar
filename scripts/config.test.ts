@@ -26,8 +26,21 @@ test("testnet setup never replaces an existing dev-key file", async () => {
 test("sample configuration defaults to testnet and contains no usable keys", async () => {
   const sample = await Bun.file(".env.example").text();
   expect(sample).toContain("NEAR_NETWORK=testnet");
+  for (const name of ["NEAR_RPC_URL", "VITE_NEAR_RPC_URL"])
+    expect(sample.match(new RegExp(`^${name}=(.+)$`, "m"))?.[1]).toBe(
+      "https://test.rpc.fastnear.com",
+    );
   expect(sample).not.toMatch(/ed25519:[1-9A-HJ-NP-Za-km-z]{80,}/);
   const ignore = await Bun.file(".gitignore").text();
   expect(ignore.split("\n")).toContain("HANDOFF.md");
   expect(ignore.split("\n")).toContain(".env");
+});
+test("runtime sources do not use the retired testnet RPC", async () => {
+  for (const directory of ["web/src", "services", "scripts"])
+    for await (const file of new Bun.Glob("**/*.{ts,tsx}").scan(directory)) {
+      if (file.endsWith(".test.ts")) continue;
+      expect(await Bun.file(join(directory, file)).text()).not.toContain(
+        "https://rpc.testnet.near.org",
+      );
+    }
 });

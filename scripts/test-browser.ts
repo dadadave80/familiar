@@ -134,7 +134,7 @@ try {
         },
       }),
     );
-    await page.route("https://rpc.testnet.near.org/**", async (route) => {
+    await page.route("https://test.rpc.fastnear.com/**", async (route) => {
       const body = route.request().postDataJSON();
       let result: unknown;
       if (body.method === "status") result = { chain_id: "testnet" };

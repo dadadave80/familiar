@@ -12,7 +12,7 @@ const backend =
         root,
         process.env.RELAYER_ID,
         key as KeyPairString,
-        process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org",
+        process.env.NEAR_RPC_URL ?? "https://test.rpc.fastnear.com",
       )
     : undefined;
 const app = createApp(

@@ -145,7 +145,7 @@ export function inputAmount(value: string): bigint {
 
 export class FamiliarClient {
   readonly rpcUrl =
-    import.meta.env.VITE_NEAR_RPC_URL ?? "https://rpc.testnet.near.org";
+    import.meta.env.VITE_NEAR_RPC_URL ?? "https://test.rpc.fastnear.com";
   readonly provider = new JsonRpcProvider({
     url: this.rpcUrl,
   });
