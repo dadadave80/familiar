@@ -1,0 +1,55 @@
+{
+  "created": "2026-11-09",
+  "purpose": "Familiar First Light local motion preview",
+  "source": "OpenAI image generation; original user-approved Familiar design references",
+  "runtimeStatus": "Composited still-image animation assets; not a skeletal rig or registered sprite atlas",
+  "files": {
+    "arena.png": "beacon_stage",
+    "harbor.png": "harbor_stage",
+    "tidekeeper.png": "guardian_clean",
+    "lens.png": "motion_lens",
+    "mochi-step.png": "motion_mochi_step",
+    "wave.png": "motion_wave",
+    "mochi.png": "Reused mochi-idle-candidate.png from approved production concept package",
+    "bram.png": "Reused bram-idle-candidate.png from approved production concept package",
+    "moth.png": "Reused wind-moth-reference.png from approved production concept package",
+    "shell.png": "motion_barrier"
+  },
+  "prompts": [
+    {
+      "id": "beacon_stage",
+      "prompt": "Use case: stylized-concept. Create a high-quality GAME BACKGROUND PLATE for Familiar First Light, matching the attached handcrafted warm clay miniature coastal ruins reference. Landscape1536x1024. This is a clean empty stage for compositing animated actors later, NOT a UI mockup. Across the lower third, THREE distinct empty round dry sandstone platforms in a horizontal row, centers at roughly22%,50%,78% width, all feet/ground areas clearlyvisible. Gentle steps connect them. Lowerforegroundstonepier, uppercenteropen turquoise sea channel where a giantguardian will be composited, distant ruins and warm sky. Architecture frames the two outeredges withweathered arches, softcoral,moss andflowers. Leftrear behindleftplatform a small empty brass reliccradle, rightrearanemptycreaturenest. No relics, barriers, characters, guardian, animals, writing, UI, labels, logos, arrows, glowingtargetmarkers or lighthouse. Keep uppermiddle60% low-detailsea/sky suitableforguardian overlay. Camera slightlyelevated threequarterfront, consistent upperleft goldenlight, tactile highqualityminiature. Composition must show ALL THREE platforms fully with clear shallowperspective; no dramaticcropping. Material richness and refined warm color grading, clean crisp broad forms, notphotoreal cliff orflatpixel art.",
+      "transparentBackground": false
+    },
+    {
+      "id": "harbor_stage",
+      "prompt": "Use case: stylized-concept. Create a beautiful empty GAME SCENE PLATE for Familiar First Light using the attached miniatureharbor artstyle. Landscape1536x1024, warmhandcrafted clay/felt dioramaatbluehourbefore sunset, clear readableworld. Cozybakeryterracottaroofandivorywalls onLEFTedge, smallwarmwindows, no readablelettering. Broad empty stone dock acrossbottomthird wherecatandbadgeractorscanbecomposited. Sea incenterandright. IMPORTANT lighthouse occupiesRIGHTQUADRANT with lanternroomcenter at x78percent y31percent, big enoughvisible, redroofivorytower; itsglasslanternroomis completelyDARK, NO lightbeam, no glow. Lighthousebaseatrightrockoutcrop, quietgardenpatchnearfrontleft, nosignalvaneyetnochimeyet. Harbor gentlycurvesaroundwater. Distantislandfaintonthehorizon. Nopeople, animals,cat,badger,moth, UI,text,logos,arrows, coinsorboatsobstructingforeground. Environmentonly, no charactersbakedin. Cleanimagewithinvitingnegative-space stoneforeground andstablecamera suitablelaterCSSlightbeamfromtheactualdarklighthouse. HighestqualitytactileminiaturematchingselectedA.",
+      "transparentBackground": false
+    },
+    {
+      "id": "guardian_clean",
+      "prompt": "Use case: stylized-concept. One clean isolated game sprite of the Familiar Tidekeeper, stonecrab guardian. Follow castreference silhouette/materialbut renderas an opaque solidstone sculpture, WITHOUT any glow or magical lighting whatsoever. Wide frontfacing stonecrab, roundcreamgrey sandstone shell, embossedcentralspiral, small ambercolored NONEMISSIVE eyes, broad roundedclaws, fourstonelegs, modestcoral andmoss onitsshell. Neutral lowpose, wholebody complete withinframewith15percentpadding. Softstudioambientlight only. Transparent alpha exterior flushwithsilhouette. NO diffusehaze, NO coloredhalo, NO bloom, NO groundshadow, NO vignette, NO backgroundgradient, NO environment, NO water, NO platform, NO text, noextras. Everypixeloutsidephysicalstone/coralbodymustbecompletelytransparent. Warmtactileclayminiature style, appealingprotective guardian. Oneposeonly, anatomicallycoherentandreadable.",
+      "transparentBackground": true
+    },
+    {
+      "id": "motion_lens",
+      "prompt": "Extract and faithfully recreate ONLY the Beacon Lens object in the upper right cell of reference as a single premium game sprite on true transparent background. Entire warm bronze round Fresnel lens and teal little stand, front three-quarter angle matching reference, physical miniature clay craft texture, glass circles and crisp clear silhouette. Object centered, fills 84% of square canvas with modest even padding, no text, no caption, no sheet, no surface, no drop shadow, no outer glow or halos. No other inventory objects. Lens glass has subtle warm reflection, no emitted bloom. Intended to animate a collectible in Familiar First Light.",
+      "transparentBackground": true
+    },
+    {
+      "id": "motion_mochi_step",
+      "prompt": "Create one animation key pose of EXACT SAME Mochi orange tabby familiar as attached: orange round chubby kitten, three forehead stripes, cream muzzle belly and paw ends, black friendly eyes, red knitted scarf, brown satchel on viewer left. Preserve exact face, material, body proportions, scale, camera angle and lighting. Make a playful springing sidestep to viewer right: body leans 10 degrees right, hind paws push off, forepaws reach slightly ahead, tail curves back, attentive happy expression, both eyes open. Full body one character only, centered with 8% padding. True transparent background no ground, no text, no shadow, no glow, no halo. Clay felt handcrafted premium miniature game art. This must register as same character as reference, not a different design.",
+      "transparentBackground": true
+    },
+    {
+      "id": "motion_wave",
+      "prompt": "Single isolated miniature ocean wave crest game effect on true transparent background. Designed as a collectible cozy clay diorama world's wave: pale teal translucent curling shallow wall of water topped by rich creamy white foam, width about three times height, front three-quarter view slightly overhead. Gentle powerful arcing crest, small organic foam bubbles at base, no separate spray dots far away. Handcrafted physical miniature style, beautifully rendered soft daylight. Entire wave fills 85% of landscape canvas. No landscape, no ground, no background, no text, no objects, no characters. No shadow outside the water, no glow or halo. Actual alpha transparency everywhere outside the wave. One wave only.",
+      "transparentBackground": true
+    },
+    {
+      "id": "motion_barrier",
+      "prompt": "One isolated shell barrier for the cozy miniature game Familiar. A large closed scallop shell standing upright, face toward viewer with a slight three-quarter perspective, pale warm ivory ceramic stone with soft salmon ridges and turquoise patina near the small hinge at bottom. This is a physical magical gate covering a relic alcove, not a creature: no face, no eyes, no legs, no lettering, no symbols. Broad fan-shaped shell, beautiful subtle handmade clay texture, strong clean silhouette, gentle natural daylight. Centered object fills 85% of square canvas. TRUE transparent background, no floor, no cast shadow, no halo, no glow, no vignette. One complete intact shell only, separate game sprite. Its fan ridges radiate from hinge to scalloped top edge, suitable for animating two halves opening when struck by a wave. Match the handcrafted premium stop-motion diorama art of the supplied scene.",
+      "transparentBackground": true
+    }
+  ]
+}
