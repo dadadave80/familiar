@@ -22,6 +22,7 @@ import { dens, itemIds, rules, validName } from "./rules";
 import { Icon, type IconName } from "./Icon";
 import { Pet } from "./Pet";
 import { Town } from "./Town";
+import { planUrl } from "./plan-url";
 import {
   googleRecoveryAvailable,
   keepWithGoogle,
@@ -455,7 +456,7 @@ export function App() {
                 <h1 id="town-title">
                   Littleharbor<span className="name-period">.</span>
                 </h1>
-                <p>Small errands. A little company.</p>
+                <p><a href={planUrl}>Explore the First Light design book</a></p>
               </div>
             )}
             {pet && (
@@ -1245,7 +1246,7 @@ export function App() {
         </div>
       </main>
       <footer className="site-footer">
-        <span>Small errands. A little company.</span>
+        <a href={planUrl}>First Light design book</a>
         <a
           href="https://kenney.nl/assets/tiny-town"
           target="_blank"

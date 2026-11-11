@@ -1,6 +1,7 @@
 {
   "created": "2026-11-09",
-  "purpose": "Familiar First Light local motion preview",
+  "purpose": "Familiar First Light motion preview",
+  "delivery": "The player loads WebP renditions of the PNG masters listed below.",
   "source": "OpenAI image generation; original user-approved Familiar design references",
   "runtimeStatus": "Composited still-image animation assets; not a skeletal rig or registered sprite atlas",
   "files": {

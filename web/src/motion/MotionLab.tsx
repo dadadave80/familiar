@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { MotionPlayer } from "./timeline";
+import { planUrl } from "../plan-url";
 import { CLIPS, sampleScene, type ClipId, type SceneState } from "./scenes";
 import "./motion.css";
 
@@ -69,7 +70,7 @@ function Scene({
     <>
       <img
         className="motion-backdrop"
-        src={`${ART}${s.harbor ? "harbor" : "arena"}.png`}
+        src={`${ART}${s.harbor ? "harbor" : "arena"}.webp`}
         alt=""
       />
       <div className="motion-sunset" style={{ opacity: s.beacon * .22 }} />
@@ -89,7 +90,7 @@ function Scene({
           >
             <span className="actor-shadow" />
             <img
-              src={`${ART}bram.png`}
+              src={`${ART}bram.webp`}
               alt=""
               style={{
                 transform: `rotate(${reduced ? 0 : Math.sin(time / 700) * 1.1}deg)`,
@@ -108,7 +109,7 @@ function Scene({
           />
           <img
             className="tidekeeper-actor"
-            src={`${ART}tidekeeper.png`}
+            src={`${ART}tidekeeper.webp`}
             alt=""
             style={{
               transform: `translate(-50%, -100%) translateY(${-s.guardianLift / 10}cqw) scale(${s.guardianScale})`,
@@ -118,7 +119,7 @@ function Scene({
             <div className="shell-barrier" data-open={shellOpen} style={position(18, 43)}>
               {[-1, 1].map(side => <img
                 key={side}
-                src={`${ART}shell.png`}
+                src={`${ART}shell.webp`}
                 alt=""
                 style={{
                   clipPath: side < 0 ? "inset(0 50% 0 0)" : "inset(0 0 0 50%)",
@@ -127,7 +128,7 @@ function Scene({
               />)}
             </div>
             <div className="shell-barrier" style={position(83, 43)}>
-              <img src={`${ART}shell.png`} alt="" />
+              <img src={`${ART}shell.webp`} alt="" />
             </div>
           </>}
           {s.targetLane !== null && (
@@ -195,7 +196,7 @@ function Scene({
           transform: `translate(-50%, -50%) rotate(${clip === "reel" ? s.ropeProgress * -12 : 0}deg)`,
         }}
       >
-        <img src={`${ART}lens.png`} alt="" />
+        <img src={`${ART}lens.webp`} alt="" />
       </div>
       <div className="motion-actor mochi-actor" style={position(s.mochiX, s.mochiY)}>
         <span
@@ -206,7 +207,7 @@ function Scene({
           }}
         />
         <img
-          src={`${ART}${stepping ? "mochi-step" : "mochi"}.png`}
+          src={`${ART}${stepping ? "mochi-step" : "mochi"}.webp`}
           alt=""
           style={{
             transform: `translateY(${-lift / 10}cqw) rotate(${s.mochiRotate}deg) scale(${s.mochiScaleX}, ${s.mochiScaleY})`,
@@ -232,7 +233,7 @@ function Scene({
             transform: `translate(-50%, -50%) scale(${.5 + s.waveProgress * .7})`,
           }}
         >
-          <img src={`${ART}wave.png`} alt="" />
+          <img src={`${ART}wave.webp`} alt="" />
         </div>
       )}
       {s.celebration > 0 && (
@@ -261,7 +262,7 @@ function Scene({
           transform: `translate(-50%, -50%) rotate(${hover * 4}deg) scaleX(${wings})`,
         }}
       >
-        <img src={`${ART}moth.png`} alt="" />
+        <img src={`${ART}moth.webp`} alt="" />
       </div>
       {!s.harbor && (
         <div className="lane-names" aria-hidden="true">
@@ -310,7 +311,7 @@ export function MotionLab() {
     Promise.all(
       ASSETS.map(name => {
         const image = new Image();
-        image.src = `${ART}${name}.png`;
+        image.src = `${ART}${name}.webp`;
         return image.decode();
       }),
     ).then(
@@ -388,7 +389,7 @@ export function MotionLab() {
         <a href="/" className="familiar-wordmark">
           familiar<span> a little world, together.</span>
         </a>
-        <span className="motion-edition">First Light · Motion study</span>
+        <a className="motion-edition" href={planUrl}>First Light design book</a>
       </header>
       <section className="motion-introduction">
         <h1>First Light, <em>in motion.</em></h1>

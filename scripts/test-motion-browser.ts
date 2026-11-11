@@ -301,7 +301,7 @@ try {
       recoveryRequests.push(url.href);
       return route.abort("blockedbyclient");
     }
-    if (url.pathname.endsWith("/first-light-motion/arena.png") && !imageAvailable) {
+    if (url.pathname.endsWith("/first-light-motion/arena.webp") && !imageAvailable) {
       return route.fulfill({ status: 503, body: "Simulated scene-image outage", contentType: "text/plain" });
     }
     return route.continue();
