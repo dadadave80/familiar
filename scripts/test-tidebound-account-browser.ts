@@ -13,7 +13,7 @@ const root='tidebound-fixture.testnet', itemsContract='items.'+root;
 const key=KeyPair.fromRandom('ed25519');
 const binding={playerId:'fixture-player',network:'testnet',nearAccountId:'p-1.'+root,signerPublicKey:key.getPublicKey().toString(),signerBindingId:'fixture:google'};
 const evidence={id:'a'.repeat(64),token_id:'lantern:'+ 'b'.repeat(64),maker:binding.nearAccountId,origin_claim_id:'c'.repeat(64),motif:'crest',input_hash:'d'.repeat(64),rules_version:'tidebound_h1_v1',content_version:'first_light_v1'};
-const fixture=window.__tbFixture={authenticated:false,bound:true,provisions:0,authentications:0,authorizations:[],broadcasts:[],statuses:{},occupiedTokens:[],balance:'250000000000000000000000',gasUnavailable:false,gasReads:[],uncertainNext:false,delayJourney:false,releaseJourney:null,readsWaiting:0,pets:[{token_id:'mochi.'+root}],
+const fixture=window.__tbFixture={authenticated:false,bound:true,provisions:0,authentications:0,authorizations:[],broadcasts:[],statuses:{},occupiedTokens:[],recipientStorage:{total:'0',available:'0'},balance:'250000000000000000000000',gasUnavailable:false,gasReads:[],uncertainNext:false,delayJourney:false,releaseJourney:null,readsWaiting:0,pets:[{token_id:'mochi.'+root}],
  journey:{revision:1,banked:['lens'],lit:true,signaled:false,lens_claim:evidence.origin_claim_id,moth_claim:null,credit:'available',workshop_salvage:1,bram_budget:12,shells:0,burned_shells:0,commission_fulfilled:false,craft:null,polish:null,placement:null},items:[]};
 const copy=value=>JSON.parse(JSON.stringify(value));
 const finalHash='11111111111111111111111111111111';
@@ -45,7 +45,8 @@ const provider={
   if(method==='nft_tokens_for_owner')return copy(fixture.pets);
   if(method==='craft_inventory')return {items:copy(fixture.items),next_index:null};
   if(method==='mt_balance_of')return fixture.items.some(item=>item.mint.token_id===args.token_id)?'1':'0';
-  if(method==='storage_balance_of')return {total:'10000000000000000000000',available:'10000000000000000000000'};
+  if(method==='storage_balance_of')return copy(fixture.recipientStorage);
+  if(method==='storage_balance_bounds')return {min:'0',max:null};
   throw Error('Unexpected fixture method '+method);
  },
  async viewAccount({blockQuery}={}){if(blockQuery)gasRead('view_account',blockQuery.blockId);return {amount:BigInt(fixture.balance),storage_usage:182}},
@@ -61,8 +62,12 @@ const provider={
    else if(call.methodName==='tidebound_craft'){if(j.credit!=='available')throw Error('fixture duplicate craft');j.credit='consumed';j.craft={evidence:copy(evidence),pet_id:'mochi.'+root,state:'confirmed',attempt:1};fixture.items=[{mint:copy(evidence),finish:'original',appearance_version:0,finish_used:false}]}
    else if(call.methodName==='tidebound_polish'){if(j.shells!==12||fixture.items[0].finish_used)throw Error('fixture invalid polish');j.shells=0;j.burned_shells=12;j.polish={state:'confirmed',attempt:1};fixture.items[0].finish='harbor_polish';fixture.items[0].appearance_version=1;fixture.items[0].finish_used=true}
    else if(call.methodName==='tidebound_place'){j.placement={item_id:args.item_id,socket:args.socket}}
+   else if(call.methodName==='storage_deposit'){
+     if(tx.receiverId!==itemsContract || args.account_id!=='recipient.testnet' || args.registration_only!==false || call.deposit<=0n)throw Error('fixture item storage must use explicit credit mode');
+     fixture.recipientStorage={total:String(BigInt(fixture.recipientStorage.total)+call.deposit),available:String(BigInt(fixture.recipientStorage.available)+call.deposit)};
+   }
    else throw Error('Unexpected fixture native method '+call.methodName);
-   if(!failure)j.revision++;
+   if(!failure && tx.receiverId===root)j.revision++;
    const hash=baseEncode(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(encodeTransaction(tx)))));
    fixture.broadcasts.push({method:call.methodName,signer:tx.signerId,receiver:tx.receiverId,deposit:call.deposit.toString(),args});
    const outcome={final_execution_status:'FINAL',status:failure?{Failure:failure}:{SuccessValue:''},transaction:{hash,signer_id:tx.signerId,receiver_id:tx.receiverId},receipts_outcome:[]};
@@ -103,7 +108,7 @@ await server.listen();
 const origin = server.resolvedUrls!.local[0]!.replace(/\/$/, "");
 const browser = await chromium.launch({ headless: true });
 const results: unknown[] = [];
-type Fixture = { authenticated:boolean; pets: {token_id:string}[]; occupiedTokens:{token_id:string;owner:string}[]; seedPendingAdoption(name:string):Promise<{operationId:string;hash:string;transaction:string}>; provisions: number; authentications: number; authorizations:{operationId:string;signer:string}[]; balance:string; gasUnavailable:boolean; gasReads:{method:string;blockHash:string}[]; statuses:Record<string,{final_execution_status:string;status:unknown}>; bound: boolean; uncertainNext:boolean; broadcasts: { method: string; signer: string; deposit: string;args:Record<string,unknown> }[]; delayJourney: boolean; readsWaiting: number; releaseJourney: (() => void) | null; journey: { credit: string; shells: number; burned_shells: number;revision:number }; items: { mint: { token_id: string; motif: string }; finish_used: boolean }[] };
+type Fixture = { authenticated:boolean; pets: {token_id:string}[]; occupiedTokens:{token_id:string;owner:string}[]; recipientStorage:{total:string;available:string}; seedPendingAdoption(name:string):Promise<{operationId:string;hash:string;transaction:string}>; provisions: number; authentications: number; authorizations:{operationId:string;signer:string}[]; balance:string; gasUnavailable:boolean; gasReads:{method:string;blockHash:string}[]; statuses:Record<string,{final_execution_status:string;status:unknown}>; bound: boolean; uncertainNext:boolean; broadcasts: { method: string; signer: string;receiver:string; deposit: string;args:Record<string,unknown> }[]; delayJourney: boolean; readsWaiting: number; releaseJourney: (() => void) | null; journey: { credit: string; shells: number; burned_shells: number;revision:number }; items: { mint: { token_id: string; motif: string }; finish_used: boolean }[] };
 async function fixture<T>(page: Page, work: (fixture: Fixture) => T): Promise<T> {
   return page.evaluate(work => (new Function("fixture", `return (${work})(fixture)`))((window as unknown as { __tbFixture: Fixture }).__tbFixture), work.toString());
 }
@@ -201,10 +206,32 @@ try {
     await expect(gift).toBeFocused();
     await expect(gift).toContainText("recipient.testnet");
     await expect(gift).toContainText("Your usable placement will disappear after confirmation");
+    await expect(gift.getByRole("button",{name:"Confirm storage deposit · 0.02 test NEAR",exact:true})).toBeEnabled();
+    await expect(gift.getByRole("button",{name:"Confirm gift of this lantern",exact:true})).toHaveCount(0);
+    const beforeStorage=await fixture(page,f=>({authorizations:f.authorizations.length,broadcasts:f.broadcasts.length}));
     await reachableAccount(page, `${width}-gift-review`);
     if(width===390)await capture(page,"390x500-gift-review-fixture");
     await gift.getByRole("button",{name:"Cancel gift",exact:true}).click();
     await expect(account.getByRole("button",{name:"Review gift",exact:true})).toBeFocused();
+    assert.deepEqual(await fixture(page,f=>({authorizations:f.authorizations.length,broadcasts:f.broadcasts.length})),beforeStorage,"storage preview and cancellation never charge");
+    await account.getByRole("button",{name:"Review gift",exact:true}).click();
+    await fixture(page,f=>{f.recipientStorage={total:'10000000000000000000000',available:'10000000000000000000000'}});
+    await gift.getByRole("button",{name:"Confirm storage deposit · 0.02 test NEAR",exact:true}).click();
+    await expect(account.getByRole("status")).toContainText("storage credit changed. Review the gift again before paying");
+    assert.deepEqual(await fixture(page,f=>({authorizations:f.authorizations.length,broadcasts:f.broadcasts.length})),beforeStorage,"changed credit never changes the reviewed payment silently");
+    await account.getByRole("button",{name:"Review gift",exact:true}).click();
+    await expect(gift.getByRole("button",{name:"Confirm storage deposit · 0.01 test NEAR",exact:true})).toBeEnabled();
+    await gift.getByRole("button",{name:"Confirm storage deposit · 0.01 test NEAR",exact:true}).click();
+    await expect(gift).toHaveCount(0);
+    await expect.poll(()=>fixture(page,f=>f.broadcasts.filter(tx=>tx.method==='storage_deposit').length)).toBe(1);
+    const storagePayments=(await fixture(page,f=>f.broadcasts)).filter(tx=>tx.method==='storage_deposit');
+    assert.equal(storagePayments.length,1,"one explicit storage payment");
+    assert.deepEqual(storagePayments[0],{method:'storage_deposit',signer:'p-1.tidebound-fixture.testnet',receiver:'items.tidebound-fixture.testnet',deposit:'10000000000000000000000',args:{account_id:'recipient.testnet',registration_only:false}});
+    assert.equal((await fixture(page,f=>f.broadcasts)).filter(tx=>tx.method==='mt_transfer').length,0,"storage funding never gives the item automatically");
+    await account.getByRole("button",{name:"Review gift",exact:true}).click();
+    await expect(gift.getByRole("button",{name:"Confirm gift of this lantern",exact:true})).toBeEnabled();
+    await expect(gift).toContainText("1 yoctoNEAR plus network gas");
+    await gift.getByRole("button",{name:"Cancel gift",exact:true}).click();
     const downloadEvent=page.waitForEvent("download");
     await account.getByRole("button",{name:"Export progress and item references",exact:true}).click();
     const download=await downloadEvent;
@@ -217,7 +244,7 @@ try {
     if(width===390) await page.setViewportSize(viewport);
 
     const broadcasts = await fixture(page, f => f.broadcasts);
-    assert(broadcasts.every(tx => tx.signer === "p-1.tidebound-fixture.testnet" && tx.deposit === "0"), "native fixture actions use player signer and no sale-price sponsor deposit");
+    assert(broadcasts.every(tx => tx.signer === "p-1.tidebound-fixture.testnet" && (tx.method==='storage_deposit'?tx.deposit==='10000000000000000000000':tx.deposit === "0")), "native actions and explicit storage credit are player-funded; no sale-price sponsor");
 
     await fixture(page,f=>{f.uncertainNext=true});
     await account.getByRole("button",{name:"Place at porch",exact:true}).click();
@@ -246,7 +273,7 @@ try {
     assert.equal(await page.evaluate(() => localStorage.getItem("familiar.guest.v1")), null, "synthetic account route never touches legacy secret namespace");
     assert.deepEqual(errors, []); assert.deepEqual(external, [], "fixture makes no real auth, RPC, or service calls");
     assert((await fixture(page,f=>f.gasReads)).every(read=>read.blockHash==='11111111111111111111111111111111'),"all affordability reads share the transaction's finalized block");
-    results.push({ ...viewport, pageScroll:"none",accountScroll:"contained",giftAndExport:"passed", commissionBeforeCraft: "passed", polishPreviewAndOnce: "passed", slowRefreshAfterSignOut: "passed", submittedReceiptWithoutGasRpc:"passed" });
+    results.push({ ...viewport, pageScroll:"none",accountScroll:"contained",giftAndExport:"passed",storageCreditExplicitDeficit:"passed; zero-min registration insufficient; changed quote never pays; separate gift", commissionBeforeCraft: "passed", polishPreviewAndOnce: "passed", slowRefreshAfterSignOut: "passed", submittedReceiptWithoutGasRpc:"passed" });
     await context.close();
   }
   const choices = await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"});

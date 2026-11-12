@@ -4,6 +4,7 @@ import { accountId } from "../relay";
 import { isPlayerAccount } from "../../../../web/src/account/names";
 import { validName } from "../../../../web/src/rules";
 import { ACTION_LIMIT, isTool } from "../../../../web/src/outing/engine";
+import { ITEM_STORAGE_CAP } from "../../../../web/src/tidebound/storage";
 
 export interface AuthSigningContext { root:string; items:string; clientId:string; origin:string; origins:readonly string[] }
 function check(value:unknown):asserts value { if (!value) throw new Error("ERR_AUTH_REQUEST"); }
@@ -28,7 +29,7 @@ export function validateNativeIntent(tx:Transaction,context:Pick<AuthSigningCont
   if(tx.receiverId===context.items) {
     if(call.methodName==="storage_deposit") {
       fields(a,["account_id","registration_only"]);
-      check(accountId(a.account_id) && a.registration_only===true && call.deposit>0n && call.deposit<=8n*10n**22n);
+      check(accountId(a.account_id) && typeof a.registration_only==="boolean" && call.deposit>0n && call.deposit<=ITEM_STORAGE_CAP);
       return;
     }
     check(call.methodName==="mt_transfer" && call.deposit===1n);

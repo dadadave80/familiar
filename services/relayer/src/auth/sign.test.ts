@@ -26,9 +26,14 @@ test("sponsorship accepts only exact configured native testnet intentions",()=>{
  const changed=body(); changed.response.signatureRequest.signPayload[0]=255;
  expect(()=>validateSigningRequest(changed,context)).toThrow();
 });
-test("registration uses only bounded player-funded storage deposits",()=>{
+test("registration and actual item-storage credit use only bounded player-funded deposits",()=>{
  const request=body(context.items,actions.functionCall("storage_deposit",{account_id:"recipient.testnet",registration_only:true},30000000000000n,80000000000000000000000n));
  expect(validateSigningRequest(request,context).transaction.receiverId).toBe(context.items);
+ const credit=body(context.items,actions.functionCall("storage_deposit",{account_id:"recipient.testnet",registration_only:false},30000000000000n,20000000000000000000000n));
+ expect(validateSigningRequest(credit,context).transaction.receiverId).toBe(context.items);
+ for(const [registration,deposit] of [[false,0n],[true,0n],[false,80000000000000000000001n],["false",20000000000000000000000n]] as const)expect(()=>validateSigningRequest(body(context.items,actions.functionCall("storage_deposit",{account_id:"recipient.testnet",registration_only:registration},30000000000000n,deposit)),context)).toThrow();
+ expect(()=>validateSigningRequest(body(root,actions.functionCall("storage_deposit",{account_id:"recipient.testnet",registration_only:false},30000000000000n,20000000000000000000000n)),context)).toThrow();
+ expect(()=>validateSigningRequest(body(context.items,actions.functionCall("storage_deposit",{account_id:"recipient.testnet",registration_only:false,receiver_id:"elsewhere.testnet"},30000000000000n,20000000000000000000000n)),context)).toThrow();
  expect(()=>validateSigningRequest(body(context.items,actions.functionCall("storage_deposit",{account_id:"recipient.testnet",registration_only:true},30000000000000n,80000000000000000000001n)),context)).toThrow();
  expect(()=>validateSigningRequest(body(),{...context,clientId:"np8paqIpMWmNbzT4xAvOOapZBjsOpptl"})).toThrow();
 });

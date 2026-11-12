@@ -1,5 +1,5 @@
 import {expect,test} from "bun:test";
-import {actions,baseDecode,baseEncode,createTransaction,KeyPair} from "near-api-js";
+import {actions,base64Encode,baseDecode,baseEncode,createTransaction,encodeTransaction,KeyPair} from "near-api-js";
 import {PrivyAccountAdapter,createPrivyConnection,nearSigningDigest,privyWalletKey,signPrivyRecoveryProof,verifyPrivyWalletOwner,type PrivyAccountOptions,type PrivyIdentity,type PrivyWalletBinding} from "./privy-adapter";
 import {AccountDoesNotExistError} from "near-api-js/rpc-errors";
 
@@ -66,6 +66,42 @@ test("restore and login resolve the same canonical wallet and named account with
   f.identity=null;expect(await one.restoreSession()).toBeNull();expect(f.provisions).toBe(0);
   await one.authenticate();expect(f.logins).toBe(1);expect((await one.resolveBinding())?.nearAccountId).toBe(account);
   expect(JSON.stringify([...f.data])).not.toContain("private-access-token");
+});
+test("an existing SDK-linked owner reuses the authoritative canonical wallet without redundant refresh requests",async()=>{
+  const f=fixture(),adapter=new PrivyAccountAdapter(f.options),tx=transaction();let refreshes=0;
+  f.options.session.refreshUser=async()=>{refreshes++;throw Error("synthetic SDK users/me request failed");};
+  const original=JSON.stringify({operationId:"native:original-adopt",transaction:base64Encode(encodeTransaction(tx)),state:"prepared"});
+  const pendingKey=`familiar.privy.authorization.v1:public-app:${root}:${account}:native:original-adopt`;
+  f.data.set(pendingKey,original);
+  expect((await adapter.resolveBinding())?.nearAccountId).toBe(account);
+  const signed=await adapter.authorizeNative(tx,"native:original-adopt");
+  expect(base64Encode(encodeTransaction(signed.transaction))).toBe(JSON.parse(original).transaction);
+  expect(refreshes).toBe(0);expect(f.signed).toHaveLength(1);expect(f.provisions).toBe(0);expect(f.creates.every(c=>c===false)).toBe(true);
+});
+test("a missing SDK wallet link still requires a successful same-owner refresh and preserves original pending bytes on failure",async()=>{
+  const f=fixture(),adapter=new PrivyAccountAdapter(f.options);f.identity={...owner(),wallets:[]};let refreshes=0;
+  f.options.session.refreshUser=async()=>{refreshes++;throw Error("synthetic SDK refresh failed");};
+  const original=JSON.stringify({operationId:"native:original",transaction:base64Encode(encodeTransaction(transaction())),state:"prepared"});f.data.set("original-native-envelope",original);
+  await expect(adapter.authorizeNative(transaction(),"native:original")).rejects.toThrow("refresh failed");
+  expect(refreshes).toBe(1);expect(f.data.get("original-native-envelope")).toBe(original);expect(f.signed).toHaveLength(0);expect(f.provisions).toBe(0);expect(f.creates).toEqual([false]);
+  f.options.session.refreshUser=async()=>{refreshes++;f.identity=owner();return owner();};
+  expect(await adapter.canonicalWallet(false)).toEqual(wallet);expect(refreshes).toBe(2);
+});
+test("a late required link refresh cannot revive the owner after sign out or alter a prepared action",async()=>{
+  const f=fixture(),adapter=new PrivyAccountAdapter(f.options);f.identity={...owner(),wallets:[]};
+  let release!:(value:PrivyIdentity)=>void,started!:()=>void;const began=new Promise<void>(resolve=>started=resolve);
+  f.options.session.refreshUser=()=>{started();return new Promise(resolve=>release=resolve);};
+  const original=JSON.stringify({operationId:"native:original",transaction:base64Encode(encodeTransaction(transaction())),state:"prepared"});f.data.set("original-native-envelope",original);
+  const approval=adapter.authorizeNative(transaction(),"native:original");await began;await adapter.endSession();release(owner());
+  await expect(approval).rejects.toThrow("sign-in changed");expect(await adapter.restoreSession()).toBeNull();
+  expect(f.data.get("original-native-envelope")).toBe(original);expect(f.signed).toHaveLength(0);expect(f.provisions).toBe(0);
+});
+test("the existing-link fast path reads the current SDK links after the canonical lookup, even for the same DID",async()=>{
+  const f=fixture();let refreshes=0;const lookup=f.options.wallet;
+  f.options.wallet=async(...args)=>{const result=await lookup(...args);f.identity={...owner(),wallets:[]};return result;};
+  f.options.session.refreshUser=async()=>{refreshes++;throw Error("current wallet link needs refresh");};
+  await expect(new PrivyAccountAdapter(f.options).canonicalWallet(false)).rejects.toThrow("needs refresh");
+  expect(refreshes).toBe(1);expect(f.signed).toHaveLength(0);expect(f.provisions).toBe(0);
 });
 test("wallet setup works without a deployed root but never creates on a restore",async()=>{
   const f=fixture();f.available=false;f.registered=false;

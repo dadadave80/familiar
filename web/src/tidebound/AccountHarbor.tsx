@@ -7,6 +7,7 @@ import type { Outing as Run } from "../outing/engine";
 import { RULES_VERSION, prepareAdoption, type PlayerBinding, type MotifId } from "./domain";
 import { claimInput, TideboundClient, type ChainSnapshot, type CraftItem } from "./client";
 import { LanternArt, OriginDiorama } from "./Storycraft";
+import { quoteItemStorage, storageNear, type ItemStorageQuote } from "./storage";
 import "./account-harbor.css";
 
 export interface AccountHarborProps {
@@ -34,7 +35,7 @@ export function AccountHarbor({home,returned,onSnapshot,onUseSaved,explicitConne
   const [snapshot,setSnapshot]=useState<ChainSnapshot|null>(null);
   const [busy,setBusy]=useState(false),[message,setMessage]=useState("");
   const [motif,setMotif]=useState<MotifId>(home.storycraft.lantern?.motif??"crest");
-  const [recipient,setRecipient]=useState(""),[gift,setGift]=useState<{item:CraftItem;recipient:string;registered:boolean}|null>(null);
+  const [recipient,setRecipient]=useState(""),[gift,setGift]=useState<{item:CraftItem;recipient:string;storage:ItemStorageQuote}|null>(null);
   const [polish,setPolish]=useState<CraftItem|null>(null);
   const confirmation=useRef<HTMLDivElement>(null);
   const confirmationTrigger=useRef<HTMLButtonElement|null>(null);
@@ -118,8 +119,15 @@ export function AccountHarbor({home,returned,onSnapshot,onUseSaved,explicitConne
     if(!/^[a-z0-9]+(?:[._-][a-z0-9]+)*\.testnet$/.test(recipient) || recipient.length>64 || recipient===binding.nearAccountId)throw Error("Enter a different existing NEAR testnet account.");
     await connection.provider.viewAccount({accountId:recipient});
     if(await connection.client.view<string>(connection.client.itemsContract,"mt_balance_of",{account_id:binding.nearAccountId,token_id:item.mint.token_id})!=="1")throw Error("This lantern has already changed hands. Refresh its ownership.");
-    const storage=await connection.client.view<{total:string}|null>(connection.client.itemsContract,"storage_balance_of",{account_id:recipient});
-    if(currentBinding.current===binding)setGift({item,recipient,registered:!!storage});
+    const storage=await recipientStorage(recipient);
+    if(currentBinding.current===binding)setGift({item,recipient,storage});
+  }
+  async function recipientStorage(accountId:string) {
+    const [bounds,balance]=await Promise.all([
+      connection!.client.view<unknown>(connection!.client.itemsContract,"storage_balance_bounds"),
+      connection!.client.view<unknown>(connection!.client.itemsContract,"storage_balance_of",{account_id:accountId}),
+    ]);
+    return quoteItemStorage(bounds,balance);
   }
   return <section className="tb-account-harbor" aria-label="Saved harbor on NEAR testnet" tabIndex={0}>
     <SignIn adapter={connection?.adapter??null} onBinding={updateBinding} loginLabel={loginLabel} providerName={providerName}/>
@@ -177,14 +185,18 @@ export function AccountHarbor({home,returned,onSnapshot,onUseSaved,explicitConne
       </div>}
       {gift && <div ref={confirmation} tabIndex={-1} role="region" aria-label="Confirm lantern gift" className="tb-gift-confirm">
         <p>Give this existing lantern to {gift.recipient} on NEAR testnet. Your usable placement will disappear after confirmation; the maker’s journey stays with the maker.</p>
-        {!gift.registered?<>
-          <p>The recipient needs item storage. This is a separate, player-funded testnet storage deposit.</p>
+        {!gift.storage.ready?<>
+          <p>First deposit {storageNear(gift.storage.deposit)} test NEAR for {gift.recipient}’s item storage, plus network gas. Their available credit is {storageNear(gift.storage.available)}; the target is {storageNear(gift.storage.target)} test NEAR. This separate deposit belongs to the recipient, and does not give the lantern.</p>
           <button disabled={busy || !!pending} onClick={()=>run(async()=>{
-            const bounds=await connection!.client.view<{min:string}>(connection!.client.itemsContract,"storage_balance_bounds");
-            if(!/^[0-9]+$/.test(bounds.min) || BigInt(bounds.min)>8n*10n**22n)throw Error("Recipient storage exceeds the configured cap.");
-            return connection!.client.send(binding!,"storage_deposit",{account_id:gift.recipient,registration_only:true},{receiver:connection!.client.itemsContract,deposit:BigInt(bounds.min)});
-          })}>Register recipient storage first</button>
-        </>:<button disabled={busy || !!pending} onClick={()=>run(()=>connection!.client.send(binding!,"mt_transfer",{receiver_id:gift.recipient,token_id:gift.item.mint.token_id,amount:"1",approval:null,memo:null},{receiver:connection!.client.itemsContract,deposit:1n}))}>Confirm gift of this lantern</button>}
+            const fresh=await recipientStorage(gift.recipient);
+            if(fresh.deposit!==gift.storage.deposit || fresh.ready)throw Error("The recipient’s storage credit changed. Review the gift again before paying.");
+            return connection!.client.send(binding!,"storage_deposit",{account_id:gift.recipient,registration_only:false},{receiver:connection!.client.itemsContract,deposit:gift.storage.deposit});
+          })}>Confirm storage deposit · {storageNear(gift.storage.deposit)} test NEAR</button>
+          <p>After its receipt is confirmed, review the gift again. An uncertain request must keep its original receipt; it never authorizes another payment.</p>
+        </>:<><p>Recipient storage credit checked. Giving the lantern is a separate action: 1 yoctoNEAR plus network gas.</p><button disabled={busy || !!pending} onClick={()=>run(async()=>{
+          if(!(await recipientStorage(gift.recipient)).ready)throw Error("The recipient’s available storage changed. Review the gift again.");
+          return connection!.client.send(binding!,"mt_transfer",{receiver_id:gift.recipient,token_id:gift.item.mint.token_id,amount:"1",approval:null,memo:null},{receiver:connection!.client.itemsContract,deposit:1n});
+        })}>Confirm gift of this lantern</button></>}
         <button onClick={closeConfirmation}>Cancel gift</button>
       </div>}
       {snapshot.nextItemIndex!==null && <button disabled={busy} onClick={async()=>{

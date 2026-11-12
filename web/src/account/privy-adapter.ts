@@ -81,6 +81,11 @@ export class PrivyAccountAdapter implements RecoverableAccountAdapter {
     const response=await this.options.wallet(create,token);this.sameIdentity(identity.id,generation);
     if(response.wallet===null)return null;
     privyWalletKey(response.wallet);
+    // The backend just verified this canonical wallet against the authenticated Privy user.
+    // A matching SDK link needs no users/me refresh; refresh only to discover a missing/stale link.
+    // In particular, signing must not depend on several redundant refresh requests per action.
+    const current=this.options.session.identity();
+    try{check(current,"The signed-in identity is unavailable.");verifyPrivyWalletOwner(current,response.wallet);return response.wallet;}catch{ /* A new link must still be refreshed and verified below. */ }
     const refreshed=await this.options.session.refreshUser();this.sameIdentity(identity.id,generation);
     check(refreshed.id===identity.id,"The Privy identity changed while reading the wallet.");
     verifyPrivyWalletOwner(refreshed,response.wallet);
