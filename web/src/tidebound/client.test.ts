@@ -30,6 +30,7 @@ const key = KeyPair.fromRandom("ed25519");
 const binding: PlayerBinding = { playerId: "one", network: "testnet", nearAccountId: `p-1.${root}`, signerPublicKey: key.getPublicKey().toString(), signerBindingId: "google:one" };
 const blankJourney = (): Journey => ({ revision: 0, banked: [], lit: false, signaled: false, lens_claim: null, moth_claim: null, credit: "unclaimed", workshop_salvage: 0, bram_budget: 0, shells: 0, burned_shells: 0, commission_fulfilled: false, craft: null, polish: null, placement: null });
 const item = (): CraftItem => ({ mint: { id: "a".repeat(64), token_id: `lantern:${"b".repeat(64)}`, maker: binding.nearAccountId, origin_claim_id: "c".repeat(64), motif: "crest", input_hash: "d".repeat(64), rules_version: "tidebound_h1_v1", content_version: "first_light_v1" }, finish: "original", appearance_version: 0, finish_used: false });
+const runtimeFees={min_gas_purchase_price:"1000000000",storage_amount_per_byte:"10000000000000000000",transaction_costs:{action_receipt_creation_config:{send_sir:108059500000,send_not_sir:108059500000,execution:108059500000},action_creation_config:{function_call_cost:{send_sir:200000000000,send_not_sir:200000000000,execution:780000000000},function_call_cost_per_byte:{send_sir:2235934,send_not_sir:47683715,execution:2235934}}}};
 
 function fixture() {
   const data = new Map<string, string>();
@@ -45,6 +46,7 @@ function fixture() {
   let finalHeight=100, originalHeight=100, validity:unknown=86_400, accessNonce=20n, rpcUnavailable=false;
   let returnedBlockHash="11111111111111111111111111111111", protocolNetwork="testnet";
   let rawNonce:unknown=undefined,keyPermission="FullAccess",nonceBlockMismatch=false;
+  let accountAmount=250000000000000000000000n,gasPrice="100000000",purchaseFloor:unknown="1000000000";
   let rootProtocolOverride:{value:unknown}|null=null,itemProtocolOverride:{value:unknown}|null=null;
   const storage = { getItem: (k: string) => data.get(k) ?? null, setItem(k: string, v: string) { data.set(k, v); events.push(`store:${JSON.parse(v).state}`); }, removeItem(k: string) { data.delete(k); events.push("clear"); } };
   const provider = {
@@ -64,7 +66,9 @@ function fixture() {
     },
     async viewAccessKey(input:{finalityQuery:{blockId?:string}}) { if(rpcUnavailable)throw Error("RPC unavailable");return { nonce: accessNonce, permission: "FullAccess",block_hash:input.finalityQuery.blockId??"11111111111111111111111111111111",block_height:finalHeight }; },
     async viewBlock(input:{blockId?:string}) { if(rpcUnavailable)throw Error("RPC unavailable");return { header: { hash: input.blockId ? returnedBlockHash : "11111111111111111111111111111111", height: input.blockId ? originalHeight : finalHeight } }; },
-    async experimental_protocolConfig() { if(rpcUnavailable)throw Error("RPC unavailable");return { chain_id:protocolNetwork,transaction_validity_period:validity }; },
+    async viewAccount() {if(rpcUnavailable)throw Error("RPC unavailable");return {amount:accountAmount,storage_usage:182};},
+    async viewGasPrice() {if(rpcUnavailable)throw Error("RPC unavailable");return {gas_price:gasPrice};},
+    async experimental_protocolConfig() { if(rpcUnavailable)throw Error("RPC unavailable");return { chain_id:protocolNetwork,transaction_validity_period:validity,protocol_version:88,runtime_config:{...runtimeFees,min_gas_purchase_price:purchaseFloor} }; },
     async query(input:{request_type:string;block_id:string;account_id:string;public_key:string}) {
       if(rpcUnavailable)throw Error("RPC unavailable");
       expect(input.request_type).toBe("view_access_key");expect(input.account_id).toBe(binding.nearAccountId);expect(input.public_key).toBe(binding.signerPublicKey);
@@ -95,6 +99,7 @@ function fixture() {
     get statusCalls() { return statusCalls; }, get broadcasts() { return broadcasts; }, get authorizationCalls() { return authorizationCalls; }, get transaction() { return observedTransaction; },
     set network(value: string) { network = value; }, set registry(value: string) { registry = value; }, set actual(value: PlayerBinding) { actual = value; },
     set rootProtocol(value:unknown) {rootProtocolOverride={value};},set itemProtocol(value:unknown){itemProtocolOverride={value};},
+    set accountAmount(value:bigint){accountAmount=value;},set gasPrice(value:string){gasPrice=value;},set purchaseFloor(value:unknown){purchaseFloor=value;},
     set journey(value: unknown) { journey = value; }, set inventory(value: unknown) { inventory = value; }, set ownedBalance(value: string) { ownedBalance = value; },
     set status(value: any) { status = value; }, set authorization(value: () => Promise<void>) { authorization = value; },
     set finalHeight(value:number) {finalHeight=value;},set originalHeight(value:number){originalHeight=value;},set validity(value:unknown){validity=value;},set accessNonce(value:bigint){accessNonce=value;},set rpcUnavailable(value:boolean){rpcUnavailable=value;},set returnedBlockHash(value:string){returnedBlockHash=value;},set protocolNetwork(value:string){protocolNetwork=value;},set rawNonce(value:unknown){rawNonce=value;},set keyPermission(value:string){keyPermission=value;},set nonceBlockMismatch(value:boolean){nonceBlockMismatch=value;},
@@ -109,6 +114,27 @@ test("fixed protocol and canonical signer are checked before any native authoriz
   f.network = "testnet"; f.actual = { ...binding, signerPublicKey: KeyPair.fromRandom("ed25519").getPublicKey().toString() };
   await expect(f.client.send(binding, "tidebound_commission", {})).rejects.toThrow("identity changed");
   expect(f.authorizationCalls).toBe(0); expect(f.broadcasts).toBe(0);
+});
+
+test("insufficient native purchase prepayment fails before signing or pending creation; no account is replaced",async()=>{
+ const f=fixture();f.accountAmount=150000000000000000000000n;
+ await expect(f.client.send(binding,"adopt",{name:"mochi"})).rejects.toThrow("gas prepayment");
+ expect(f.data.size).toBe(0);expect(f.authorizationCalls).toBe(0);expect(f.broadcasts).toBe(0);
+ f.accountAmount=250000000000000000000000n;
+ await f.client.send(binding,"adopt",{name:"mochi"});expect(f.authorizationCalls).toBe(1);expect(f.broadcasts).toBe(1);expect(f.transaction?.signerId).toBe(binding.nearAccountId);
+});
+
+test("underfunded original requests retain their exact pending bytes and submitted receipts remain checkable",async()=>{
+ const f=fixture();f.authorization=async()=>{throw Error("popup canceled")};
+ await expect(f.client.send(binding,"adopt",{name:"mochi"})).rejects.toThrow("popup canceled");
+ const original=JSON.stringify(f.client.pending(binding));f.accountAmount=150000000000000000000000n;
+ await expect(f.client.resumeNative(binding)).rejects.toThrow("gas prepayment");
+ expect(JSON.stringify(f.client.pending(binding))).toBe(original);expect(f.authorizationCalls).toBe(1);expect(f.broadcasts).toBe(0);
+ const submitted=fixture();submitted.status={final_execution_status:"EXECUTED_OPTIMISTIC",status:"Unknown",transaction:{},receipts_outcome:[]};
+ await expect(submitted.client.send(binding,"adopt",{name:"mochi"})).rejects.toThrow();
+ const pending=submitted.client.pending(binding)!;submitted.accountAmount=0n;
+ submitted.status={final_execution_status:"FINAL",status:{SuccessValue:""},transaction:{hash:pending.hash,signer_id:binding.nearAccountId,receiver_id:root},receipts_outcome:[]};
+ expect(await submitted.client.resumeNative(binding)).toContain("finalized");expect(submitted.broadcasts).toBe(1);
 });
 
 test("both contracts must provide the full compatible protocol before signing or persisting",async()=>{

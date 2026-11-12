@@ -30,3 +30,9 @@ export function isPlayerAccount(account: unknown, root: string): account is stri
   const username = account.slice(0, -(root.length + 1));
   return validName(username) || /^p-[0-9]+$/.test(username);
 }
+/** Stable first-adoption ID only. Existing pet IDs and saved native transactions take precedence. */
+export async function mochiNameForPlayer(accountId:string,root:string):Promise<string> {
+  if(!isPlayerAccount(accountId,root))throw Error("The saved player account could not be verified. Keep the same harbor.");
+  const hash=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(accountId)));
+  return `mochi-${Array.from(hash.slice(0,9),byte=>byte.toString(16).padStart(2,"0")).join("")}`;
+}

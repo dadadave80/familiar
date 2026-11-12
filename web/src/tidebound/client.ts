@@ -5,6 +5,7 @@ import { replayOuting } from "../outing/engine";
 import { CONTENT_VERSION, RULES_VERSION, type ExpeditionTranscript, type PlayerBinding } from "./domain";
 import { assertTideboundProtocol } from "./protocol";
 import { validateNativeIntent } from "../../../services/relayer/src/auth/sign";
+import { assertNativeAffordable } from "./affordability";
 
 export interface MintEvidence { id:string;token_id:string;maker:string;origin_claim_id:string;motif:"crest"|"moth";input_hash:string;rules_version:string;content_version:string }
 export interface CraftItem { mint:MintEvidence;finish:"original"|"harbor_polish";appearance_version:number;finish_used:boolean }
@@ -109,6 +110,15 @@ export class TideboundClient {
     const actual=await this.adapter.resolveBinding();
     check(actual?.nearAccountId===binding.nearAccountId && actual.signerPublicKey===binding.signerPublicKey,"The signing identity changed. Reload the saved harbor.");
   }
+  private async affordable(transaction:ReturnType<typeof createTransaction>,blockHash?:string) {
+    const hash=blockHash??(await this.provider.viewBlock({finality:"final"})).header.hash;
+    const [account,protocol,price]=await Promise.all([
+      this.provider.viewAccount({accountId:transaction.signerId,blockQuery:{blockId:hash}}),
+      this.provider.experimental_protocolConfig({blockId:hash}),
+      this.provider.viewGasPrice(hash),
+    ]);
+    assertNativeAffordable(transaction,account,protocol,price.gas_price);
+  }
   async send(binding:PlayerBinding,method:string,args:Record<string,unknown>,options:{receiver?:string;deposit?:bigint}={}) {
     check(!this.pending(binding),"An earlier action needs its original receipt checked before another action.");
     return this.lock(binding,async()=>{
@@ -121,6 +131,7 @@ export class TideboundClient {
       const gas = nativeGas(method);
       const tx=createTransaction(binding.nearAccountId,key,options.receiver??this.root,access.nonce+1n,[actions.functionCall(method,args,gas,options.deposit??0n)],baseDecode(block.header.hash));
       validateNativeIntent(tx,{root:this.root,items:this.itemsContract});
+      await this.affordable(tx,block.header.hash);
       const hash=baseEncode(new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(encodeTransaction(tx)))));
       this.store.setItem(this.pendingKey(binding),JSON.stringify({operationId:`native:${crypto.randomUUID()}`,hash,method,receiver:tx.receiverId,transaction:base64Encode(encodeTransaction(tx)),state:"prepared"} satisfies PendingNative));
       return this.resumeLocked(binding);
@@ -180,6 +191,7 @@ export class TideboundClient {
     const pending=this.pending(binding);check(pending,"No original action is available to resume.");
     const {tx,hash}=await this.originalTransaction(binding,pending);
     if(pending.state==="submitted") return this.reconcileNative(binding);
+    await this.affordable(tx);
     const signed=pending.signedTransaction ? decodeSignedTransaction(base64Decode(pending.signedTransaction)) : await this.adapter.authorizeNative(tx,pending.operationId);
     check(base64Encode(encodeTransaction(signed.transaction))===pending.transaction,"The signature belongs to a different action.");
     const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(encodeTransaction(tx))));

@@ -11,6 +11,7 @@ export const RUNTIME_WEBPS=["harbor","arena","wind-gate-v1","bram","mochi","moch
 export const RUNTIME_METADATA=["assets/first-light-motion/wind-gate-v1.webp.json"] as const;
 const primaryFunction="api/v1/privy/wallet.func";
 const aliases=["api/health.func","api/v1/privy/player.func"] as const;
+const endpoints=[{path:HTTP_PATHS[0],methods:["GET","OPTIONS"]},...HTTP_PATHS.slice(1).map(path=>({path,methods:["POST","OPTIONS"]}))];
 const gameRoot="familiar-game.testnet",origin="https://familiar-two.vercel.app";
 const digest=(bytes:Uint8Array)=>createHash("sha256").update(bytes).digest("hex");
 const hash=async(path:string)=>digest(await readFile(path));
@@ -76,17 +77,51 @@ export async function overlayGameStatic(source:string,destination:string) {
   for(const file of preserved)check(await hash(join(destination,file.path))===file.sha256,`A preserved baseline file changed: ${file.path}`);
   return {originals,preserved,changes,added};
 }
-/** Vercel supports .func symlinks. No route rewrite or wrapper strips the original URL. */
-export async function installFunctionAliases(output:string) {
+async function existingFunctionAliases(output:string) {
   await functionDirectories(output);
-  const functions=join(output,"functions"),primary=join(functions,primaryFunction),stat=await lstat(primary);
-  check(stat.isDirectory() && !stat.isSymbolicLink(),"The H1 handler must be one physical function directory.");
-  for(const path of aliases) {
-    const exists=await lstat(join(functions,path)).then(()=>true,error=>{if(error.code==="ENOENT")return false;throw error;});
-    check(!exists,`The baseline already contains an unexpected H1 alias: ${path}`);
+  const functions=join(output,"functions"),primary=join(functions,primaryFunction),existing:{path:string;target:string}[]=[];
+  async function rejectUnknown(directory:string,prefix="") {
+    for(const entry of await readdir(directory,{withFileTypes:true})) {
+      const path=join(prefix,entry.name);
+      if(entry.isSymbolicLink())check((aliases as readonly string[]).includes(path),`Unknown function alias in baseline: ${path}`);
+      else if(entry.isDirectory()) {
+        if(entry.name.endsWith(".func"))check(path===primaryFunction,`Unknown physical function in baseline: ${path}`);
+        else await rejectUnknown(join(directory,entry.name),path);
+      }
+    }
   }
-  for(const path of aliases){const target=join(functions,path);await mkdir(dirname(target),{recursive:true});await symlink(relative(dirname(target),primary),target,"dir");check(await realpath(target)===await realpath(primary),"An H1 alias escaped its physical handler.");}
+  await rejectUnknown(functions);
+  for(const path of aliases) {
+    const file=join(functions,path),stat=await lstat(file).catch(error=>{if(error.code==="ENOENT")return null;throw error;});
+    if(!stat)continue;
+    const expected=relative(dirname(file),primary);
+    check(stat.isSymbolicLink() && await readlink(file)===expected,`The baseline contains an incorrect H1 alias: ${path}`);
+    check(await realpath(file)===await realpath(primary),`The baseline H1 alias escaped its physical handler: ${path}`);
+    existing.push({path,target:expected});
+  }
+  return existing;
+}
+/** Vercel supports .func symlinks. Preserve exact known aliases and the original request URL. */
+export async function installFunctionAliases(output:string) {
+  const existing=await existingFunctionAliases(output),functions=join(output,"functions"),primary=join(functions,primaryFunction);
+  for(const path of aliases)if(!existing.some(alias=>alias.path===path)){const target=join(functions,path);await mkdir(dirname(target),{recursive:true});await symlink(relative(dirname(target),primary),target,"dir");check(await realpath(target)===await realpath(primary),"An H1 alias escaped its physical handler.");}
   return Promise.all(aliases.map(async path=>({path,target:await readlink(join(functions,path))})));
+}
+/** Scope is declared by the prior review manifest, then bound to its actual handler hash and aliases. */
+export function baselineFunctionScope(manifest:unknown,actualHash:string,actualAliases:{path:string;target:string}[]):"recovery-only"|"h1" {
+  check(manifest && typeof manifest==="object" && "privateFunction" in manifest && manifest.privateFunction && typeof manifest.privateFunction==="object","The baseline's private function scope is unverified.");
+  const fn=manifest.privateFunction;
+  check("sha256" in fn && /^[a-f0-9]{64}$/.test(actualHash) && fn.sha256===actualHash,"The baseline manifest does not match the actual private handler hash.");
+  if("mode" in manifest && manifest.mode==="LOCAL_H1_REVIEW_ONLY") {
+    const expected=[{path:aliases[0],target:"v1/privy/wallet.func"},{path:aliases[1],target:"wallet.func"}];
+    const declaredAliases="aliases" in fn?fn.aliases:null;
+    check("path" in fn && fn.path===primaryFunction && "endpoints" in fn && JSON.stringify(fn.endpoints)===JSON.stringify(endpoints) &&
+      Array.isArray(declaredAliases) && declaredAliases.length===expected.length && expected.every(alias=>declaredAliases.some((item:unknown)=>!!item&&typeof item==="object"&&"path" in item&&"target" in item&&item.path===alias.path&&item.target===alias.target)) &&
+      JSON.stringify(actualAliases)===JSON.stringify(expected),"The baseline H1 function scope or aliases are unverified.");
+    return "h1";
+  }
+  check("mode" in manifest && manifest.mode==="LOCAL_REVIEW_ONLY" && "gameIssuance" in manifest && manifest.gameIssuance===false && "path" in fn && fn.path==="api/v1/privy/wallet" && actualAliases.length===0,"The baseline is not a verified recovery-only function.");
+  return "recovery-only";
 }
 
 async function main() {
@@ -98,6 +133,9 @@ async function main() {
   await cp(join(baseline,".vercel/output"),output,{recursive:true,verbatimSymlinks:true});
   await physicalDirectory(output);
   await writeFile(join(release,".vercel/project.json"),JSON.stringify(project));
+  const fn=join(output,"functions",primaryFunction);await functionDirectories(output);await staticFiles(fn);
+  const oldFunctionSha256=await hash(join(fn,"index.mjs")),oldAliases=await existingFunctionAliases(output);
+  const scopeBefore=baselineFunctionScope(JSON.parse(await readFile(join(baseline,"review-manifest.json"),"utf8")),oldFunctionSha256,oldAliases);
   const baselineStatic=await Promise.all((await staticFiles(site)).map(async path=>({path,sha256:await hash(join(site,path))})));
   // publicDir stays disabled. Copy only missing approved runtime art, preserving every existing byte.
   const runtimeAssets=await copyRuntimeAssets(join(source,"web/public"),site);
@@ -109,8 +147,6 @@ async function main() {
     "import.meta.env.VITE_TIDEBOUND_ENABLED":JSON.stringify("true"),
   },build:{outDir:overlay,rollupOptions:{input:{home:join(source,"web/index.html"),outing:join(source,"web/outing/index.html")},output:{manualChunks:id=>id.includes("/phaser/")?"phaser":undefined}}}});
   const staticReport=await overlayGameStatic(overlay,site);
-  const fn=join(output,"functions",primaryFunction);await functionDirectories(output);await staticFiles(fn);
-  const oldFunctionSha256=await hash(join(fn,"index.mjs"));
   await rm(fn,{recursive:true,force:true});await mkdir(fn,{recursive:true});
   const result=await Bun.build({entrypoints:[join(source,"services/relayer/src/tidebound-http.ts")],outdir:fn,naming:"index.mjs",target:"node",format:"esm",minify:true,env:"disable"});
   check(result.success,"The private H1 HTTP function did not bundle.");
@@ -123,7 +159,7 @@ async function main() {
     static:{baselineCount:baselineStatic.length,preservedCount:preserved.length,allowedHtmlReplacementPaths:GAME_HTML,replacedHtml:staticReport.changes,addedFiles:[...runtimeAssets.added,...staticReport.added],runtimeAssets:{allowedWebps:RUNTIME_WEBPS,allowedMetadata:RUNTIME_METADATA,...runtimeAssets},preservedFiles:preserved,recoveryPageUnchanged:true},
     routing:{baselineConfigSha256:digest(configBytes),changed:false,originalFunctionRequestUrlPreserved:true},
     publicBuild:{provider:"privy",tideboundUiEnabled:true,root:gameRoot,relayerUrl:"/api",appIdSha256:digest(new TextEncoder().encode(appId)),environmentFilesLoaded:false},
-    privateFunction:{path:primaryFunction,scopeChangedFromRecoveryOnly:true,beforeSha256:oldFunctionSha256,sha256:await hash(join(fn,"index.mjs")),bytes:await Bun.file(join(fn,"index.mjs")).size,runtime:"nodejs24.x",shouldAddHelpers:false,aliases:functionAliases,endpoints:[{path:HTTP_PATHS[0],methods:["GET","OPTIONS"]},...HTTP_PATHS.slice(1).map(path=>({path,methods:["POST","OPTIONS"]}))],enabledByDefault:false},
+    privateFunction:{path:primaryFunction,scopeBefore,scopeAfter:"h1",scopeChangedFromRecoveryOnly:scopeBefore==="recovery-only",beforeSha256:oldFunctionSha256,sha256:await hash(join(fn,"index.mjs")),bytes:await Bun.file(join(fn,"index.mjs")).size,runtime:"nodejs24.x",shouldAddHelpers:false,aliases:functionAliases,endpoints,enabledByDefault:false},
     requiredRuntimeEnvironmentNames:["TIDEBOUND_HTTP_ENABLED","ACCOUNT_PROVIDER","NEAR_NETWORK","NEAR_ROOT","RELAYER_ID","RELAYER_PRIVATE_KEY","PRIVY_APP_ID","PRIVY_APP_SECRET"],
     requiredNonSecretRuntimeValues:{TIDEBOUND_HTTP_ENABLED:"true",ACCOUNT_PROVIDER:"privy",NEAR_NETWORK:"testnet",NEAR_ROOT:gameRoot,RELAYER_ID:`relayer.${gameRoot}`},
     limits:{compatibleContractsVerified:false,liveGameActionsTested:false,hostingAliasUrlBehaviorVerified:false,privateRuntimeConfigured:false},uploaded:false,deployed:false};

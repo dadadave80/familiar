@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRecoverableAccountConnection, type AccountConnection } from "../account/client";
 import { SignIn } from "../account/SignIn";
+import { mochiNameForPlayer } from "../account/names";
 import type { Home } from "../outing/home";
 import type { Outing as Run } from "../outing/engine";
 import { RULES_VERSION, prepareAdoption, type PlayerBinding, type MotifId } from "./domain";
@@ -32,7 +33,7 @@ export function AccountHarbor({home,returned,onSnapshot,onUseSaved,explicitConne
   const updateBinding=(next:PlayerBinding|null)=>{generation.current++;currentBinding.current=next;setBinding(next);};
   const [snapshot,setSnapshot]=useState<ChainSnapshot|null>(null);
   const [busy,setBusy]=useState(false),[message,setMessage]=useState("");
-  const [name,setName]=useState(""),[motif,setMotif]=useState<MotifId>(home.storycraft.lantern?.motif??"crest");
+  const [motif,setMotif]=useState<MotifId>(home.storycraft.lantern?.motif??"crest");
   const [recipient,setRecipient]=useState(""),[gift,setGift]=useState<{item:CraftItem;recipient:string;registered:boolean}|null>(null);
   const [polish,setPolish]=useState<CraftItem|null>(null);
   const confirmation=useRef<HTMLDivElement>(null);
@@ -83,6 +84,16 @@ export function AccountHarbor({home,returned,onSnapshot,onUseSaved,explicitConne
     finally{if(generation.current===epoch)setBusy(false)}
   }
   const send=(method:string,args:Record<string,unknown>={})=>connection!.client.send(binding!,method,args);
+  async function adoptMochi() {
+    const account=currentBinding.current,epoch=generation.current;
+    if(!account || !connection)return;
+    const fresh=await refresh(account);
+    if(generation.current!==epoch || currentBinding.current!==account || !fresh)return;
+    if(fresh.pets.length)return "Mochi is already home.";
+    const name=await mochiNameForPlayer(account.nearAccountId,connection.adapter.accountRoot);
+    if(generation.current!==epoch || currentBinding.current!==account)return;
+    return connection.client.send(account,"adopt",{name});
+  }
   const j=snapshot?.journey;
   let pending=null;
   try{pending=binding&&connection?connection.client.pending(binding):null;}catch{ /* Preserve malformed pending data; the next account action explains the error. */ }
@@ -126,10 +137,7 @@ export function AccountHarbor({home,returned,onSnapshot,onUseSaved,explicitConne
       <button disabled={busy || !!home.active} onClick={()=>{try{onUseSaved(snapshot)}catch{setMessage("The saved harbor could not be opened on this device. The earlier preview was preserved.")}}}>Use saved harbor for next outing</button>
       <p className="tb-account-note">Your device preview stays separate. Active outings are never merged. This chooses the confirmed starting checkpoint.</p>
       {adoptionMessage && <p className="tb-account-note">{adoptionMessage}</p>}
-      {!snapshot.pets.length && <form onSubmit={e=>{e.preventDefault();void run(()=>send("adopt",{name}));}}>
-        <label>Mochi’s harbor name<input value={name} minLength={2} maxLength={24} pattern="[a-z0-9-]+" onChange={e=>setName(e.target.value)} placeholder="mochi-by-the-bay" required/></label>
-        <button disabled={busy || !!pending}>Adopt Mochi on testnet</button>
-      </form>}
+      {!snapshot.pets.length && <button disabled={busy || !!pending} onClick={()=>void run(adoptMochi)}>Adopt Mochi</button>}
       {snapshot.pets.length>0 && <>
         {origin && <button disabled={busy || !!pending} onClick={()=>run(saveReturn)}>Save returned outing on testnet</button>}
         {!!j.lens_claim && !j.lit && <button disabled={busy || !!pending} onClick={()=>run(()=>send("tidebound_restore",{restoration:"beacon"}))}>Confirm beacon restoration</button>}

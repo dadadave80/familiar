@@ -2,7 +2,7 @@ import { expect,test } from "bun:test";
 import { lstat,mkdir,mkdtemp,readFile,readlink,realpath,rm,symlink,writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { GAME_HTML,HTTP_PATHS,RUNTIME_METADATA,RUNTIME_WEBPS,copyRuntimeAssets,installFunctionAliases,overlayGameStatic,staticFiles,validateProject,validateRouting } from "./package-tidebound-review";
+import { GAME_HTML,HTTP_PATHS,RUNTIME_METADATA,RUNTIME_WEBPS,baselineFunctionScope,copyRuntimeAssets,installFunctionAliases,overlayGameStatic,staticFiles,validateProject,validateRouting } from "./package-tidebound-review";
 
 async function fixture() {
   const root=await mkdtemp(join(tmpdir(),"familiar-game-overlay-test-")),baseline=join(root,"baseline"),overlay=join(root,"overlay");
@@ -49,9 +49,45 @@ test("three fixed URLs share one physical handler using relative aliases without
   const aliases=await installFunctionAliases(output);
   expect(aliases).toEqual([{path:"api/health.func",target:"v1/privy/wallet.func"},{path:"api/v1/privy/player.func",target:"wallet.func"}]);
   for(const alias of aliases){const path=join(output,"functions",alias.path);expect((await lstat(path)).isSymbolicLink()).toBe(true);expect(await readlink(path)).not.toStartWith("/");expect(await realpath(path)).toBe(await realpath(primary));expect(await readFile(join(path,"index.mjs"),"utf8")).toBe(await readFile(join(primary,"index.mjs"),"utf8"));}
-  await expect(installFunctionAliases(output)).rejects.toThrow("unexpected H1 alias");
+  const before=await Promise.all(aliases.map(alias=>lstat(join(output,"functions",alias.path)).then(stat=>stat.ino)));
+  await writeFile(join(primary,"index.mjs"),"export default (req,res)=>res.end('patched '+req.url)");
+  expect(await installFunctionAliases(output)).toEqual(aliases);
+  expect(await Promise.all(aliases.map(alias=>lstat(join(output,"functions",alias.path)).then(stat=>stat.ino)))).toEqual(before);
+  for(const alias of aliases)expect(await readFile(join(output,"functions",alias.path,"index.mjs"),"utf8")).toBe("export default (req,res)=>res.end('patched '+req.url)");
   const linked=await mkdtemp(join(tmpdir(),"familiar-game-linked-function-test-"));await symlink(join(output,"functions"),join(linked,"functions"),"dir");
   await expect(installFunctionAliases(linked)).rejects.toThrow("symlinked parents");
+});
+test("wrong, absolute, physical or unknown aliases are rejected before adding a missing known alias",async()=>{
+  for(const kind of ["noncanonical-relative","absolute","physical","unknown","unknown-physical"]) {
+    const output=await mkdtemp(join(tmpdir(),"familiar-game-bad-alias-test-")),primary=join(output,"functions/api/v1/privy/wallet.func"),player=join(output,"functions/api/v1/privy/player.func");await mkdir(primary,{recursive:true});await writeFile(join(primary,"index.mjs"),"original handler");
+    if(kind==="physical")await mkdir(player);
+    else if(kind==="absolute")await symlink(primary,player,"dir");
+    else if(kind==="noncanonical-relative")await symlink("./wallet.func",player,"dir");
+    else if(kind==="unknown-physical")await mkdir(join(output,"functions/api/unknown.func"));
+    else await symlink("v1/privy/wallet.func",join(output,"functions/api/unknown.func"),"dir");
+    await expect(installFunctionAliases(output)).rejects.toThrow(kind==="unknown"?"Unknown function alias":kind==="unknown-physical"||kind==="physical"?"Unknown physical function":"incorrect H1 alias");
+    expect(await lstat(join(output,"functions/api/health.func")).then(()=>true,()=>false)).toBe(false);
+    expect(await readFile(join(primary,"index.mjs"),"utf8")).toBe("original handler");
+  }
+});
+test("scope distinguishes recovery rollout from H1 patch only with a hash-bound manifest and exact aliases",()=>{
+  const sha256="a".repeat(64),aliases=[{path:"api/health.func",target:"v1/privy/wallet.func"},{path:"api/v1/privy/player.func",target:"wallet.func"}];
+  const recovery={mode:"LOCAL_REVIEW_ONLY",gameIssuance:false,privateFunction:{path:"api/v1/privy/wallet",sha256}};
+  const h1={mode:"LOCAL_H1_REVIEW_ONLY",privateFunction:{path:"api/v1/privy/wallet.func",sha256,aliases,endpoints:[{path:"/api/health",methods:["GET","OPTIONS"]},{path:"/api/v1/privy/wallet",methods:["POST","OPTIONS"]},{path:"/api/v1/privy/player",methods:["POST","OPTIONS"]}]}};
+  expect(baselineFunctionScope(recovery,sha256,[])).toBe("recovery-only");expect(baselineFunctionScope(h1,sha256,aliases)).toBe("h1");
+  expect(()=>baselineFunctionScope(h1,"b".repeat(64),aliases)).toThrow("actual private handler hash");
+  expect(()=>baselineFunctionScope(recovery,sha256,aliases)).toThrow("recovery-only");
+  expect(()=>baselineFunctionScope(h1,sha256,aliases.slice(0,1))).toThrow("scope or aliases");
+  expect(()=>baselineFunctionScope({...h1,privateFunction:{...h1.privateFunction,endpoints:[]}},sha256,aliases)).toThrow("scope or aliases");
+  expect(()=>baselineFunctionScope(null,sha256,[])).toThrow("scope is unverified");
+});
+test("an H1 patch retains both prior generations of hashed chunks for already-open tabs",async()=>{
+  const f=await fixture(),older="assets/previous-Abcd1234.js",current="assets/current-Efgh5678.js";
+  await writeFile(join(f.baseline,older),"older open-tab chunk");await writeFile(join(f.baseline,current),"currently published chunk");await writeFile(join(f.overlay,"assets/patched-Ijkl9012.js"),"new patched chunk");
+  const report=await overlayGameStatic(f.overlay,f.baseline);
+  expect(report.preserved.map(file=>file.path)).toContain(older);expect(report.preserved.map(file=>file.path)).toContain(current);
+  expect(await readFile(join(f.baseline,older),"utf8")).toBe("older open-tab chunk");expect(await readFile(join(f.baseline,current),"utf8")).toBe("currently published chunk");
+  expect(report.added.map(file=>file.path)).toEqual(["assets/patched-Ijkl9012.js"]);
 });
 async function runtimeFixture() {
   const f=await fixture(),source=join(f.root,"public");await mkdir(join(source,"assets/first-light-motion"),{recursive:true});

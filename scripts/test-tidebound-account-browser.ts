@@ -4,17 +4,33 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, expect, type Page } from "@playwright/test";
 import { createServer } from "vite";
+import { mochiNameForPlayer } from "../web/src/account/names";
 
 // Fixture-only module replacement. Production signing, account configuration, and contracts are untouched.
 const fixtureModule = `
-import { KeyPair, KeyPairSigner, baseEncode, encodeTransaction } from 'near-api-js';
+import { actions, KeyPair, KeyPairSigner, base64Encode, baseDecode, baseEncode, createTransaction, encodeTransaction } from 'near-api-js';
 const root='tidebound-fixture.testnet', itemsContract='items.'+root;
 const key=KeyPair.fromRandom('ed25519');
 const binding={playerId:'fixture-player',network:'testnet',nearAccountId:'p-1.'+root,signerPublicKey:key.getPublicKey().toString(),signerBindingId:'fixture:google'};
 const evidence={id:'a'.repeat(64),token_id:'lantern:'+ 'b'.repeat(64),maker:binding.nearAccountId,origin_claim_id:'c'.repeat(64),motif:'crest',input_hash:'d'.repeat(64),rules_version:'tidebound_h1_v1',content_version:'first_light_v1'};
-const fixture=window.__tbFixture={authenticated:false,bound:true,provisions:0,authentications:0,authorizations:[],broadcasts:[],statuses:{},uncertainNext:false,delayJourney:false,releaseJourney:null,readsWaiting:0,pets:[{token_id:'mochi.'+root}],
+const fixture=window.__tbFixture={authenticated:false,bound:true,provisions:0,authentications:0,authorizations:[],broadcasts:[],statuses:{},occupiedTokens:[],balance:'250000000000000000000000',gasUnavailable:false,gasReads:[],uncertainNext:false,delayJourney:false,releaseJourney:null,readsWaiting:0,pets:[{token_id:'mochi.'+root}],
  journey:{revision:1,banked:['lens'],lit:true,signaled:false,lens_claim:evidence.origin_claim_id,moth_claim:null,credit:'available',workshop_salvage:1,bram_budget:12,shells:0,burned_shells:0,commission_fulfilled:false,craft:null,polish:null,placement:null},items:[]};
 const copy=value=>JSON.parse(JSON.stringify(value));
+const finalHash='11111111111111111111111111111111';
+const fee=(send_sir,send_not_sir,execution)=>({send_sir,send_not_sir,execution});
+const protocol={chain_id:'testnet',protocol_version:88,transaction_validity_period:86400,runtime_config:{min_gas_purchase_price:'1000000000',storage_amount_per_byte:'10000000000000000000',transaction_costs:{
+ action_receipt_creation_config:fee(108059500000,108059500000,108059500000),action_creation_config:{
+  function_call_cost:fee(200000000000,200000000000,780000000000),function_call_cost_per_byte:fee(2235934,47683715,2235934),
+  transfer_cost:fee(115123062500,115123062500,115123062500),add_key_cost:{full_access_cost:fee(101765125000,101765125000,101765125000)},
+ },
+}}};
+function gasRead(method,blockHash){fixture.gasReads.push({method,blockHash});if(fixture.gasUnavailable)throw Error('fixture gas RPC unavailable');if(blockHash!==finalHash)throw Error('fixture gas quote must use the same finalized block')}
+fixture.seedPendingAdoption=async name=>{
+ const tx=createTransaction(binding.nearAccountId,key.getPublicKey(),root,BigInt(fixture.broadcasts.length)+1n,[actions.functionCall('adopt',{name},180000000000000n,0n)],baseDecode(finalHash));
+ const transaction=base64Encode(encodeTransaction(tx)),hash=baseEncode(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(encodeTransaction(tx)))));
+ const pending={operationId:'native:fixture-original-adoption',hash,method:'adopt',receiver:root,transaction,state:'prepared'};
+ localStorage.setItem('familiar.tidebound.pending.v1:'+root+':'+binding.nearAccountId,JSON.stringify(pending));return copy(pending);
+};
 const provider={
  async getNetworkId(){return 'testnet'},
  async callFunction({method,args}){
@@ -32,21 +48,24 @@ const provider={
   if(method==='storage_balance_of')return {total:'10000000000000000000000',available:'10000000000000000000000'};
   throw Error('Unexpected fixture method '+method);
  },
- async viewAccount(){return {amount:1000000000000000000000000n,storage_usage:0}},
+ async viewAccount({blockQuery}={}){if(blockQuery)gasRead('view_account',blockQuery.blockId);return {amount:BigInt(fixture.balance),storage_usage:182}},
+ async experimental_protocolConfig({blockId}){gasRead('EXPERIMENTAL_protocol_config',blockId);return copy(protocol)},
+ async viewGasPrice(blockHash){gasRead('gas_price',blockHash);return {gas_price:100000000n}},
  async viewAccessKey(){return {permission:'FullAccess',nonce:BigInt(fixture.broadcasts.length)}},
- async viewBlock(){return {header:{hash:'11111111111111111111111111111111',height:100}}},
+ async viewBlock(){return {header:{hash:finalHash,height:100}}},
  async sendTransactionUntil(signed){
    const tx=signed.transaction,call=tx.actions[0].functionCall,args=JSON.parse(new TextDecoder().decode(new Uint8Array(call.args)));
-   const j=fixture.journey;
-   if(call.methodName==='tidebound_commission'){if(j.commission_fulfilled)throw Error('fixture duplicate commission');j.workshop_salvage=0;j.bram_budget=0;j.shells=12;j.commission_fulfilled=true}
+   const j=fixture.journey;let failure=null;
+   if(call.methodName==='adopt'){if(fixture.pets.length)throw Error('fixture duplicate adoption');if(fixture.occupiedTokens.some(token=>token.token_id===args.name+'.'+root))failure={ActionError:{kind:'ERR_NAME_TAKEN'}};else fixture.pets=[{token_id:args.name+'.'+root}]}
+   else if(call.methodName==='tidebound_commission'){if(j.commission_fulfilled)throw Error('fixture duplicate commission');j.workshop_salvage=0;j.bram_budget=0;j.shells=12;j.commission_fulfilled=true}
    else if(call.methodName==='tidebound_craft'){if(j.credit!=='available')throw Error('fixture duplicate craft');j.credit='consumed';j.craft={evidence:copy(evidence),pet_id:'mochi.'+root,state:'confirmed',attempt:1};fixture.items=[{mint:copy(evidence),finish:'original',appearance_version:0,finish_used:false}]}
    else if(call.methodName==='tidebound_polish'){if(j.shells!==12||fixture.items[0].finish_used)throw Error('fixture invalid polish');j.shells=0;j.burned_shells=12;j.polish={state:'confirmed',attempt:1};fixture.items[0].finish='harbor_polish';fixture.items[0].appearance_version=1;fixture.items[0].finish_used=true}
    else if(call.methodName==='tidebound_place'){j.placement={item_id:args.item_id,socket:args.socket}}
    else throw Error('Unexpected fixture native method '+call.methodName);
-   j.revision++;
+   if(!failure)j.revision++;
    const hash=baseEncode(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(encodeTransaction(tx)))));
    fixture.broadcasts.push({method:call.methodName,signer:tx.signerId,receiver:tx.receiverId,deposit:call.deposit.toString(),args});
-   const outcome={final_execution_status:'FINAL',status:{SuccessValue:''},transaction:{hash,signer_id:tx.signerId,receiver_id:tx.receiverId},receipts_outcome:[]};
+   const outcome={final_execution_status:'FINAL',status:failure?{Failure:failure}:{SuccessValue:''},transaction:{hash,signer_id:tx.signerId,receiver_id:tx.receiverId},receipts_outcome:[]};
    if(fixture.uncertainNext){fixture.uncertainNext=false;outcome.final_execution_status='EXECUTED_OPTIMISTIC';outcome.status='Unknown'}
    fixture.statuses[hash]=outcome;return outcome;
  },
@@ -84,7 +103,7 @@ await server.listen();
 const origin = server.resolvedUrls!.local[0]!.replace(/\/$/, "");
 const browser = await chromium.launch({ headless: true });
 const results: unknown[] = [];
-type Fixture = { authenticated:boolean; pets: {token_id:string}[]; provisions: number; authentications: number; bound: boolean; uncertainNext:boolean; broadcasts: { method: string; signer: string; deposit: string }[]; delayJourney: boolean; readsWaiting: number; releaseJourney: (() => void) | null; journey: { credit: string; shells: number; burned_shells: number }; items: { mint: { token_id: string; motif: string }; finish_used: boolean }[] };
+type Fixture = { authenticated:boolean; pets: {token_id:string}[]; occupiedTokens:{token_id:string;owner:string}[]; seedPendingAdoption(name:string):Promise<{operationId:string;hash:string;transaction:string}>; provisions: number; authentications: number; authorizations:{operationId:string;signer:string}[]; balance:string; gasUnavailable:boolean; gasReads:{method:string;blockHash:string}[]; statuses:Record<string,{final_execution_status:string;status:unknown}>; bound: boolean; uncertainNext:boolean; broadcasts: { method: string; signer: string; deposit: string;args:Record<string,unknown> }[]; delayJourney: boolean; readsWaiting: number; releaseJourney: (() => void) | null; journey: { credit: string; shells: number; burned_shells: number;revision:number }; items: { mint: { token_id: string; motif: string }; finish_used: boolean }[] };
 async function fixture<T>(page: Page, work: (fixture: Fixture) => T): Promise<T> {
   return page.evaluate(work => (new Function("fixture", `return (${work})(fixture)`))((window as unknown as { __tbFixture: Fixture }).__tbFixture), work.toString());
 }
@@ -135,6 +154,9 @@ try {
     await account.getByRole("button", { name: "Continue with Google", exact: true }).click();
     await expect(account.getByText(/Saved progress · NEAR testnet · revision 1/)).toBeVisible();
     assert.equal(await fixture(page, f => f.provisions), 0, "existing sign-in never provisions");
+    await expect(account.getByRole("button",{name:"Adopt Mochi",exact:true})).toHaveCount(0);
+    await expect(account.getByLabel("Mochi’s harbor name",{exact:true})).toHaveCount(0);
+    assert.deepEqual(await fixture(page,f=>f.pets),[{token_id:"mochi.tidebound-fixture.testnet"}],"existing Mochi keeps its original identifier");
     await reachableAccount(page, `${width}-signed-in`);
     await account.getByRole("button", { name: "Use saved harbor for next outing", exact: true }).click();
     await expect(account.getByRole("button", { name: "Craft lantern on testnet", exact: true })).toBeEnabled();
@@ -202,6 +224,12 @@ try {
     await expect(account.getByRole("button",{name:"Resolve expired unexecuted request",exact:true})).toBeVisible();
     await expect(account.getByText(/Only a provably expired, unused signing request can be cleared/)).toBeVisible();
     await reachableAccount(page,`${width}-pending-proof-controls`);
+    const beforeReceipt=await fixture(page,f=>({authorizations:f.authorizations.length,broadcasts:f.broadcasts.length,gasReads:f.gasReads.length}));
+    await fixture(page,f=>{f.balance='0';f.gasUnavailable=true;for(const status of Object.values(f.statuses)){status.final_execution_status='FINAL';status.status={SuccessValue:''};}});
+    await account.getByRole("button",{name:"Check original receipt",exact:true}).click();
+    await expect(account.getByRole("button",{name:"Check original receipt",exact:true})).toHaveCount(0);
+    assert.deepEqual(await fixture(page,f=>({authorizations:f.authorizations.length,broadcasts:f.broadcasts.length,gasReads:f.gasReads.length})),beforeReceipt,"submitted receipt reconciliation needs no affordability RPC, signature or rebroadcast even with zero balance");
+    await fixture(page,f=>{f.balance='250000000000000000000000';f.gasUnavailable=false;});
 
     // Delay an old account's explicit refresh, sign out, then release that old response.
     await fixture(page, f => { f.delayJourney = true; });
@@ -217,7 +245,8 @@ try {
     await expect(page.getByTestId("placed-lantern")).toHaveCount(0);
     assert.equal(await page.evaluate(() => localStorage.getItem("familiar.guest.v1")), null, "synthetic account route never touches legacy secret namespace");
     assert.deepEqual(errors, []); assert.deepEqual(external, [], "fixture makes no real auth, RPC, or service calls");
-    results.push({ ...viewport, pageScroll:"none",accountScroll:"contained",giftAndExport:"passed", commissionBeforeCraft: "passed", polishPreviewAndOnce: "passed", slowRefreshAfterSignOut: "passed" });
+    assert((await fixture(page,f=>f.gasReads)).every(read=>read.blockHash==='11111111111111111111111111111111'),"all affordability reads share the transaction's finalized block");
+    results.push({ ...viewport, pageScroll:"none",accountScroll:"contained",giftAndExport:"passed", commissionBeforeCraft: "passed", polishPreviewAndOnce: "passed", slowRefreshAfterSignOut: "passed", submittedReceiptWithoutGasRpc:"passed" });
     await context.close();
   }
   const choices = await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"});
@@ -290,15 +319,63 @@ try {
   await expect(firstAccount.getByText("new-player.tidebound-fixture.testnet",{exact:true})).toBeVisible();
   assert.equal(await fixture(first, f => f.provisions), 1);
   await first.setViewportSize({width:390,height:500});
-  await firstAccount.getByLabel("Mochi’s harbor name",{exact:true}).fill("mochi-fixture");
-  await firstAccount.getByLabel("Mochi’s harbor name",{exact:true}).focus();
-  await reachableAccount(first,"390x500-name-keyboard");
+  await expect(firstAccount.getByLabel("Mochi’s harbor name",{exact:true})).toHaveCount(0);
+  await expect(firstAccount.getByRole("textbox")).toHaveCount(0);
+  await firstAccount.getByRole("button",{name:"Adopt Mochi",exact:true}).focus();
+  await reachableAccount(first,"390x500-adoption");
   await first.setViewportSize({width:390,height:844});
+  await fixture(first,f=>{f.balance='150000000000000000000000';});
+  const beforeUnderfunded=await fixture(first,f=>({authorizations:f.authorizations.length,broadcasts:f.broadcasts.length,provisions:f.provisions}));
+  const pendingBefore=await first.evaluate(()=>Object.keys(localStorage).filter(key=>key.startsWith('familiar.tidebound.pending.v1:')));
+  assert.deepEqual(pendingBefore,[]);
+  await firstAccount.getByRole("button",{name:"Adopt Mochi",exact:true}).click();
+  const underfundedNotice=firstAccount.getByText(/needs more test NEAR for gas prepayment and the attached deposit/);
+  await expect(underfundedNotice).toBeVisible();
+  assert.deepEqual(await fixture(first,f=>({authorizations:f.authorizations.length,broadcasts:f.broadcasts.length,provisions:f.provisions})),beforeUnderfunded,"0.15 test NEAR rejects adoption before a signature, broadcast or replacement account");
+  assert.deepEqual(await first.evaluate(()=>Object.keys(localStorage).filter(key=>key.startsWith('familiar.tidebound.pending.v1:'))),pendingBefore,"underfunding creates no pending native request");
+  await reachableAccount(first,"390-underfunded-adoption");await underfundedNotice.scrollIntoViewIfNeeded();await expect(underfundedNotice).toBeInViewport();await capture(first,"390-underfunded-adoption-fixture");
+  await fixture(first,f=>{f.balance='250000000000000000000000';});
+  await firstAccount.getByRole("button",{name:"Adopt Mochi",exact:true}).click();
+  await expect(firstAccount.getByRole("button",{name:"Adopt Mochi",exact:true})).toHaveCount(0);
+  assert.equal(await fixture(first,f=>f.authorizations.length),beforeUnderfunded.authorizations+1,"0.25 test NEAR permits one synthetic approval");
+  assert.equal(await fixture(first,f=>f.broadcasts.filter(tx=>tx.method==='adopt').length),1,"funded retry executes once in the fixture");
+  const automaticName=await mochiNameForPlayer("new-player.tidebound-fixture.testnet","tidebound-fixture.testnet");
+  assert.equal(await fixture(first,f=>f.broadcasts.find(tx=>tx.method==='adopt')!.args.name),automaticName);
+  assert.deepEqual(await fixture(first,f=>f.pets),[{token_id:automaticName+".tidebound-fixture.testnet"}],"first adoption uses the stable internal identifier without another field");
   await firstAccount.getByRole("button", { name: "Sign out", exact: true }).click();
   await firstAccount.getByRole("button", { name: "Continue with Google", exact: true }).click();
-  await expect(firstAccount.getByText(/Saved progress · NEAR testnet · revision 1/)).toBeVisible();
+  await expect(firstAccount.getByText(/Saved progress · NEAR testnet · revision 2/)).toBeVisible();
   assert.equal(await fixture(first, f => f.provisions), 1, "returning login never provisions a second fixture player");
   await fresh.close();
+  for(const scenario of ["existing-pet-arrived","occupied-internal-name","original-pending-adoption"]) {
+    const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),page=await context.newPage(),errors:string[]=[],external:string[]=[];
+    page.on("pageerror",error=>errors.push(error.message));page.on("request",request=>{if(!request.url().startsWith(origin)&&!request.url().startsWith("data:")&&!request.url().startsWith("blob:"))external.push(request.url());});
+    await page.goto(origin+"/outing/");await page.getByRole("tab",{name:"Account",exact:true}).click();await expect(page.getByRole("button",{name:"Continue with Google",exact:true})).toBeEnabled();
+    await fixture(page,f=>{f.pets=[];});
+    const original=scenario==="original-pending-adoption"?await fixture(page,f=>f.seedPendingAdoption("old-mochi")):null;
+    await page.getByRole("button",{name:"Continue with Google",exact:true}).click();const account=page.locator(".tb-account-harbor");
+    await expect(account.getByRole("button",{name:"Adopt Mochi",exact:true})).toBeVisible();await expect(account.getByRole("textbox")).toHaveCount(0);
+    if(scenario==="existing-pet-arrived") {
+      await fixture(page,f=>{f.pets=[{token_id:'bramble-old.tidebound-fixture.testnet'}];});
+      await account.getByRole("button",{name:"Adopt Mochi",exact:true}).click();
+      await expect(account.getByRole("button",{name:"Adopt Mochi",exact:true})).toHaveCount(0);
+      assert.deepEqual(await fixture(page,f=>f.pets),[{token_id:'bramble-old.tidebound-fixture.testnet'}]);
+      assert.equal(await fixture(page,f=>f.authorizations.length),0,"a fresh owned-pet read prevents replacing an existing Mochi");assert.equal(await fixture(page,f=>f.broadcasts.length),0);
+    }else if(scenario==="occupied-internal-name") {
+      const name=await mochiNameForPlayer("p-1.tidebound-fixture.testnet","tidebound-fixture.testnet"),occupied={token_id:name+'.tidebound-fixture.testnet',owner:'another-holder.testnet'};
+      await page.evaluate(token=>(window as unknown as {__tbFixture:Fixture}).__tbFixture.occupiedTokens=[token],occupied);
+      await account.getByRole("button",{name:"Adopt Mochi",exact:true}).click();await expect(account.getByText(/A receipt failed/)).toBeVisible();
+      assert.deepEqual(await fixture(page,f=>f.occupiedTokens),[occupied],"an occupied token keeps its existing holder");assert.deepEqual(await fixture(page,f=>f.pets),[]);
+      assert.equal(await fixture(page,f=>f.broadcasts.length),1,"a collision does not trigger a random-name fallback or automatic retry");assert.equal(await fixture(page,f=>f.broadcasts[0]!.args.name),name);assert.equal(await fixture(page,f=>f.provisions),0);assert.equal(await fixture(page,f=>f.journey.revision),1);
+    }else {
+      await expect(account.getByRole("button",{name:"Adopt Mochi",exact:true})).toBeDisabled();
+      assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('familiar.tidebound.pending.v1:tidebound-fixture.testnet:p-1.tidebound-fixture.testnet')!).transaction),original!.transaction);
+      await account.getByRole("button",{name:"Resume original action",exact:true}).click();await expect(account.getByRole("button",{name:"Adopt Mochi",exact:true})).toHaveCount(0);
+      assert.equal(await fixture(page,f=>f.broadcasts[0]!.args.name),"old-mochi","pending adoption keeps its original pre-update name");assert.equal(await fixture(page,f=>f.authorizations[0]!.operationId),original!.operationId);
+      assert.deepEqual(await fixture(page,f=>f.pets),[{token_id:'old-mochi.tidebound-fixture.testnet'}]);assert.equal(await fixture(page,f=>f.broadcasts.length),1);
+    }
+    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await reachableAccount(page,scenario);await capture(page,`${scenario}-fixture`);await context.close();
+  }
   const disabled = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await disabled.addInitScript(() => { (window as unknown as { __tbFixtureDisabled: boolean }).__tbFixtureDisabled = true; });
   const off = await disabled.newPage(); await off.goto(origin + "/outing/");
@@ -307,5 +384,5 @@ try {
   await expect(off.getByRole("button", { name: "Continue with Google", exact: true })).toHaveCount(0);
   await expect(off.getByText(/Owned item confirmed/)).toHaveCount(0);
   await disabled.close();
-  console.log(JSON.stringify({ results, disabledFixture: "passed", explicitProvisioning: "passed", simulatedKeyboardHeight:500, previewChoiceAndTransferredConflict:"passed", captures, limits: "Explicitly synthetic local Chromium fixtures. No OAuth, native chain execution, physical device, wallet recovery, human playtest, or retention claim. Viewport shrink simulates keyboard space; actual Android/iPad keyboards were not tested." }, null, 2));
+  console.log(JSON.stringify({ results, disabledFixture: "passed", explicitProvisioning: "passed", simulatedKeyboardHeight:500, previewChoiceAndTransferredConflict:"passed",underfundedAdoptionBeforeSigning:"passed at synthetic 0.15 test NEAR",fundedAdoption:"passed at synthetic 0.25 test NEAR",automaticMochiIdentifier:"stable; second name field absent",existingMochiAndNameCollision:"preserved without fallback",originalPendingAdoption:"original name and operation resumed", captures, limits: "Explicitly synthetic local Chromium fixtures. No OAuth, native chain execution, physical device, wallet recovery, human playtest, or retention claim. Viewport shrink simulates keyboard space; actual Android/iPad keyboards were not tested." }, null, 2));
 } finally { await browser.close(); await server.close(); }
