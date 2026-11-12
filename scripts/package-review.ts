@@ -58,7 +58,7 @@ await writeFile(join(output, "config.json"), JSON.stringify({
   routes: [
     { src: "/(.*)", headers: { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin" }, continue: true },
     { src: "/plan/?$", dest: "/plan/index.html" },
-    { src: "/motion/?$", dest: "/index.html" },
+    { src: "/(motion|outing)/?$", dest: "/index.html" },
     { src: "/$", dest: "/index.html" },
     { handle: "filesystem" },
   ],

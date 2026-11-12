@@ -456,7 +456,7 @@ export function App() {
                 <h1 id="town-title">
                   Littleharbor<span className="name-period">.</span>
                 </h1>
-                <p><a href={planUrl}>Explore the First Light design book</a></p>
+                <p><a href="/outing">Play The Broken Beacon</a> · <a href={planUrl}>First Light design book</a></p>
               </div>
             )}
             {pet && (

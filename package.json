@@ -19,6 +19,7 @@
     "test:sandbox": "cargo test --manifest-path contracts/Cargo.toml -p familiar-root --test sandbox -- --ignored --nocapture",
     "test:browser": "bun scripts/test-browser.ts",
     "test:motion-browser": "bun scripts/test-motion-browser.ts",
+    "test:outing-browser": "bun scripts/test-outing-browser.ts",
     "test:auth-browser": "bun run build && bun scripts/test-auth-browser.ts",
     "build:contracts": "bash scripts/build-contracts.sh",
     "setup:testnet": "bash scripts/setup-testnet.sh",
