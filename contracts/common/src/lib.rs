@@ -1,4 +1,6 @@
+pub mod expedition;
 pub mod rules;
+pub mod storycraft;
 use near_sdk::{
     AccountId, Gas, NearToken, Promise, env,
     json_types::U128,
