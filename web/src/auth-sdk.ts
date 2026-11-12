@@ -23,10 +23,11 @@ const [
   import("@fast-auth-near/javascript-provider"),
 ]);
 
-export async function openGoogleSession(
+export async function openRecoverableGoogleSession(
   rpcUrl: string,
   clientId: string,
-): Promise<GoogleSession> {
+  mode: "authenticate" | "restore" = "authenticate",
+): Promise<(GoogleSession & { endSession(): Promise<void> }) | null> {
   const provider = new JavascriptProvider({ network: "testnet", clientId });
   const { connection } = await connect({
     networkId: "testnet",
@@ -36,7 +37,13 @@ export async function openGoogleSession(
     fastAuthContractId: "fast-auth.testnet",
     mpcContractId: "v1.signer-prod.testnet",
   });
-  const user = await client.login();
+  if (mode === "restore" && !(await provider.isLoggedIn())) return null;
+  if (mode === "authenticate") await client.login();
+  const path = await provider.getPath();
+  const prefix = "jwt#https://login.testnet.fast-auth.com/#";
+  if (!path.startsWith(prefix)) throw new Error("Auth identity changed");
+  const user = { userId: path.slice(prefix.length) };
+  if (!/^google-oauth2\|[^#]{1,240}$/.test(user.userId)) throw new Error("Choose the configured Google route");
   const signer = await client.getSigner();
   if (
     (await provider.getPath()) !==
@@ -48,6 +55,10 @@ export async function openGoogleSession(
     userId: user.userId,
     publicKey,
     clientId,
+    async endSession() {
+      // The pinned client logout forwards an array; call the documented provider directly.
+      await provider.logout({ logoutParams: { returnTo: globalThis.location.origin } });
+    },
     async requestSignature(bytes) {
       const transaction = transactions.Transaction.decode(bytes);
       const roundtrip = transactions.encodeTransaction(transaction);
@@ -83,4 +94,10 @@ export async function openGoogleSession(
       }).recover("ed25519");
     },
   };
+}
+
+export async function openGoogleSession(rpcUrl: string, clientId: string): Promise<GoogleSession> {
+  const session = await openRecoverableGoogleSession(rpcUrl, clientId);
+  if (!session) throw new Error("Google authentication did not finish");
+  return session;
 }

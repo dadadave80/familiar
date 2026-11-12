@@ -16,6 +16,7 @@ import {
   type Transaction,
 } from "near-api-js";
 import { validName } from "./rules";
+import { validateAuthRequest } from "./account/signing-request";
 
 export const TESTNET_AUTH_CLIENT_ID = "np8paqIpMWmNbzT4xAvOOapZBjsOpptl";
 export type RecoveryGuest = {
@@ -197,87 +198,7 @@ async function sendGoogle(
   );
   return confirmed(await provider.sendTransactionUntil(signed, "FINAL"));
 }
-function bytesEqual(a: unknown, b: Uint8Array) {
-  return (
-    (Array.isArray(a) || a instanceof Uint8Array) &&
-    a.length === b.length &&
-    b.every((byte, i) => a[i] === byte)
-  );
-}
-function jwtPart(part: string) {
-  check(/^[A-Za-z0-9_-]+$/.test(part));
-  const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
-  return JSON.parse(
-    new TextDecoder("utf-8", { fatal: true }).decode(
-      base64Decode(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")),
-    ),
-  );
-}
-
-export function validateAuthRequest(
-  value: unknown,
-  bytes: Uint8Array,
-  session: Pick<GoogleSession, "userId" | "publicKey" | "clientId">,
-) {
-  check(value && typeof value === "object");
-  const response = value as {
-    user?: { userId?: unknown };
-    publicKey?: unknown;
-    signatureRequest?: {
-      guardId?: unknown;
-      verifyPayload?: unknown;
-      signPayload?: unknown;
-    };
-  };
-  const request = response.signatureRequest;
-  check(
-    response.user?.userId === session.userId &&
-      response.publicKey === session.publicKey,
-  );
-  check(/^google-oauth2\|[^#]{1,240}$/.test(session.userId));
-  check(
-    request?.guardId === "jwt#https://login.testnet.fast-auth.com/" &&
-      typeof request.verifyPayload === "string" &&
-      request.verifyPayload.length <= 16_384 &&
-      bytesEqual(request.signPayload, bytes),
-  );
-  const parts = request.verifyPayload.split(".");
-  check(parts.length === 3);
-  const header = jwtPart(parts[0]);
-  const claims = jwtPart(parts[1]);
-  const now = Math.floor(Date.now() / 1000);
-  // The on-chain guard verifies the JWT signature; these checks bind its claims to this exact request.
-  check(header.alg === "RS256" && typeof header.kid === "string");
-  check(
-    claims.iss === "https://login.testnet.fast-auth.com/" &&
-      claims.sub === session.userId &&
-      claims.azp === session.clientId,
-  );
-  check(
-    claims.aud === "auth0.jwt.fast-auth.testnet" ||
-      (Array.isArray(claims.aud) &&
-        claims.aud.includes("auth0.jwt.fast-auth.testnet")),
-  );
-  check(
-    Number.isSafeInteger(claims.exp) &&
-      claims.exp > now &&
-      Number.isSafeInteger(claims.iat) &&
-      claims.iat <= now + 60 &&
-      (claims.nbf === undefined ||
-        (Number.isSafeInteger(claims.nbf) && claims.nbf <= now)),
-  );
-  check(
-    typeof claims.scope === "string" &&
-      claims.scope.split(" ").includes("transaction:sign") &&
-      bytesEqual(claims.fatxn, bytes),
-  );
-  return {
-    guard_id: request.guardId,
-    verify_payload: request.verifyPayload,
-    sign_payload: [...bytes],
-    algorithm: "eddsa",
-  };
-}
+export { validateAuthRequest } from "./account/signing-request";
 
 export function googleRecoveryAvailable(
   origin: string,

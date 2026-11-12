@@ -11,6 +11,7 @@ export type RelayResult = {
 };
 export type Backend = {
   ready?(): Promise<boolean>;
+  authSign?(value:unknown, origin:string): Promise<unknown>;
   guest(publicKey: string): Promise<string>;
   relay(encoded: string): Promise<RelayResult>;
 };
@@ -93,6 +94,13 @@ export function createApp(
       return c.json({ error: STAMPS, code: "QUOTA" }, 429);
     const accountId = await backend!.guest(publicKey as string);
     return c.json({ accountId, root: config.root, network: "testnet" });
+  });
+  app.post("/v1/auth/sign", async (c) => {
+    const origin = c.req.header("origin");
+    if (!origin || !config.origins.includes(origin)) return c.json({code:"ERR_AUTH_ORIGIN",error:"Sign in from the configured Familiar address."},403);
+    if (!backend?.authSign) return c.json({code:"AUTH_UNAVAILABLE",error:"Cross-device saving is not connected at this address. Your local preview is safe."},503);
+    const body:unknown = await c.req.json().catch(() => null);
+    return c.json(await backend.authSign(body,origin));
   });
   app.post("/v1/relay", async (c) => {
     const body: unknown = await c.req.json().catch(() => null);

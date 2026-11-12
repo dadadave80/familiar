@@ -82,3 +82,26 @@ test("rejects unapproved origins and malformed public keys before provisioning",
   expect(invalid.status).toBe(400);
   expect(creates).toBe(0);
 });
+
+test("native Auth signing requires the configured browser origin and fails closed when disabled", async () => {
+  let calls = 0;
+  const backend = {
+    guest:async()=>"", relay:async()=>({hash:"",receiptSentenceKey:""}),
+    authSign:async (_body:unknown,origin:string)=>{ calls++; return {signature:[1], origin}; },
+  };
+  const app = createApp({origins:["https://play.example"],root:"familiar.testnet"},backend);
+  const request = (origin?:string) => app.request("/v1/auth/sign", {method:"POST",headers:{"content-type":"application/json",...(origin ? {origin}: {})},body:"{}"});
+  expect((await request()).status).toBe(403);
+  expect((await request("https://wrong.example")).status).toBe(403);
+  const accepted = await request("https://play.example");
+  expect(accepted.status).toBe(200);
+  expect(await accepted.json()).toEqual({signature:[1],origin:"https://play.example"});
+  expect(calls).toBe(1);
+  const disabled = createApp({origins:["https://play.example"],root:"familiar.testnet"},{guest:backend.guest,relay:backend.relay});
+  expect((await disabled.request("/v1/auth/sign",{method:"POST",headers:{origin:"https://play.example"},body:"{}"})).status).toBe(503);
+});
+
+test("Tidebound mode cannot silently start with legacy principal sponsorship when Auth is missing",()=>{
+ const result=Bun.spawnSync({cmd:[process.execPath,"--no-env-file","services/relayer/src/index.ts"],cwd:process.cwd(),env:{...process.env,TIDEBOUND_ENABLED:"true",NEAR_AUTH_CLIENT_ID:""},stdout:"pipe",stderr:"pipe"});
+ expect(result.exitCode).not.toBe(0);expect(result.stderr.toString()).toContain("refusing a silent legacy sponsorship fallback");
+});
