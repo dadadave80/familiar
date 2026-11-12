@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
+import { previewMotifs } from "../tidebound/domain";
 import { replayOuting, type Action } from "./engine";
-import { bankRun, challengeMet, challengeText, installLens, installVane, newHome, readHome, writeHome } from "./home";
+import { bankRun, challengeMet, challengeText, installLens, installVane, newHome, readHome, writeHome, previewLantern, provenanceBank } from "./home";
 
 const dry: Action[] = ["wait", "move:left", "move:center", "reel:lens", "return"];
 const wet: Action[] = ["wait", "move:left", "wait", "take:lens", "move:center", "return"];
@@ -74,7 +75,7 @@ test("old Beacon saves retain the pending wave and unlock Wind only after instal
   expect(old.storage).toBe("ready");
   expect(old.home).toMatchObject({ signaled:false, active:{ area:"beacon", locked:"left", turn:2 } });
   expect(writeHome(old.home,store)).toBe(true);
-  expect(JSON.parse(store.getItem(key)!).version).toBe(2);
+  expect(JSON.parse(store.getItem(key)!).version).toBe(3);
   expect(readHome(store).home).toEqual(old.home);
   expect(installVane(old.home)).toBe(old.home);
 });
@@ -120,7 +121,7 @@ test("invalid Wind progression, areas and challenges preserve the original save"
     { ...valid, bank:["lens","lens"] },
     { ...valid, active:{ tool:"rope", area:"wind", actions:[] }, challengeActive:true },
     { ...valid, active:{ tool:"rope", area:"wind", actions:["take:vane"] } },
-    { ...valid, version:3 },
+    { ...valid, version:4 },
     { ...valid, version:1, active:{ tool:"rope", area:"wind", actions:[] } },
   ];
   for (const data of invalid) {
@@ -153,4 +154,82 @@ test("a failed signal write can retry with the earned vane still available", () 
   refuse = false;
   expect(writeHome(installed,store)).toBe(true);
   expect(readHome(store).home.signaled).toBe(true);
+});
+
+test("Storycraft records returned origins once and keeps the first preview motif", () => {
+  const first = bankRun(newHome(), replayOuting("rope", [], dry)!);
+  expect(first.storycraft.origins.crest?.actions).toEqual(dry);
+  expect(first.storycraft.origins.moth).toBeNull();
+  const lantern = previewLantern(first, "crest");
+  expect(lantern.storycraft.lantern).toEqual({ motif:"crest", socket:"porch" });
+  expect(previewLantern(lantern, "moth")).toBe(lantern);
+  const rescue = bankRun(lantern, replayOuting("rope", [], two)!);
+  expect(rescue.storycraft.origins.moth?.actions).toEqual(two);
+  expect(rescue.storycraft.lantern?.motif).toBe("crest");
+  expect(previewLantern(newHome(), "moth").storycraft.lantern).toBeNull();
+  expect(bankRun(newHome(), replayOuting("rope", [], Array(9).fill("wait"))!).storycraft.origins.crest).toBeNull();
+});
+
+test("Storycraft saves one lantern and old banks need a new witnessed return", () => {
+  const store = memoryStore();
+  const key = "familiar.first-light.beacon.v1";
+  store.setItem(key, JSON.stringify({ version:2, bank:["lens","moth","salvage"], lit:true, signaled:false, active:null }));
+  const old = readHome(store).home;
+  expect(old.storycraft.lantern).toBeNull();
+  expect(old.storycraft.origins).toEqual({ crest:null, moth:null });
+  expect(provenanceBank(old)).toEqual(["salvage"]);
+  const active = replayOuting("rope", provenanceBank(old), dry.slice(0,2))!;
+  expect(writeHome({ ...old, active },store)).toBe(true);
+  expect(readHome(store).home.active?.banked).toEqual(["salvage"]);
+  const returned = bankRun(old, replayOuting("rope", provenanceBank(old), dry)!);
+  const next = previewLantern(returned, "crest");
+  expect(next).toMatchObject({ bank:["lens","moth","salvage"], lit:true, storycraft:{ lantern:{motif:"crest",socket:"porch"} } });
+  expect(writeHome(next,store)).toBe(true);
+  expect(readHome(store).home.storycraft).toEqual(next.storycraft);
+  const raw = JSON.parse(store.getItem(key)!);
+  raw.storycraft.lantern.motif = "moth";
+  store.setItem(key,JSON.stringify(raw));
+  expect(readHome(store).storage).toBe("invalid");
+});
+
+test("Storycraft rejects forged origins and active omissions unrelated to missing origins", () => {
+  const store = memoryStore();
+  const key = "familiar.first-light.beacon.v1";
+  readHome(store);
+  const home = previewLantern(bankRun(newHome(), replayOuting("rope", [], dry)!), "crest");
+  expect(writeHome(home,store)).toBe(true);
+  const raw = JSON.parse(store.getItem(key)!);
+  raw.storycraft.origins.crest.actions = ["return"];
+  store.setItem(key,JSON.stringify(raw));
+  expect(readHome(store).storage).toBe("invalid");
+  const unrelated = { ...newHome(), bank:["salvage"] as const };
+  const empty = replayOuting("rope", [], ["wait"])!;
+  const other = memoryStore();
+  readHome(other);
+  expect(writeHome({ ...unrelated, bank:["salvage"], active:empty },other)).toBe(false);
+});
+
+test("a failed provenance outing keeps an older harbor without inventing a lantern origin", () => {
+  const old = { ...newHome(), bank:["lens","moth"] as ("lens"|"moth")[], lit:true };
+  const run = replayOuting("rope", provenanceBank(old), Array(9).fill("wait"))!;
+  const returned = bankRun(old,run);
+  expect(returned).toMatchObject({ bank:["lens","moth"], lit:true, active:null });
+  expect(returned.storycraft.origins).toEqual({ crest:null, moth:null });
+  expect(returned.storycraft.lantern).toBeNull();
+});
+
+test("a v3 motif origin must name Beacon explicitly; a missing area preserves the corrupt save", () => {
+  const store = memoryStore();
+  const key = "familiar.first-light.beacon.v1";
+  readHome(store);
+  const home = previewLantern(bankRun(newHome(), replayOuting("rope", [], dry)!), "crest");
+  expect(writeHome(home,store)).toBe(true);
+  const raw = JSON.parse(store.getItem(key)!);
+  delete raw.storycraft.origins.crest.area;
+  const malformed = JSON.stringify(raw);
+  store.setItem(key,malformed);
+  expect(previewMotifs(raw.storycraft)).toEqual([]);
+  expect(readHome(store).storage).toBe("invalid");
+  expect(writeHome(newHome(),store)).toBe(false);
+  expect(store.getItem(key)).toBe(malformed);
 });

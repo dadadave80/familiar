@@ -27,7 +27,14 @@
     "e2e:testnet": "bun scripts/e2e.ts",
     "rules:export": "cargo run --manifest-path contracts/Cargo.toml -p rules-export > web/src/rules.json",
     "relayer": "bun services/relayer/src/index.ts",
-    "npc": "bun services/npc/src/index.ts"
+    "npc": "bun services/npc/src/index.ts",
+    "test:tidebound-browser": "bun scripts/test-tidebound-browser.ts",
+    "test:tidebound-sandbox": "cargo test --manifest-path contracts/Cargo.toml -p familiar-root --test tidebound -- --ignored --nocapture",
+    "test:tidebound-account-browser": "bun scripts/test-tidebound-account-browser.ts",
+    "preflight:tidebound": "bun scripts/tidebound-preflight.ts",
+    "dev:privy-spike": "bun --env-file=.env.privy.local scripts/privy-spike.ts",
+    "test:privy-browser": "bun scripts/test-privy-browser.ts",
+    "test:privy-lifecycle-browser": "bun scripts/test-privy-lifecycle-browser.ts"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "5.3.0",

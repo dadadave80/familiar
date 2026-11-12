@@ -1,18 +1,7 @@
-import { Buffer } from "buffer";
+import "./browser-globals";
 import type { GoogleSession } from "./auth";
 
-// The official Auth SDK uses near-api-js 5 and browser Buffer; only canonical bytes cross into version 7.
-if (typeof globalThis.Buffer === "undefined")
-  Object.defineProperty(globalThis, "Buffer", {
-    value: Buffer,
-    writable: true,
-    configurable: true,
-  });
-if (!("global" in globalThis))
-  Object.defineProperty(globalThis, "global", {
-    value: globalThis,
-    configurable: true,
-  });
+// The official Auth SDK uses near-api-js 5; only canonical bytes cross into version 7.
 const [
   { connect, transactions },
   { FastAuthClient, FastAuthSignature },

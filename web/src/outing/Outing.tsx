@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { planUrl } from "../plan-url";
 import { MochiActor } from "../motion/MochiActor";
 import { MOCHI_POSES, type MochiPoseName } from "../motion/mochi";
@@ -19,6 +19,7 @@ import {
   type Tool,
 } from "./engine";
 import {
+  newHome,
   bankRun,
   challengeMet,
   challengeRequested,
@@ -27,9 +28,19 @@ import {
   installVane,
   readHome,
   writeHome,
+  previewLantern,
+  provenanceBank,
   type Home,
 } from "./home";
+import { applyPlacement } from "../tidebound/domain";
+import { LanternArt, Storycraft } from "../tidebound/Storycraft";
 import "./outing.css";
+
+import { preservePreview } from "../tidebound/adoption";
+import type { ChainSnapshot } from "../tidebound/client";
+import type { SocketId, MotifId } from "../tidebound/domain";
+const AccountHarbor = lazy(()=>import("../account/HarborAccount").then(module=>({default:module.HarborAccount})));
+type PlacedCraft = {motif:MotifId;socket:SocketId;polished:boolean};
 
 const art = "/assets/first-light-motion/";
 const positions = { left: 20, center: 50, right: 79 };
@@ -43,6 +54,15 @@ const items: Record<Item, string> = {
 const title = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 const checklist =
   "Open both shells with the Rope, then return to Center without losing Resolve.";
+
+function HarborIcon({kind}:{kind:"outing"|"workshop"|"account"|"menu"}) {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="of-harbor-icon">
+    {kind==="outing"?<><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2ZM12 1v2M12 21v2M1 12h2M21 12h2"/></>
+      :kind==="workshop"?<><path d="M8 7V5a4 4 0 0 1 8 0v2M7 8h10l2 12H5L7 8ZM4 21h16M9 10v7M15 10v7"/><path d="m12 11-2 3 2 3 2-3-2-3Z"/></>
+      :kind==="account"?<><path d="m3 11 9-8 9 8M5 10v11h14V10M9 21v-6h6v6"/><path d="M9 9h6"/></>
+      :<><path d="M5 6h14M5 12h14M5 18h14"/><circle cx="3" cy="6" r=".5"/><circle cx="21" cy="18" r=".5"/></>}
+  </svg>;
+}
 
 function actionLabel(action: Action) {
   if (action === "wait") return "Wait";
@@ -97,7 +117,18 @@ function lastTurn(run: Run) {
         : `Mochi held position in ${run.lane}.`,
     );
   }
+  if(run.outcome==="rescued") result.push(run.resolve===0
+    ? "Mochi ran out of Resolve. Bram brought Mochi home; unbanked cargo stayed with the tide."
+    : "The fifteenth action closed the route. Bram brought Mochi home; unbanked cargo stayed with the tide.");
+  if(run.outcome==="returned") result.push("Mochi returned from Center before the incoming wave. The carried finds are safe at home.");
   return result.join(" ");
+}
+
+function waveConsequence(run:Run) {
+  const wave=run.waves.at(-1)!;
+  const opened=wave.opened ? `${title(wave.lane)} ${run.area==="wind"?"socket charged":"shell opened"}. ` : "";
+  const route=run.area==="wind" ? `${title(wave.source)} → ${title(wave.lane)}. ` : `${title(wave.lane)} wave. `;
+  return `${opened||route}${wave.hit?`Splash: ${run.resolve} Resolve left.`:"Mochi stayed dry."}`;
 }
 
 function LaneShell({
@@ -147,6 +178,7 @@ function Stage({
   igniting,
   inspected,
   inspect,
+  canonicalLantern,
 }: {
   board: RefObject<HTMLElement | null>;
   run: Run | null;
@@ -155,12 +187,14 @@ function Stage({
   igniting: boolean;
   inspected: Lane | null;
   inspect: (lane: Lane) => void;
+  canonicalLantern?:PlacedCraft|null;
 }) {
   const wave = run?.waves.at(-1);
   const arrival = run && wave?.turn === run.turn ? wave : null;
   const atCourt = !!run;
   const wind = run?.area === "wind";
   const name = heldPose(run, home, resting);
+  const lantern = canonicalLantern === undefined ? home.storycraft.lantern : canonicalLantern;
   const actor = (
     <MochiActor
       x={run ? positions[run.lane] : 44}
@@ -180,21 +214,29 @@ function Stage({
       ref={board}
       className={`of-stage ${atCourt ? "at-court" : "at-home"}${wind ? " at-wind" : ""}`}
       data-testid="outing-scene"
+      data-turn={run?run.turn+1:undefined}
       data-lit={home.lit}
+      data-source={run?.locked??""}
+      data-exit={run?waveExit(run)??"":""}
+      data-orientation={run?.orientation}
       data-signaled={home.signaled}
       data-igniting={igniting}
       aria-label={atCourt ? `${wind ? "Wind Gate" : "Beacon Court"} playfield` : "Pocket Harbor"}
       aria-describedby={atCourt ? "of-control-hint" : undefined}
     >
+      <img className="of-world-backdrop" src={`${art}${wind ? "wind-gate-v1" : atCourt ? "arena" : "harbor"}.webp`} alt=""/>
+      <div className="of-scene-frame">
       <div className="of-stage-art" aria-hidden="true">
         <img
           className="of-backdrop"
+          key={wind?"wind":atCourt?"beacon":"harbor"}
           src={`${art}${wind ? "wind-gate-v1" : atCourt ? "arena" : "harbor"}.webp`}
           alt=""
         />
         {run ? (
           <>
             <img
+              key="tidekeeper"
               className={`of-guardian phase-${phaseOf(run).toLowerCase()}`}
               src={`${art}tidekeeper.webp`}
               alt=""
@@ -219,7 +261,7 @@ function Stage({
                 <i style={{ transform: `rotate(${run.orientation * 120}deg)` }} />
               </div>
               {(["left", "center"] as const).map(lane => (
-                <span key={lane} className={`of-socket of-socket-${lane}`} data-charged={run.opened.includes(lane)}>
+                <span key={lane} className={`of-socket of-socket-${lane}`} data-testid={`wind-socket-${lane}`} data-charged={run.opened.includes(lane)}>
                   {run.opened.includes(lane) ? "Charged" : "Unlit"}
                 </span>
               ))}
@@ -253,7 +295,7 @@ function Stage({
           </>
         ) : (
           <>
-            <img className="of-home-bram" src={`${art}bram.webp`} alt="" />
+            <img key="bram" className="of-home-bram" src={`${art}bram.webp`} alt="" />
             {actor}
             {home.lit && (
               <>
@@ -264,6 +306,9 @@ function Stage({
             {home.bank.includes("moth") && (
               <img className="of-home-moth" src={`${art}moth.webp`} alt="" />
             )}
+            {lantern && <span className="tb-home-lantern" data-testid="placed-lantern" data-socket={lantern.socket}>
+              <LanternArt motif={lantern.motif} polished={canonicalLantern?.polished} />
+            </span>}
             {home.lit && <div className="of-signal-post" data-repaired={home.signaled}><i /></div>}
           </>
         )}
@@ -296,6 +341,7 @@ function Stage({
           ))}
         </div>
       )}
+      </div>
     </section>
   );
 }
@@ -344,7 +390,7 @@ function inspection(run: Run, lane: Lane) {
 function WindRouting({ run }: { run: Run }) {
   const turned = { ...run, orientation: ((run.orientation + 1) % 3) as 0 | 1 | 2 };
   return <section className="of-routing" aria-label="Wind Gate channels"
-    data-testid="wind-routing" data-source={run.locked ?? ""}
+    data-testid="wind-channel-map" data-source={run.locked ?? ""}
     data-exit={waveExit(run) ?? ""} data-orientation={run.orientation}>
     <h2>Follow the channel</h2>
     <dl className="of-channel-map">
@@ -354,7 +400,7 @@ function WindRouting({ run }: { run: Run }) {
     </dl>
     <div className="of-socket-status" aria-label="Required sockets">
       {(["left", "center"] as const).map(lane => <span key={lane}
-        data-testid={`wind-socket-${lane}`} data-charged={run.opened.includes(lane)}>
+        data-charged={run.opened.includes(lane)}>
         {title(lane)} socket · {run.opened.includes(lane) ? "charged" : "unlit"}
       </span>)}
     </div>
@@ -369,6 +415,35 @@ function WindRouting({ run }: { run: Run }) {
 export function Outing() {
   const [initial] = useState(readHome);
   const [home, setHome] = useState(initial.home);
+  const [accountStore,setAccountStore]=useState<Pick<Storage,"getItem"|"setItem">|undefined>();
+  const [canonical,setCanonical]=useState<ChainSnapshot|null>(null);
+  const ownedPlacement = canonical?.journey.placement;
+  const placedItem = canonical?.items.find(item=>item.mint.token_id===ownedPlacement?.item_id);
+  const canonicalLantern:PlacedCraft|null|undefined = canonical && accountStore ? placedItem && ownedPlacement
+    ? {motif:placedItem.mint.motif,socket:ownedPlacement.socket,polished:placedItem.finish_used}:null : undefined;
+  function accountSnapshot(next:ChainSnapshot|null) {
+    setCanonical(next);
+    if(!next && accountStore){const local=readHome();setHome(local.home);setStorage(local.storage);setAccountStore(undefined);setVisited(null);}
+  }
+  function useSavedHarbor(snapshot:ChainSnapshot) {
+    if(home.active)return;
+    const key=`familiar.tidebound.run.v1:${snapshot.binding.nearAccountId}`;
+    const store={getItem:()=>localStorage.getItem(key),setItem:(_key:string,value:string)=>localStorage.setItem(key,value)};
+    const cached=readHome(store);
+    const j=snapshot.journey;
+    const sameBank=JSON.stringify(cached.home.bank)===JSON.stringify(j.banked);
+    const active=cached.home.active;
+    const resumable=active && JSON.stringify(active.banked)===JSON.stringify(j.banked) && (active.area!=="wind" || j.lit);
+    const next={...newHome(),bank:j.banked as Item[],lit:j.lit,signaled:j.signaled,
+      ...(sameBank ? {active:resumable?active:null,storycraft:cached.home.storycraft,memory:cached.home.memory,challengeActive:cached.home.challengeActive}:{}),
+    };
+    preservePreview(localStorage,key,j.revision);
+    const saved=cached.storage==="ready" && writeHome(next,store);
+    setHome(next);setStorage(saved?"ready":cached.storage==="invalid"?"invalid":"unavailable");setAccountStore(store);setVisited(null);setCanonical(snapshot);setResting(false);
+  }
+  const [panel,setPanel] = useState<"outing"|"workshop"|"account"|"menu">("outing");
+  const [view,setView] = useState("play");
+  const [guidePage,setGuidePage] = useState(0);
   const [storage, setStorage] = useState<string>(initial.storage);
   const [visited, setVisited] = useState<Run | null>(null);
   const [tool, setTool] = useState<Tool>("rope");
@@ -414,13 +489,13 @@ export function Outing() {
   }, []);
 
   function save(next: Home) {
-    if (storage === "ready" && !writeHome(next)) setStorage("unsaved");
+    if (storage === "ready" && !writeHome(next,accountStore)) setStorage("unsaved");
     setHome(next);
   }
 
   function restore(next: Home) {
     // Durable installation keeps the earned relic available when storage needs a retry.
-    if ((storage === "ready" || storage === "unsaved") && !writeHome(next)) {
+    if ((storage === "ready" || storage === "unsaved") && !writeHome(next,accountStore)) {
       setRestoreProblem(true);
       return;
     }
@@ -431,14 +506,23 @@ export function Outing() {
     focusChapter();
   }
 
+  function changeStorycraft(next:Home): boolean {
+    if (next === home) return false;
+    if ((storage === "ready" || storage === "unsaved") && !writeHome(next,accountStore)) return false;
+    if (storage === "unsaved") setStorage("ready");
+    setHome(next);
+    return true;
+  }
+
   function focusChapter() {
     requestAnimationFrame(() =>
       heading.current?.focus({ preventScroll: true }),
     );
   }
 
-  function begin(selected: Tool, asChallenge = false) {
+  function begin(selected: Tool, asChallenge = false, recordOrigin = false) {
     if (home.active) return;
+    setPanel("outing");setView("play");
     setChallenge(asChallenge);
     setIgniting(false);
     setVisited(null);
@@ -449,7 +533,7 @@ export function Outing() {
     save({
       ...home,
       challengeActive: asChallenge,
-      active: startOuting(selected, home.bank, asChallenge ? "beacon" : destination),
+      active: startOuting(selected, recordOrigin ? provenanceBank(home) : home.bank, asChallenge || recordOrigin ? "beacon" : destination),
     });
     focusChapter();
   }
@@ -483,7 +567,13 @@ export function Outing() {
     }, 220);
   }
 
-  const board = useCourtControls(toolMenu || inspected || busy ? null : run, commit);
+  useEffect(()=>{
+    if(!toolMenu&&!inspected)return;
+    const close=(event:KeyboardEvent)=>{if(event.key!=="Escape")return;event.preventDefault();setToolMenu(false);setInspected(null);requestAnimationFrame(()=>{if(toolMenu)toolToggle.current?.focus({preventScroll:true});else heading.current?.focus({preventScroll:true});});};
+    window.addEventListener("keydown",close);return()=>window.removeEventListener("keydown",close);
+  },[toolMenu,inspected]);
+
+  const board = useCourtControls(panel!=="outing" || view!=="play" || toolMenu || inspected || busy ? null : run, commit);
   const actionButton = (action: Action, label = actionLabel(action)) => (
     <button
       key={action}
@@ -493,7 +583,7 @@ export function Outing() {
       disabled={!legal.includes(action)}
       aria-disabled={busy || !legal.includes(action)}
       onClick={(event) => commit(action, event.detail === 0)}
-      aria-describedby={action === "turn:vane" ? "of-vane-preview" : undefined}
+      aria-label={action === "turn:vane" ? `${label}. Moves all channel exits one lane onward.` : undefined}
     >
       {label}
     </button>
@@ -505,6 +595,7 @@ export function Outing() {
     !run.banked.includes("lens") &&
     free <= 1;
   const nextTide = run ? phaseOf(run) : null;
+  const resolvedWave=run?.waves.at(-1)?.turn===run?.turn && !!run?.waves.length;
   const note = run && inspected ? inspection(run, inspected) : null;
   const storageLabel =
     storage === "ready"
@@ -524,11 +615,13 @@ export function Outing() {
       setCopied(true);
     } catch {
       setCopied(false);
-      document.querySelector<HTMLTextAreaElement>("#of-invite-text")?.select();
+      const text=document.querySelector(".of-invitation");
+      if(text){const range=document.createRange();range.selectNodeContents(text);window.getSelection()?.removeAllRanges();window.getSelection()?.addRange(range);}
     }
   }
 
   function chooseChallenge() {
+    setPanel("outing");setView("play");
     setDestination("beacon");
     setChallenge(true);
     setTool("rope");
@@ -538,461 +631,118 @@ export function Outing() {
     focusChapter();
   }
 
+  function show(next:string) {
+    setPanel("outing");setView(next);setInspected(null);setToolMenu(false);focusChapter();
+  }
+  const homeTitle = resting ? "At the water’s edge." : declaringGoal ? "Two shells. Dry paws." : canInstallVane ? "A way through." : canInstall ? "The lens is home." : escaped ? visited!.turn>=ACTION_LIMIT?"The tide closed in.":"Carried home." : home.signaled ? "The harbor finds its bearings." : home.lit ? "Home by first light." : "The broken beacon.";
+  const homeIntent = resting ? quietGesture : declaringGoal ? checklist : canInstallVane ? "The Signal Vane is home. Fit it to the harbor’s signal post." : canInstall ? "The missing lens is safe. Restore the beacon so the boats can find home." : escaped ? visited!.turn>=ACTION_LIMIT?"The tide closed the route. Mochi is safe; the satchel is empty.":"Mochi is safe with Bram. The unbanked cargo stayed with the tide." : signalRestoredNow ? "The signal post points toward Echo Basin. That outing is still being built." : restoredNow ? "The light crosses the bay. Bram puts the kettle on." : visited ? visited.cargo.length ? `Brought home: ${visited.cargo.map(i=>items[i]).join(", ")}.` : `Mochi returned after ${visited.turn} actions.` : home.lit ? "Choose your next outing, or make a little light for home." : "Bring the missing lens back from Beacon Court and light the harbor again.";
+  const tideGuide = [
+    "Every action advances the tide: Low, Rising, Surge. At Rising, the guardian marks Mochi’s lane after your action. Inspection and menus spend no turns.",
+    "On Surge, the marked wave arrives after your action. A wave can open a shell even when it splashes Mochi. Return from Center extracts before the wave, even on action fifteen.",
+    run?.tool === "lantern" ? "The Lantern redirects a locked wave during Surge. At Beacon Court’s Center, it can copy the chart even with no charges. The wind-moth needs two free pack slots." : "The Rope reels an exposed lens, salvage or vane from another lane. The wind-moth needs a personal visit and two free pack slots. Bring any finds home before the tide closes.",
+  ];
   return (
-    <main className="outing-root">
+    <main className="outing-root" data-panel={panel} data-run={!!run} data-view={view} data-primary={panel==="outing"&&view==="play"&&!note&&!toolMenu}>
       <header className="of-mast">
-        <a className="of-wordmark" href="/">
-          familiar<span>.</span>
-        </a>
-        <nav aria-label="Familiar">
-          <a href={planUrl}>Design book</a>
-          <a href="/motion">Motion study</a>
-        </nav>
+        <a className="of-brand" href="/" aria-label="Familiar home"><span className="of-wordmark">familiar<span>.</span></span><span className="of-chapter">{canonical&&accountStore?"NEAR testnet":storage==="ready"?"Local preview":"This visit only"}</span></a>
+        <button className="of-menu-toggle" onClick={()=>{setPanel(panel==="menu"?"outing":"menu");setView("play");setInspected(null);setToolMenu(false);}}><HarborIcon kind="menu"/><span>Menu</span></button>
       </header>
       <div className="of-layout">
         <div className="of-world">
-          <Stage
-            board={board}
-            run={run}
-            home={home}
-            resting={resting}
-            igniting={igniting}
-            inspected={inspected}
-            inspect={(lane) => setInspected(lane === inspected ? null : lane)}
-          />
-          {run ? (
-            <div className="of-inventory" aria-label="Supplies">
-              <span>
-                <b>Resolve</b> {run.resolve} / 3
-              </span>
-              <span>
-                <b>Pack</b> {packSlots(run.cargo)} / 3
-              </span>
-              <span>
-                <b>{title(run.tool)}</b> {run.uses} uses
-              </span>
-            </div>
-          ) : (
-            <div className="of-harbor-state">
-              <span className={home.lit ? "of-lit-dot" : "of-dark-dot"} />
-              <span>{home.lit ? "Beacon lit" : "Beacon dark"}</span>
-              {home.lit && <span>{home.signaled ? "Signal post repaired" : "Signal post missing its vane"}</span>}
-              {home.bank.includes("moth") && (
-                <span>Wind-moth in the garden</span>
-              )}
-            </div>
-          )}
+          <Stage board={board} run={run} home={home} resting={resting} igniting={igniting} inspected={inspected}
+            inspect={lane=>{setPanel("outing");setView("play");setToolMenu(false);setInspected(lane===inspected?null:lane);}}
+            canonicalLantern={canonicalLantern}/>
+          {run ? <div className="of-inventory" aria-label="Supplies">
+            <span><b>Resolve</b> {run.resolve} / 3</span><span><b>Pack</b> {packSlots(run.cargo)} / 3</span><span><b>{title(run.tool)}</b> {run.uses} uses</span>
+          </div> : <div className="of-harbor-state"><span className={home.lit?"of-lit-dot":"of-dark-dot"}/><span>{home.lit?"Beacon lit":"Beacon dark"}</span>{home.lit&&<span>{home.signaled?"Signal post repaired":"Signal post missing its vane"}</span>}{home.bank.includes("moth")&&<span>Wind-moth in the garden</span>}</div>}
         </div>
-        <section
-          className="of-controls"
-          aria-label={run ? "Outing controls" : "Harbor controls"}
-        >
-          {run ? (
-            <>
-              <div className="of-turn">
-                <span>
-                  Turn {run.turn + 1} of {ACTION_LIMIT}
-                </span>
-                <span>{title(run.lane)} lane</span>
-              </div>
-              <h1 ref={heading} tabIndex={-1}>
-                {nextTide === "Low"
-                  ? "Low tide"
-                  : nextTide === "Rising"
-                    ? "Rising tide"
-                    : "Surge"}
-              </h1>
-              <p className="of-intent">
-                {nextTide === "Low"
-                  ? "The water is quiet. Choose where Mochi stands."
-                  : nextTide === "Rising"
-                    ? "After your action, the Tidekeeper will mark Mochi’s lane."
-                    : run.locked
-                      ? run.area === "wind"
-                        ? `Source ${title(run.locked)}. After your action, the wave exits ${title(waveExit(run)!)}.`
-                        : `After your action, the wave will strike ${title(run.locked)}.`
-                      : "The water will pass without a marked lane."}
-              </p>
-              <p className="of-next-goal">
-                {run.area === "wind"
-                  ? run.cargo.includes("vane")
-                    ? "Vane in the pack. Return at Center to bring it home."
-                    : run.banked.includes("vane")
-                      ? "Practice the channels. The Signal Vane is already home."
-                      : run.opened.includes("left") && run.opened.includes("center")
-                        ? "The Signal Vane is exposed at Center. Take or Reel it, then return."
-                        : "The channel turns the wave. Charge the Left and Center sockets to release the Signal Vane."
-                  : challenge
-                  ? "Two-shell challenge: open both shells and bring Mochi home dry."
-                  : run.cargo.includes("lens")
-                    ? "Lens in the pack. Return at Center to bring it home."
-                    : run.banked.includes("lens")
-                      ? "Practice: open the left shell, or find a missing discovery."
-                      : run.opened.includes("left")
-                        ? run.tool === "rope" &&
-                          run.uses > 0 &&
-                          run.lane !== "left"
-                          ? "The Beacon Lens is exposed. Reel it from here, or pick it up in Left."
-                          : "The Beacon Lens is exposed. Pick it up in Left, then return at Center."
-                        : "A wave can crack the left shell. Bring its Beacon Lens home."}
-              </p>
-              {run.area === "wind" && <WindRouting run={run} />}
-              {note && (
-                <div className="of-inspection">
-                  <b>{title(inspected!)} lane</b>
-                  <p>{note}</p>
-                  <button onClick={() => setInspected(null)}>
-                    Close inspection
-                  </button>
-                </div>
-              )}
-              <p id="of-control-hint" className="of-control-hint">
-                <span className="of-key-hint">Use ← or → to move one lane.</span>
-                <span className="of-touch-hint">Swipe across the scene to move one lane.</span>{" "}
-                Each move spends one turn.
-              </p>
-              <div className="of-moves" aria-label="Choose a lane">
-                {lanes.map((lane) => actionButton(`move:${lane}`))}
-              </div>
+        <aside className="of-panel" aria-label="Game controls">
+          <div className="of-panel-tabs" role="tablist" aria-label="Harbor panels">
+            {(["outing","workshop","account"] as const).map(tab=><button key={tab} role="tab" id={`of-tab-${tab}`} aria-controls={`of-panel-${tab}`} aria-selected={panel===tab} onClick={()=>{setPanel(tab);setInspected(null);setToolMenu(false);setView("play");}}><HarborIcon kind={tab}/><span>{title(tab)}</span></button>)}
+          </div>
+          <section className="of-controls of-panel-page" id="of-panel-outing" role="tabpanel" aria-labelledby="of-tab-outing" hidden={panel!=="outing"}>
+            {run ? note ? <>
+              <h1 ref={heading} tabIndex={-1}>{title(inspected!)} lane</h1><p className="of-intent of-inspection">{note}</p>
+              <button className="of-primary" onClick={()=>setInspected(null)}>Close inspection</button>
+            </> : toolMenu ? <>
+              <h1 ref={heading} tabIndex={-1}>Lure the wave</h1><p className="of-intent">Choose a new {run.area==="wind"?"source; the channel decides its exit":"target"}. Mochi stays here. Uses one charge.</p>
+              <div className="of-tool-choices">{legal.filter(a=>a.startsWith("lure:")).map(a=>actionButton(a,run.area==="wind"?`Lure ${title(a.split(":")[1]!)} → exit ${title(waveExit(run,a.split(":")[1] as Lane)!)}`:actionLabel(a)))}</div>
+              <button className="of-secondary" onClick={()=>{setToolMenu(false);toolToggle.current?.focus();}}>Cancel</button>
+            </> : view==="channels" ? <><WindRouting run={run}/><button className="of-primary" onClick={()=>show("play")}>Back to outing</button></>
+            : view==="notes" ? <>
+              <h1 ref={heading} tabIndex={-1}>Field notes</h1><p>Tap a lane to inspect. Arrows or a horizontal scene swipe move one lane.</p><div className="of-choice-grid">
+                <button onClick={()=>show("tide")}>Tide guide</button><button onClick={()=>show("pack")}>Pack & finds</button><button onClick={()=>show("result")}>Last turn</button>
+                {run.area==="wind"&&<button onClick={()=>show("channels")}>Channel map</button>}
+              </div><button className="of-primary" onClick={()=>show("play")}>Back to outing</button>
+            </> : view==="tide" ? <>
+              <h1 ref={heading} tabIndex={-1}>The tide · {guidePage+1} / 3</h1><p className="of-intent">{tideGuide[guidePage]}</p>
+              <div className="of-choice-grid"><button disabled={guidePage===0} onClick={()=>setGuidePage(guidePage-1)}>Previous</button><button disabled={guidePage===2} onClick={()=>setGuidePage(guidePage+1)}>Next</button></div><button className="of-primary" onClick={()=>show("play")}>Back to outing</button>
+            </> : view==="pack" ? <>
+              <h1 ref={heading} tabIndex={-1}>Mochi’s pack</h1><p className="of-intent">{run.cargo.length?run.cargo.map(i=>items[i]).join(" · "):"The pack is empty."} {free} of 3 slots free.</p>
+              <p>{missingPack?"The lens needs one slot. The wind-moth needs two. You can bring these finds home and return for another." : "Finds are only banked after returning from Center. A failed outing loses only this unbanked cargo."}</p><button className="of-primary" onClick={()=>show("play")}>Back to outing</button>
+            </> : view==="result" ? <>
+              <h1 ref={heading} tabIndex={-1}>The last turn</h1><p className="of-intent">{lastTurn(run)}</p><button className="of-primary" onClick={()=>show("play")}>Back to outing</button>
+            </> : <>
+              <div className="of-decision"><h1 ref={heading} tabIndex={-1}>{nextTide==="Surge"?"Surge":`${nextTide} tide`}</h1><div className="of-turn"><span>Turn {run.turn+1} of {ACTION_LIMIT}</span><span>{title(run.lane)} lane</span></div></div>
+              <p className="of-intent of-forecast" data-testid={resolvedWave?"turn-consequence":undefined}>{resolvedWave?waveConsequence(run):nextTide==="Low"?"Choose where Mochi stands. The water is quiet.":nextTide==="Rising"?"After this action, the Tidekeeper marks Mochi’s lane.":run.locked?run.area==="wind"?`Source ${title(run.locked)} → exit ${title(waveExit(run)!)} after your action.`:`The wave strikes ${title(run.locked)} after your action.`:"The water passes without a marked lane."}</p>
+              <p className="of-next-goal">{run.area==="wind"?run.cargo.includes("vane")?"Vane secured. Return at Center.":run.banked.includes("vane")?"Practice the channels. The vane is already home.":"Charge Left + Center; bring the vane home.":challenge?"Open both shells. Bring Mochi home dry.":run.cargo.includes("lens")?"Lens secured. Return at Center.":run.banked.includes("lens")?"Practice, or recover a missing discovery.":"Open the left shell. Bring its lens home."}</p>
+              <div className="of-moves" aria-label="Choose a lane">{lanes.map(lane=>actionButton(`move:${lane}`))}</div>
               <div className="of-actions">
                 {actionButton("wait")}
-                {run.area === "wind" && actionButton("turn:vane", run.locked && run.lane === "center"
-                  ? `Turn vane → exit ${title(waveExit({ ...run, orientation: ((run.orientation + 1) % 3) as 0 | 1 | 2 })!)}`
-                  : "Turn vane")}
-                {run.tool === "lantern" && (
-                  <button
-                    ref={toolToggle}
-                    disabled={busy || !legal.some((a) => a.startsWith("lure:"))}
-                    aria-expanded={toolMenu}
-                    onClick={() => setToolMenu(!toolMenu)}
-                  >
-                    Lure wave
-                  </button>
-                )}
-                {legal
-                  .filter((a) => a.startsWith("take:") || a.startsWith("reel:"))
-                  .map((a) => actionButton(a))}
-                {actionButton(
-                  "return",
-                  run.lane === "center"
-                    ? "Return to harbor"
-                    : "Return at Center",
-                )}
+                {run.area==="wind"&&actionButton("turn:vane",run.locked&&run.lane==="center"?`Turn vane → ${title(waveExit({...run,orientation:((run.orientation+1)%3) as 0|1|2})!)}`:"Turn vane")}
+                {run.tool==="lantern"&&<button ref={toolToggle} disabled={busy||!legal.some(a=>a.startsWith("lure:"))} onClick={()=>setToolMenu(true)}>Lure wave</button>}
+                {legal.filter(a=>a.startsWith("take:")||a.startsWith("reel:")).map(a=>actionButton(a))}
+                {actionButton("return",run.lane==="center"?"Return to harbor":"Return at Center")}
               </div>
-              {toolMenu && (
-                <div
-                  className="of-tool-choices"
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      setToolMenu(false);
-                      toolToggle.current?.focus();
-                    }
-                  }}
-                >
-                  <p>{run.area === "wind"
-                    ? "Choose a new source. The vane routes it to the shown exit. Mochi stays here. Uses one charge."
-                    : "Redirect the lock. Mochi stays here. Uses one charge."}</p>
-                  {legal
-                    .filter((a) => a.startsWith("lure:"))
-                    .map((a) => actionButton(a, run.area === "wind"
-                      ? `Lure ${title(a.split(":")[1]!)} → exit ${title(waveExit(run, a.split(":")[1] as Lane)!)}`
-                      : actionLabel(a)))}
-                  <button
-                    onClick={() => {
-                      setToolMenu(false);
-                      toolToggle.current?.focus();
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-              {run.turn >= 12 && (
-                <p className="of-pressure">
-                  {ACTION_LIMIT - run.turn} actions left, including the return
-                  from Center.
-                </p>
-              )}
-              {missingPack && (
-                <p className="of-pressure">
-                  {free === 1
-                    ? "One slot left. Taking another find can fill the pack before the lens."
-                    : "Pack full. You can bring these finds home and revisit the lens."}
-                </p>
-              )}
-              <p className="of-event" aria-live="polite" aria-atomic="true">
-                {lastTurn(run)}
-              </p>
-              <details className="of-guide">
-                <summary>Pack & tide guide</summary>
-                <p>
-                  {run.cargo.length
-                    ? run.cargo.map((i) => items[i]).join(" · ")
-                    : "The pack is empty."}{" "}
-                  {free} of 3 slots free.
-                </p>
-                <p>
-                  Every action advances the tide once: Low, Rising, Surge. At
-                  Rising, the guardian marks your lane after you act. A Surge
-                  {run.area === "wind" ? "charges a socket at its exit." : "opens a shell in its path."} Spend one action at Center to
-                  return, even on the last turn.
-                </p>
-                <p>
-                  {run.area === "wind"
-                    ? run.tool === "rope"
-                      ? "Rope reels the exposed vane from another lane. Turn the vane at Center to change all three channels for one action."
-                      : "Lantern chooses the locked source during Surge. The channel still decides its exit. Turn the vane at Center for one action."
-                    : run.tool === "rope"
-                    ? "Rope reels an exposed lens or salvage from another lane. The moth needs a personal visit."
-                    : "The Lantern redirects a locked wave during Surge. At Center it can also copy the chart, even with no charges left."}{" "}
-                  Tap or select a lane label to inspect it for free.
-                </p>
-              </details>
-            </>
-          ) : (
-            <>
-              <h1 ref={heading} tabIndex={-1}>
-                {resting
-                  ? "At the water’s edge."
-                  : declaringGoal
-                    ? "Two shells. Dry paws."
-                    : canInstallVane
-                      ? "A way through."
-                    : canInstall
-                      ? "The lens is home."
-                      : escaped
-                        ? visited!.resolve === 0
-                          ? "Carried home."
-                          : "The tide closed in."
-                        : home.signaled
-                          ? "The harbor finds its bearings."
-                        : home.lit
-                          ? "Home by first light."
-                          : visited
-                            ? visited.cargo.length
-                              ? "Something came home."
-                              : "Back on the dock."
-                            : "The broken beacon."}
-              </h1>
-              <p className="of-intent">
-                {resting
-                  ? quietGesture
-                  : declaringGoal
-                    ? checklist
-                    : canInstallVane
-                      ? "Bram turns the little pointer in his hands. “That’s our missing vane. Let’s see where it was trying to send us.”"
-                    : canInstall
-                      ? "Bram lifts the glass from Mochi’s satchel. It fits the empty lantern room."
-                      : escaped
-                        ? visited!.resolve === 0
-                          ? "The last wave carried Mochi back to the dock. An empty satchel, a dry towel, and Bram waiting."
-                          : "The tide closed the route before Mochi could return. His satchel is empty. Bram has put the kettle on."
-                        : signalRestoredNow
-                          ? "The signal post turns toward the far channel. Mochi follows its point. Echo Basin lies beyond. That outing is still being built."
-                        : restoredNow
-                          ? "The light brushes the water. Bram sets down his towel. “There. The boats can find us again.”"
-                          : visited && visited.cargo.length
-                            ? `Brought home: ${visited.cargo.map((i) => items[i]).join(", ")}.`
-                            : visited
-                              ? `Mochi returned after ${visited.turn} ${visited.turn === 1 ? "action" : "actions"}.`
-                              : home.lit
-                                ? "The light crosses the bay. Mochi settles on the warm stone beside Bram."
-                                : "Bring the missing lens back from Beacon Court and light the harbor again."}
-              </p>
-              {visited && (
-                <p className="of-result">
-                  {visited.turn} actions · {visited.resolve} / 3 Resolve
-                  {visited.waves.length && !visited.waves.some((w) => w.hit)
-                    ? " · dry paws"
-                    : ""}
-                  {challengeMet(visited)
-                    ? " · two-shell challenge complete"
-                    : ""}
-                </p>
-              )}
-              {!resting && (home.memory || !home.lit) && (
-                <div className="of-memory">
-                  <b>
-                    {home.memory ? "Mochi remembers" : "Bram, harbor baker"}
-                  </b>
-                  <p>
-                    “
-                    {home.memory ||
-                      "The beacon’s dark. The tide left something shining across the bay."}
-                    ”
-                  </p>
-                </div>
-              )}
-              {canInstall && (
-                <button
-                  className="of-primary"
-                  data-action="install"
-                  onClick={() => {
-                    restore(installLens(home));
-                  }}
-                >
-                  Restore the beacon
-                </button>
-              )}
-              {canInstallVane && <button className="of-primary" data-action="install-vane" onClick={() => {
-                restore(installVane(home));
-              }}>Repair signal post</button>}
-              {restoreProblem && <p role="alert" className="of-pressure">The repair could not be saved. Your find is still here. Try the repair again, or reload to read the device save.</p>}
-              {!visited && !resting && !canInstall && !canInstallVane && (
-                <>
-                  {!declaringGoal && <>
-                    <div className="of-destinations" role="group" aria-label="Choose destination">
-                      <button aria-pressed={destination === "beacon"} onClick={() => setDestination("beacon")}>Beacon Court</button>
-                      <button disabled={!home.lit} aria-pressed={destination === "wind"} onClick={() => setDestination("wind")}>Wind Gate</button>
-                    </div>
-                    <p className="of-destination-note">{destination === "wind"
-                      ? "A Way Through. Route the tide into two sockets and bring the missing signal vane home."
-                      : home.lit ? "Revisit the shells, or follow the light to Wind Gate."
-                      : "Restore the beacon to open the route to Wind Gate."}</p>
-                    {destination === "wind" && home.bank.includes("chart") && <details className="of-guide">
-                      <summary>Moonpool Chart · Wind Gate</summary>
-                      <p>The chart follows each inlet through the channel. On arrival, Left exits Center, Center exits Right, and Right exits Left. A turn moves each exit one lane onward, wrapping Right to Left.</p>
-                      <p>The same live mapping is always available at the gate. Charge the Left and Center sockets to release the vane.</p>
-                    </details>}
-                  </>}
-                  {!declaringGoal && (
-                    <fieldset className="of-kits">
-                      <legend>Choose your tool</legend>
-                      {(["rope", "lantern"] as const).map((kit) => (
-                        <label
-                          key={kit}
-                          className={tool === kit ? "selected" : ""}
-                        >
-                          <input
-                            type="radio"
-                            name="outing-tool"
-                            value={kit}
-                            checked={tool === kit}
-                            onChange={() => setTool(kit)}
-                          />
-                          <span>
-                            <b>{title(kit)}</b>
-                            <small>
-                              {kit === "rope"
-                                ? "Reel a distant find. Two uses per outing."
-                                : "Redirect a marked wave. Two uses per outing."}
-                            </small>
-                          </span>
-                        </label>
-                      ))}
-                    </fieldset>
-                  )}
-                  <button
-                    className="of-primary"
-                    data-action="depart"
-                    onClick={() =>
-                      begin(declaringGoal ? "rope" : tool, declaringGoal)
-                    }
-                  >
-                    {declaringGoal ? "Start challenge" : "Set out with Mochi"}
-                  </button>
-                  {declaringGoal && (
-                    <button
-                      className="of-text"
-                      onClick={() => setChallenge(false)}
-                    >
-                      Choose a regular outing
-                    </button>
-                  )}
-                  {invite && !declaringGoal && (
-                    <button className="of-secondary" onClick={chooseChallenge}>
-                      Accept two-shell challenge
-                    </button>
-                  )}
-                </>
-              )}
-              {visited && !canInstall && !canInstallVane && (
-                <div className="of-home-actions">
-                  <button
-                    className="of-primary"
-                    onClick={() => {
-                      setVisited(null);
-                      setResting(false);
-                      setSharing(false);
-                      focusChapter();
-                    }}
-                  >
-                    {escaped ? "Try again" : "Prepare another outing"}
-                  </button>
-                  {visited.area === "beacon" && <button className="of-secondary" onClick={chooseChallenge}>
-                    Try the two-shell challenge
-                  </button>}
-                  {!resting && (
-                    <button
-                      className="of-text"
-                      onClick={() => {
-                        setVisited(null);
-                        setResting(true);
-                        setSharing(false);
-                      }}
-                    >
-                      Rest at the harbor
-                    </button>
-                  )}
-                </div>
-              )}
-              {resting && (
-                <button
-                  className="of-text"
-                  onClick={() => {
-                    setResting(false);
-                    focusChapter();
-                  }}
-                >
-                  Prepare another outing
-                </button>
-              )}
-              {visited?.area === "beacon" && visited.outcome === "returned" && (
-                <div className="of-share">
-                  <button
-                    className="of-text"
-                    aria-expanded={sharing}
-                    onClick={() => {
-                      setSharing(!sharing);
-                      setCopied(false);
-                    }}
-                  >
-                    Make a challenge
-                  </button>
-                  {sharing && (
-                    <div>
-                      <label htmlFor="of-invite-text">
-                        Challenge invitation
-                      </label>
-                      <textarea
-                        id="of-invite-text"
-                        readOnly
-                        value={challengeText(visited)}
-                      />
-                      <button className="of-secondary" onClick={copy}>
-                        Copy invitation
-                      </button>
-                      <span role="status">
-                        {copied ? "Copied." : "You can also select the text."}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-              {!resting && !!home.bank.length && (
-                <details className="of-guide">
-                  <summary>Discoveries at home ({home.bank.length})</summary>
-                  <p>{home.bank.map((i) => items[i]).join(" · ")}</p>
-                </details>
-              )}
-            </>
-          )}
-        </section>
+              <p id="of-control-hint" className="of-control-hint"><span className="of-key-hint">← / → moves one lane · one turn.</span><span className="of-touch-hint">Swipe a lane · each move spends one turn.</span></p>
+              <p className="of-announcement" aria-live="polite" aria-atomic="true">{lastTurn(run)}</p>
+            </> : view==="result" && visited ? <>
+              <h1 ref={heading} tabIndex={-1}>The final turn</h1><p className="of-intent" data-testid="final-turn-result">{lastTurn(visited)}</p><button className="of-primary" onClick={()=>show("play")}>Back to harbor</button>
+            </> : view==="prepare" ? <>
+              <h1 ref={heading} tabIndex={-1}>Prepare an outing</h1><p className="of-intent">{destination==="wind"?"Wind Gate":"Beacon Court"} · {title(tool)}. Choose a different route or tool before setting out.</p><div className="of-choice-grid"><button onClick={()=>show("destinations")}>Change outing</button><button onClick={()=>show("loadout")}>Change tool</button></div><button className="of-primary" onClick={()=>show("play")}>Back to harbor</button>
+            </> : view==="loadout" ? <>
+              <h1 ref={heading} tabIndex={-1}>Choose your tool</h1><fieldset className="of-kits"><legend className="of-announcement">Outing tool</legend>{(["rope","lantern"] as const).map(kit=><label key={kit} className={tool===kit?"selected":""}><input type="radio" name="outing-tool" value={kit} checked={tool===kit} onChange={()=>setTool(kit)}/><span><b>{title(kit)}</b><small>{kit==="rope"?"Reel a distant find. Two uses.":"Redirect a marked wave. Two uses."}</small></span></label>)}</fieldset><button className="of-primary" onClick={()=>show("play")}>Use {title(tool)}</button>
+            </> : view==="destinations" ? <>
+              <h1 ref={heading} tabIndex={-1}>Choose an outing</h1><div className="of-destinations"><button aria-pressed={destination==="beacon"} onClick={()=>{setDestination("beacon");show("play");}}>Beacon Court</button><button disabled={!home.lit} aria-pressed={destination==="wind"} onClick={()=>{setDestination("wind");show("play");}}>Wind Gate</button></div><p className="of-intent">{home.lit?"Wind Gate changes the tide’s entrance into a different exit. Route two channels and recover the Signal Vane.":"Restore the beacon to open the route to Wind Gate."}</p>{home.bank.includes("chart")&&<button onClick={()=>show("chart")}>Moonpool Chart · Wind Gate</button>}<button className="of-secondary" onClick={()=>show("play")}>Back to harbor</button>
+            </> : view==="chart" ? <>
+              <h1 ref={heading} tabIndex={-1}>Moonpool Chart · Wind Gate</h1><p className="of-intent">On arrival, Left exits Center, Center exits Right, and Right exits Left.</p><p>Turning the vane moves every exit one lane onward. Charge the Left and Center sockets, then bring the Signal Vane home.</p><button className="of-primary" onClick={()=>show("destinations")}>Back to outings</button>
+            </> : view==="memory" ? <>
+              <h1 ref={heading} tabIndex={-1}>Mochi remembers</h1><blockquote className="of-memory"><p>“{home.memory||"The beacon’s dark. The tide left something shining across the bay."}”</p></blockquote><button className="of-primary" onClick={()=>show("play")}>Back to harbor</button>
+            </> : view==="discoveries" ? <>
+              <h1 ref={heading} tabIndex={-1}>Discoveries at home ({home.bank.length})</h1><p className="of-intent">{home.bank.length?home.bank.map(i=>items[i]).join(" · "):"The harbor is waiting for its first find."}</p><button className="of-primary" onClick={()=>show("play")}>Back to harbor</button>
+            </> : view==="share" && visited ? <>
+              <h1 ref={heading} tabIndex={-1}>A tide puzzle to share</h1><p className="of-invitation" role="textbox" aria-label="Challenge invitation" aria-readonly="true">{challengeText(visited)}</p><button className="of-secondary" onClick={copy}>Copy invitation</button><span role="status">{copied?"Copied.":"You can also select the text."}</span><button className="of-primary" onClick={()=>show("play")}>Back to harbor</button>
+            </> : <>
+              <h1 ref={heading} tabIndex={-1}>{homeTitle}</h1><p className="of-intent">{homeIntent}</p>
+              {visited&&<div className="of-result-row"><p className="of-result">{visited.turn} actions · {visited.resolve} / 3 Resolve{visited.waves.length&&!visited.waves.some(w=>w.hit)?" · dry paws":""}{challengeMet(visited)?" · two-shell challenge complete":""}</p><button onClick={()=>show("result")}>Last turn</button></div>}
+              {canInstall&&<button className="of-primary" data-action="install" onClick={()=>restore(installLens(home))}>Restore the beacon</button>}
+              {canInstallVane&&<button className="of-primary" data-action="install-vane" onClick={()=>restore(installVane(home))}>Repair signal post</button>}
+              {restoreProblem&&<p role="alert" className="of-pressure">The repair could not be saved. Your find is safe. Retry the repair, or reload the device save.</p>}
+              {!visited&&!resting&&!canInstall&&!canInstallVane&&<>
+                <button className="of-primary" data-action="depart" onClick={()=>begin(declaringGoal?"rope":tool,declaringGoal)}>{declaringGoal?"Start challenge":"Set out with Mochi"}</button>
+                <p className="of-destination-note">{declaringGoal?"Rope · Beacon Court":`${destination==="wind"?"Wind Gate":"Beacon Court"} · ${title(tool)}`}</p>
+                {!declaringGoal&&<button className="of-text" onClick={()=>show("prepare")}>Prepare outing</button>}
+                {declaringGoal&&<button className="of-text" onClick={()=>setChallenge(false)}>Choose a regular outing</button>}
+                {invite&&!declaringGoal&&<button className="of-secondary" onClick={chooseChallenge}>Accept two-shell challenge</button>}
+              </>}
+              {visited&&!canInstall&&!canInstallVane&&<div className="of-home-actions"><button className="of-primary" onClick={()=>{setVisited(null);setResting(false);setSharing(false);focusChapter();}}>{escaped?"Try again":"Prepare another outing"}</button><button onClick={()=>{setVisited(null);setResting(true);}}>Rest at the harbor</button></div>}
+              {resting&&<button className="of-primary" onClick={()=>{setResting(false);focusChapter();}}>Prepare another outing</button>}
+              <div className="of-choice-grid of-harbor-notes"><button onClick={()=>show("memory")}>Mochi’s memory</button><button onClick={()=>show("discoveries")}>Discoveries</button>{visited?.area==="beacon"&&visited.outcome==="returned"&&<button onClick={()=>show("share")}>Make a challenge</button>}{home.storycraft.origins.crest&&<button onClick={()=>setPanel("workshop")}>Lantern workshop</button>}</div>
+            </>}
+          </section>
+          <section className="of-panel-page" id="of-panel-workshop" role="tabpanel" aria-labelledby="of-tab-workshop" hidden={panel!=="workshop"}>
+            {run ? <><h2>The outing is still open.</h2><p>Bring Mochi home before opening the workbench.</p><button className="of-primary" onClick={()=>setPanel("outing")}>Back to outing</button></> : <Storycraft preview={home.storycraft} accountPanel={<button className="of-secondary" onClick={()=>setPanel("account")}>Account & recovery</button>}
+              hasEarlierDiscoveries={(home.bank.includes("lens")&&!home.storycraft.origins.crest)||(home.bank.includes("moth")&&!home.storycraft.origins.moth)} temporary={storage!=="ready"}
+              onCraft={motif=>changeStorycraft(previewLantern(home,motif))} onPlace={socket=>{const result=applyPlacement(home.storycraft,socket,home.storycraft.revision);return result.ok&&changeStorycraft({...home,storycraft:result.preview});}}
+              onRecordOrigin={()=>{setDestination("beacon");begin("rope",false,true);}}/>}
+          </section>
+          <section className="of-panel-page" id="of-panel-account" role="tabpanel" aria-labelledby="of-tab-account" hidden={panel!=="account"}>
+            {import.meta.env.VITE_TIDEBOUND_ENABLED==="true" ? <Suspense fallback={<p>Opening account controls…</p>}><AccountHarbor home={home} returned={visited} onSnapshot={accountSnapshot} onUseSaved={useSavedHarbor}/></Suspense> : <><h2>Keep your harbor on all your devices</h2><p>Recoverable sign-in and NEAR ownership are not connected here yet. Your lantern remains a local preview.</p><p>Local preview · not backed up or transferable.</p></>}
+          </section>
+          <section className="of-panel-page of-game-menu" aria-label="Game menu" hidden={panel!=="menu"}><h2>Familiar · First Light</h2><p>A harbor, a familiar, and a tide worth understanding.</p>{run&&<button onClick={()=>show("notes")}>Outing notes</button>}{!run&&<div className="of-choice-grid"><button onClick={()=>show("prepare")}>Prepare outing</button>{visited?.area==="beacon"&&<button onClick={chooseChallenge}>Try the two-shell challenge</button>}<button onClick={()=>show("memory")}>Mochi’s memory</button><button onClick={()=>show("discoveries")}>Discoveries</button>{visited?.area==="beacon"&&visited.outcome==="returned"&&<button onClick={()=>show("share")}>Make a challenge</button>}{home.storycraft.origins.crest&&<button onClick={()=>setPanel("workshop")}>Lantern workshop</button>}</div>}<div className="of-choice-grid"><a href={planUrl}>Design book</a><a href="/motion">Motion study</a></div><button className="of-primary" onClick={()=>setPanel("outing")}>Back to game</button></section>
+        </aside>
       </div>
-      <footer className="of-footer">
-        <span>{storageLabel}</span>
-        <span>First Light · {run?.area === "wind" ? "A Way Through" : "The Broken Beacon"}</span>
-      </footer>
+      <footer className="of-footer"><span>{canonical&&accountStore?`NEAR testnet checkpoint ${canonical.journey.revision} · current outing on this device`:storageLabel}</span><span>First Light · {run?.area==="wind"?"A Way Through":"The Broken Beacon"}</span></footer>
     </main>
   );
 }

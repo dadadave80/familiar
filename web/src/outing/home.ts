@@ -1,4 +1,5 @@
 import { isItem, replayOuting, type Item, type Outing } from "./engine";
+import { CONTENT_VERSION, RULES_VERSION, deriveStoryEvents, newPreview, previewMotifs, rememberRun, type LocalPreview, type MotifId } from "../tidebound/domain";
 
 export interface Home {
   bank: Item[];
@@ -7,6 +8,7 @@ export interface Home {
   memory: string;
   active: Outing | null;
   challengeActive: boolean;
+  storycraft: LocalPreview;
 }
 type Store = Pick<Storage, "getItem" | "setItem">;
 type ReadResult = { home: Home; storage: "ready" | "unavailable" | "invalid" };
@@ -32,7 +34,7 @@ type MemoryId = keyof typeof memoryLines;
 const memoryIds = Object.keys(memoryLines) as MemoryId[];
 
 export function newHome(): Home {
-  return { bank: [], lit: false, signaled: false, memory: "", active: null, challengeActive: false };
+  return { bank: [], lit: false, signaled: false, memory: "", active: null, challengeActive: false, storycraft:newPreview() };
 }
 
 export function challengeMet(run: Outing) {
@@ -60,7 +62,7 @@ export function bankRun(home: Home, run: Outing): Home {
   else if (brought.includes("chart")) memory = memoryLines.chart;
   else if (brought.includes("salvage")) memory = memoryLines.salvage;
   else if (!memory) memory = run.outcome === "rescued" ? memoryLines.rescue : memoryLines.retreat;
-  return { ...home, bank, memory, active: null, challengeActive: false };
+  return { ...home, bank, memory, active: null, challengeActive: false, storycraft:rememberRun(home.storycraft, run) };
 }
 
 export function installLens(home: Home): Home {
@@ -71,9 +73,37 @@ export function installVane(home: Home): Home {
   return home.lit && home.bank.includes("vane") && !home.signaled ? { ...home, signaled: true } : home;
 }
 
+export function previewLantern(home:Home, motif:MotifId): Home {
+  if (home.storycraft.lantern || !home.storycraft.origins.crest || !previewMotifs(home.storycraft).includes(motif)) return home;
+  return { ...home, storycraft:{ ...home.storycraft, revision:home.storycraft.revision + 1, lantern:{ motif, socket:"porch" } } };
+}
+
+/** A new local outing can witness missing origins without removing earlier discoveries. */
+export function provenanceBank(home:Pick<Home,"bank" | "storycraft">): Item[] {
+  return home.bank.filter(item => !((item === "lens" && !home.storycraft.origins.crest) || (item === "moth" && !home.storycraft.origins.moth)));
+}
+
+function decodePreview(value:unknown, bank:Item[]): LocalPreview | null {
+  if (!value || typeof value !== "object") return null;
+  const data = value as LocalPreview;
+  if (data.rulesVersion !== RULES_VERSION || data.contentVersion !== CONTENT_VERSION ||
+      !Number.isSafeInteger(data.revision) || data.revision < 0 || !data.origins || typeof data.origins !== "object") return null;
+  for (const motif of ["crest","moth"] as const) {
+    const origin = data.origins[motif];
+    if (origin === null) continue;
+    if (!origin || origin.area !== "beacon" || !bank.includes(motif === "crest" ? "lens" : "moth")) return null;
+    const run = replayOuting(origin.tool, origin.banked, origin.actions, origin.area);
+    if (!run || !deriveStoryEvents(run).some(e => e.id === (motif === "crest" ? "lens_return" : "moth_return"))) return null;
+  }
+  if (data.lantern !== null && (!data.lantern || !data.origins.crest ||
+      !previewMotifs(data).includes(data.lantern.motif) ||
+      (data.lantern.socket !== "porch" && data.lantern.socket !== "dock"))) return null;
+  return data;
+}
+
 function decode(raw: string): Home | null {
   const data = JSON.parse(raw);
-  if ((data?.version !== 1 && data?.version !== 2) || !Array.isArray(data.bank) || data.bank.length > 5 ||
+  if ((data?.version !== 1 && data?.version !== 2 && data?.version !== 3) || !Array.isArray(data.bank) || data.bank.length > 5 ||
       !data.bank.every(isItem) || new Set(data.bank).size !== data.bank.length ||
       typeof data.lit !== "boolean" || (data.lit && !data.bank.includes("lens"))) return null;
   const signaled = data.version === 1 ? false : data.signaled;
@@ -82,17 +112,22 @@ function decode(raw: string): Home | null {
       (signaled && (!data.lit || !data.bank.includes("vane")))) return null;
   // Earlier prototype saves held the line itself. Editing dialogue must never erase a harbor.
   const memoryId = memoryIds.find(id => id === data.memoryId || memoryLines[id] === data.memory);
+  const storycraft = data.version === 3 ? decodePreview(data.storycraft, data.bank) : newPreview();
+  if (!storycraft) return null;
   let active: Outing | null = null;
   if (data.active !== null) {
     const area = data.active?.area === undefined ? "beacon" : data.active.area;
     if (data.version === 1 && area !== "beacon") return null;
-    active = replayOuting(data.active?.tool, data.bank, data.active?.actions, area);
+    const initialBank = data.version === 3 && data.active?.banked !== undefined ? data.active.banked : data.bank;
+    if (JSON.stringify(initialBank) !== JSON.stringify(data.bank) &&
+        (area !== "beacon" || JSON.stringify(initialBank) !== JSON.stringify(provenanceBank({bank:data.bank,storycraft})))) return null;
+    active = replayOuting(data.active?.tool, initialBank, data.active?.actions, area);
     if (active?.outcome !== "active" || (active.area === "wind" && !data.lit)) return null;
   }
   const challengeActive = data.challengeActive ?? false;
   if (typeof challengeActive !== "boolean" ||
       (challengeActive && (active?.tool !== "rope" || active.area !== "beacon"))) return null;
-  return { bank: data.bank, lit: data.lit, signaled, memory: memoryId ? memoryLines[memoryId] : "", active, challengeActive };
+  return { bank: data.bank, lit: data.lit, signaled, memory: memoryId ? memoryLines[memoryId] : "", active, challengeActive, storycraft };
 }
 
 export function readHome(storage?: Store): ReadResult {
@@ -123,9 +158,11 @@ export function writeHome(home: Home, storage?: Store): boolean {
       tool: home.active.tool,
       actions: home.active.actions,
       ...(home.active.area === "wind" ? { area: "wind" } : {}),
+      ...(JSON.stringify(home.active.banked) !== JSON.stringify(home.bank) ? {banked:home.active.banked} : {}),
     };
     const memoryId = memoryIds.find(id => memoryLines[id] === home.memory) ?? null;
-    const raw = JSON.stringify({ version: 2, bank: home.bank, lit: home.lit, signaled: home.signaled, memoryId, challengeActive: home.challengeActive, active });
+    const raw = JSON.stringify({ version: 3, storycraft:home.storycraft, bank: home.bank, lit: home.lit, signaled: home.signaled, memoryId, challengeActive: home.challengeActive, active });
+    if (!decode(raw)) return false;
     store.setItem(KEY, raw);
     observed.set(store, raw);
     return true;

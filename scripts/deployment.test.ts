@@ -25,7 +25,16 @@ test("Tidebound deployment cannot target legacy state or reuse a mismatched regi
  expect(()=>assertIsolatedTidebound("legacy.testnet","legacy.testnet",true)).toThrow();
  expect(()=>assertIsolatedTidebound("fresh.testnet","legacy.testnet",false)).toThrow();
  const root={registry:"fresh.testnet",items:"items.fresh.testnet",network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
- expect(()=>assertTideboundProtocol("fresh.testnet",root,{registry:"fresh.testnet"})).not.toThrow();
- expect(()=>assertTideboundProtocol("fresh.testnet",null,{registry:"fresh.testnet"})).toThrow();
- expect(()=>assertTideboundProtocol("fresh.testnet",root,{registry:"legacy.testnet"})).toThrow();
+ const items={registry:"fresh.testnet",network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
+ expect(()=>assertTideboundProtocol("fresh.testnet",root,items)).not.toThrow();
+ expect(()=>assertTideboundProtocol("fresh.testnet",null,items)).toThrow();
+ expect(()=>assertTideboundProtocol("fresh.testnet",root,{...items,registry:"legacy.testnet"})).toThrow();
+ for(const target of ["root","items"] as const){
+  for(const field of target==="root"?["registry","items","network","rules_version","content_version"]:["registry","network","rules_version","content_version"]){
+   for(const value of [undefined,"wrong"]){
+    const p:Record<string,unknown>={...root},i:Record<string,unknown>={...items};(target==="root"?p:i)[field]=value;
+    expect(()=>assertTideboundProtocol("fresh.testnet",p,i)).toThrow();
+   }
+  }
+ }
 });

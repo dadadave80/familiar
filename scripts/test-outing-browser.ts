@@ -13,7 +13,7 @@ if (target) {
   assert(!target.username && !target.password && target.pathname === "/" && !target.search && !target.hash, "Pass a plain site origin");
   assert(target.origin === "https://familiar-two.vercel.app" || (target.protocol === "http:" && ["127.0.0.1","localhost"].includes(target.hostname)), "Use Familiar production or a local preview");
 }
-const server = target ? null : await createServer({ root: web, envDir: false, envPrefix: [], logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
+const server = target ? null : await createServer({ cacheDir:join(captures,"vite-cache"), root: web, envDir: false, envPrefix: [], logLevel: "error", server: { host: "127.0.0.1", port: 0 } });
 
 const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
 const action = (page: Page, value: string) => page.locator(`[data-action="${value}"]`);
@@ -34,9 +34,25 @@ async function play(page: Page, moves: readonly Action[]) {
 }
 
 async function onTurn(page: Page, turn: number, lane: string) {
-  await expect(page.getByText(`Turn ${turn} of 15`, {exact:true})).toBeVisible();
+  await expect(scene(page)).toHaveAttribute("data-turn",String(turn));
   await expect(button(page, `Inspect ${lane}`)).toHaveAttribute("data-here","true");
-  await expect(action(page, "wait")).toBeEnabled();
+  if(await action(page,"wait").count())await expect(action(page, "wait")).toBeEnabled();
+}
+
+async function chooseOuting(page:Page,name:string) {
+  await button(page,"Prepare outing").click();await button(page,"Change outing").click();await button(page,name).click();
+}
+async function chooseTool(page:Page,name:"Rope"|"Lantern") {
+  await button(page,"Prepare outing").click();await button(page,"Change tool").click();await page.getByRole("radio",{name:new RegExp(name,"i")}).check();await button(page,`Use ${name}`).click();
+}
+async function memory(page:Page,match:RegExp) {
+  await button(page,"Menu").click();await button(page,"Mochi’s memory").click();await expect(page.locator(".of-memory")).toContainText(match);await button(page,"Back to harbor").click();
+}
+async function event(page:Page,match:RegExp) {
+  await expect(page.getByTestId("turn-consequence")).toBeVisible();
+  await button(page,"Menu").click();await button(page,"Outing notes").click();await button(page,"Last turn").click();
+  await expect(page.locator(".of-panel-page:visible .of-intent")).toContainText(match);
+  await button(page,"Back to outing").click();
 }
 
 type Point = {x:number; y:number; id:number};
@@ -65,14 +81,18 @@ async function capture(page: Page, name: string) {
     await document.fonts.ready;
     await Promise.all([...document.images].map(image => image.decode()));
   });
-  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), name + " fits the viewport");
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight), name + " fits without page scrolling");
+  const overflow=await page.locator(".of-panel-page:visible").evaluateAll(nodes=>nodes.filter(n=>n.scrollHeight>n.clientHeight+1||n.scrollWidth>n.clientWidth+1).map(n=>n.id));
+  assert.deepEqual(overflow,[],name+" has no scrolling panel");
+  const outside=await page.locator("button:visible,a:visible,input:visible").evaluateAll(nodes=>nodes.filter(n=>{const r=n.getBoundingClientRect();return r.left<-.5||r.top<-.5||r.right>innerWidth+.5||r.bottom>innerHeight+.5}).map(n=>n.textContent));
+  assert.deepEqual(outside,[],name+" keeps every action in the viewport");
   const small = await page.locator("button:visible, summary:visible, .of-kits label:visible").evaluateAll(nodes =>
     nodes.filter(node => {
       const {width, height} = node.getBoundingClientRect();
       return width < 44 || height < 44;
     }).map(node => node.textContent?.trim()));
   assert.deepEqual(small, [], name + " controls have 44px touch targets");
-  if (await page.getByTestId("wind-routing").count()) {
+  if (await scene(page).getAttribute("data-orientation") !== null) {
     const overlaps = await scene(page).evaluate(stage => {
       const nodes = [...stage.querySelectorAll(".of-source, .of-strike span, .of-vane-find, .of-socket, .of-lanes button")];
       const collisions:string[] = [];
@@ -93,8 +113,8 @@ async function capture(page: Page, name: string) {
   // Keep mobile captures in the real touch viewport, including its input media queries.
   const touch = await page.evaluate(() => navigator.maxTouchPoints > 0);
   if (touch) await page.evaluate(() => window.scrollTo({top:0,behavior:"instant"}));
-  await page.screenshot({ path: join(captures, name + ".png"), fullPage: !touch });
-  if (touch && await page.getByTestId("wind-routing").count()) {
+  await page.screenshot({ path: join(captures, name + ".png"), fullPage: false });
+  if (touch && await scene(page).getAttribute("data-orientation") !== null) {
     await page.locator(".of-controls").screenshot({path:join(captures, name + "-controls.png")});
   }
 }
@@ -135,11 +155,11 @@ async function dryOuting(page: Page) {
   await onTurn(page, 3, "Left");
   await page.keyboard.press("ArrowLeft");
   await onTurn(page, 3, "Left");
-  await expect(page.getByText(/wave will strike Left/i)).toBeVisible();
+  await expect(page.getByText(/wave strikes Left/i)).toBeVisible();
   await expect(action(page, "move:right")).toBeDisabled();
   await page.reload();
   await expect(page.getByText("Turn 3 of 15")).toBeVisible();
-  await expect(page.getByText(/wave will strike Left/i)).toBeVisible();
+  await expect(page.getByText(/wave strikes Left/i)).toBeVisible();
   await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "brace");
   await capture(page, "desktop-locked");
   // Second key-down is an OS repeat. Center still has a legal Right move after settling.
@@ -148,7 +168,7 @@ async function dryOuting(page: Page) {
   await page.keyboard.down("ArrowRight");
   await page.keyboard.up("ArrowRight");
   await onTurn(page, 4, "Center");
-  await expect(page.getByText(/left shell split open.*stayed dry/i)).toBeVisible();
+  await event(page,/left shell split open.*stayed dry/i);
   await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "relieved");
   await play(page, ["reel:lens"]);
   await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "pull-in");
@@ -159,17 +179,17 @@ async function dryOuting(page: Page) {
   assert.equal(await button(page, "Wind Gate").isEnabled().catch(() => false), false);
   await action(page, "install").click();
   await expect(scene(page)).toHaveAttribute("data-lit", "true");
-  await button(page, "Try the two-shell challenge").click();
+  await button(page,"Menu").click();await button(page, "Try the two-shell challenge").click();
   await expect(page.getByText(/Open both shells with the Rope/i)).toBeVisible();
   await button(page, "Start challenge").click();
   await page.reload();
-  await expect(page.getByText(/two-shell challenge: open both shells/i)).toBeVisible();
+  await expect(page.getByText("Open both shells. Bring Mochi home dry.",{exact:true})).toBeVisible();
   await play(page, ["wait", "move:left", "move:center", "move:right", "wait", "move:center", "move:right", "take:moth", "move:center", "return"]);
   await expect(page.getByText(/two-shell challenge complete/i)).toBeVisible();
   await expect(page.getByText("Wind-moth in the garden")).toBeVisible();
-  await button(page, "Make a challenge").click();
+  await button(page,"Menu").click();await button(page, "Make a challenge").click();
   const invite = page.getByLabel("Challenge invitation");
-  const text = await invite.inputValue();
+  const text = await invite.innerText();
   assert.match(text, /10 turns/);
   assert.match(text, /both shells/i);
   assert.doesNotMatch(text, /move:|reel:|0x[0-9a-f]{20,}/i);
@@ -186,39 +206,39 @@ async function dryOuting(page: Page) {
   }));
   await button(page, "Copy invitation").click();
   await expect(page.locator("html")).toHaveAttribute("data-copied-invite", text);
+  await button(page,"Back to harbor").click();
   await button(page, "Rest at the harbor").click();
   await expect(scene(page)).toHaveAttribute("data-lit", "true");
   await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "neutral");
   await expect(action(page, "wait")).toHaveCount(0);
   await page.reload();
   await expect(page.getByText("Wind-moth in the garden")).toBeVisible();
-  await expect(page.getByText(/little wings all the way home/i)).toBeVisible();
+  await memory(page,/little wings all the way home/i);
   await capture(page, "desktop-restored-garden");
 }
 
 async function lanternOuting(page: Page) {
   const client = await page.context().newCDPSession(page);
-  await page.getByRole("radio", {name:/Lantern/}).check();
+  await chooseTool(page,"Lantern");
   await action(page, "depart").click();
   await expect(page.locator(".of-touch-hint")).toBeVisible();
-  // Give the browser scroll room to discriminate a real vertical pan from a game swipe.
-  const scrollRoom = await page.addStyleTag({content:"body {min-height: 200vh}"});
+  // Vertical pans stay within the fixed game viewport and must not spend a turn.
   await page.evaluate(()=>window.scrollTo(0,0));
   let start = await touchStart(page);
   const top = await page.evaluate(()=>scrollY);
   await drag(client,[start],0,-80);
-  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(top);
+  assert.equal(await page.evaluate(()=>scrollY),top,"vertical gesture does not scroll the game");
   await onTurn(page, 1, "Center");
   await page.evaluate(()=>window.scrollTo(0,0));
   start = await touchStart(page);
   await client.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[start]});
-  // Once a pan has scrolled the document, a sideways tail must never spend a turn.
+  // A vertical-first gesture with a sideways tail must never spend a turn.
   for (const [dx,dy] of [[0,-24],[0,-56],[-70,-60],[-115,-60]]) {
     await client.send("Input.dispatchTouchEvent",{type:"touchMove",touchPoints:[{...start,x:start.x+dx,y:start.y+dy}]});
   }
   await client.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
   await onTurn(page, 1, "Center");
-  await scrollRoom.evaluate(el=>el.parentNode?.removeChild(el));
+
   start = await touchStart(page);
   await drag(client,[start],-45,50);
   await onTurn(page, 1, "Center");
@@ -234,7 +254,7 @@ async function lanternOuting(page: Page) {
   await button(page, "Close inspection").tap();
   await expect(button(page, "Lure wave")).toBeDisabled();
   await play(page, ["wait", "wait"]);
-  await expect(page.getByText(/wave will strike Center/i)).toBeVisible();
+  await expect(page.getByText(/wave strikes Center/i)).toBeVisible();
   await button(page, "Lure wave").click();
   await action(page, "lure:right").focus();
   await page.keyboard.press("ArrowLeft");
@@ -244,7 +264,7 @@ async function lanternOuting(page: Page) {
   await expect(page.getByText("Turn 3 of 15")).toBeVisible();
   await button(page, "Lure wave").click();
   await play(page, ["lure:right"]);
-  await expect(page.getByText(/right shell split open.*stayed dry/i)).toBeVisible();
+  await event(page,/right shell split open.*stayed dry/i);
   await onTurn(page, 4, "Center");
   start = await touchStart(page,"Center");
   await drag(client,[start],-79,3);
@@ -258,9 +278,9 @@ async function lanternOuting(page: Page) {
   await drag(client,[start],-75,0);
   await onTurn(page, 5, "Left");
   await play(page, ["wait", "wait"]);
-  await expect(page.getByText(/left shell split open.*2 Resolve left/i)).toBeVisible();
+  await event(page,/left shell split open.*2 Resolve left/i);
   await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "startled");
-  await expect(page.getByText(/Beacon Lens is exposed/i)).toBeVisible();
+  await expect(action(page,"take:lens")).toBeEnabled();
   await expect(page.locator(".of-touch-hint")).toBeVisible();
   // The browser may still register a reduced 0.001ms animation before its first frame.
   const durations = await scene(page).evaluate(stage =>
@@ -277,18 +297,19 @@ async function lanternOuting(page: Page) {
   await expect(action(page, "install")).toBeVisible();
   await action(page, "install").click();
   await expect(scene(page)).toHaveAttribute("data-lit", "true");
-  await expect(page.getByText(/wrung out my scarf/i)).toBeVisible();
+  await memory(page,/wrung out my scarf/i);
   await page.reload();
   await expect(scene(page)).toHaveAttribute("data-lit", "true");
-  await button(page, "Beacon Court").click();
+  await chooseOuting(page, "Beacon Court");
   await action(page, "depart").click();
   const circuit: Action[] = ["wait", "move:left", "move:center", "wait", "move:right", "move:center"];
   await play(page, [...circuit, ...circuit]);
-  await expect(page.getByText(/3 actions left, including the return/i)).toBeVisible();
+  await onTurn(page,13,"Center");
   await play(page, ["wait", "move:left", "move:center"]);
   await expect(page.getByRole("heading", {name:"The tide closed in."})).toBeVisible();
   await expect(scene(page)).toHaveAttribute("data-lit","true");
   await expect(page.getByText(/tide closed the route.*satchel is empty/i)).toBeVisible();
+  await button(page,"Last turn").click();await expect(page.getByTestId("final-turn-result")).toContainText("fifteenth action closed the route");await capture(page,"mobile-flood-final-turn");await button(page,"Back to harbor").click();
   await capture(page, "mobile-flood-refuge");
 }
 
@@ -298,6 +319,7 @@ async function temporaryOuting(page: Page) {
   await button(page, "Start challenge").click();
   for (let i = 0; i < 9; i++) await play(page, ["wait"]);
   await expect(page.getByRole("heading", {name:"Carried home."})).toBeVisible();
+  await button(page,"Last turn").click();await expect(page.getByTestId("final-turn-result")).toContainText(/wave struck center.*0 Resolve left.*ran out of Resolve/i);await capture(page,"small-mobile-zero-resolve-final-turn");await button(page,"Back to harbor").click();
   await button(page,"Try again").click();
   await action(page,"depart").click();
   await expect(page.getByText("Turn 1 of 15")).toBeVisible();
@@ -332,15 +354,17 @@ async function allowStorageWrites(page: Page) {
 async function windOuting(page: Page, kit: "rope" | "lantern", width: number) {
   await expect(scene(page)).toHaveAttribute("data-lit", "true");
   await expect(scene(page)).toHaveAttribute("data-signaled", "false");
-  await button(page, "Wind Gate").click();
+  await chooseOuting(page, "Wind Gate");
   if (kit === "lantern") {
-    await page.getByText("Moonpool Chart · Wind Gate", {exact:true}).click();
+    await button(page,"Prepare outing").click();await button(page,"Change outing").click();
+    await button(page,"Moonpool Chart · Wind Gate").click();
     await expect(page.getByText(/On arrival, Left exits Center, Center exits Right, and Right exits Left/)).toBeVisible();
+    await button(page,"Back to outings").click();await button(page,"Back to harbor").click();
   }
-  await page.getByRole("radio", {name: new RegExp(kit, "i")}).check();
+  await chooseTool(page,kit === "rope"?"Rope":"Lantern");
   await action(page, "depart").click();
   await expect(page.getByRole("region", {name:"Wind Gate playfield"})).toBeVisible();
-  const routing = page.getByTestId("wind-routing");
+  const routing = scene(page);
   await expect(routing).toHaveAttribute("data-orientation", "1");
   await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "false");
   await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "false");
@@ -373,7 +397,7 @@ async function windOuting(page: Page, kit: "rope" | "lantern", width: number) {
   await play(page, ["wait"]);
   await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
   await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "false");
-  await expect(page.getByText(/Mochi stayed dry/)).toBeVisible();
+  await event(page,/Mochi stayed dry/);
   await play(page, windDry.slice(3, 6));
   await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "true");
   await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
@@ -415,7 +439,7 @@ async function windOuting(page: Page, kit: "rope" | "lantern", width: number) {
     await expect(page.getByText("Saved on this device", {exact:true})).toBeVisible();
     await capture(page, `wind-${width}-${kit}-restored`);
     await button(page, "Prepare another outing").click();
-    await button(page, "Wind Gate").click();
+    await chooseOuting(page, "Wind Gate");
     await action(page, "depart").click();
     await play(page, ["move:left", "wait"]);
     await page.reload();
@@ -431,10 +455,10 @@ async function windOuting(page: Page, kit: "rope" | "lantern", width: number) {
 }
 
 async function windRotationAndLure(page: Page) {
-  await button(page, "Wind Gate").click();
-  await page.getByRole("radio", {name:/Lantern/}).check();
+  await chooseOuting(page, "Wind Gate");
+  await chooseTool(page,"Lantern");
   await action(page, "depart").click();
-  const routing = page.getByTestId("wind-routing");
+  const routing = scene(page);
   await play(page, ["wait", "wait"]);
   await expect(routing).toHaveAttribute("data-source", "center");
   await expect(routing).toHaveAttribute("data-exit", "right");
@@ -443,7 +467,7 @@ async function windRotationAndLure(page: Page) {
   await play(page, ["turn:vane"]);
   await expect(routing).toHaveAttribute("data-orientation", "2");
   await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "true");
-  await expect(page.getByText(/wave entered center and struck left/i)).toBeVisible();
+  await event(page,/wave entered center and struck left/i);
   await play(page, ["move:left", "wait"]);
   await expect(routing).toHaveAttribute("data-source", "left");
   await expect(routing).toHaveAttribute("data-exit", "right");
@@ -451,29 +475,29 @@ async function windRotationAndLure(page: Page) {
   await expect(action(page, "lure:right")).toContainText(/center/i);
   await play(page, ["lure:right"]);
   await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
-  await expect(page.getByText(/wave entered right and struck center/i)).toBeVisible();
+  await event(page,/wave entered right and struck center/i);
   await play(page, ["move:center", "take:vane", "return"]);
   await expect(page.getByText(/9 actions · 3 \/ 3 Resolve/)).toBeVisible();
   await expect(action(page, "install-vane")).toBeVisible();
 }
 
 async function windSocketSplash(page: Page) {
-  await button(page, "Wind Gate").click();
+  await chooseOuting(page, "Wind Gate");
   await action(page, "depart").click();
   await play(page, ["move:left", "wait", "move:center"]);
   await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
-  await expect(page.getByText(/2 Resolve left/)).toBeVisible();
+  await event(page,/2 Resolve left/);
   await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "startled");
   await capture(page, "wind-socket-and-splash");
   await page.reload();
   await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
-  await expect(page.getByText(/2 Resolve left/)).toBeVisible();
+  await event(page,/2 Resolve left/);
   await play(page, ["return"]);
   await expect(action(page, "install-vane")).toHaveCount(0);
   await expect(scene(page)).toHaveAttribute("data-signaled", "false");
   await button(page, "Prepare another outing").click();
-  await button(page, "Wind Gate").click();
-  await page.getByRole("radio", {name:/Rope/}).check();
+  await chooseOuting(page, "Wind Gate");
+  await chooseTool(page,"Rope");
   await action(page, "depart").click();
   await play(page, windDry.slice(0,6));
   await play(page, ["move:left", "reel:vane"]);
@@ -539,17 +563,21 @@ try {
       {width:320, height:750, name:"legacyActiveBeacon", run:async (page:Page) => {
         await expect(page.getByRole("region", {name:"Beacon Court playfield"})).toBeVisible();
         await onTurn(page, 3, "Left");
-        await expect(page.getByText(/wave will strike Left/i)).toBeVisible();
+        await expect(page.getByText(/wave strikes Left/i)).toBeVisible();
         await play(page, ["move:center", "reel:lens", "return"]);
         await expect(action(page, "install")).toBeEnabled();
         await expect(scene(page)).toHaveAttribute("data-lit", "false");
         assert.equal(await button(page, "Wind Gate").isEnabled().catch(() => false), false);
         await action(page, "install").click();
         await button(page, "Prepare another outing").click();
+        await button(page,"Prepare outing").click();await button(page,"Change outing").click();
         await expect(button(page, "Wind Gate")).toBeEnabled();
+        await button(page,"Back to harbor").click();
         await openGame(page, origin!, "/");
         await expect(scene(page)).toHaveAttribute("data-lit", "true");
+        await button(page,"Prepare outing").click();await button(page,"Change outing").click();
         await expect(button(page, "Wind Gate")).toBeEnabled();
+        await button(page,"Back to harbor").click();
       }},
     ];
     for (const {width,height,name,run} of windScenarios) {

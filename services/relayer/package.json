@@ -5,5 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "bun src/index.ts"
+  },
+  "dependencies": {
+    "@privy-io/node": "0.39.0"
   }
 }

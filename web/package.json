@@ -12,7 +12,9 @@
   "dependencies": {
     "@fast-auth-near/browser-sdk": "1.4.2",
     "@fast-auth-near/javascript-provider": "1.4.1",
+    "@privy-io/react-auth": "3.51.3",
     "buffer": "6.0.3",
-    "near-api-js-legacy": "npm:near-api-js@5.1.1"
+    "near-api-js-legacy": "npm:near-api-js@5.1.1",
+    "process": "0.11.10"
   }
 }

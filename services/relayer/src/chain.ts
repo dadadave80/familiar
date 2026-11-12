@@ -9,16 +9,23 @@ import {
   type SerializedReturnValue,
 } from "near-api-js";
 import type { Backend, RelayResult } from "./app";
+import { AccountDoesNotExistError } from "near-api-js/rpc-errors";
+import { isPlayerAccount, usernameAccountId, UsernameError, type UsernameAvailability } from "../../../web/src/account/names";
 import { accountId, Quota, validateDelegate } from "./relay";
 import { confirmedValue } from "./outcome";
 import { validateSigningRequest, type AuthSigningContext } from "./auth/sign";
+import { assertTideboundProtocol } from "../../../web/src/tidebound/protocol";
+
+export type AccountBackendConfig =
+  | (Omit<AuthSigningContext,"root"|"origin"> & {provider?:"near-auth"})
+  | {provider:"privy";items:string;origins:readonly string[]};
 
 export function createBackend(
   root: string,
   relayerId: string,
   privateKey: KeyPairString,
   rpcUrl: string,
-  auth?: Omit<AuthSigningContext,"root" | "origin">,
+  auth?: AccountBackendConfig,
 ): Backend {
   if (
     !accountId(root) ||
@@ -27,13 +34,14 @@ export function createBackend(
     !relayerId.endsWith(".testnet")
   )
     throw new Error("Testnet account IDs are required.");
+  if(auth&&auth.items!==`items.${root}`)throw new Error("ERR_AUTH_STACK");
   const provider = new JsonRpcProvider({ url: rpcUrl });
   const relayer = new Account(relayerId, provider, privateKey);
   const playerQuota = new Quota(30, 60_000);
   const daily = new Quota(5000, 86_400_000, 1);
   const authDaily = new Quota(100, 86_400_000, 1);
   const signatures = new Map<string, {until:number;result:Promise<unknown>}>();
-  const pendingGuests = new Map<string, Promise<string>>();
+  const pendingGuests = new Map<string, {username?:string;result:Promise<string>}>();
   const deliveries = new Map<
     string,
     { until: number; result: Promise<RelayResult> }
@@ -64,11 +72,23 @@ export function createBackend(
   async function compatibleStack() {
     if (!auth) return;
     const protocol = await view<{network:string;registry:string;items:string;rules_version:string;content_version:string}>("tidebound_protocol",{});
-    const items = await provider.callFunction<{registry:string}>({contractId:auth.items,method:"craft_protocol",args:{},blockQuery:{finality:"final"}});
-    if (!protocol || protocol.network !== "testnet" || protocol.registry !== root || protocol.items !== auth.items || items?.registry !== root ||
-      protocol.rules_version !== "tidebound_h1_v1" || protocol.content_version !== "first_light_v1") throw new Error("ERR_AUTH_STACK");
+    const items = await provider.callFunction<Record<string,string>>({contractId:auth.items,method:"craft_protocol",args:{},blockQuery:{finality:"final"}});
+    assertTideboundProtocol(root,protocol,items,"ERR_AUTH_STACK");
+  }
+  async function availability(username:string):Promise<UsernameAvailability> {
+    const accountId=usernameAccountId(username,root);
+    const ledgerAvailable=await view<boolean>("player_name_available",{username});
+    if(typeof ledgerAvailable!=="boolean")throw new Error("ERR_AUTH_STACK");
+    let exists=true;
+    try{await provider.viewAccount({accountId,blockQuery:{finality:"final"}});}
+    catch(error){
+      if(error instanceof AccountDoesNotExistError && error.accountId===accountId)exists=false;
+      else throw error;
+    }
+    return {username,accountId,available:ledgerAvailable&&!exists,root,network:"testnet"};
   }
   return {
+    accountProvider:auth ? auth.provider??"near-auth":undefined,
     async ready() {
       await network();
       await stamps();
@@ -82,35 +102,50 @@ export function createBackend(
       });
       return true;
     },
-    async guest(publicKey) {
+    usernameAvailable:auth ? async username=>{
+      usernameAccountId(username,root);
+      await network();await compatibleStack();
+      return availability(username);
+    }:undefined,
+    async guest(publicKey,username) {
       const existing = pendingGuests.get(publicKey);
-      if (existing) return existing;
+      if(existing){
+        if(auth && existing.username!==username)throw new UsernameError("ERR_USERNAME_PENDING");
+        return existing.result;
+      }
       const work = (async () => {
         await network();
         await compatibleStack();
         const registered = await view<string>("get_player", {
           public_key: publicKey,
         });
-        if (registered) return registered;
+        if(registered){
+          if(!isPlayerAccount(registered,root))throw new Error("ERR_AUTH_BINDING");
+          return registered;
+        }
+        if(auth){
+          if(username===undefined)throw new UsernameError("ERR_USERNAME_REQUIRED");
+          if(!(await availability(username)).available)throw new UsernameError("ERR_USERNAME_TAKEN");
+        }
         await stamps();
         const created = await relayer.callFunction<string>({
           contractId: root,
-          methodName: "create_player",
-          args: { public_key: publicKey },
+          methodName: auth ? "create_named_player":"create_player",
+          args: auth ? {public_key:publicKey,username}:{public_key:publicKey},
           gas: 100_000_000_000_000n,
           waitUntil: "FINAL",
         });
-        if (!created) throw new Error("ERR_CREATE_PLAYER");
+        if (!created || !isPlayerAccount(created,root)) throw new Error("ERR_CREATE_PLAYER");
         return created;
       })();
-      pendingGuests.set(publicKey, work);
+      pendingGuests.set(publicKey, {username,result:work});
       try {
         return await work;
       } finally {
         pendingGuests.delete(publicKey);
       }
     },
-    authSign: auth ? async (value, origin) => {
+    authSign: auth && auth.provider!=="privy" ? async (value, origin) => {
       const checked = validateSigningRequest(value,{...auth,root,origin});
       const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(checked.transaction.encode())))).map(b=>b.toString(16).padStart(2,"0")).join("");
       for (const [id,entry] of signatures) if (entry.until < Date.now()) signatures.delete(id);

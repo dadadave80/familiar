@@ -1,3 +1,4 @@
+import "./browser-globals";
 import React from "react";
 import { createRoot } from "react-dom/client";
 // Only the legacy harbor needs the testnet signing client.

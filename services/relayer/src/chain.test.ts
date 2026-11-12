@@ -110,7 +110,7 @@ test("Auth sponsorship verifies compatible stack, Ed25519 derivation and binding
     spyOn(JsonRpcProvider.prototype,"getNetworkId").mockResolvedValue("testnet"),
     spyOn(JsonRpcProvider.prototype,"callFunction").mockImplementation((async (input:{method:string;args:unknown})=>{
       if(input.method==="tidebound_protocol") return {network:"testnet",registry:root,items:`items.${root}`,rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
-      if(input.method==="craft_protocol")return {registry:root};
+      if(input.method==="craft_protocol")return {registry:root,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
       if(input.method==="derived_public_key") { derivedArgs=input.args;return key.getPublicKey().toString(); }
       if(input.method==="get_player") return wrongBinding ? `p-2.${root}`:sender;
       throw Error("unexpected method");
@@ -140,7 +140,7 @@ test("Tidebound sponsor cannot pay a delegated native companion purchase princip
  const signed=base64Encode(encodeSignedDelegate((await new KeyPairSigner(key).signDelegateAction(delegate)).signedDelegate));
  const mocks=[spyOn(JsonRpcProvider.prototype,"getNetworkId").mockResolvedValue("testnet"),spyOn(JsonRpcProvider.prototype,"viewBlock").mockResolvedValue({header:{height:100,hash:"11111111111111111111111111111111"}} as Awaited<ReturnType<JsonRpcProvider["viewBlock"]>>),
     spyOn(JsonRpcProvider.prototype,"experimental_protocolConfig").mockResolvedValue({chain_id:"testnet",transaction_validity_period:86400})];
- try{const backend=createBackend(root,`relayer.${root}`,key.toString(),"https://test.rpc.fastnear.com",{items:`items.${root}`,clientId:"test",origins:[]});await expect(backend.relay(signed)).rejects.toThrow("ERR_PLAYER_FUNDED_PURCHASE_REQUIRED");}
+ try{for(const auth of [{items:`items.${root}`,clientId:"test",origins:[]},{provider:"privy" as const,items:`items.${root}`,origins:[]}]){const backend=createBackend(root,`relayer.${root}`,key.toString(),"https://test.rpc.fastnear.com",auth);await expect(backend.relay(signed)).rejects.toThrow("ERR_PLAYER_FUNDED_PURCHASE_REQUIRED");if(auth.provider==="privy")expect(backend.authSign).toBeUndefined();}}
  finally{for(const m of mocks)m.mockRestore();}
 });
 
@@ -156,7 +156,7 @@ test("native Auth sponsorship uses current protocol validity and rejects malform
   spyOn(JsonRpcProvider.prototype,"getNetworkId").mockResolvedValue("testnet"),
   spyOn(JsonRpcProvider.prototype,"callFunction").mockImplementation((async(input:{method:string})=>{
    if(input.method==="tidebound_protocol")return{network:"testnet",registry:root,items:`items.${root}`,rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
-   if(input.method==="craft_protocol")return{registry:root};
+   if(input.method==="craft_protocol")return{registry:root,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
    if(input.method==="derived_public_key")return key.getPublicKey().toString();
    if(input.method==="get_player")return sender;
    throw Error("unexpected method");
@@ -185,4 +185,72 @@ test("native Auth sponsorship uses current protocol validity and rejects malform
    await expect(backend().authSign!(value,origin)).rejects.toThrow();expect(sends).toBe(2);
   }
  } finally{for(const m of mocks)m.mockRestore();}
+});
+
+test("named signup checks registry and actual accounts, preserves key binding and rejects competing choices",async()=>{
+ const root="familiar-game.testnet",relayer=`relayer.${root}`,sponsor=KeyPair.fromRandom("ed25519"),pub=()=>KeyPair.fromRandom("ed25519").getPublicKey().toString();
+ const {AccountDoesNotExistError}=await import("near-api-js/rpc-errors");
+ const bindings=new Map<string,string>(),accounts=new Set([`occupied.${root}`]),calls:{methodName:string;args:Record<string,string>}[]=[];
+ let outage=false,ledgerAvailable=true,stackCompatible=true;let protocolOverrides:Record<string,unknown>={},itemOverrides:Record<string,unknown>={};let release!:()=>void,entered!:()=>void;
+ const wait=new Promise<void>(resolve=>{release=resolve}),active=new Promise<void>(resolve=>{entered=resolve});
+ const mocks=[
+  spyOn(JsonRpcProvider.prototype,"getNetworkId").mockResolvedValue("testnet"),
+  spyOn(JsonRpcProvider.prototype,"callFunction").mockImplementation((async({method,args}:{method:string;args:Record<string,string>})=>{
+   if(method==="tidebound_protocol")return {network:"testnet",registry:stackCompatible?root:"other.testnet",items:`items.${root}`,rules_version:"tidebound_h1_v1",content_version:"first_light_v1",...protocolOverrides};
+   if(method==="craft_protocol")return {registry:root,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1",...itemOverrides};
+   if(method==="get_player")return bindings.get(args.public_key)??null;
+   if(method==="player_name_available")return ledgerAvailable;
+   throw Error("unexpected fixture view "+method);
+  }) as JsonRpcProvider["callFunction"]),
+  spyOn(JsonRpcProvider.prototype,"viewAccount").mockImplementation((async({accountId}:{accountId:string})=>{
+   if(accountId===relayer||accounts.has(accountId))return {amount:10n**25n,storage_usage:0};
+   if(outage)throw Error("RPC unavailable");
+   throw new AccountDoesNotExistError(accountId,"11111111111111111111111111111111",100);
+  }) as JsonRpcProvider["viewAccount"]),
+  spyOn(Account.prototype,"callFunction").mockImplementation((async(input:{methodName:string;args:Record<string,string>})=>{
+   calls.push(input);
+   if(input.methodName==="create_player")return `p-1.${root}`;
+   if(input.methodName!=="create_named_player")throw Error("unexpected fixture mutation");
+   if(input.args.username==="slow"){entered();await wait;}
+   if(input.args.username==="raced")throw Error("ERR_USERNAME_TAKEN");
+   const account=`${input.args.username}.${root}`;bindings.set(input.args.public_key,account);accounts.add(account);return account;
+  }) as Account["callFunction"]),
+ ];
+ try{
+  const backend=createBackend(root,relayer,sponsor.toString(),"https://test.rpc.fastnear.com",{items:`items.${root}`,clientId:"fixture-client",origins:[]});
+  expect(await backend.usernameAvailable!("tide_cat")).toEqual({username:"tide_cat",accountId:`tide_cat.${root}`,available:true,root,network:"testnet"});
+  expect((await backend.usernameAvailable!("occupied")).available).toBe(false);
+  ledgerAvailable=false;expect((await backend.usernameAvailable!("reserved")).available).toBe(false);ledgerAvailable=true;
+  await expect(backend.usernameAvailable!("items")).rejects.toThrow();
+  outage=true;await expect(backend.usernameAvailable!("mochi")).rejects.toThrow("RPC unavailable");outage=false;
+  const key=pub();await expect(backend.guest(key)).rejects.toThrow("Choose a username");expect(calls).toHaveLength(0);
+  expect(await backend.guest(key,"tide_cat")).toBe(`tide_cat.${root}`);
+  expect(calls[0]).toMatchObject({methodName:"create_named_player",args:{public_key:key,username:"tide_cat"}});
+  expect(await backend.guest(key,"items")).toBe(`tide_cat.${root}`);expect(calls).toHaveLength(1);
+  await expect(backend.guest(pub(),"occupied")).rejects.toThrow("no longer available");
+  await expect(backend.guest(pub(),"raced")).rejects.toThrow("ERR_USERNAME_TAKEN");
+  const slowKey=pub(),first=backend.guest(slowKey,"slow");await active;
+  const same=backend.guest(slowKey,"slow");
+  const failureRelease=setTimeout(release,50);
+  try{await expect(backend.guest(slowKey,"other-choice")).rejects.toThrow("pending");}
+  finally{clearTimeout(failureRelease);release();}
+  expect(await first).toBe(`slow.${root}`);expect(await same).toBe(`slow.${root}`);
+  expect(calls.filter(c=>c.args.public_key===slowKey)).toHaveLength(1);
+  const privy=createBackend(root,relayer,sponsor.toString(),"https://test.rpc.fastnear.com",{provider:"privy",items:`items.${root}`,origins:[]});
+  expect(privy.accountProvider).toBe("privy");expect(privy.authSign).toBeUndefined();
+  const privyKey=pub();expect(await privy.guest(privyKey,"privy-player")).toBe(`privy-player.${root}`);
+  expect(calls.at(-1)).toMatchObject({methodName:"create_named_player",args:{public_key:privyKey,username:"privy-player"}});
+  const before=calls.length;expect(await privy.guest(privyKey,"another-name")).toBe(`privy-player.${root}`);expect(calls).toHaveLength(before);
+  stackCompatible=false;await expect(privy.guest(pub(),"another-name")).rejects.toThrow("ERR_AUTH_STACK");expect(calls).toHaveLength(before);stackCompatible=true;
+  for(const field of ["registry","network","rules_version","content_version"]){
+   for(const value of [undefined,"wrong"]){itemOverrides={[field]:value};await expect(privy.guest(pub(),"another-name")).rejects.toThrow("ERR_AUTH_STACK");expect(calls).toHaveLength(before);}
+  }
+  itemOverrides={};
+  for(const override of [{network:"mainnet"},{content_version:undefined},{items:undefined}]){
+   protocolOverrides=override;await expect(privy.guest(pub(),"another-name")).rejects.toThrow("ERR_AUTH_STACK");expect(calls).toHaveLength(before);
+  }
+  protocolOverrides={};
+  const legacy=createBackend(root,relayer,sponsor.toString(),"https://test.rpc.fastnear.com");
+  expect(await legacy.guest(pub())).toBe(`p-1.${root}`);expect(calls.at(-1)?.methodName).toBe("create_player");
+ }finally{release();for(const m of mocks)m.mockRestore();}
 });

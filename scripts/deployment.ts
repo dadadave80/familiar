@@ -30,8 +30,4 @@ export function assertIsolatedTidebound(root:unknown,legacy:string,explicit:bool
   if(!explicit || typeof root!=="string" || root===legacy || root.length>39 || !root.endsWith(".testnet"))
     throw Error("This build changes initialized state. Use --tidebound with a separate fresh testnet root; legacy deployment is forbidden.");
 }
-export function assertTideboundProtocol(root:string,protocol:unknown,items:unknown) {
-  const p=protocol as Record<string,unknown>|null,i=items as Record<string,unknown>|null;
-  if(p?.registry!==root || p?.items!==`items.${root}` || p?.network!=="testnet" || p?.rules_version!=="tidebound_h1_v1" || p?.content_version!=="first_light_v1" || i?.registry!==root)
-    throw Error("Initialized contracts do not form the compatible Tidebound tuple. No upgrade or migration will be attempted.");
-}
+export { assertTideboundProtocol } from "../web/src/tidebound/protocol";

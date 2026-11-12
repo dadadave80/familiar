@@ -1,6 +1,8 @@
 import { base64Decode, base64Encode, decodeTransaction, encodeTransaction, KeyType, type Transaction } from "near-api-js";
 import { validateAuthRequest } from "../../../../web/src/account/signing-request";
 import { accountId } from "../relay";
+import { isPlayerAccount } from "../../../../web/src/account/names";
+import { validName } from "../../../../web/src/rules";
 import { ACTION_LIMIT, isTool } from "../../../../web/src/outing/engine";
 
 export interface AuthSigningContext { root:string; items:string; clientId:string; origin:string; origins:readonly string[] }
@@ -11,11 +13,12 @@ function fields(args:Record<string,unknown>,names:string[]) { check(Object.keys(
 /** This allowlist grants no account authority and performs no RPC. */
 export function validateNativeIntent(tx:Transaction,context:Pick<AuthSigningContext,"root"|"items">) {
   check(accountId(context.root) && context.root.endsWith(".testnet") && context.items===`items.${context.root}`);
-  check(accountId(tx.signerId) && tx.signerId.endsWith(`.${context.root}`) && /^p-[0-9]+$/.test(tx.signerId.slice(0,-context.root.length-1)));
+  check(isPlayerAccount(tx.signerId,context.root));
   check(tx.publicKey.keyType===KeyType.ED25519 && tx.nonce>0n && tx.actions.length===1 && tx.nonceIndex===undefined);
   const action=tx.actions[0]!;
-  if("transfer" in action) { check(tx.receiverId===tx.signerId && action.transfer?.deposit===0n); return; }
-  check("functionCall" in action && Object.keys(action).length === 1);
+  if("transfer" in action) { check(Object.keys(action).every(key=>key==="transfer" || key==="enum") && (action.enum===undefined || action.enum==="transfer") && tx.receiverId===tx.signerId && action.transfer?.deposit===0n); return; }
+  // Constructed SDK actions include an enum tag; decoded Borsh actions omit it.
+  check("functionCall" in action && Object.keys(action).every(key=>key==="functionCall" || key==="enum") && (action.enum===undefined || action.enum==="functionCall"));
   const call=action.functionCall;
   check(call);
   check(call.gas>0n && call.gas<=280000000000000n && call.args.length<=8192);
@@ -36,7 +39,7 @@ export function validateNativeIntent(tx:Transaction,context:Pick<AuthSigningCont
   check(tx.receiverId===context.root && call.deposit===0n);
   const token=(value:unknown)=>bounded(value,64) && accountId(value) && value.endsWith(`.${context.root}`);
   switch(call.methodName) {
-    case "adopt": fields(a,["name"]); check(typeof a.name==="string" && /^[a-z0-9][a-z0-9-]{0,22}[a-z0-9]$/.test(a.name)); break;
+    case "adopt": fields(a,["name"]); check(typeof a.name==="string" && validName(a.name)); break;
     case "tidebound_claim": {
       fields(a,["token_id","operation_id","expected_revision","initial_checkpoint_hash","rules_version","content_version","tool","commands","area"]);
       check(token(a.token_id) && bounded(a.operation_id) && revision(a.expected_revision) && bounded(a.initial_checkpoint_hash) && a.rules_version==="tidebound_h1_v1" && a.content_version==="first_light_v1" && isTool(a.tool) && (a.area==="beacon" || a.area==="wind"));

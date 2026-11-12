@@ -1,7 +1,10 @@
 import { actions, base64Encode, base64Decode, baseEncode, baseDecode, createTransaction, decodeTransaction, decodeSignedTransaction, encodeTransaction, PublicKey, teraToGas, type AccessKeyViewRaw, type JsonRpcProvider } from "near-api-js";
-import type { NearAuthAccountAdapter } from "../account/adapter";
+import type { RecoverableAccountAdapter } from "../account/adapter";
+import { isPlayerAccount } from "../account/names";
 import { replayOuting } from "../outing/engine";
 import { CONTENT_VERSION, RULES_VERSION, type ExpeditionTranscript, type PlayerBinding } from "./domain";
+import { assertTideboundProtocol } from "./protocol";
+import { validateNativeIntent } from "../../../services/relayer/src/auth/sign";
 
 export interface MintEvidence { id:string;token_id:string;maker:string;origin_claim_id:string;motif:"crest"|"moth";input_hash:string;rules_version:string;content_version:string }
 export interface CraftItem { mint:MintEvidence;finish:"original"|"harbor_polish";appearance_version:number;finish_used:boolean }
@@ -61,20 +64,21 @@ export function nativeGas(method:string):bigint {
 
 /** Fixed testnet tuple, native player-funded transactions, and one persisted uncertain action per account. */
 export class TideboundClient {
-  constructor(readonly root:string,readonly itemsContract:string,readonly provider:JsonRpcProvider,readonly adapter:NearAuthAccountAdapter,private readonly store:Pick<Storage,"getItem"|"setItem"|"removeItem">) {}
+  constructor(readonly root:string,readonly itemsContract:string,readonly provider:JsonRpcProvider,readonly adapter:RecoverableAccountAdapter,private readonly store:Pick<Storage,"getItem"|"setItem"|"removeItem">) {}
   async view<T>(contractId:string,method:string,args:Record<string,unknown>={}):Promise<T> {
     return await this.provider.callFunction({contractId,method,args,blockQuery:{finality:"final"}}) as unknown as T;
   }
   async verifyStack() {
     check(this.root.endsWith(".testnet") && this.itemsContract===`items.${this.root}` && await this.provider.getNetworkId()==="testnet","This harbor requires the configured NEAR testnet stack.");
-    const protocol=await this.view<{registry:string;items:string;network:string;rules_version:string;content_version:string}>(this.root,"tidebound_protocol");
-    check(protocol?.registry===this.root && protocol.items===this.itemsContract && protocol.network==="testnet" && protocol.rules_version===RULES_VERSION && protocol.content_version===CONTENT_VERSION,"These contracts are not a compatible Tidebound stack. Legacy holdings remain untouched.");
-    const items=await this.view<{registry:string}>(this.itemsContract,"craft_protocol");
-    check(items?.registry===this.root,"The item registry belongs to a different harbor.");
+    const [protocol,items]=await Promise.all([
+      this.view<unknown>(this.root,"tidebound_protocol"),
+      this.view<unknown>(this.itemsContract,"craft_protocol"),
+    ]);
+    assertTideboundProtocol(this.root,protocol,items,"These contracts are not a compatible Tidebound stack. Legacy holdings remain untouched.");
   }
   async snapshot(binding:PlayerBinding,fromIndex=0):Promise<ChainSnapshot> {
     await this.verifyStack();
-    check(binding.network==="testnet" && binding.nearAccountId.endsWith(`.${this.root}`),"The account belongs to a different harbor.");
+    check(binding.network==="testnet" && isPlayerAccount(binding.nearAccountId,this.root),"The account belongs to a different harbor.");
     const [raw,checkpointHash,pets,inventory]=await Promise.all([
       this.view<unknown>(this.root,"tidebound_journey",{account_id:binding.nearAccountId}),
       this.view<string>(this.root,"tidebound_checkpoint_hash",{account_id:binding.nearAccountId}),
@@ -116,17 +120,19 @@ export class TideboundClient {
       const block=await this.provider.viewBlock({finality:"final"});
       const gas = nativeGas(method);
       const tx=createTransaction(binding.nearAccountId,key,options.receiver??this.root,access.nonce+1n,[actions.functionCall(method,args,gas,options.deposit??0n)],baseDecode(block.header.hash));
+      validateNativeIntent(tx,{root:this.root,items:this.itemsContract});
       const hash=baseEncode(new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(encodeTransaction(tx)))));
       this.store.setItem(this.pendingKey(binding),JSON.stringify({operationId:`native:${crypto.randomUUID()}`,hash,method,receiver:tx.receiverId,transaction:base64Encode(encodeTransaction(tx)),state:"prepared"} satisfies PendingNative));
       return this.resumeLocked(binding);
     });
   }
   private async originalTransaction(binding:PlayerBinding,pending:PendingNative) {
-    check(binding.network==="testnet" && binding.nearAccountId.endsWith(`.${this.root}`),"The account belongs to a different testnet harbor.");
+    check(binding.network==="testnet" && isPlayerAccount(binding.nearAccountId,this.root),"The account belongs to a different testnet harbor.");
     const tx=decodeTransaction(base64Decode(pending.transaction));
     check(base64Encode(encodeTransaction(tx))===pending.transaction && tx.signerId===binding.nearAccountId && tx.receiverId===pending.receiver &&
       [this.root,this.itemsContract].includes(tx.receiverId) && tx.publicKey.toString()===binding.signerPublicKey &&
       tx.actions.length===1 && tx.actions[0]?.functionCall?.methodName===pending.method,"The original signing context changed.");
+    validateNativeIntent(tx,{root:this.root,items:this.itemsContract});
     const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(encodeTransaction(tx))));
     check(baseEncode(digest)===pending.hash,"The stored transaction no longer matches its original hash.");
     if(pending.signedTransaction) {
@@ -191,7 +197,7 @@ export class TideboundClient {
   }
   async reconcileNative(binding:PlayerBinding):Promise<string> {
     await this.verifyStack();
-    check(binding.network==="testnet" && binding.nearAccountId.endsWith(`.${this.root}`),"The account belongs to a different testnet harbor.");
+    check(binding.network==="testnet" && isPlayerAccount(binding.nearAccountId,this.root),"The account belongs to a different testnet harbor.");
     const pending=this.pending(binding);if(!pending)return "No native action is pending.";
     await this.originalTransaction(binding,pending);
     const outcome=await this.provider.viewTransactionStatusWithReceipts({txHash:pending.hash,accountId:binding.nearAccountId,waitUntil:"FINAL"});

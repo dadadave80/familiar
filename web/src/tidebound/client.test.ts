@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { baseEncode, encodeTransaction, KeyPair, KeyPairSigner, type JsonRpcProvider, type Transaction } from "near-api-js";
+import { actions, base64Encode, baseEncode, createTransaction, encodeTransaction, KeyPair, KeyPairSigner, type JsonRpcProvider, type Transaction } from "near-api-js";
 import type { NearAuthAccountAdapter } from "../account/adapter";
 import type { PlayerBinding } from "./domain";
 import { claimInput, parseJourney, TideboundClient, type CraftItem, type Journey } from "./client";
@@ -45,13 +45,14 @@ function fixture() {
   let finalHeight=100, originalHeight=100, validity:unknown=86_400, accessNonce=20n, rpcUnavailable=false;
   let returnedBlockHash="11111111111111111111111111111111", protocolNetwork="testnet";
   let rawNonce:unknown=undefined,keyPermission="FullAccess",nonceBlockMismatch=false;
+  let rootProtocolOverride:{value:unknown}|null=null,itemProtocolOverride:{value:unknown}|null=null;
   const storage = { getItem: (k: string) => data.get(k) ?? null, setItem(k: string, v: string) { data.set(k, v); events.push(`store:${JSON.parse(v).state}`); }, removeItem(k: string) { data.delete(k); events.push("clear"); } };
   const provider = {
     async getNetworkId() { return network; },
     async callFunction(input: { method: string; args: Record<string, unknown> }) {
       switch (input.method) {
-        case "tidebound_protocol": return { registry, items: itemContract, network: "testnet", rules_version: "tidebound_h1_v1", content_version: "first_light_v1" };
-        case "craft_protocol": return { registry };
+        case "tidebound_protocol": return rootProtocolOverride ? rootProtocolOverride.value : { registry, items: itemContract, network: "testnet", rules_version: "tidebound_h1_v1", content_version: "first_light_v1" };
+        case "craft_protocol": return itemProtocolOverride ? itemProtocolOverride.value : { registry, network: "testnet", rules_version: "tidebound_h1_v1", content_version: "first_light_v1" };
         case "get_player": return binding.nearAccountId;
         case "tidebound_journey": events.push("snapshot"); return journey;
         case "tidebound_checkpoint_hash": return "e".repeat(64);
@@ -72,7 +73,7 @@ function fixture() {
     async sendTransactionUntil(signed: { transaction: Transaction }) {
       broadcasts++; events.push("broadcast"); observedTransaction = signed.transaction;
       const hash = baseEncode(new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(encodeTransaction(signed.transaction)))));
-      status ??= { final_execution_status: "FINAL", status: { SuccessValue: "" }, transaction: { hash, signer_id: binding.nearAccountId, receiver_id: signed.transaction.receiverId }, receipts_outcome: [] };
+      status ??= { final_execution_status: "FINAL", status: { SuccessValue: "" }, transaction: { hash, signer_id: signed.transaction.signerId, receiver_id: signed.transaction.receiverId }, receipts_outcome: [] };
       return { ...status, transaction: { ...status.transaction, hash } };
     },
     async viewTransactionStatusWithReceipts() { statusCalls++; return status; },
@@ -93,6 +94,7 @@ function fixture() {
     set failMark(value: boolean) { failMark = value; },
     get statusCalls() { return statusCalls; }, get broadcasts() { return broadcasts; }, get authorizationCalls() { return authorizationCalls; }, get transaction() { return observedTransaction; },
     set network(value: string) { network = value; }, set registry(value: string) { registry = value; }, set actual(value: PlayerBinding) { actual = value; },
+    set rootProtocol(value:unknown) {rootProtocolOverride={value};},set itemProtocol(value:unknown){itemProtocolOverride={value};},
     set journey(value: unknown) { journey = value; }, set inventory(value: unknown) { inventory = value; }, set ownedBalance(value: string) { ownedBalance = value; },
     set status(value: any) { status = value; }, set authorization(value: () => Promise<void>) { authorization = value; },
     set finalHeight(value:number) {finalHeight=value;},set originalHeight(value:number){originalHeight=value;},set validity(value:unknown){validity=value;},set accessNonce(value:bigint){accessNonce=value;},set rpcUnavailable(value:boolean){rpcUnavailable=value;},set returnedBlockHash(value:string){returnedBlockHash=value;},set protocolNetwork(value:string){protocolNetwork=value;},set rawNonce(value:unknown){rawNonce=value;},set keyPermission(value:string){keyPermission=value;},set nonceBlockMismatch(value:boolean){nonceBlockMismatch=value;},
@@ -107,6 +109,61 @@ test("fixed protocol and canonical signer are checked before any native authoriz
   f.network = "testnet"; f.actual = { ...binding, signerPublicKey: KeyPair.fromRandom("ed25519").getPublicKey().toString() };
   await expect(f.client.send(binding, "tidebound_commission", {})).rejects.toThrow("identity changed");
   expect(f.authorizationCalls).toBe(0); expect(f.broadcasts).toBe(0);
+});
+
+test("both contracts must provide the full compatible protocol before signing or persisting",async()=>{
+  const rootProtocol={registry:root,items:itemContract,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
+  const itemsProtocol={registry:root,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};
+  for(const side of ["root","items"] as const){
+    const valid=side==="root"?rootProtocol:itemsProtocol;
+    const invalid:unknown[]=[null,undefined,[],false,"testnet",{}];
+    for(const field of Object.keys(valid)){
+      const missing:Record<string,unknown>={...valid};delete missing[field];
+      invalid.push(missing,{...valid,[field]:field==="network"?"mainnet":"incompatible"});
+    }
+    for(const value of invalid){
+      const f=fixture();if(side==="root")f.rootProtocol=value;else f.itemProtocol=value;
+      await expect(f.client.send(binding,"tidebound_commission",{})).rejects.toThrow();
+      expect(f.data.size).toBe(0);expect(f.authorizationCalls).toBe(0);expect(f.broadcasts).toBe(0);
+    }
+  }
+});
+
+test("unsupported native methods and payments fail before pending persistence or signing",async()=>{
+  for(const request of [
+    {method:"buy_pet",args:{token_id:`mochi.${root}`},options:{}},
+    {method:"tidebound_commission",args:{},options:{deposit:1n}},
+    {method:"tidebound_commission",args:{extra:true},options:{}},
+    {method:"storage_deposit",args:{account_id:"recipient.testnet",registration_only:true},options:{receiver:itemContract,deposit:8n*10n**22n+1n}},
+    {method:"mt_transfer",args:{receiver_id:"recipient.testnet",token_id:item().mint.token_id,amount:"1",approval:null,memo:null},options:{receiver:itemContract,deposit:0n}},
+  ]){
+    const f=fixture();
+    await expect(f.client.send(binding,request.method,request.args,request.options)).rejects.toThrow();
+    expect(f.data.size).toBe(0);expect(f.authorizationCalls).toBe(0);expect(f.broadcasts).toBe(0);
+    expect(f.events.some(event=>event.startsWith("store:"))).toBe(false);
+  }
+});
+
+test("saved unsupported actions, methods, deposits and gas never sign or broadcast and preserve their exact record",async()=>{
+  for(const state of ["prepared","signed","submitted"] as const){
+    for(const action of [
+      actions.transfer(1n),
+      actions.addFullAccessKey(KeyPair.fromRandom("ed25519").getPublicKey()),
+      actions.functionCall("buy_pet",{token_id:`mochi.${root}`},50_000_000_000_000n,0n),
+      actions.functionCall("tidebound_commission",{},50_000_000_000_000n,1n),
+      actions.functionCall("tidebound_commission",{},280_000_000_000_001n,0n),
+      actions.functionCall("tidebound_commission",{},0n,0n),
+    ]){
+      const f=fixture(),tx=createTransaction(binding.nearAccountId,key.getPublicKey(),root,21n,[action],new Uint8Array(32));
+      const signed=(await new KeyPairSigner(key).signTransaction(tx)).signedTransaction;
+      const hash=baseEncode(new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(encodeTransaction(tx)))));
+      const storageKey=`familiar.tidebound.pending.v1:${root}:${binding.nearAccountId}`;
+      const original=JSON.stringify({operationId:"native:unsupported",hash,method:action.functionCall?.methodName??"unsupported-action",receiver:root,transaction:base64Encode(encodeTransaction(tx)),state,...(state!=="prepared"?{signedTransaction:base64Encode(signed.encode())}:{})});
+      f.data.set(storageKey,original);
+      await expect(state==="submitted"?f.client.reconcileNative(binding):f.client.resumeNative(binding)).rejects.toThrow();
+      expect(f.data.get(storageKey)).toBe(original);expect(f.authorizationCalls).toBe(0);expect(f.broadcasts).toBe(0);expect(f.statusCalls).toBe(0);expect(f.events).toEqual([]);
+    }
+  }
 });
 
 test("pending intent is durable before Auth0 opens and a second action cannot replace it", async () => {
@@ -342,4 +399,10 @@ test("an unknown submitted envelope clears only after permanent expiry and an un
  expect(await f.client.resolveExpiredNative(binding)).toContain("without execution");
  expect(f.client.pending(binding)).toBeNull();expect(f.broadcasts).toBe(1);expect(f.authorizationCalls).toBe(1);
  expect(f.events.indexOf("snapshot")).toBeLessThan(f.events.indexOf("clear"));
+});
+
+test("a configured direct-child username can sign while nested account snapshots fail closed",async()=>{
+ const f=fixture();const named={...binding,nearAccountId:`tide_cat.${root}`};f.actual=named;
+ await f.client.send(named,"tidebound_commission",{});expect(f.transaction?.signerId).toBe(named.nearAccountId);
+ await expect(f.client.snapshot({...binding,nearAccountId:`cat.nested.${root}`})).rejects.toThrow("different harbor");
 });

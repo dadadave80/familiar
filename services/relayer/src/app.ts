@@ -3,6 +3,9 @@ import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { KeyType, PublicKey } from "near-api-js";
 import { Quota, STAMPS } from "./relay";
+import { validName } from "../../../web/src/rules";
+import { UsernameError, usernameErrors, type UsernameAvailability } from "../../../web/src/account/names";
+import { PrivyBridgeError, type PrivyService } from "./auth/privy";
 
 export type RelayResult = {
   hash: string;
@@ -10,24 +13,29 @@ export type RelayResult = {
   value?: unknown;
 };
 export type Backend = {
+  accountProvider?: "near-auth"|"privy";
   ready?(): Promise<boolean>;
   authSign?(value:unknown, origin:string): Promise<unknown>;
-  guest(publicKey: string): Promise<string>;
+  guest(publicKey: string, username?:string): Promise<string>;
+  usernameAvailable?(username:string):Promise<UsernameAvailability>;
   relay(encoded: string): Promise<RelayResult>;
 };
 export function createApp(
   config: { origins: string[]; root: string },
   backend?: Backend,
+  privy?: PrivyService,
 ) {
   const app = new Hono();
   const guests = new Quota(200, 86_400_000, 1);
   const keys = new Quota(4, 3_600_000);
+  const names = new Quota(120,60_000,1);
+  const privyRequests = new Quota(120,60_000,1);
   app.use(
     "*",
     cors({
       origin: config.origins,
       allowMethods: ["GET", "POST", "OPTIONS"],
-      allowHeaders: ["Content-Type"],
+      allowHeaders: ["Content-Type", "Authorization"],
     }),
   );
   app.use("*", async (c, next) => {
@@ -55,6 +63,35 @@ export function createApp(
       ready ? 200 : 503,
     );
   });
+  // These two routes remain available for an isolated recovery spike with no game contracts.
+  app.use("/v1/privy/*",async(c,next)=>{
+    const origin=c.req.header("origin");
+    if(!origin||!config.origins.includes(origin))return c.json({code:"ERR_AUTH_ORIGIN",error:"Sign in from the configured Familiar address."},403);
+    if(!privy)return c.json({code:"AUTH_UNAVAILABLE",error:"Recoverable sign-in is not connected at this address."},503);
+    const authorization=c.req.header("authorization");
+    if(!authorization||authorization.length>16_391||!/^Bearer [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(authorization))
+      return c.json({code:"ERR_PRIVY_SESSION",error:"Sign in again to verify your session."},401);
+    if(!privyRequests.take("all"))return c.json({code:"QUOTA",error:"Account checks are busy. Try again shortly."},429);
+    await next();
+  });
+  app.post("/v1/privy/wallet",async c=>{
+    const body:unknown=await c.req.json().catch(()=>null);
+    if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).length!==1||!("create" in body)||typeof body.create!=="boolean")
+      return c.json({code:"ERR_PRIVY_BODY",error:"Choose restore or explicit wallet creation."},400);
+    return c.json({wallet:await privy!.wallet(c.req.header("authorization")!.slice(7),body.create)});
+  });
+  app.post("/v1/privy/player",async c=>{
+    const body:unknown=await c.req.json().catch(()=>null);
+    if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).length!==1||!("username" in body)||typeof body.username!=="string"||!validName(body.username))
+      throw new UsernameError("ERR_USERNAME_INVALID");
+    if(!backend||backend.accountProvider!=="privy")return c.json({code:"AUTH_UNAVAILABLE",error:"The compatible game harbor is not connected. Your wallet remains unchanged."},503);
+    // Only the server-verified user's existing canonical key may request a player. This never creates a wallet.
+    const wallet=await privy!.wallet(c.req.header("authorization")!.slice(7),false);
+    if(!wallet)return c.json({code:"ERR_PRIVY_WALLET_REQUIRED",error:"Create your recoverable wallet explicitly before creating a player."},409);
+    if(!keys.take(wallet.publicKey)||!guests.take("all"))return c.json({error:STAMPS,code:"QUOTA"},429);
+    const accountId=await backend.guest(wallet.publicKey,body.username);
+    return c.json({accountId,root:config.root,network:"testnet"});
+  });
   app.use("/v1/*", async (c, next) => {
     if (!backend)
       return c.json(
@@ -67,7 +104,15 @@ export function createApp(
       );
     await next();
   });
+  app.get("/v1/player-name/:username",async c=>{
+    const username=c.req.param("username");
+    if(!validName(username))throw new UsernameError("ERR_USERNAME_INVALID");
+    if(!backend?.usernameAvailable)return c.json({code:"AUTH_UNAVAILABLE",error:"Username signup is not connected for this harbor."},503);
+    if(!names.take("all"))return c.json({code:"QUOTA",error:"Name checks are busy. Try again shortly."},429);
+    return c.json(await backend.usernameAvailable(username));
+  });
   app.post("/v1/guest", async (c) => {
+    if(backend?.accountProvider==="privy")return c.json({code:"ERR_PRIVY_SESSION",error:"Use recoverable sign-in before creating a player."},401);
     const body: unknown = await c.req.json().catch(() => null);
     const publicKey =
       body && typeof body === "object" && "publicKey" in body
@@ -90,9 +135,11 @@ export function createApp(
         400,
       );
     }
+    const username=body && typeof body==="object" && "username" in body ? body.username:undefined;
+    if(username!==undefined && (typeof username!=="string" || !validName(username)))throw new UsernameError("ERR_USERNAME_INVALID");
     if (!keys.take(publicKey) || !guests.take("all"))
       return c.json({ error: STAMPS, code: "QUOTA" }, 429);
-    const accountId = await backend!.guest(publicKey as string);
+    const accountId = await backend!.guest(publicKey as string,username as string|undefined);
     return c.json({ accountId, root: config.root, network: "testnet" });
   });
   app.post("/v1/auth/sign", async (c) => {
@@ -119,7 +166,12 @@ export function createApp(
     return c.json(await backend!.relay(encoded));
   });
   app.onError((error, c) => {
-    const code = error.message.match(/\bERR_[A-Z_]{1,48}\b/)?.[0];
+    if(error instanceof PrivyBridgeError){
+      const copy={ERR_PRIVY_SESSION:"Sign in again to verify your session.",ERR_PRIVY_OWNER:"This session has no verified signing ownership of that wallet.",ERR_PRIVY_WALLET:"The wallet response could not be verified. Keep the original wallet and check again.",ERR_PRIVY_UNAVAILABLE:"The wallet service is unavailable. No replacement wallet was requested.",ERR_PRIVY_CREATE_UNKNOWN:"The original wallet request is unresolved. Restore it before requesting any new action.",ERR_QUOTA:STAMPS};
+      return c.json({code:error.code,error:copy[error.code]},error.code==="ERR_PRIVY_SESSION"?401:error.code==="ERR_PRIVY_OWNER"?403:error.code==="ERR_QUOTA"?429:503);
+    }
+    const code = error instanceof UsernameError ? error.code:error.message.match(/\bERR_[A-Z_]{1,48}\b/)?.[0];
+    if(code && Object.hasOwn(usernameErrors,code))return c.json({code,error:usernameErrors[code as keyof typeof usernameErrors]},400);
     const exhausted =
       code && ["ERR_QUOTA", "ERR_STAMPS", "ERR_DAILY_BUDGET"].includes(code);
     if (code)
