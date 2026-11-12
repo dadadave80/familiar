@@ -17,6 +17,10 @@ use near_sdk::{
 };
 use std::collections::HashMap;
 
+// H1 named players pay native gas. NEP-642 buys 180 Tgas at a >=1e9 yocto/gas
+// receipt price before refunding unused gas; the legacy automatic route keeps 0.05.
+const NAMED_PLAYER_FUND: u128 = YOCTO / 4;
+
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
 pub struct Config {
@@ -525,6 +529,11 @@ impl Contract {
         );
         let operation_id = self.counter.checked_add(1).expect("ERR_PLAYER_LIMIT");
         let named = username.is_some();
+        let player_fund = if named {
+            NAMED_PLAYER_FUND
+        } else {
+            PLAYER_FUND
+        };
         let name = username.unwrap_or_else(|| format!("p-{operation_id}"));
         require!(!named || valid_name(&name), "ERR_NAME");
         let account_id: AccountId = format!("{name}.{}", env::current_account_id())
@@ -535,7 +544,7 @@ impl Contract {
         require!(self.guests_today < 200, "ERR_DAILY_BUDGET");
         let storage_reserve = self.storage_reserve(PLAYER_STORAGE_RESERVE_BYTES);
         require!(
-            self.spendable() >= PLAYER_FUND + ADOPT_FUND + ITEM_STORAGE_FUND + storage_reserve,
+            self.spendable() >= player_fund + ADOPT_FUND + ITEM_STORAGE_FUND + storage_reserve,
             "ERR_STAMPS"
         );
         self.guests_today += 1;
@@ -559,7 +568,7 @@ impl Contract {
         }
         Promise::new(account_id.clone())
             .create_account()
-            .transfer(NearToken::from_yoctonear(PLAYER_FUND))
+            .transfer(NearToken::from_yoctonear(player_fund))
             .add_full_access_key(public_key)
             .then(call(
                 env::current_account_id(),

@@ -1,5 +1,10 @@
 use super::*;
-use near_sdk::{PromiseResult, test_utils::VMContextBuilder, testing_env};
+use near_sdk::{
+    PromiseResult,
+    mock::MockAction,
+    test_utils::{VMContextBuilder, get_created_receipts},
+    testing_env,
+};
 
 fn id(s: &str) -> AccountId {
     s.parse().unwrap()
@@ -48,6 +53,67 @@ fn reserve(c: &mut Contract, public_key: PublicKey, name: &str) -> PendingPlayer
 }
 
 #[test]
+fn named_native_signers_receive_a_quarter_near_and_legacy_automatic_players_keep_their_endowment() {
+    let mut c = contract();
+    ctx("relayer.testnet");
+    drop(c.create_named_player(key(1), "alice".into()));
+    let named: Vec<_> = get_created_receipts()
+        .into_iter()
+        .filter(|r| r.receiver_id == id("alice.root.testnet"))
+        .flat_map(|r| r.actions)
+        .filter_map(|a| match a {
+            MockAction::Transfer { deposit, .. } => Some(deposit.as_yoctonear()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(named, vec![YOCTO / 4]);
+
+    ctx("relayer.testnet");
+    drop(c.create_player(key(2)));
+    let legacy: Vec<_> = get_created_receipts()
+        .into_iter()
+        .filter(|r| r.receiver_id == id("p-2.root.testnet"))
+        .flat_map(|r| r.actions)
+        .filter_map(|a| match a {
+            MockAction::Transfer { deposit, .. } => Some(deposit.as_yoctonear()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(legacy, vec![PLAYER_FUND]);
+    assert_eq!(PLAYER_FUND, YOCTO / 20);
+}
+
+#[test]
+fn named_player_precheck_reserves_the_larger_endowment_before_any_async_creation() {
+    let mut c = contract();
+    let overhead =
+        PET_RESERVE + env::storage_byte_cost().as_yoctonear() * u128::from(env::storage_usage());
+    let reserve = c.storage_reserve(PLAYER_STORAGE_RESERVE_BYTES);
+    let mut low = context("relayer.testnet");
+    low.storage_usage(env::storage_usage())
+        .account_balance(NearToken::from_yoctonear(
+            overhead + PLAYER_FUND + ADOPT_FUND + ITEM_STORAGE_FUND + reserve,
+        ));
+    testing_env!(low.build());
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || c.create_named_player(key(1), "alice".into())
+        ))
+        .is_err()
+    );
+    assert!(c.pending_players.get(&key(1).to_string()).is_none());
+    assert!(
+        c.pending_player_names
+            .get(&id("alice.root.testnet"))
+            .is_none()
+    );
+    assert_eq!((c.counter, c.guests_today, c.reserved_storage), (0, 0, 0));
+    assert!(get_created_receipts().is_empty());
+    drop(c.create_player(key(2)));
+    assert!(c.pending_players.get(&key(2).to_string()).is_some());
+}
+
+#[test]
 fn named_player_is_the_exact_child_and_stable_key_binding_wins_changed_name_retry() {
     let mut c = contract();
     let pk = key(1);
@@ -71,6 +137,10 @@ fn named_player_is_the_exact_child_and_stable_key_binding_wins_changed_name_retr
         matches!(c.create_player(pk),PromiseOrValue::Value(Some(account)) if account==id("alice.root.testnet"))
     );
     assert!(c.player_name_available("different".into()));
+    assert!(
+        get_created_receipts().is_empty(),
+        "Returning sign-in must never issue another endowment."
+    );
 }
 
 #[test]
