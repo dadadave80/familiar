@@ -1,17 +1,20 @@
 const LANES = ["left", "center", "right"] as const;
-const ITEMS = ["lens", "moth", "chart", "salvage"] as const;
+const ITEMS = ["lens", "moth", "chart", "salvage", "vane"] as const;
 export const ACTION_LIMIT = 15;
+export type Area = "beacon" | "wind";
 export type Lane = typeof LANES[number];
 export type Item = typeof ITEMS[number];
 export type Tool = "rope" | "lantern";
 export type Action =
-  | "wait" | "return"
+  | "wait" | "return" | "turn:vane"
   | `move:${Lane}` | `lure:${Lane}` | `take:${Item}`
-  | "reel:lens" | "reel:salvage";
+  | "reel:lens" | "reel:salvage" | "reel:vane";
 
-const itemLane: Record<Item, Lane> = { lens: "left", salvage: "left", moth: "right", chart: "center" };
+const itemLane: Record<Item, Lane> = { lens: "left", salvage: "left", moth: "right", chart: "center", vane: "center" };
 
 export interface Outing {
+  area: Area;
+  orientation: 0 | 1 | 2;
   tool: Tool;
   lane: Lane;
   turn: number;
@@ -22,7 +25,7 @@ export interface Outing {
   banked: Item[];
   cargo: Item[];
   actions: Action[];
-  waves: { turn: number; lane: Lane; hit: boolean; opened: boolean }[];
+  waves: { turn: number; source: Lane; lane: Lane; hit: boolean; opened: boolean }[];
   outcome: "active" | "returned" | "rescued";
 }
 
@@ -34,11 +37,18 @@ export function isItem(value: unknown): value is Item {
   return ITEMS.some(item => item === value);
 }
 
-export function startOuting(tool: Tool, banked: readonly Item[] = []): Outing {
+export function startOuting(tool: Tool, banked: readonly Item[] = [], area: Area = "beacon"): Outing {
   return {
+    area, orientation: area === "wind" ? 1 : 0,
     tool, banked: [...banked], lane: "center", turn: 0, resolve: 3, uses: 2,
     locked: null, opened: [], cargo: [], actions: [], waves: [], outcome: "active",
   };
+}
+
+/** The marked source passes through the channel before striking an exit. */
+export function waveExit(run: Outing, source: Lane | null = run.locked): Lane | null {
+  if (source === null) return null;
+  return LANES[(LANES.indexOf(source) + run.orientation) % LANES.length]!;
 }
 
 export function phaseOf(run: Outing) {
@@ -57,16 +67,20 @@ export function legalActions(run: Outing): Action[] {
     if (Math.abs(position - index) === 1) actions.push(`move:${lane}`);
   }
   if (run.lane === "center") actions.push("return");
+  if (run.area === "wind" && run.lane === "center") actions.push("turn:vane");
   if (run.tool === "lantern" && run.uses > 0 && phaseOf(run) === "Surge" && run.locked !== null) {
     for (const lane of LANES) actions.push(`lure:${lane}`);
   }
   for (const item of ITEMS) {
+    if ((run.area === "wind") !== (item === "vane")) continue;
     if (run.banked.includes(item) || run.cargo.includes(item) || packSlots([...run.cargo, item]) > 3) continue;
     const source = itemLane[item];
-    const exposed = item === "chart" ? run.tool === "lantern" : run.opened.includes(source);
+    const exposed = item === "vane"
+      ? run.opened.includes("left") && run.opened.includes("center")
+      : item === "chart" ? run.tool === "lantern" : run.opened.includes(source);
     if (!exposed) continue;
     if (source === run.lane) actions.push(`take:${item}`);
-    else if (run.tool === "rope" && run.uses > 0 && (item === "lens" || item === "salvage")) {
+    else if (run.tool === "rope" && run.uses > 0 && (item === "lens" || item === "salvage" || item === "vane")) {
       actions.push(`reel:${item}`);
     }
   }
@@ -83,6 +97,7 @@ export function applyAction(run: Outing, candidate: unknown): Outing {
   const [verb, target] = action.split(":");
   if (verb === "move") next.lane = target as Lane;
   if (verb === "lure") next.locked = target as Lane;
+  if (action === "turn:vane") next.orientation = ((run.orientation + 1) % 3) as 0 | 1 | 2;
   if (verb === "take" || verb === "reel") next.cargo = [...run.cargo, target as Item];
   if (verb === "lure" || verb === "reel") next.uses--;
 
@@ -91,13 +106,15 @@ export function applyAction(run: Outing, candidate: unknown): Outing {
       next.locked = next.lane;
       break;
     case "Surge": {
-      const lane = next.locked;
+      const source = next.locked;
+      const lane = waveExit(next);
       if (lane === null) break;
       const hit = next.lane === lane;
-      const opened = lane !== "center" && !run.opened.includes(lane);
+      const objective = run.area === "wind" ? lane !== "right" : lane !== "center";
+      const opened = objective && !run.opened.includes(lane);
       if (hit) next.resolve--;
       if (opened) next.opened = [...run.opened, lane];
-      next.waves = [...run.waves, { turn: next.turn, lane, hit, opened }];
+      next.waves = [...run.waves, { turn: next.turn, source: source!, lane, hit, opened }];
       next.locked = null;
       break;
     }
@@ -109,11 +126,11 @@ export function applyAction(run: Outing, candidate: unknown): Outing {
 }
 
 /** Recompute a saved outing from player choices. Derived state is never read from storage. */
-export function replayOuting(tool: unknown, banked: unknown, actions: unknown): Outing | null {
-  if (!isTool(tool) || !Array.isArray(banked) || banked.length > ITEMS.length ||
+export function replayOuting(tool: unknown, banked: unknown, actions: unknown, area: unknown = "beacon"): Outing | null {
+  if ((area !== "beacon" && area !== "wind") || !isTool(tool) || !Array.isArray(banked) || banked.length > ITEMS.length ||
       !banked.every(isItem) || new Set(banked).size !== banked.length ||
       !Array.isArray(actions) || actions.length > ACTION_LIMIT) return null;
-  let run = startOuting(tool, banked);
+  let run = startOuting(tool, banked, area);
   for (const action of actions) {
     const next = applyAction(run, action);
     if (next === run) return null;

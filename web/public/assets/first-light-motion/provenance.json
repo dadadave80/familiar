@@ -5,6 +5,7 @@
   "source": "OpenAI image generation; original user-approved Familiar design references",
   "runtimeStatus": "Mochi uses a registered sixteen-pose raster animation atlas sampled on the shared timeline. Other actors remain composited still images; no skeletal rig or runtime 3D models.",
   "files": {
+    "wind-gate-v1.webp": "Generated November 12, 2026 using arena.webp as the approved style/camera reference. 1536×1024, WebP quality 83. Exact prompt retained in wind-gate-v1.webp.json. Original source retained at /Users/dadadave/.codex/generated_images/01a1cfe8-5587-7891-a135-9fe1f9af91c9/exec-7b6043b8-6510-4ea3-8415-f5cabceac162.png. Runtime pointer, source/exit and socket states are rendered separately from the inert background.",
     "arena.png": "beacon_stage",
     "harbor.png": "harbor_stage",
     "tidekeeper.png": "guardian_clean",
