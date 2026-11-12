@@ -2,14 +2,15 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { MotionPlayer } from "./timeline";
 import { planUrl } from "../plan-url";
 import { CLIPS, sampleScene, type ClipId, type SceneState } from "./scenes";
+import { MochiActor } from "./MochiActor";
+import { MOCHI_ATLAS, mochiPawPosition, sampleMochi } from "./mochi";
 import "./motion.css";
 
 const ART = "/assets/first-light-motion/";
 const ASSETS = [
   "arena",
   "harbor",
-  "mochi",
-  "mochi-step",
+  MOCHI_ATLAS,
   "bram",
   "tidekeeper",
   "moth",
@@ -60,11 +61,11 @@ function Scene({
   time: number;
   reduced: boolean;
 }) {
-  const stepping = clip === "dodge" && s.mochiX > 21 && s.mochiX < 50;
+  const mochi = sampleMochi(clip, time, reduced);
+  const paw = mochiPawPosition(s, mochi);
   const waveX = s.waveLane === null ? 50 : LANES[s.waveLane]!;
   const hover = reduced ? 0 : Math.sin(time / 350) * 1.2;
   const wings = reduced ? 1 : .86 + Math.sin(time / 100) * .14;
-  const lift = reduced ? 0 : s.mochiLift;
   const shellOpen = clip === "reel" ? 1 : s.lensOpacity;
   return (
     <>
@@ -182,7 +183,7 @@ function Scene({
         style={{ opacity: s.ropeProgress > 0 ? 1 : 0 }}
       >
         <path
-          d={`M ${s.mochiX * 10} ${(s.mochiY - 8) * 6.67} Q ${(s.mochiX + s.lensX) * 5} ${s.mochiY * 6.67 - 140} ${s.lensX * 10} ${s.lensY * 6.67}`}
+          d={`M ${paw.x * 10} ${paw.y * 6.67} Q ${(paw.x + s.lensX) * 5} ${Math.min(paw.y, s.lensY) * 6.67 - 70} ${s.lensX * 10} ${s.lensY * 6.67}`}
           pathLength="1"
           strokeDasharray="1"
           strokeDashoffset={1 - s.ropeProgress}
@@ -198,22 +199,7 @@ function Scene({
       >
         <img src={`${ART}lens.webp`} alt="" />
       </div>
-      <div className="motion-actor mochi-actor" style={position(s.mochiX, s.mochiY)}>
-        <span
-          className="actor-shadow"
-          style={{
-            opacity: .22 - Math.min(lift / 220, .14),
-            transform: `translateX(-50%) scale(${1 - Math.min(lift / 180, .25)})`,
-          }}
-        />
-        <img
-          src={`${ART}${stepping ? "mochi-step" : "mochi"}.webp`}
-          alt=""
-          style={{
-            transform: `translateY(${-lift / 10}cqw) rotate(${s.mochiRotate}deg) scale(${s.mochiScaleX}, ${s.mochiScaleY})`,
-          }}
-        />
-      </div>
+      <MochiActor x={s.mochiX} y={s.mochiY} pose={mochi} />
       <div
         className="lure-ring"
         style={{

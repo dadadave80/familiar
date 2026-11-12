@@ -176,7 +176,33 @@ button {
   position: relative;
 }
 .mochi-actor {
-  width: 18%;
+  aspect-ratio: 1;
+  transform: translate(-50%, calc(-1 * var(--mochi-ground)));
+}
+.mochi-actor .actor-shadow {
+  bottom: calc(100% - var(--mochi-ground) - 3%);
+}
+.mochi-body,
+.mochi-cell {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.mochi-body {
+  transform-origin: 50% var(--mochi-ground);
+}
+.mochi-cell {
+  position: relative;
+  overflow: hidden;
+}
+.mochi-actor .mochi-atlas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 400%;
+  height: 400%;
+  max-width: none;
+  transform-origin: 0 0;
 }
 .bram-actor {
   width: 21%;

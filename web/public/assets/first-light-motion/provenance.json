@@ -3,7 +3,7 @@
   "purpose": "Familiar First Light motion preview",
   "delivery": "The player loads WebP renditions of the PNG masters listed below.",
   "source": "OpenAI image generation; original user-approved Familiar design references",
-  "runtimeStatus": "Composited still-image animation assets; not a skeletal rig or registered sprite atlas",
+  "runtimeStatus": "Mochi uses a registered sixteen-pose raster animation atlas sampled on the shared timeline. Other actors remain composited still images; no skeletal rig or runtime 3D models.",
   "files": {
     "arena.png": "beacon_stage",
     "harbor.png": "harbor_stage",
@@ -14,7 +14,11 @@
     "mochi.png": "Reused mochi-idle-candidate.png from approved production concept package",
     "bram.png": "Reused bram-idle-candidate.png from approved production concept package",
     "moth.png": "Reused wind-moth-reference.png from approved production concept package",
-    "shell.png": "motion_barrier"
+    "shell.png": "motion_barrier",
+    "mochi-poses-source-v1.png": "Generated sixteen-pose Mochi identity/acting source sheet (1254×1254)",
+    "mochi-walk-source-v1.png": "Generated four-pose Mochi walking refinement source sheet (1254×1254)",
+    "mochi-poses-v1.webp": "Runtime registered 4×4 Mochi atlas (1024×1024)",
+    "mochi-contact-b-source-v1.png": "Focused opposite planted walk contact correction (1312×1199)"
   },
   "prompts": [
     {
@@ -52,5 +56,56 @@
       "prompt": "One isolated shell barrier for the cozy miniature game Familiar. A large closed scallop shell standing upright, face toward viewer with a slight three-quarter perspective, pale warm ivory ceramic stone with soft salmon ridges and turquoise patina near the small hinge at bottom. This is a physical magical gate covering a relic alcove, not a creature: no face, no eyes, no legs, no lettering, no symbols. Broad fan-shaped shell, beautiful subtle handmade clay texture, strong clean silhouette, gentle natural daylight. Centered object fills 85% of square canvas. TRUE transparent background, no floor, no cast shadow, no halo, no glow, no vignette. One complete intact shell only, separate game sprite. Its fan ridges radiate from hinge to scalloped top edge, suitable for animating two halves opening when struck by a wave. Match the handcrafted premium stop-motion diorama art of the supplied scene.",
       "transparentBackground": true
     }
-  ]
+  ],
+  "animationUpgrade": {
+    "created": "2026-11-12",
+    "direction": "David chose careful and curious movement with a soft stop-motion cadence; keep the 2.5D clay style.",
+    "generator": "Built-in image_gen tool; same approved mochi.png identity reference.",
+    "delivery": {
+      "file": "mochi-poses-v1.webp",
+      "columns": 4,
+      "rows": 4,
+      "cellPixels": 256,
+      "bodyPivotX": 128,
+      "groundY": 224,
+      "webpQuality": 88
+    },
+    "registration": "bun --no-env-file scripts/build-mochi-atlas.ts (ImageMagick + cwebp); common per-source scale and per-pose body pivots, ground line measured from opaque silhouette. Original alpha retained. Walk refinement replaces source-sheet frames 4–7; focused opposite contact replaces frame 6 after visual review.",
+    "poses": [
+      "neutral",
+      "look-right",
+      "turn-right",
+      "profile-right",
+      "walk-contact-a",
+      "walk-pass-a",
+      "walk-contact-b",
+      "walk-pass-b",
+      "turn-left",
+      "reach-ready",
+      "reach-left",
+      "pull-in",
+      "curious",
+      "startled",
+      "brace",
+      "relieved"
+    ],
+    "limitations": "Authored generated key poses, not a hand-animated in-between sequence or skeletal rig. Fixed camera and limited views; real device performance requires separate measurement.",
+    "prompts": [
+      {
+        "source": "mochi-poses-source-v1.png",
+        "prompt": "Use case: stylized-concept. Asset type: production 2D game character pose atlas for Familiar First Light.\nInput image: identity and material reference ONLY. Recreate EXACT same Mochi kitten: plump orange tabby with three forehead stripes, cream muzzle/belly/paw tips, black bead eyes, small brown nose, red knitted scarf, brown leather crossbody satchel hanging on the character's RIGHT hip (viewer LEFT in front view), curled orange striped tail with cream tip. Same soft clay/felt handcrafted miniature material, same head/body proportions and warm upper-left studio light.\n\nPrimary request: one precise 4-column by 4-row sprite sheet, SIXTEEN full-body Mochi poses, ordered row-major as described below. A square 2048x2048 image divided into 16 identical 512x512 invisible cells. Each pose belongs fully inside its own cell with 10% empty transparent margins. All grounded feet share local y=448 baseline, head height and body scale consistent across cells, body pivot centered at local x=256. Keep every tail, paw and scarf fully inside its own cell. Transparent exterior, NO ground/floor/shadows, no separators, no grid lines, no labels, no text, no scenery, no props besides Mochi's own scarf and satchel. Every cell contains exactly ONE complete Mochi. Careful curious personality, restrained soft stop-motion posing, never exaggerated squash or a jumping gait.\n\nRow 1, left to right:\n0 neutral standing, three-quarter FRONT view, facing slightly right, all feet grounded, match reference.\n1 head looking to screen RIGHT, torso still near front, ears attentive.\n2 body turning to screen RIGHT, three-quarter right view, head leads, paws plant.\n3 full right-facing PROFILE, nose pointing screen right, tail at rear, satchel remains anatomically on same hip, not mirrored.\n\nRow 2, left to right: four consecutive grounded WALK RIGHT cycle key poses, same rightward three-quarter view, body almost same position/height, short tiny careful steps:\n4 first contact: near forepaw forward/down, far forepaw back, opposite hindpaw forward.\n5 first passing: near forepaw under chest/raised slightly, hind legs passing.\n6 opposite contact: far forepaw forward/down, near forepaw back, opposite legs switch.\n7 opposite passing: far forepaw under chest/raised slightly, near forepaw reaching next contact.\nUse articulated separate paws, feet close to floor, continuous calm step cycle; NOT four copies, NOT jumping.\n\nRow 3, left to right:\n8 planted three-quarter LEFT turn, nose screen left, authentic opposite body view, preserve anatomical satchel side rather than mirroring.\n9 reach anticipation toward screen LEFT: left-facing three-quarter stance, one front paw lifting, weight stays on other three paws.\n10 full reach toward screen LEFT: same feet/body anchor, leading front paw extended horizontally left at chest height, curious intent face, three other paws grounded.\n11 gentle pull inward/stow: same left-facing stance, leading paw tucks toward satchel/chest, slight weight back, three feet planted.\n\nRow 4, left to right:\n12 curious front pose, head cocked gently toward screen RIGHT, one ear slightly forward, all feet grounded.\n13 surprised small recoil: ears a little back, wide bead eyes, front paw slightly raised, alert but safe and cute.\n14 low braced recovery: four feet grounded a bit wider, knees bent, head a little low, eyes attentive; no injury.\n15 relieved pleased front-three-quarter pose: eyes softly closed in a smile, shoulders relaxed, paws grounded.\n\nConstraints: same character model and camera elevation in every cell, identity-lock face/scarf/satchel/materials, no duplicate cells, no missing cells, no clipping. Only the requested pose/view changes. Clean transparent alpha all outside actual character silhouettes.",
+        "transparentBackground": true
+      },
+      {
+        "source": "mochi-walk-source-v1.png",
+        "prompt": "Use case: stylized-concept. Asset type: four consecutive key frames for a small 2D clay kitten WALK cycle. First reference is identity/style; second reference is pose sheet identity/style. Need a more anatomically distinct walk than the earlier sheet.\n\nCreate ONE square transparent sprite sheet, exactly TWO columns and TWO rows, four full-body poses. Each equal cell exactly one SAME Mochi, same body size, same camera elevated three-quarter SIDE view looking to screen RIGHT, same lighting, body center and planted foot line. Clean alpha transparent exterior, no ground, no shadows, no text or separators. Body nearly stationary, no jumping, careful little steps. Small light-colored front paws must change position in each image so four frames are visibly distinct. Preserve orange tabby, cream belly/muzzle/paws/tailtip, black bead eyes, red knit scarf, brown satchel on same visible hip. Full tails and paw tips inside each cell with generous 12% margin.\n\nRow1 col1 CONTACT A: near front leg stretches FORWARD toward screen RIGHT and is planted. Far front leg stretches BACK toward screen LEFT. Near hind leg stretches BACK screen LEFT. Far hind leg forward right. Clear short diagonal grounded gait.\nRow1 col2 PASS A: near front leg now bends below chest, near paw near body center. Far front leg nearly straight vertical planted. Near hind leg comes forward under body, far hind leg extends back.\nRow2 col1 CONTACT B, OPPOSITE OF FIRST: near front leg distinctly points BACKWARD screen LEFT and planted (visible cream paw on LEFT side under shoulder). Far front leg stretches FORWARD screen RIGHT and is planted (visible beyond body). Near hind leg reaches FORWARD right. Far hind leg extends BACK left. Body shape remains identical.\nRow2 col2 PASS B, OPPOSITE OF SECOND: near front leg straight VERTICAL planted below shoulder. Far front leg bends forward with paw LIFTED toward screen RIGHT. Near hind leg planted under body, far hind leg raised passing forward.\n\nCRITICAL: Do NOT repeat the same near-front-paw-forward pose in both contact frames. In the third cell the near front paw must be BEHIND its shoulder toward LEFT, with the farther front paw ahead to RIGHT. This is grounded articulated walking, no leap or run. Identical continuous character model and body proportions across all four images.",
+        "transparentBackground": true
+      },
+      {
+        "source": "mochi-contact-b-source-v1.png",
+        "prompt": "Use case: precise-object-edit. Asset type: ONE replacement walk contact pose for a 2D clay kitten game.\nReference1: approved Mochi identity. Reference2: current walk sheet; use its clay material, head/body shape, right-facing three-quarter view and walking body proportions.\n\nCreate a SINGLE full-body Mochi on true transparent background, not a sheet. Same orange tabby, cream muzzle and pawtips and tailtip, black eyes, red knitted scarf, brown satchel. Camera and lighting exactly match the walk sheet. Same right-facing direction.\n\nPRIMARY CHANGE: draw the OPPOSITE leg arrangement to the top-left walking pose in the walk sheet.\nIn this new pose the NEAR FORELEG, the front leg closest to the viewer on the visible side below the satchel/chest, sweeps BACKWARDS TOWARD SCREEN LEFT, with its cream paw planted behind the shoulder. Make this backwards foreleg VERY CLEAR and unobscured, diagonal back-left. The FAR FORELEG on the other side reaches FORWARDS TOWARD SCREEN RIGHT, with cream paw planted beyond the chest. The near hind leg reaches forwards underneath the tummy, the far hind leg reaches back-left. Four anatomically correct legs only. Calm short grounded stride, NOT airborne. Body and head held steady. This pose must visibly reverse the near-front-paw-forward arrangement of the reference. Do NOT reuse that same near-paw-forward silhouette. Do not raise a front paw into a reaching gesture: all contact feet on ground. Tail and scarf rest naturally.\n\nFull complete character centered with 12% transparent empty margin on all sides. No floor, shadow, glow, background, text, grid or new props. Preserve the approved face, scarf knot, satchel, colors, felt/clay texture.",
+        "transparentBackground": true
+      }
+    ]
+  }
 }

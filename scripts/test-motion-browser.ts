@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium, expect, type Page } from "@playwright/test";
+import { MOCHI_POSES, type MochiPoseName } from "../web/src/motion/mochi";
 
 const origin = "http://127.0.0.1:5186";
 const captures = join(tmpdir(), "familiar-motion-browser");
@@ -29,12 +30,77 @@ const settle = (page: Page) => page.evaluate(() => new Promise<void>((resolve) =
   requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
 ));
 
+async function seek(page: Page, milliseconds: number) {
+  await page.getByRole("slider", { name: "Scrub animation", exact: true }).evaluate((input, value) => {
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    setValue.call(input, String(value));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, milliseconds);
+  await expect.poll(() => time(page)).toBe(milliseconds);
+  await settle(page);
+}
+
+async function actorSnapshot(page: Page) {
+  return page.getByTestId("mochi-actor").evaluate((actor) => ({
+    pose: actor.getAttribute("data-pose"),
+    frame: actor.getAttribute("data-frame"),
+    position: getComputedStyle(actor).transform,
+    body: getComputedStyle(actor.querySelector(".mochi-body")!).transform,
+    crop: getComputedStyle(actor.querySelector(".mochi-atlas")!).transform,
+  }));
+}
+
+async function expectPose(page: Page, milliseconds: number, pose: MochiPoseName) {
+  await seek(page, milliseconds);
+  const actor = page.getByTestId("mochi-actor");
+  await expect(actor).toHaveAttribute("data-pose", pose);
+  await expect(actor).toHaveAttribute("data-frame", String(MOCHI_POSES[pose].frame));
+  const crop = await actor.evaluate((element) => {
+    const image = element.querySelector<HTMLImageElement>(".mochi-atlas")!;
+    const cell = element.querySelector<HTMLElement>(".mochi-cell")!;
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(image).transform);
+    const frame = Number(element.getAttribute("data-frame"));
+    return {
+      overflow: getComputedStyle(cell).overflow,
+      horizontalError: Math.abs(matrix.e + (frame % 4) * cell.clientWidth),
+      verticalError: Math.abs(matrix.f + Math.floor(frame / 4) * cell.clientHeight),
+      columns: image.clientWidth / cell.clientWidth,
+      rows: image.clientHeight / cell.clientHeight,
+    };
+  });
+  assert.equal(crop.overflow, "hidden", "Atlas cells do not spill into neighboring poses");
+  assert(crop.horizontalError < 2 && crop.verticalError < 2, "Atlas crop shows the selected registered cell");
+  assert(Math.abs(crop.columns - 4) < .1 && Math.abs(crop.rows - 4) < .1, "Atlas renders as a four-by-four pose sheet");
+}
+
+async function expectPawAttached(page: Page, pose: MochiPoseName) {
+  const distance = await page.evaluate(({ x, y }) => {
+    const body = document.querySelector<HTMLElement>(".mochi-body")!;
+    const cell = body.querySelector<HTMLElement>(".mochi-cell")!;
+    const path = document.querySelector<SVGPathElement>(".motion-rope path")!;
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(body).transform);
+    const [originX, originY] = getComputedStyle(body).transformOrigin.split(" ").map(Number.parseFloat);
+    const point = new DOMPoint(x * cell.offsetWidth - originX!, y * cell.offsetHeight - originY!)
+      .matrixTransform(matrix);
+    // offsetLeft/Top are untransformed; restore the body's transform origin in its actor.
+    const actor = body.parentElement!.getBoundingClientRect();
+    const pawX = actor.left + point.x + originX!;
+    const pawY = actor.top + point.y + originY!;
+    const start = path.getPointAtLength(0).matrixTransform(path.getScreenCTM()!);
+    return Math.hypot(start.x - pawX, start.y - pawY);
+  }, MOCHI_POSES[pose].paw);
+  assert(distance < 2, `Reel line starts at the displayed ${pose} paw (${distance.toFixed(2)}px)`);
+}
+
 async function expectPaused(page: Page, message: string) {
   await expect(status(page), message).toHaveAttribute("data-playing", "false");
   await settle(page);
   const before = await time(page);
+  const beforeActor = await actorSnapshot(page);
   await page.waitForTimeout(180);
   assert.equal(await time(page), before, message);
+  assert.deepEqual(await actorSnapshot(page), beforeActor, `${message}: Mochi pose and atlas crop also freeze`);
   const runningAnimations = await page.getByTestId("motion-stage").evaluate((stage) =>
     stage.getAnimations({ subtree: true }).filter((animation) => animation.playState === "running").length,
   );
@@ -101,6 +167,9 @@ try {
       return images.filter((image) => !image.naturalWidth).map((image) => image.src);
     });
     assert.deepEqual(brokenImages, [], `${label}: scene and character images decode`);
+    await expect(page.locator(".mochi-atlas")).toHaveJSProperty("naturalWidth", 1024);
+    await expect(page.locator(".mochi-atlas")).toHaveJSProperty("naturalHeight", 1024);
+    await expect(page.locator(".mochi-atlas")).toHaveAttribute("src", /\/mochi-poses-v1\.webp$/);
     await settle(page);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
       `${label}: no document-level horizontal overflow`);
@@ -159,15 +228,60 @@ try {
         await expect(intactShell.locator("img")).toHaveCount(1);
         await expect(intactShell.locator("img")).toHaveCSS("transform", "none");
       }
+      if (clip === "dodge") {
+        await expectPose(page, 900, "look-right");
+        const headLead = await actorSnapshot(page);
+        await expectPose(page, 1200, "turn-right");
+        await page.getByTestId("motion-stage").screenshot({ path: join(captures, `${label}-mochi-turn.png`) });
+        await expectPose(page, 1400, "turn-right");
+        for (const [at, pose] of [
+          [1500, "walk-contact-a"], [1675, "walk-pass-a"],
+          [1800, "walk-contact-b"], [1850, "walk-pass-b"],
+        ] as const) {
+          await expectPose(page, at, pose);
+          await expectPaused(page, `${label}: ${pose} is frozen at the chosen walk contact`);
+          await page.getByTestId("motion-stage").screenshot({ path: join(captures, `${label}-mochi-${pose}.png`) });
+        }
+        await expectPose(page, 2250, "turn-right");
+        await expectPose(page, 900, "look-right");
+        assert.deepEqual(await actorSnapshot(page), headLead, `${label}: reverse scrubbing restores the exact earlier turn pose`);
+      }
+      if (clip === "reel") {
+        await expectPose(page, 250, "turn-left");
+        await expectPose(page, 600, "reach-ready");
+        await expectPawAttached(page, "reach-ready");
+        await expectPose(page, 1000, "reach-left");
+        await expectPawAttached(page, "reach-left");
+        await page.getByTestId("motion-stage").screenshot({ path: join(captures, `${label}-mochi-reach.png`) });
+        await expectPose(page, 1500, "pull-in");
+        await expectPawAttached(page, "pull-in");
+        await page.getByTestId("motion-stage").screenshot({ path: join(captures, `${label}-mochi-pull.png`) });
+        await expectPose(page, 3800, "relieved");
+        await expectPose(page, 1000, "reach-left");
+        await expectPaused(page, `${label}: reversing from stow restores the reaching pose and line`);
+      }
+      if (clip === "hit") {
+        await expectPose(page, 2250, "startled");
+        await expect(page.locator(".motion-scene-art")).toHaveAttribute("aria-label", /Resolve: 2 of 3\./);
+        await page.getByTestId("motion-stage").screenshot({ path: join(captures, `${label}-mochi-startle.png`) });
+        await expectPose(page, 2800, "brace");
+        await page.getByTestId("motion-stage").screenshot({ path: join(captures, `${label}-mochi-recovery.png`) });
+        await expectPose(page, 3500, "relieved");
+        await page.getByRole("checkbox", { name: "Reduced motion", exact: true }).check();
+        await expectPose(page, 2250, "brace");
+        await expect(page.locator(".mochi-body")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+        await expect(page.locator(".motion-scene-art")).toHaveAttribute("aria-label", /Resolve: 2 of 3\./);
+        await expectPaused(page, `${label}: reduced impact presents a planted pose without recoil`);
+        await page.getByRole("checkbox", { name: "Reduced motion", exact: true }).uncheck();
+      }
+      if (clip === "moth") {
+        await expectPose(page, 1400, "look-right");
+        await expectPose(page, 2300, "curious");
+        await page.getByTestId("motion-stage").screenshot({ path: join(captures, `${label}-mochi-curious.png`) });
+      }
       if (label === "desktop" && clip === "dodge") {
         // Send the same native input event as scrubbing, at a deterministic impact instant.
-        await slider.evaluate((input) => {
-          const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
-          setValue.call(input, "3500");
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-        });
-        await expect.poll(() => time(page)).toBe(3500);
+        await seek(page, 3500);
         const openness = Number(await openingShell.getAttribute("data-open"));
         assert(openness > 0 && openness < 1, "Impact scrubbing presents a partly opened shell");
         const transforms = await openingShell.locator("img").evaluateAll((halves) =>
@@ -291,40 +405,46 @@ try {
   await reducedContext.close();
   console.info("PASS system reduced-motion preference");
 
-  const recoveryContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const recoveryPage = await recoveryContext.newPage();
-  let imageAvailable = false;
-  const recoveryRequests: string[] = [];
-  await recoveryPage.route("**/*", (route) => {
-    const url = new URL(route.request().url());
-    if (url.origin !== origin || /^\/(?:api|npc-api)(?:\/|$)/.test(url.pathname)) {
-      recoveryRequests.push(url.href);
-      return route.abort("blockedbyclient");
-    }
-    if (url.pathname.endsWith("/first-light-motion/arena.webp") && !imageAvailable) {
-      return route.fulfill({ status: 503, body: "Simulated scene-image outage", contentType: "text/plain" });
-    }
-    return route.continue();
-  });
-  await recoveryPage.goto(`${origin}/motion`);
-  await expect(recoveryPage.getByText("The scene art couldn’t load.", { exact: true })).toBeVisible();
-  await expect(recoveryPage.getByRole("button", { name: "Play", exact: true })).toBeDisabled();
-  await recoveryPage.screenshot({ path: join(captures, "mobile-asset-error.png"), fullPage: true });
-  imageAvailable = true;
-  await recoveryPage.getByRole("button", { name: "Try again", exact: true }).focus();
-  await recoveryPage.keyboard.press("Enter");
-  await expect(recoveryPage.getByRole("button", { name: "Play", exact: true })).toBeEnabled();
-  await expect.poll(() => recoveryPage.locator(".motion-backdrop").evaluate((image) =>
-    (image as HTMLImageElement).naturalWidth,
-  ), { message: "Retry restores the visible scene image, not only preloader state" }).toBeGreaterThan(0);
-  await recoveryPage.getByRole("button", { name: "Replay", exact: true }).click();
-  await expect.poll(() => time(recoveryPage)).toBeGreaterThan(100);
-  await recoveryPage.getByRole("button", { name: "Pause", exact: true }).click();
-  await expectPaused(recoveryPage, "Recovered scene supports normal playback");
-  await recoveryPage.screenshot({ path: join(captures, "mobile-asset-recovered.png"), fullPage: true });
-  assert.deepEqual(recoveryRequests, [], "Asset retry needs no backend or external service");
-  await recoveryContext.close();
-  console.info(`PASS injected image outage, accessible retry and recovered playback. Captures: ${captures}`);
+  for (const [filename, selector, label] of [
+    ["arena.webp", ".motion-backdrop", "scene"],
+    ["mochi-poses-v1.webp", ".mochi-atlas", "mochi-atlas"],
+  ] as const) {
+    const recoveryContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const recoveryPage = await recoveryContext.newPage();
+    let imageAvailable = false;
+    const recoveryRequests: string[] = [];
+    await recoveryPage.route("**/*", (route) => {
+      const url = new URL(route.request().url());
+      if (url.origin !== origin || /^\/(?:api|npc-api)(?:\/|$)/.test(url.pathname)) {
+        recoveryRequests.push(url.href);
+        return route.abort("blockedbyclient");
+      }
+      if (url.pathname.endsWith(`/first-light-motion/${filename}`) && !imageAvailable) {
+        return route.fulfill({ status: 503, body: `Simulated ${label} outage`, contentType: "text/plain" });
+      }
+      return route.continue();
+    });
+    await recoveryPage.goto(`${origin}/motion`);
+    await expect(recoveryPage.getByText("The scene art couldn’t load.", { exact: true })).toBeVisible();
+    await expect(recoveryPage.getByRole("button", { name: "Play", exact: true })).toBeDisabled();
+    await recoveryPage.screenshot({ path: join(captures, `mobile-${label}-error.png`), fullPage: true });
+    imageAvailable = true;
+    await recoveryPage.getByRole("button", { name: "Try again", exact: true }).focus();
+    await recoveryPage.keyboard.press("Enter");
+    await expect(recoveryPage.getByRole("button", { name: "Play", exact: true })).toBeEnabled();
+    await expect.poll(() => recoveryPage.locator(selector).evaluate((image) =>
+      (image as HTMLImageElement).naturalWidth,
+    ), { message: `Retry restores the visible ${label} image, not only preloader state` }).toBeGreaterThan(0);
+    await recoveryPage.getByRole("button", { name: "Replay", exact: true }).click();
+    await expect.poll(() => time(recoveryPage)).toBeGreaterThan(100);
+    await recoveryPage.getByRole("button", { name: "Pause", exact: true }).click();
+    await expectPaused(recoveryPage, `Recovered ${label} supports normal playback`);
+    await recoveryPage.screenshot({ path: join(captures, `mobile-${label}-recovered.png`), fullPage: true });
+    assert.deepEqual(recoveryRequests, [], `${label} retry needs no backend or external service`);
+    await recoveryContext.close();
+    console.info(`PASS injected ${label} outage, accessible retry and recovered playback`);
+  }
+  console.info(`Captures: ${captures}`);
 } finally {
   await browser.close();
   server.kill();

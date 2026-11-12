@@ -14,10 +14,6 @@ export interface SceneState {
   harbor: boolean;
   mochiX: number;
   mochiY: number;
-  mochiLift: number;
-  mochiRotate: number;
-  mochiScaleX: number;
-  mochiScaleY: number;
   guardianLift: number;
   guardianScale: number;
   waveLane: Lane | null;
@@ -161,7 +157,6 @@ export function sampleScene(id: ClipId, time: number): SceneState {
   const harbor = clip.chapter === "Homecoming";
   const state: SceneState = {
     harbor, mochiX: harbor ? 43 : 50, mochiY: harbor ? 83 : 62,
-    mochiLift: 0, mochiRotate: 0, mochiScaleX: 1, mochiScaleY: 1,
     guardianLift: 0, guardianScale: 1,
     waveLane: null, waveProgress: 0, waveOpacity: 0,
     targetLane: null, targetOpacity: 0, echoLane: null, echoOpacity: 0,
@@ -173,13 +168,7 @@ export function sampleScene(id: ClipId, time: number): SceneState {
   switch (id) {
     case "dodge": {
       const step = between(t, 1500, 2250);
-      const lift = pulse(t, 1500, 1850, 2250);
-      const brace = pulse(t, 1200, 1500, 1700);
       state.mochiX = mix(21, 50, step);
-      state.mochiLift = 22 * lift;
-      state.mochiRotate = -6 * brace + 4 * lift;
-      state.mochiScaleX = 1 + 0.07 * brace - 0.035 * lift;
-      state.mochiScaleY = 1 - 0.07 * brace + 0.045 * lift;
       state.targetLane = 0;
       state.targetOpacity = between(t, 200, 600) * (1 - between(t, 3100, 3400));
       state.guardianLift = 8 * pulse(t, 800, 1450, 2400);
@@ -192,8 +181,6 @@ export function sampleScene(id: ClipId, time: number): SceneState {
       state.targetLane = t < 1800 ? 1 : 0;
       state.targetOpacity = between(t, 150, 450) * (1 - between(t, 3400, 3650));
       state.lureOpacity = pulse(t, 1000, 1750, 2350);
-      state.mochiRotate = -5 * pulse(t, 1050, 1650, 2250);
-      state.mochiScaleY = 1 + 0.025 * pulse(t, 1250, 1750, 2300);
       state.guardianLift = 8 * pulse(t, 850, 1600, 2500);
       wave(state, t, 0, 2650, 3550);
       state.lensOpacity = between(t, 3750, 4100);
@@ -205,9 +192,6 @@ export function sampleScene(id: ClipId, time: number): SceneState {
       state.lensY = mix(48, 53, pull) - 6 * Math.sin(Math.PI * pull);
       state.lensOpacity = 1 - between(t, 2900, 3400);
       state.ropeProgress = between(t, 450, 950) * (1 - between(t, 2800, 3100));
-      state.mochiRotate = 5 * pulse(t, 600, 1300, 2850) - 3 * pulse(t, 2850, 3100, 3500);
-      state.mochiScaleX = 1 + 0.025 * pulse(t, 2700, 3000, 3500);
-      state.mochiScaleY = 1 - 0.025 * pulse(t, 2700, 3000, 3500);
       state.celebration = pulse(t, 3300, 3650, 4250);
       break;
     }
@@ -227,17 +211,11 @@ export function sampleScene(id: ClipId, time: number): SceneState {
       state.vaneRotation = mix(120, 240, between(t, 950, 1750));
       state.targetLane = 1;
       state.targetOpacity = 1 - between(t, 3100, 3500);
-      state.mochiRotate = -4 * pulse(t, 900, 1250, 1900);
       wave(state, t, t < 1750 ? 2 : 0, 2400, 3300);
       break;
     }
     case "hit": {
-      const impact = pulse(t, 2200, 2320, 2800);
       state.mochiX = 21;
-      state.mochiLift = 11 * impact;
-      state.mochiRotate = -9 * impact + 3 * pulse(t, 2750, 3000, 3400);
-      state.mochiScaleX = 1 + 0.09 * impact;
-      state.mochiScaleY = 1 - 0.09 * impact;
       state.targetLane = 0;
       state.targetOpacity = 1 - between(t, 2100, 2350);
       state.resolve = t >= 2200 ? 2 : 3;
@@ -246,33 +224,19 @@ export function sampleScene(id: ClipId, time: number): SceneState {
     }
     case "beacon": {
       const rise = between(t, 900, 2600);
-      const joy = pulse(t, 3800, 4080, 4400);
       state.lensX = mix(43, 82.6, rise);
       state.lensY = mix(72, 23, rise) - 8 * Math.sin(Math.PI * rise);
       state.lensOpacity = 1 - between(t, 2750, 3050);
       state.beacon = between(t, 2700, 3700);
-      state.mochiLift = 14 * joy;
-      state.mochiRotate = -3 * joy;
-      state.mochiScaleX = 1 - 0.035 * joy;
-      state.mochiScaleY = 1 + 0.035 * joy;
       state.celebration = pulse(t, 3500, 4100, 5000);
       break;
     }
     case "idle": {
-      const breath = t === clip.duration ? 0 : (1 - Math.cos(2 * Math.PI * t / 3250)) / 2;
-      state.mochiScaleX = 1 - 0.004 * breath;
-      state.mochiScaleY = 1 + 0.012 * breath;
-      state.mochiLift = 1.5 * breath;
-      state.mochiRotate = t === clip.duration ? 0 : 0.7 * Math.sin(2 * Math.PI * t / 6500);
       state.beacon = 1;
       break;
     }
     case "moth": {
-      const notice = pulse(t, 1000, 2000, 4800);
       state.moth = between(t, 500, 1400);
-      state.mochiRotate = -5 * notice;
-      state.mochiLift = 2 * notice;
-      state.mochiScaleY = 1 + 0.015 * notice;
       state.beacon = 1;
       break;
     }
