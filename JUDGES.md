@@ -2,7 +2,7 @@
 
 ## Tidebound candidate — November 12, 2026
 
-**Status: local/sandbox candidate; H1 live recovery/ownership gates remain blocked.** Nothing in this candidate was pushed, published or submitted. “Tidebound” remains a proposed subtitle. The public site has the earlier Beacon build.
+**Status: local/sandbox candidate; H1 live recovery/ownership gates remain blocked.** The recovery-only HTTPS check was explicitly approved and published; the game candidate remains local and no source push or submission occurred. “Tidebound” remains a proposed subtitle. The public game has the earlier Beacon build.
 
 ### Reproduce the current work
 
@@ -48,7 +48,7 @@ The server verifies Privy JWTs with the official SDK and resolves a stable per-a
 
 David chose `familiar-game.testnet` after confirming he does not control `familiar.testnet`. The candidate factory atomically reserves `player1.familiar-game.testnet` for a chosen username and canonical recovered key. Returning login resolves root.get_player; it does not make a fresh player or wallet. Name/key/companion collisions, unknown results and stale callbacks preserve the original reservation. The planned root is absent in the read-only candidate, so this is not a live username issuance claim.
 
-Mac, Android and iPad are available; **0 two-device recovery checks completed**. A stable approved HTTPS origin and second-device participation are still required. The isolated spike has no game backend, NEAR private key, broadcast, funding or purchase route. Native game gas/storage/1yocto remain player-funded; no H2 sale principal route exists.
+Mac, Android and iPad are available; **0 two-device recovery checks completed**. David approved the recovery-only HTTPS publication and reported saving the same app’s allowed origin. Second-device participation is still required. The isolated spike has no game backend, NEAR private key, broadcast, funding or purchase route. Native game gas/storage/1yocto remain player-funded; no H2 sale principal route exists.
 
 Pending native actions retain their original canonical bytes and signature. Receipt reconciliation clears the local envelope only after the original final result. An explicit expiry check can also clear that envelope after proving protocol-defined expiry and an unused nonce at the same finalized block, then refreshing canonical state. It never releases a contract reservation, refunds Shells, signs replacement bytes or remints an item. A consumed nonce with an unknown receipt remains pending.
 
@@ -62,7 +62,7 @@ Read-only preflight for `familiar-game.testnet` found the root and its items/bak
 
 `bun run package:privy-review <existing-rendered-release-directory>` prepares a local Vercel overlay for the existing Familiar project. It preserves all98 original static files byte-for-byte, adds the recovery-only page and one private572,516-byte Node24 wallet endpoint, and refuses a static path collision. It does not release the new game UI. `bun run test:privy-review-browser <prepared-release-directory>` checks the compiled recovery page and preserved site in local Chromium; the serverless function is checked separately through actual local Node HTTP. No upload, environment mutation or publication is performed by either command.
 
-The endpoint defaults off and accepts only the exact wallet URL, configured origin, bounded authenticated body and POST/OPTIONS. It has no game backend, NEAR key, signing/export or broadcast route. Runtime `PRIVY_APP_SECRET` must be configured privately after explicit publication approval; no secret value occurs in the artifact. Instance quotas are process-local. Cloud execution and HTTPS device recovery remain untested. The exact artifact/function hash, current production deployment and required Privy Allowed Origin are in the external `VERCEL-RECOVERY-REVIEW.md`; a prepared package is not authorization to publish.
+The endpoint defaults off and accepts only the exact wallet URL, configured origin, bounded authenticated body and POST/OPTIONS. It has no game backend, NEAR key, signing/export or broadcast route. Runtime credentials were privately configured after David’s explicit approval, with App ID/secret stored as sensitive production variables; no secret value occurs in the artifact. Instance quotas are process-local. Actual cloud anonymous origin/auth/method checks and the public browser startup passed; authenticated HTTPS device recovery is still pending. [PRIVY-RECOVERY-DEPLOYMENT.json](docs/PRIVY-RECOVERY-DEPLOYMENT.json) records the actual production deployment, HTTP results and all98 preserved public file hashes. The page is [live here](https://familiar-two.vercel.app/privy-spike/). The external `VERCEL-RECOVERY-REVIEW.md` retains the reviewed action and scoped approval.
 
 ### Playtest and performance limits
 
@@ -78,7 +78,7 @@ Human formative study: **0/8 participants tested**, so causality, home-change, v
 
 1:40 — In a separate terminal, show the local Tidebound sandbox assertions for one credit, commission, same-token finish/gift and former-holder rejection. Label the network **local sandbox**.
 
-2:20 — Show the Privy sign-only check and disabled game issuance, with the exact remaining wallet/device/contract gates. Do not narrate a successful live account recovery, mainnet settlement or published release. After those gates really pass, replace this disclosure with the measured real-device/receipt evidence.
+2:20 — Show the Privy sign-only check and disabled game issuance, with the exact remaining wallet/device/contract gates. Do not narrate a successful live account recovery, mainnet settlement or full game release. Identify the published recovery-only page separately. After those gates really pass, replace this disclosure with the measured real-device/receipt evidence.
 
 ### Baseline-to-candidate disclosure
 
@@ -91,12 +91,12 @@ Task baseline: `4d8cb2e` (existing game, art, landing, Wind Gate, legacy contrac
 | T0 | Source, dependencies, baseline, authority and minimum cutline recorded | None for source inspection |
 | T2 / T4 | Pure event/adoption rules and complete local lantern homecoming | Confirmed ownership remains separate |
 | T3 | Scene-led local game and responsive browser checks | Physical-device performance/readability and human comprehension unmeasured |
-| T1 / T5 / T8 | Account adapter, exact-byte signing, canonical snapshot and conflict handling implemented and locally checked | Restore the same Privy wallet on a second device; approved HTTPS origin; named-account live binding |
+| T1 / T5 / T8 | Account adapter, exact-byte signing, canonical snapshot and conflict handling implemented and locally checked | Restore the same Privy wallet on a second device; named-account live binding |
 | T6 / T7 / T9 | Replay, finite ledger, idempotent mint, polish and transfer execute in the real local sandbox | Fresh compatible live testnet deployment and end-to-end receipts |
 | T10 | Existing second goals preserved and machine-playable |0/8 formative study participants; voluntary continuation unmeasured |
 | T11 / T12 | Cut from minimum H1; no Intents route or payment support claimed | H2 prerequisites, current route proof and explicit authorization/budget |
 | T13 | Local failure/retry, export and browser checks implemented | Real-device/provider outage behavior, production capacity and recovery remain unverified |
-| T14 | Reproducibility guide, honest demo, evidence and baseline diff prepared locally | Public release, video and submission not authorized or completed |
+| T14 | Reproducibility guide, honest demo, evidence and baseline diff prepared locally | Full game release, video and submission not authorized or completed; recovery-only page published with approval |
 
 H1 remains incomplete until its live/device/human gates pass. Dynamic merchants, extra recipes/arenas/replays and P2P listing are cut. No every-chain support, dry-quote execution, cash redemption or prize claim.
 

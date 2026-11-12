@@ -1,6 +1,6 @@
 # Familiar
 
-The local Tidebound H1 candidate adds a Storycraft lantern, a finite personal commission/finish, and a recoverable-account adapter to the existing First Light adventure. **H1 is not yet a completed live integration:** two-device recovery, an approved HTTPS origin, fresh compatible testnet deployment and human playtests remain outstanding. New issuance is disabled by default. The public site still serves the earlier release.
+The local Tidebound H1 candidate adds a Storycraft lantern, a finite personal commission/finish, and a recoverable-account adapter to the existing First Light adventure. **H1 is not yet a completed live integration:** two-device recovery, fresh compatible testnet deployment and human playtests remain outstanding. New issuance is disabled by default. The public game still serves the earlier release; the separately approved [Privy recovery check](https://familiar-two.vercel.app/privy-spike/) is now live.
 
 Run `bun run dev` and open `/outing/` for the local game. The existing artwork fills the viewport, with custom wood/brass navigation and parchment actions over the world. Use Workshop for Crest/Moth, porch/dock placement and an illustrated origin. Beacon Court, Wind Gate, the two-shell challenge and legacy holdings are preserved. The whole game page stays fixed; contained detail/account panels may scroll where useful.
 

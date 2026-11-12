@@ -1,0 +1,570 @@
+{
+  "scope": "recovery-only publication explicitly approved by David on 2026-11-12",
+  "project": "familiar",
+  "projectId": "prj_BfSIGWQo1vzXglQE2Hoh68ZWxriF",
+  "deploymentId": "dpl_9G3pzTEJfVDGT3DZyfH7RKp4H9vM",
+  "deploymentUrl": "https://familiar-hgv6ajd1o-david-dadas-projects.vercel.app",
+  "publicPage": "https://familiar-two.vercel.app/privy-spike/",
+  "previousProductionDeployment": "dpl_xK67MD1PJemN7XuN3pw9QR3DdQXe",
+  "state": "READY",
+  "runtime": "nodejs24.x",
+  "uploadedFunctionSha256": "b2864a208ebd9350fb15ce59110feddc6323d721c8a91ffe13aad9db80d723eb",
+  "environmentMetadata": [
+    {
+      "key": "PRIVY_APP_ID",
+      "type": "sensitive",
+      "target": "production"
+    },
+    {
+      "key": "PRIVY_APP_SECRET",
+      "type": "sensitive",
+      "target": "production"
+    },
+    {
+      "key": "PRIVY_REVIEW_ENABLED",
+      "type": "encrypted",
+      "target": "production"
+    }
+  ],
+  "httpChecks": {
+    "checkedAt": "2026-11-12T19:23:11.327Z",
+    "origin": "https://familiar-two.vercel.app",
+    "deployment": "dpl_9G3pzTEJfVDGT3DZyfH7RKp4H9vM",
+    "homepagePreserved": true,
+    "recoveryPage": 200,
+    "results": [
+      {
+        "path": "/api/v1/privy/wallet",
+        "method": "POST",
+        "status": 401,
+        "cache": "no-store"
+      },
+      {
+        "path": "/api/v1/privy/wallet",
+        "method": "POST",
+        "status": 403,
+        "cache": "no-store"
+      },
+      {
+        "path": "/api/v1/privy/wallet",
+        "method": "GET",
+        "status": 405,
+        "cache": "no-store"
+      },
+      {
+        "path": "/api/v1/privy/player",
+        "method": "POST",
+        "status": 404,
+        "cache": "public, max-age=0, must-revalidate"
+      },
+      {
+        "path": "/.env.privy.local",
+        "method": "GET",
+        "status": 404,
+        "cache": "public, max-age=0, must-revalidate"
+      }
+    ]
+  },
+  "preservedStaticFiles": {
+    "checkedAt": "2026-11-12T19:26:22.351Z",
+    "deployment": "dpl_9G3pzTEJfVDGT3DZyfH7RKp4H9vM",
+    "origin": "https://familiar-two.vercel.app",
+    "files": [
+      {
+        "path": "assets/__vite-browser-external-NkSIBfMg.js",
+        "sha256": "9b8b080dbfa85f85cdef2697f38579142a7adf548cf030c143999f60b18606a9",
+        "status": 200
+      },
+      {
+        "path": "assets/App-BB-BTgIX.js",
+        "sha256": "38f946015b75a205405388ddf950aed248e0abe4b3f4dec2a1e319caf2b2652f",
+        "status": 200
+      },
+      {
+        "path": "assets/auth-sdk-Cy-mf9ok.js",
+        "sha256": "4bb1fbb1155da4fa426ac568157482df5a98f6e7a8247af851586af93dea146f",
+        "status": 200
+      },
+      {
+        "path": "assets/browser-index-CT9WsFnD.js",
+        "sha256": "6c26bf2cc8e41b16838a5305c3f359c4f998f5dfb0dfa2127beb323fb1698d3b",
+        "status": 200
+      },
+      {
+        "path": "assets/buffer-qNXQTdCV.js",
+        "sha256": "abc5751025c02df5f83e7810df87ddf60d308f98e6428a7ced74d06b8bd4b816",
+        "status": 200
+      },
+      {
+        "path": "assets/dist-C1ml9xEv.js",
+        "sha256": "e9f47a5262a9e3ff91ce0495e9575bf93b8ba551e60ac3b7dce0fd80a95a911a",
+        "status": 200
+      },
+      {
+        "path": "assets/dist-CTLrzys6.js",
+        "sha256": "f6e2eb83736d42d646ad004f631898b0bdd067554c280c20e7e0a9b76e928389",
+        "status": 200
+      },
+      {
+        "path": "assets/figtree-latin-wght-normal-D_ZTVpCC.woff2",
+        "sha256": "4ba7d3d096695818fe0686be4f1e82c6b05134e18a22260336130335027462dd",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/arena.webp",
+        "sha256": "5dd6d3dee29be632e06c096571fa420fafd57d43f6eda168655b36fe738d4852",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/bram.webp",
+        "sha256": "d014994fbb253b4b5ed523a4bf3d43efa06ad7c086ae52dea5c2f46446d01940",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/harbor.webp",
+        "sha256": "8b8152e93ae42137a9e7ea16ba04e014b0c3e3957204ae25dc703b2b7b3c59b2",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/lens.webp",
+        "sha256": "6e8dc354cb0c871d4fee0982c997a6fa0fbabf23feb1a187012aad608ca7f5ca",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/mochi-poses-v1.webp",
+        "sha256": "f7c772c16b58eb5adf7954bb0d68ed3070064add8a15570f52eac734fb2bec34",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/mochi-step.webp",
+        "sha256": "c5a84cd812030333a0d263226cfeb9c7d2582049a27c4ea5e559adbf972997a0",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/mochi.webp",
+        "sha256": "38f25df3f83069a347dc154d459afe9ef56b55ec5ddc5a84289b5f1b754b679b",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/moth.webp",
+        "sha256": "10ec2436f73cb20b305938032331c9796fa1c34d1bc925e5be640c7a8c6fb2c4",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/provenance.json",
+        "sha256": "d62382748abdf30125a50ca12046c3f5e896dc7c2fe868451847fbc37988d282",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/shell.webp",
+        "sha256": "58e45abc4560ab49b287c8e69672508c9246488a10f98398c615e1a76adb343e",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/tidekeeper.webp",
+        "sha256": "8581027afe1e5a55bf5e8dc4d5eaf11c70607c7ff439cfbecc0328ef244db8c6",
+        "status": 200
+      },
+      {
+        "path": "assets/first-light-motion/wave.webp",
+        "sha256": "95af6bb3cc82df1f4eebac429731b07fbcfc44dcfb7fc6c6276a8aeb02b870f0",
+        "status": 200
+      },
+      {
+        "path": "assets/fraunces-latin-standard-normal-DihXLNYH.woff2",
+        "sha256": "7234ed860a9cc83045413c4faee63c960a8f2d1917adcf728119307d56e0d783",
+        "status": 200
+      },
+      {
+        "path": "assets/ibm-plex-mono-latin-400-normal-CvHOgSBP.woff",
+        "sha256": "328d50b6ece9ca25c46eea3e885ba497f6237f2fb84ef7b92f88e14a1a25e381",
+        "status": 200
+      },
+      {
+        "path": "assets/ibm-plex-mono-latin-400-normal-DMJ8VG8y.woff2",
+        "sha256": "08949f728dc52d528e69b1667d15c89a5686a4ee9a296ff90983985f99c380f7",
+        "status": 200
+      },
+      {
+        "path": "assets/is-my-json-valid-CMHT6YKy.js",
+        "sha256": "269d44ce2482a8b1bff1cc5dd8ae140f4899bb494c996b55df8458b6f2595821",
+        "status": 200
+      },
+      {
+        "path": "assets/jsx-runtime-DApVmHJR.js",
+        "sha256": "bfad0687c96569c4ccba6cc92d75dc9e620492b053cf7f5bc776197023798d61",
+        "status": 200
+      },
+      {
+        "path": "assets/kenney-license.txt",
+        "sha256": "a6aea8150db86ee5c9e90e6eba4eae3ca2e0f92d18c56d70b99942b53585b256",
+        "status": 200
+      },
+      {
+        "path": "assets/key_pair-bS3jkXdO.js",
+        "sha256": "0642edd31b6048b6bd6469c4b00bbdf7b30fa122cc8485b73f0499e8f0803d06",
+        "status": 200
+      },
+      {
+        "path": "assets/latin-400-Ca34VLOU.css",
+        "sha256": "25721d3701a391047032567ae0bb66ea8ccc873377c0f0718cf3267b097e6749",
+        "status": 200
+      },
+      {
+        "path": "assets/main-CveucV7P.js",
+        "sha256": "d6d862888c387606ef0d0acefc851b2f1486005ce0cbc65c87d7f96ae3d2ddbc",
+        "status": 200
+      },
+      {
+        "path": "assets/MochiActor-DZtgLDyO.js",
+        "sha256": "48dd1e639a21d1c2d503295cc04c4c49940330b9bc48e4dab832c99ab069e50b",
+        "status": 200
+      },
+      {
+        "path": "assets/MotionLab-Bt1kmEKt.css",
+        "sha256": "fe6caf5ce3a50198c2ce3d65d986d352c051775f11a77f806bee178bdc44df1d",
+        "status": 200
+      },
+      {
+        "path": "assets/MotionLab-pD1OqHTR.js",
+        "sha256": "d87ca22ba544f5ed2387769890516fa1d33a710bfb09de29a35fb3cd158f0aec",
+        "status": 200
+      },
+      {
+        "path": "assets/Outing-Cyvq4gL0.js",
+        "sha256": "48667fc0e5e2b8e457c078cd9e47d97de8dd7dcc9b46a11511f526228495ead6",
+        "status": 200
+      },
+      {
+        "path": "assets/Outing-DIDxZwe6.css",
+        "sha256": "b3c1242bf1326636361e4b5dd249699fd7d53119a0cffff8e27bb412bef0a631",
+        "status": 200
+      },
+      {
+        "path": "assets/phaser-BM08wt2z.js",
+        "sha256": "44c71c755a08dd8dead8d490a99eab98cfe775009bcd7464f9c15a1e783d9da4",
+        "status": 200
+      },
+      {
+        "path": "assets/phaser-D7qgRFjo.js",
+        "sha256": "05a6d116f4ae0b10199baaefc250acfedefc03d512a2c4cdc9f84704211deaa8",
+        "status": 200
+      },
+      {
+        "path": "assets/plan-url-CaUS14lc.js",
+        "sha256": "cbafce2d414880a6bec4ba6507921e7d41d9d0cef19e2ad2bdcfbdb168519402",
+        "status": 200
+      },
+      {
+        "path": "assets/preload-helper-tvnSqkfO.js",
+        "sha256": "ba4551b412784dde683a3976f4d570e530d60d584e3f9e75c88f563b5c2061cb",
+        "status": 200
+      },
+      {
+        "path": "assets/rolldown-runtime-BWaJ3C7D.js",
+        "sha256": "d0e9044430006c5bb48f477501a5af465f0a6377d2fcd7495aa215b8b75aaee3",
+        "status": 200
+      },
+      {
+        "path": "assets/styles-ezpdacXZ.css",
+        "sha256": "6974b1813000ab8136755675e370ae4e6fa28b91f3fa35b1ddf36fea19f2bc5d",
+        "status": 200
+      },
+      {
+        "path": "assets/tiny-town.png",
+        "sha256": "3a54d99ecde790d4fdea207a3644cf130fc56fa838f1beb1507c185a95b8e902",
+        "status": 200
+      },
+      {
+        "path": "assets/transaction-BGtQmE9r.js",
+        "sha256": "a4793349f9bfbfe09e0c56ee99b44078bf0ffe141f939111b37f70d158d8b833",
+        "status": 200
+      },
+      {
+        "path": "icons/beacon-192.png",
+        "sha256": "6612a6ccc907750756c5cf7a77ad21cf842d380280be91fb5864590c4efc9817",
+        "status": 200
+      },
+      {
+        "path": "icons/beacon-512.png",
+        "sha256": "bba2e68c8e9d23247202771c6b07fe525a39316b0c2fe1255acb6c55e8c1eedf",
+        "status": 200
+      },
+      {
+        "path": "index.html",
+        "sha256": "4988c76a6d2a1ed4bc78a02ac193092f05ca8958bbbbb4c8eaffbc1ac9c9aa2e",
+        "status": 200
+      },
+      {
+        "path": "legacy/index.html",
+        "sha256": "2fc86fb58960dc9293a193663712e930dc3f7a3305cd8cee2476591ca9b773b1",
+        "status": 200
+      },
+      {
+        "path": "licenses/buffer.txt",
+        "sha256": "06bafa45fdad2579ba0e43b0c9b2c6290287c99c4203c300254a462b38a307f6",
+        "status": 200
+      },
+      {
+        "path": "licenses/figtree-ofl.txt",
+        "sha256": "ee23e6c84000126692e112ff067b456470493349f993ceaa8b4d3766dd6fad5d",
+        "status": 200
+      },
+      {
+        "path": "licenses/fraunces-ofl.txt",
+        "sha256": "cd3384cafac6f2bddc3955273958a2e029f97027c8037ac539ef5744a77b579e",
+        "status": 200
+      },
+      {
+        "path": "licenses/hono.txt",
+        "sha256": "a6ab98e5c77b9070c443eaff2ff81034a6f8cc05a7524d5098eb0f24defa0115",
+        "status": 200
+      },
+      {
+        "path": "licenses/ibm-plex-mono-ofl.txt",
+        "sha256": "23b0a9d0c6d3f140a0b77e483c5cfa6bba574325ef5cb189ed9f2fec4884533f",
+        "status": 200
+      },
+      {
+        "path": "licenses/near-api-js.txt",
+        "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+        "status": 200
+      },
+      {
+        "path": "licenses/phaser.txt",
+        "sha256": "c3123cd25de4eccf1fd5a5a0a6fc872299116d1dbbb48b00f2554a4c35220a65",
+        "status": 200
+      },
+      {
+        "path": "licenses/react-dom.txt",
+        "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+        "status": 200
+      },
+      {
+        "path": "licenses/react.txt",
+        "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+        "status": 200
+      },
+      {
+        "path": "manifest.webmanifest",
+        "sha256": "4805a4b49c7d3e46d5968e6c4fcd60e2eb9b279a73d2051e24d09b725314b10f",
+        "status": 200
+      },
+      {
+        "path": "outing.webmanifest",
+        "sha256": "f804cd5f21ee9d493e776d0642d897e6edec4393c90332d5b1c004bfdb144eb2",
+        "status": 200
+      },
+      {
+        "path": "outing/index.html",
+        "sha256": "4988c76a6d2a1ed4bc78a02ac193092f05ca8958bbbbb4c8eaffbc1ac9c9aa2e",
+        "status": 200
+      },
+      {
+        "path": "pet.svg",
+        "sha256": "469cfb804cb2c6fe3611aff945a5587e42b38db6213984c4fc8b150293f68603",
+        "status": 200
+      },
+      {
+        "path": "plan/art/bram-idle-candidate.webp",
+        "sha256": "d014994fbb253b4b5ed523a4bf3d43efa06ad7c086ae52dea5c2f46446d01940",
+        "status": 200
+      },
+      {
+        "path": "plan/art/cast-reference.webp",
+        "sha256": "74b6035122944944fd636e8f78169bae32db33962a81b2aaa6377b4325e87327",
+        "status": 200
+      },
+      {
+        "path": "plan/art/homecoming-sequence.webp",
+        "sha256": "be48cdeae464cef240a262cedb17615e0bbe7ecd0384e675920744a176547283",
+        "status": 200
+      },
+      {
+        "path": "plan/art/image-prompts.json",
+        "sha256": "3874b4b0896c2d51514212d7b14c76f9d24f52993404975676c1c677670a8c3d",
+        "status": 200
+      },
+      {
+        "path": "plan/art/item-reference.webp",
+        "sha256": "0d49eb33e3deab4ab3be8490ab8922c9ceb20d036bf0933343d24b52bc298d1a",
+        "status": 200
+      },
+      {
+        "path": "plan/art/mochi-idle-candidate.webp",
+        "sha256": "38f25df3f83069a347dc154d459afe9ef56b55ec5ddc5a84289b5f1b754b679b",
+        "status": 200
+      },
+      {
+        "path": "plan/art/mochi-model-sheet.webp",
+        "sha256": "d2792859ec6c284386bc8018977084d6e7b0fce30d298973ef3948325da98ac0",
+        "status": 200
+      },
+      {
+        "path": "plan/art/pocket-harbor-original.webp",
+        "sha256": "ac3c9d947d0dfed30cca23c7ac0eacb65781d76daa9e6b487d3fa83ea29540a2",
+        "status": 200
+      },
+      {
+        "path": "plan/art/preparation-and-guide.webp",
+        "sha256": "df2eb968ebe6be1c4d48ccafe6daef33e99663e9f784cdb6aa3d367da918da75",
+        "status": 200
+      },
+      {
+        "path": "plan/art/responsive-encounter.webp",
+        "sha256": "ccbf2d80c5dbbd0469d5e6247cd2f0c6ca1f4df18a24599d221c5353f73c78be",
+        "status": 200
+      },
+      {
+        "path": "plan/art/responsive-harbor.webp",
+        "sha256": "cacb3e835d23915630986250a81d943bccb43da90ee127d6da8481267f4fb7c6",
+        "status": 200
+      },
+      {
+        "path": "plan/art/review-cover.jpg",
+        "sha256": "6bf7b6c198d11fbf5ea7ec2e9b86a2393bf2b805e5725e527d6d18643f52eb98",
+        "status": 200
+      },
+      {
+        "path": "plan/art/scene-reference.webp",
+        "sha256": "39038392d6aa84abdf95d873d1c6f9f32a9e0dc6522b9d019b150800dd52e1f9",
+        "status": 200
+      },
+      {
+        "path": "plan/art/tidekeeper-reference.webp",
+        "sha256": "806c5226c75e8a89e446dfca8e66c3f794b59b708e13a986a01dce15405c421f",
+        "status": 200
+      },
+      {
+        "path": "plan/art/wind-moth-reference.webp",
+        "sha256": "10ec2436f73cb20b305938032331c9796fa1c34d1bc925e5be640c7a8c6fb2c4",
+        "status": 200
+      },
+      {
+        "path": "plan/data/ASSET-MANIFEST.json",
+        "sha256": "4c9ba6b8c8e39107b17376ea4616e75ff8e4cceed6665181cf9923bec993ae5f",
+        "status": 200
+      },
+      {
+        "path": "plan/data/CONTENT.json",
+        "sha256": "c80b5bbe49de168e779158ad7adcd6efa7ba8a3a170a95cd5f1877e8baa403f9",
+        "status": 200
+      },
+      {
+        "path": "plan/data/gameplay-paper-model.mjs",
+        "sha256": "ddca625a168d8e7d5c5810142967255b1def35562e92ea5b4756d286f4658896",
+        "status": 200
+      },
+      {
+        "path": "plan/data/gameplay-search-results.json",
+        "sha256": "b2e5a56e557feee0c74c78d12a9169859f1a6a1b94d6b0d9c33cfe8a95c130c6",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/ART-PRODUCTION.html",
+        "sha256": "34a76e182cd6c465e7ac39a9ce74f786c2df9649392ebb79e30aa2c4adeebba8",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/BALANCE.html",
+        "sha256": "97befacb2129dd17065038e66f0efbe1f397ebdff97e4933816f718e4d374e37",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/BUILD-PLAN.html",
+        "sha256": "b061f0e6176813755522ac64016ee61c38ec351e64fbe0cdbedf15733d974be7",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/CONTENT.html",
+        "sha256": "93ee3a46456708f0050f85215b8467db7f6d1dcfd6246bda3bbaf65594c1c178",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/FINAL-REVIEW.html",
+        "sha256": "bae87f6b8759dfdb82cbf59eae2b44b210c331a5adac95e4cdc40288a09ee295",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/GAMEPLAY.html",
+        "sha256": "feedfca744f40c8ccef3a0d64c60716df8722462ea6de6b4e9a1d50d385d2ce1",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/MOTION-BRIEF.html",
+        "sha256": "729078afbef99c6511afc29e62235efc2043ac611680694352f10b3e95a9a5e6",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/PLAYTEST.html",
+        "sha256": "c0e493df36fa82814e078f268a7dbf72747c1e42a6efd1f01f629ff15b25ad98",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/PRODUCT-STRATEGY.html",
+        "sha256": "b3362c3c9ef59a0ef59bd378b94c526601dd09685823f6693070c6f737859475",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/reader.css",
+        "sha256": "8df09937aaee04232b08e59629653c6fcea91d06778616f78dd77c05b198fdae",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/REVIEW.html",
+        "sha256": "72ffb4f8d425d9f00e551ac13abc2d0fd94d015e25c1c9d05e1820d64b3a9f15",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/START-HERE.html",
+        "sha256": "9faf62b2b4edca9bafc9e62971fdd78aa38f9fb3a4392b1b4be1ec30130b1a01",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/UX-LAYOUTS.html",
+        "sha256": "f8a35390b38c8ab4b01aaffbf90777234f67fcaf2cbfe20a109339f0bf0bd81c",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/VERIFICATION.html",
+        "sha256": "b2dc3da6cce4bfffa99ae07eebe7a9448876618b9109b418e1716010d4ba3e64",
+        "status": 200
+      },
+      {
+        "path": "plan/docs/WORLD.html",
+        "sha256": "989be7cac5cff96f25b1bd22655c9cfa694ffd033f2eb9e75399f6e6a846863a",
+        "status": 200
+      },
+      {
+        "path": "plan/fonts/figtree-ofl.txt",
+        "sha256": "ee23e6c84000126692e112ff067b456470493349f993ceaa8b4d3766dd6fad5d",
+        "status": 200
+      },
+      {
+        "path": "plan/fonts/figtree.woff2",
+        "sha256": "4ba7d3d096695818fe0686be4f1e82c6b05134e18a22260336130335027462dd",
+        "status": 200
+      },
+      {
+        "path": "plan/fonts/fraunces-ofl.txt",
+        "sha256": "cd3384cafac6f2bddc3955273958a2e029f97027c8037ac539ef5744a77b579e",
+        "status": 200
+      },
+      {
+        "path": "plan/fonts/fraunces.woff2",
+        "sha256": "7234ed860a9cc83045413c4faee63c960a8f2d1917adcf728119307d56e0d783",
+        "status": 200
+      },
+      {
+        "path": "plan/index.html",
+        "sha256": "d002f79da615c5581593d554722352dc29cba1761f69047ae84086ffddee6790",
+        "status": 200
+      }
+    ]
+  },
+  "browserObservation": "Actual public HTTPS page initialized; Sign in with email enabled, no visible error. No identity submitted by the agent.",
+  "deviceRecovery": "pending personal second-device test",
+  "gameIssuance": false,
+  "nearDeploymentOrFunding": false,
+  "privateValuesIncluded": false
+}
