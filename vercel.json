@@ -6,6 +6,8 @@
   "framework": null,
   "rewrites": [
     { "source": "/outing", "destination": "/outing/index.html" },
+    { "source": "/legacy", "destination": "/legacy/index.html" },
+    { "source": "/motion", "destination": "/legacy/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

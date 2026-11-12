@@ -120,7 +120,7 @@ export function challengeText(run: Outing): string {
   // A localhost URL would send a recipient to their own computer.
   if (typeof window === "undefined") return text;
   const url = new URL(window.location.href);
-  if (url.protocol !== "https:" || url.pathname.replace(/\/$/, "") !== "/outing" ||
+  if (url.protocol !== "https:" || !["", "/outing"].includes(url.pathname.replace(/\/$/, "")) ||
       /^(localhost|127\.|\[::1\]$)|\.localhost$/i.test(url.hostname)) return text;
   return text + "\n" + new URL("/outing/?challenge=" + challenge, url.origin).href;
 }

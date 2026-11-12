@@ -307,10 +307,10 @@ try {
           get() { throw new DOMException("Unavailable", "SecurityError"); },
         }));
       }
-      const path = width === 320 ? "/outing/?challenge=two-shells-v1" : "/outing";
+      const path = width === 1440 ? "/" : width === 320 ? "/outing/?challenge=two-shells-v1" : "/outing";
       const response = await page.goto(origin + path);
       assert.equal(response?.status(), 200, "Outing opens publicly");
-      assert.match(new URL(page.url()).pathname, /^\/outing\/?$/, "No redirect to a login or fallback");
+      assert.match(new URL(page.url()).pathname, /^\/(?:outing\/?)?$/, "No redirect to a login or fallback");
       await expect(page.getByRole("heading",{name:"The broken beacon."})).toBeVisible();
       await scenario(page);
       if (width !== 320) {

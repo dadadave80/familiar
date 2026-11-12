@@ -254,7 +254,7 @@ try {
       } else throw new Error(`Unexpected fixture RPC ${body.method}`);
       return route.fulfill({ json: { jsonrpc: "2.0", id: body.id, result } });
     });
-    await page.goto("http://127.0.0.1:5184");
+    await page.goto("http://127.0.0.1:5184/legacy/");
     await page.locator("canvas").waitFor();
     await page.waitForFunction(() => {
       const pixel = document

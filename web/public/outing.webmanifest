@@ -4,7 +4,7 @@
   "short_name": "Beacon Court",
   "description": "A turn-based outing with Mochi at Beacon Court.",
   "start_url": "/outing/",
-  "scope": "/outing/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f6f0e4",
   "theme_color": "#f6f0e4",

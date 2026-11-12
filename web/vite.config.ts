@@ -18,7 +18,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        harbor: fileURLToPath(new URL("./index.html", import.meta.url)),
+        home: fileURLToPath(new URL("./index.html", import.meta.url)),
+        legacy: fileURLToPath(new URL("./legacy/index.html", import.meta.url)),
         outing: fileURLToPath(new URL("./outing/index.html", import.meta.url)),
       },
       output: {

@@ -1,16 +1,16 @@
 # Familiar
 
-Familiar is a harbor-town pet game for NEAR testnet. Each pet is a keyless named account represented by an NFT; its inventory and savings stay with the account when ownership changes.
+Familiar: First Light is a turn-based adventure with Mochi and a harbor to restore. The public homepage opens the playable Beacon Court prototype. The original NEAR testnet pet game is available at `/legacy/`; its inventory and savings stay with its keyless pet account when ownership changes.
 
 The [First Light design book](https://familiar-two.vercel.app/plan/) is the public review edition of the proposed adventure. It includes all fourteen chapters, illustrations and supporting data. The [motion preview](https://familiar-two.vercel.app/motion) plays nine implemented sequences. Both open without an account.
 
-[Play Beacon Court](https://familiar-two.vercel.app/outing/) without signing in. Press **←** or **→** on desktop, or swipe horizontally on the scene on a phone. Each legal move advances one turn. Tap a lane to inspect it for free. The movement buttons work with either input. An ordinary reload resumes the outing in the same browser. Installing the outing from its page launches it in a standalone window. It needs a connection to load.
+[Play Beacon Court](https://familiar-two.vercel.app/) without signing in. Press **←** or **→** on desktop, or swipe horizontally on the scene on a phone. Each legal move advances one turn. Tap a lane to inspect it for free. The movement buttons work with either input. An ordinary reload resumes the outing in the same browser. Installing the outing from its page launches it in a standalone window. It needs a connection to load.
 
 For local development, run `bun run dev` and open `/outing/` on the printed URL. Use `bun run test:outing-browser` for the local playtest suite, or append `https://familiar-two.vercel.app` to exercise the deployed app in isolated, signed-out browser profiles.
 
 To reproduce the review deployment, pass the external public edition's `plan` directory to `bun --no-env-file scripts/package-review.ts <plan-directory>`. The command builds the frontend and prints a temporary Vercel deployment directory containing the static files and routes. The editable plans and public edition live outside Git.
 
-Preview: [familiar-two.vercel.app](https://familiar-two.vercel.app). The static frontend is public; play is paused while public backend hosting is pending. Contracts are deployed on NEAR testnet and the local Bun services have passed real-chain readiness and browser checks. The complete contract loop also runs locally with no supplied secrets. See [PROGRESS.md](PROGRESS.md) for live versus local evidence.
+Preview: [familiar-two.vercel.app](https://familiar-two.vercel.app). The playable First Light outing opens at the site root. The original pet game at /legacy/ pauses play while public backend hosting is pending. Contracts are deployed on NEAR testnet and the local Bun services have passed real-chain readiness and browser checks. The complete contract loop also runs locally with no supplied secrets. See [PROGRESS.md](PROGRESS.md) for live versus local evidence.
 
 ## The problem
 

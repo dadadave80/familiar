@@ -29,7 +29,7 @@ try {
   const page = await browser.newPage();
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("http://127.0.0.1:5185");
+  await page.goto("http://127.0.0.1:5185/legacy/");
   const hasSession = await page.evaluate(async (path) => {
     const sdk = await import(path);
     return typeof sdk.openGoogleSession === "function";
