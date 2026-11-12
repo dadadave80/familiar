@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-11-12T15:41:31.425Z",
+  "network": "testnet",
+  "root": "familiar-1105-28522e.testnet",
+  "config": {
+    "relayer": "relayer.familiar-1105-28522e.testnet",
+    "pet_code_hash": "7qp1sWajb7RYJncGAN3PpoUa16BS4o37ncrGFiRMhihK",
+    "items": "items.familiar-1105-28522e.testnet",
+    "bakery": "bakery.familiar-1105-28522e.testnet",
+    "market": "market.familiar-1105-28522e.testnet",
+    "pool": "kiln.pool.f863973.m0"
+  },
+  "accounts": [
+    {
+      "account": "familiar-1105-28522e.testnet",
+      "state": {
+        "amount": "6681094551190822700000000",
+        "block_hash": "5qyoZn5LR7NjN5D6fwwXBVGF866vihdyd9DQ3AExqTHE",
+        "block_height": 277382799,
+        "code_hash": "HZBLDjfXbBLssDwKLhbk5qtbUVgPpd4a8DnUKuSKAAqA",
+        "locked": "0",
+        "storage_paid_at": 0,
+        "storage_usage": 328641
+      }
+    },
+    {
+      "account": "items.familiar-1105-28522e.testnet",
+      "state": {
+        "amount": "2971436537647551800000000",
+        "block_hash": "5qyoZn5LR7NjN5D6fwwXBVGF866vihdyd9DQ3AExqTHE",
+        "block_height": 277382799,
+        "code_hash": "GnjJNTJtejLmHNPeBEATMkgDPFMCJVzg8iVdNL1hNXPD",
+        "locked": "0",
+        "storage_paid_at": 0,
+        "storage_usage": 249015
+      }
+    },
+    {
+      "account": "bakery.familiar-1105-28522e.testnet",
+      "state": {
+        "amount": "1611476999263083000000000",
+        "block_hash": "5qyoZn5LR7NjN5D6fwwXBVGF866vihdyd9DQ3AExqTHE",
+        "block_height": 277382799,
+        "code_hash": "B4A3WggKCRyMGnNEbJVo5S7v7rWiMSST8qMkoEz29gg7",
+        "locked": "0",
+        "storage_paid_at": 0,
+        "storage_usage": 111511
+      }
+    },
+    {
+      "account": "market.familiar-1105-28522e.testnet",
+      "state": {
+        "amount": "3835093315722555400000000",
+        "block_hash": "5qyoZn5LR7NjN5D6fwwXBVGF866vihdyd9DQ3AExqTHE",
+        "block_height": 277382799,
+        "code_hash": "CVEQkViDvRaeLf2pknrULb5YadBHt11XGnUgpKxW4PTk",
+        "locked": "0",
+        "storage_paid_at": 0,
+        "storage_usage": 235026
+      }
+    }
+  ]
+}

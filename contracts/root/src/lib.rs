@@ -1,3 +1,4 @@
+mod tidebound;
 use familiar_common::{Action, call, emit, promise_bool, promise_succeeded, rules::*};
 use near_contract_standards::non_fungible_token::{
     NonFungibleToken, Token, TokenId,
@@ -63,6 +64,9 @@ pub struct Contract {
     adoptions_today: u16,
     registrations_today: u16,
     reserved_storage: u128,
+    // Fresh compatible stack only: never deploy this layout over the legacy registry state.
+    journeys: LookupMap<AccountId, tidebound::Journey>,
+    tidebound_retries_today: u16,
 }
 
 #[near]
@@ -116,6 +120,8 @@ impl Contract {
             adoptions_today: 0,
             registrations_today: 0,
             reserved_storage: 0,
+            journeys: LookupMap::new(b"tb-journeys".as_slice()),
+            tidebound_retries_today: 0,
         }
     }
     pub fn get_epoch(&self) -> U64 {
@@ -509,6 +515,7 @@ impl Contract {
             self.guests_today = 0;
             self.adoptions_today = 0;
             self.registrations_today = 0;
+            self.tidebound_retries_today = 0;
         }
     }
     fn spendable(&self) -> u128 {

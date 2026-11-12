@@ -12,11 +12,14 @@ import {
 } from "near-api-js";
 import { savings } from "../web/src/near";
 import { accountId } from "../services/relayer/src/relay";
-import { assertQuoteKey } from "./deployment";
+import legacy from "../docs/TESTNET-DEPLOYMENT.json";
+import { assertIsolatedTidebound, assertTideboundProtocol, assertQuoteKey } from "./deployment";
 
 if (process.env.NEAR_NETWORK !== "testnet")
   throw new Error("Deployment accepts NEAR_NETWORK=testnet only.");
 const rootId = process.env.NEAR_ROOT;
+assertIsolatedTidebound(rootId,legacy.root,process.argv.includes("--tidebound"));
+const evidencePath = ".data/tidebound-deploy-evidence.json";
 const rootSecret = process.env.ROOT_PRIVATE_KEY;
 const pool = process.env.STAKING_POOL;
 if (
@@ -103,12 +106,8 @@ for (const plan of [{ name: "root", amount: 0n, key: rootPair }, ...plans]) {
   });
   if (access.permission !== "FullAccess")
     throw new Error(`Expected project administrative key at ${id}.`);
-  if (
-    code[plan.name] &&
-    info.code_hash !== "11111111111111111111111111111111" &&
-    info.code_hash !== hash(code[plan.name])
-  )
-    throw new Error(`Refusing to overwrite different code at ${id}.`);
+  if (code[plan.name] && info.code_hash !== "11111111111111111111111111111111")
+    throw new Error(`Fresh Tidebound deployment refuses initialized code at ${id}. Preserve this state for separate recovery review; it will not be overwritten or silently paired.`);
   if (
     plan.name !== "root" &&
     info.code_hash === "11111111111111111111111111111111" &&
@@ -116,20 +115,7 @@ for (const plan of [{ name: "root", amount: 0n, key: rootPair }, ...plans]) {
   )
     required += plan.amount - info.amount;
 }
-if (rootBalance.code_hash !== "11111111111111111111111111111111") {
-  const current = await rpc.callFunction<Record<string, string>>({
-    contractId: rootId,
-    method: "get_config",
-    args: {},
-  });
-  if (
-    !current ||
-    Object.entries(desiredConfig).some(([key, value]) => current[key] !== value)
-  )
-    throw new Error(
-      "Existing root configuration does not match this deployment.",
-    );
-} else required += BigInt(code.root.length) * 10n ** 19n;
+required += BigInt(code.root.length) * 10n ** 19n;
 if (prior.get(`bram.${rootId}`)) {
   const keys = await rpc.viewAccessKeyList({ accountId: `bram.${rootId}` });
   const quoteKey = keys.keys.find(
@@ -179,8 +165,8 @@ await rpc.callFunction({
   args: { account_id: rootId },
 });
 let evidence: { method: string; account: string; hash: string }[] = [];
-if (await Bun.file(".data/deploy-evidence.json").exists()) {
-  const previous = await Bun.file(".data/deploy-evidence.json").json();
+if (await Bun.file(evidencePath).exists()) {
+  const previous = await Bun.file(evidencePath).json();
   if (
     previous.network !== "testnet" ||
     previous.root !== rootId ||
@@ -200,7 +186,7 @@ async function record(
 ) {
   evidence.push({ method, account, hash: result.transaction.hash });
   await Bun.write(
-    ".data/deploy-evidence.json",
+    evidencePath,
     JSON.stringify(
       {
         network: "testnet",
@@ -312,16 +298,8 @@ const initializers: Record<string, Record<string, unknown>> = {
 for (const name of ["items", "bakery", "market", "root"]) {
   const account = name === "root" ? root : buildingAccounts[name];
   const info = await rpc.viewAccount({ accountId: account.accountId });
-  if (info.code_hash !== "11111111111111111111111111111111") {
-    if (info.code_hash !== hash(code[name]))
-      throw new Error(
-        `Refusing to overwrite different code at ${account.accountId}.`,
-      );
-    console.info(
-      `Existing matching contract: ${account.accountId}; initialization is not repeated.`,
-    );
-    continue;
-  }
+  if (info.code_hash !== "11111111111111111111111111111111")
+    throw new Error(`Fresh deployment found initialized code at ${account.accountId}; no overwrite or initialization skip is allowed.`);
   await record(
     `deploy_${name}`,
     account.accountId,
@@ -335,6 +313,9 @@ for (const name of ["items", "bakery", "market", "root"]) {
     }),
   );
 }
+assertTideboundProtocol(rootId,
+  await rpc.callFunction({contractId:rootId,method:"tidebound_protocol",args:{}}),
+  await rpc.callFunction({contractId:`items.${rootId}`,method:"craft_protocol",args:{}}));
 const npcPublic = KeyPair.fromString(npcSecret as KeyPairString).getPublicKey();
 const access = await rpc.viewAccessKeyList({ accountId: npc.accountId });
 const existingNpcKey = access.keys.find(

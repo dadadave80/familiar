@@ -1,7 +1,10 @@
+mod craft;
 use familiar_common::rules::{ITEM_STORAGE_FUND, ITEMS};
 use near_sdk::{
-    AccountId, NearToken, PanicOnDefault, Promise, env, json_types::U128, near, require,
-    store::LookupSet,
+    AccountId, NearToken, PanicOnDefault, Promise, env,
+    json_types::U128,
+    near, require,
+    store::{LookupMap, LookupSet, Vector},
 };
 use near_sdk_contract_tools::{
     MultiToken,
@@ -11,12 +14,35 @@ use near_sdk_contract_tools::{
     },
 };
 
+pub struct SafeTransfer;
+impl near_sdk_contract_tools::hook::Hook<Contract, Nep245Transfer<'_>> for SafeTransfer {
+    fn hook<R>(
+        contract: &mut Contract,
+        transfer: &Nep245Transfer<'_>,
+        f: impl FnOnce(&mut Contract) -> R,
+    ) -> R {
+        // contract-tools 4.0.0 writes the same balance twice on a self-transfer.
+        require!(
+            transfer.sender_id != transfer.receiver_id,
+            "ERR_SELF_TRANSFER"
+        );
+        f(contract)
+    }
+}
+
 #[derive(MultiToken, PanicOnDefault)]
+#[multi_token(transfer_hook = "SafeTransfer")]
 #[near(contract_state)]
 pub struct Contract {
     registry: AccountId,
     buildings: LookupSet<AccountId>,
     pets: LookupSet<AccountId>,
+    // Fresh compatible stack only: no migration of the deployed legacy Borsh state.
+    crafts: LookupMap<String, craft::CraftItem>,
+    craft_ids: Vector<String>,
+    mint_operations: LookupMap<String, familiar_common::storycraft::MintEvidence>,
+    polish_operations: LookupMap<String, familiar_common::storycraft::PolishEvidence>,
+    polish_fences: LookupMap<String, u32>,
 }
 
 #[near]
@@ -31,6 +57,11 @@ impl Contract {
             registry,
             buildings: LookupSet::new(b"buildings".as_slice()),
             pets: LookupSet::new(b"pets".as_slice()),
+            crafts: LookupMap::new(b"tb-crafts".as_slice()),
+            craft_ids: Vector::new(b"tb-craft-ids".as_slice()),
+            mint_operations: LookupMap::new(b"tb-mints".as_slice()),
+            polish_operations: LookupMap::new(b"tb-polish".as_slice()),
+            polish_fences: LookupMap::new(b"tb-finish-fences".as_slice()),
         };
         this.buildings.insert(bakery);
         this.buildings.insert(market.clone());
