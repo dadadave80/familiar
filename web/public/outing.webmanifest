@@ -1,8 +1,8 @@
 {
   "id": "/outing/",
-  "name": "Familiar · The Broken Beacon",
-  "short_name": "Beacon Court",
-  "description": "A turn-based outing with Mochi at Beacon Court.",
+  "name": "Familiar · First Light",
+  "short_name": "Familiar",
+  "description": "Read the tide with Mochi at Beacon Court and Wind Gate.",
   "start_url": "/outing/",
   "scope": "/",
   "display": "standalone",

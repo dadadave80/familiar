@@ -4,7 +4,8 @@ import { createRoot } from "react-dom/client";
 async function entry() {
   const path = window.location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "");
   if (path === "/motion") return (await import("./motion/MotionLab")).MotionLab;
-  if (path === "" || path === "/outing") return (await import("./outing/Outing")).Outing;
+  if (path === "") return (await import("./landing/Landing")).Landing;
+  if (path === "/outing") return (await import("./outing/Outing")).Outing;
   await import("@fontsource/ibm-plex-mono/latin-400.css");
   await import("./styles.css");
   return (await import("./App")).App;

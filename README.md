@@ -6,7 +6,9 @@ The [First Light design book](https://familiar-two.vercel.app/plan/) is the publ
 
 [Play Beacon Court](https://familiar-two.vercel.app/) without signing in. Press **←** or **→** on desktop, or swipe horizontally on the scene on a phone. Each legal move advances one turn. Tap a lane to inspect it for free. The movement buttons work with either input. An ordinary reload resumes the outing in the same browser. Installing the outing from its page launches it in a standalone window. It needs a connection to load.
 
-For local development, run `bun run dev` and open `/outing/` on the printed URL. Use `bun run test:outing-browser` for the local playtest suite, or append `https://familiar-two.vercel.app` to exercise the deployed app in isolated, signed-out browser profiles.
+For local development, run `bun run dev`. The homepage introduces Mochi and the adventure, with **Play Familiar** opening `/outing/`. Restore the lighthouse, prepare another outing, and choose **Wind Gate**. Trace each source to its exit, charge the Left and Center sockets, recover the Signal Vane, then return and deliberately repair the harbor's signal post. The Lantern changes the source. Turning the vane at Center changes the routing before that action's wave. Both outings share the same rules engine and device save. Existing Beacon saves are read and upgraded on the next write.
+
+Wind Gate and the new landing page are local development changes pending release. Use `bun run test:outing-browser` for the local browser suite, which covers both outings, landing-to-game navigation, touch/keyboard inputs, reloads, and failed-save recovery. The published preview currently contains the earlier Beacon Court build. The eight-person human playtest remains pending.
 
 To reproduce the review deployment, pass the external public edition's `plan` directory to `bun --no-env-file scripts/package-review.ts <plan-directory>`. The command builds the frontend and prints a temporary Vercel deployment directory containing the static files and routes. The editable plans and public edition live outside Git.
 

@@ -6,7 +6,7 @@ import { chromium, expect, type CDPSession, type Page } from "@playwright/test";
 import { createServer } from "vite";
 import type { Action } from "../web/src/outing/engine";
 
-const captures = await mkdtemp(join(tmpdir(), "familiar-beacon-browser-"));
+const captures = await mkdtemp(join(tmpdir(), "familiar-outing-browser-"));
 const web = resolve(import.meta.dir, "../web");
 const target = process.argv[2] ? new URL(process.argv[2]) : null;
 if (target) {
@@ -18,6 +18,16 @@ const server = target ? null : await createServer({ root: web, envDir: false, en
 const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
 const action = (page: Page, value: string) => page.locator(`[data-action="${value}"]`);
 const scene = (page: Page) => page.getByTestId("outing-scene");
+
+async function openGame(page: Page, origin: string, path: string) {
+  const response = await page.goto(origin + path);
+  assert.equal(response?.status(), 200, "Familiar opens publicly");
+  if (path === "/") {
+    await page.getByRole("link", {name:"Play Familiar", exact:true}).first().click();
+    await expect(page).toHaveURL(new RegExp("/outing/?$"));
+  }
+  assert.match(new URL(page.url()).pathname, /^\/outing\/?$/, "Game opens at its dedicated route");
+}
 
 async function play(page: Page, moves: readonly Action[]) {
   for (const move of moves) await action(page, move).click();
@@ -62,10 +72,31 @@ async function capture(page: Page, name: string) {
       return width < 44 || height < 44;
     }).map(node => node.textContent?.trim()));
   assert.deepEqual(small, [], name + " controls have 44px touch targets");
+  if (await page.getByTestId("wind-routing").count()) {
+    const overlaps = await scene(page).evaluate(stage => {
+      const nodes = [...stage.querySelectorAll(".of-source, .of-strike span, .of-vane-find, .of-socket, .of-lanes button")];
+      const collisions:string[] = [];
+      for (const [index,node] of nodes.entries()) {
+        const a = node.getBoundingClientRect();
+        for (const other of nodes.slice(index + 1)) {
+          const b = other.getBoundingClientRect();
+          if (Math.min(a.right,b.right) > Math.max(a.left,b.left) &&
+              Math.min(a.bottom,b.bottom) > Math.max(a.top,b.top)) {
+            collisions.push(`${node.textContent?.trim()} overlaps ${other.textContent?.trim()}`);
+          }
+        }
+      }
+      return collisions;
+    });
+    assert.deepEqual(overlaps, [], name + " scene labels remain readable beside the lane controls");
+  }
   // Keep mobile captures in the real touch viewport, including its input media queries.
   const touch = await page.evaluate(() => navigator.maxTouchPoints > 0);
   if (touch) await page.evaluate(() => window.scrollTo({top:0,behavior:"instant"}));
   await page.screenshot({ path: join(captures, name + ".png"), fullPage: !touch });
+  if (touch && await page.getByTestId("wind-routing").count()) {
+    await page.locator(".of-controls").screenshot({path:join(captures, name + "-controls.png")});
+  }
 }
 
 async function dryOuting(page: Page) {
@@ -124,6 +155,8 @@ async function dryOuting(page: Page) {
   await play(page, ["return"]);
   await expect(page.getByRole("heading", { name: "The lens is home." })).toBeVisible();
   await expect(scene(page)).toHaveAttribute("data-lit", "false");
+  // Returning with the lens must not unlock the second outing before installation.
+  assert.equal(await button(page, "Wind Gate").isEnabled().catch(() => false), false);
   await action(page, "install").click();
   await expect(scene(page)).toHaveAttribute("data-lit", "true");
   await button(page, "Try the two-shell challenge").click();
@@ -247,6 +280,7 @@ async function lanternOuting(page: Page) {
   await expect(page.getByText(/wrung out my scarf/i)).toBeVisible();
   await page.reload();
   await expect(scene(page)).toHaveAttribute("data-lit", "true");
+  await button(page, "Beacon Court").click();
   await action(page, "depart").click();
   const circuit: Action[] = ["wait", "move:left", "move:center", "wait", "move:right", "move:center"];
   await play(page, [...circuit, ...circuit]);
@@ -272,6 +306,182 @@ async function temporaryOuting(page: Page) {
   await capture(page, "small-mobile-safe-stop");
   await page.reload();
   await expect(page.getByRole("heading",{name:"The broken beacon."})).toBeVisible();
+}
+
+const windDry: readonly Action[] = [
+  "move:left", "wait", "wait", "move:center", "move:right", "move:center", "take:vane", "return",
+];
+
+async function denyStorageWrites(page: Page) {
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Object.defineProperty(window, "restoreWindStorage", {
+      configurable:true, value:() => { Storage.prototype.setItem = original; },
+    });
+    Storage.prototype.setItem = () => { throw new DOMException("Quota exceeded", "QuotaExceededError"); };
+  });
+}
+
+async function allowStorageWrites(page: Page) {
+  await page.evaluate(() => {
+    Reflect.get(window, "restoreWindStorage")();
+    Reflect.deleteProperty(window, "restoreWindStorage");
+  });
+}
+
+async function windOuting(page: Page, kit: "rope" | "lantern", width: number) {
+  await expect(scene(page)).toHaveAttribute("data-lit", "true");
+  await expect(scene(page)).toHaveAttribute("data-signaled", "false");
+  await button(page, "Wind Gate").click();
+  if (kit === "lantern") {
+    await page.getByText("Moonpool Chart · Wind Gate", {exact:true}).click();
+    await expect(page.getByText(/On arrival, Left exits Center, Center exits Right, and Right exits Left/)).toBeVisible();
+  }
+  await page.getByRole("radio", {name: new RegExp(kit, "i")}).check();
+  await action(page, "depart").click();
+  await expect(page.getByRole("region", {name:"Wind Gate playfield"})).toBeVisible();
+  const routing = page.getByTestId("wind-routing");
+  await expect(routing).toHaveAttribute("data-orientation", "1");
+  await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "false");
+  await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "false");
+  await expect(action(page, "take:chart")).toHaveCount(0);
+  await expect(action(page, "take:lens")).toHaveCount(0);
+  await button(page, "Inspect Center").click();
+  await expect(button(page, "Close inspection")).toBeVisible();
+  await onTurn(page, 1, "Center");
+  await button(page, "Close inspection").click();
+  await expect(routing).toHaveAttribute("data-orientation", "1");
+  // Use the actual input pipeline for the first move into the routed arena.
+  if (width === 1440) {
+    await page.getByRole("heading", {name:"Low tide"}).focus();
+    await page.keyboard.press("ArrowLeft");
+  } else {
+    const client = await page.context().newCDPSession(page);
+    await drag(client, [await touchStart(page)], -80, 0);
+    await client.detach();
+  }
+  await onTurn(page, 2, "Left");
+  await expect(action(page, "turn:vane")).toBeDisabled();
+  await play(page, ["wait"]);
+  await expect(routing).toHaveAttribute("data-source", "left");
+  await expect(routing).toHaveAttribute("data-exit", "center");
+  await capture(page, `wind-${width}-${kit}-locked`);
+  await page.reload();
+  await expect(routing).toHaveAttribute("data-source", "left");
+  await expect(routing).toHaveAttribute("data-exit", "center");
+  await onTurn(page, 3, "Left");
+  await play(page, ["wait"]);
+  await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
+  await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "false");
+  await expect(page.getByText(/Mochi stayed dry/)).toBeVisible();
+  await play(page, windDry.slice(3, 6));
+  await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "true");
+  await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
+  await expect(action(page, "take:vane")).toBeEnabled();
+  await capture(page, `wind-${width}-${kit}-charged`);
+  await play(page, ["take:vane"]);
+  if (width === 390) await denyStorageWrites(page);
+  await play(page, ["return"]);
+  await expect(page.getByText(/8 actions · 3 \/ 3 Resolve/)).toBeVisible();
+  await expect(action(page, "install-vane")).toBeEnabled();
+  await expect(scene(page)).toHaveAttribute("data-signaled", "false");
+  if (width === 390) {
+    await expect(page.getByText(/Progress only in this tab/)).toBeVisible();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("familiar.first-light.beacon.v1")!));
+    assert.equal(saved.bank.includes("vane"), false, "Failed return write keeps the earlier device save");
+    await allowStorageWrites(page);
+  } else {
+    await page.reload();
+    await expect(action(page, "install-vane")).toBeEnabled();
+    await expect(scene(page)).toHaveAttribute("data-signaled", "false");
+  }
+  if (width === 320) {
+    await denyStorageWrites(page);
+    await button(page, "Repair signal post").click();
+    await expect(page.getByRole("alert")).toContainText("The repair could not be saved");
+    await expect(scene(page)).toHaveAttribute("data-signaled", "false");
+    await expect(action(page, "install-vane")).toBeEnabled();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("familiar.first-light.beacon.v1")!));
+    assert.equal(saved.signaled, false);
+    assert(saved.bank.includes("vane"), "Failed repair preserves the earned vane");
+    await allowStorageWrites(page);
+  }
+  await button(page, "Repair signal post").click();
+  await expect(scene(page)).toHaveAttribute("data-signaled", "true");
+  await expect(action(page, "install-vane")).toHaveCount(0);
+  if (width === 390) {
+    // Keep this same mounted app. Reloading here would reset its persistence
+    // status and hide a failure to resume durable writes after the repair.
+    await expect(page.getByText("Saved on this device", {exact:true})).toBeVisible();
+    await capture(page, `wind-${width}-${kit}-restored`);
+    await button(page, "Prepare another outing").click();
+    await button(page, "Wind Gate").click();
+    await action(page, "depart").click();
+    await play(page, ["move:left", "wait"]);
+    await page.reload();
+    await onTurn(page, 3, "Left");
+    await expect(routing).toHaveAttribute("data-exit", "center");
+    await expect(scene(page)).toHaveAttribute("data-signaled", "true");
+  } else {
+    await page.reload();
+    await expect(scene(page)).toHaveAttribute("data-signaled", "true");
+    await expect(action(page, "install-vane")).toHaveCount(0);
+    await capture(page, `wind-${width}-${kit}-restored`);
+  }
+}
+
+async function windRotationAndLure(page: Page) {
+  await button(page, "Wind Gate").click();
+  await page.getByRole("radio", {name:/Lantern/}).check();
+  await action(page, "depart").click();
+  const routing = page.getByTestId("wind-routing");
+  await play(page, ["wait", "wait"]);
+  await expect(routing).toHaveAttribute("data-source", "center");
+  await expect(routing).toHaveAttribute("data-exit", "right");
+  // The committed source is fixed, but a Surge turn applies the new orientation.
+  await expect(action(page, "turn:vane")).toContainText(/left/i);
+  await play(page, ["turn:vane"]);
+  await expect(routing).toHaveAttribute("data-orientation", "2");
+  await expect(page.getByTestId("wind-socket-left")).toHaveAttribute("data-charged", "true");
+  await expect(page.getByText(/wave entered center and struck left/i)).toBeVisible();
+  await play(page, ["move:left", "wait"]);
+  await expect(routing).toHaveAttribute("data-source", "left");
+  await expect(routing).toHaveAttribute("data-exit", "right");
+  await button(page, "Lure wave").click();
+  await expect(action(page, "lure:right")).toContainText(/center/i);
+  await play(page, ["lure:right"]);
+  await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
+  await expect(page.getByText(/wave entered right and struck center/i)).toBeVisible();
+  await play(page, ["move:center", "take:vane", "return"]);
+  await expect(page.getByText(/9 actions · 3 \/ 3 Resolve/)).toBeVisible();
+  await expect(action(page, "install-vane")).toBeVisible();
+}
+
+async function windSocketSplash(page: Page) {
+  await button(page, "Wind Gate").click();
+  await action(page, "depart").click();
+  await play(page, ["move:left", "wait", "move:center"]);
+  await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
+  await expect(page.getByText(/2 Resolve left/)).toBeVisible();
+  await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "startled");
+  await capture(page, "wind-socket-and-splash");
+  await page.reload();
+  await expect(page.getByTestId("wind-socket-center")).toHaveAttribute("data-charged", "true");
+  await expect(page.getByText(/2 Resolve left/)).toBeVisible();
+  await play(page, ["return"]);
+  await expect(action(page, "install-vane")).toHaveCount(0);
+  await expect(scene(page)).toHaveAttribute("data-signaled", "false");
+  await button(page, "Prepare another outing").click();
+  await button(page, "Wind Gate").click();
+  await page.getByRole("radio", {name:/Rope/}).check();
+  await action(page, "depart").click();
+  await play(page, windDry.slice(0,6));
+  await play(page, ["move:left", "reel:vane"]);
+  await expect(page.getByTestId("mochi-actor")).toHaveAttribute("data-pose", "pull-in");
+  await expect(action(page, "reel:vane")).toHaveCount(0);
+  await play(page, ["wait", "move:center", "return"]);
+  await expect(page.getByText(/11 actions · 3 \/ 3 Resolve/)).toBeVisible();
+  await expect(action(page, "install-vane")).toBeEnabled();
 }
 
 try {
@@ -308,9 +518,7 @@ try {
         }));
       }
       const path = width === 1440 ? "/" : width === 320 ? "/outing/?challenge=two-shells-v1" : "/outing";
-      const response = await page.goto(origin + path);
-      assert.equal(response?.status(), 200, "Outing opens publicly");
-      assert.match(new URL(page.url()).pathname, /^\/(?:outing\/?)?$/, "No redirect to a login or fallback");
+      await openGame(page, origin, path);
       await expect(page.getByRole("heading",{name:"The broken beacon."})).toBeVisible();
       await scenario(page);
       if (width !== 320) {
@@ -321,6 +529,65 @@ try {
       assert.deepEqual(forbidden, [], "No external, RPC, or legacy backend requests");
       await context.close();
       console.log(`PASS ${width}×${height} ${scenario.name}`);
+    }
+    const windScenarios = [
+      {width:1440, height:900, name:"windRope", run:(page:Page) => windOuting(page, "rope", 1440)},
+      {width:390, height:844, name:"windLantern", run:(page:Page) => windOuting(page, "lantern", 390)},
+      {width:320, height:750, name:"windSmallPhone", run:(page:Page) => windOuting(page, "rope", 320)},
+      {width:1440, height:900, name:"windRotationAndLure", run:windRotationAndLure},
+      {width:390, height:844, name:"windSocketSplash", run:windSocketSplash},
+      {width:320, height:750, name:"legacyActiveBeacon", run:async (page:Page) => {
+        await expect(page.getByRole("region", {name:"Beacon Court playfield"})).toBeVisible();
+        await onTurn(page, 3, "Left");
+        await expect(page.getByText(/wave will strike Left/i)).toBeVisible();
+        await play(page, ["move:center", "reel:lens", "return"]);
+        await expect(action(page, "install")).toBeEnabled();
+        await expect(scene(page)).toHaveAttribute("data-lit", "false");
+        assert.equal(await button(page, "Wind Gate").isEnabled().catch(() => false), false);
+        await action(page, "install").click();
+        await button(page, "Prepare another outing").click();
+        await expect(button(page, "Wind Gate")).toBeEnabled();
+        await openGame(page, origin!, "/");
+        await expect(scene(page)).toHaveAttribute("data-lit", "true");
+        await expect(button(page, "Wind Gate")).toBeEnabled();
+      }},
+    ];
+    for (const {width,height,name,run} of windScenarios) {
+      const context = await browser.newContext({
+        viewport:{width,height}, reducedMotion:width === 1440 ? "no-preference" : "reduce",
+        hasTouch:width !== 1440, isMobile:width !== 1440,
+      });
+      const page = await context.newPage();
+      const errors:string[] = [], forbidden:string[] = [];
+      page.on("pageerror", error => errors.push(error.message));
+      await context.route("**/*", route => {
+        const url = new URL(route.request().url());
+        if (url.origin !== origin || route.request().method() !== "GET" || /^\/(api|npc-api)(\/|$)/.test(url.pathname)) {
+          forbidden.push(url.href);
+          return route.abort();
+        }
+        return route.continue();
+      });
+      // These are fixtures in the previously shipped v1 format. Once the app writes
+      // the migrated save, reloads must keep the new progress rather than reseed it.
+      const legacyActive = name === "legacyActiveBeacon";
+      await context.addInitScript(({legacyActive, chart}) => {
+        const key = "familiar.first-light.beacon.v1";
+        if (localStorage.getItem(key) !== null) return;
+        localStorage.setItem(key, JSON.stringify({
+          version:1, bank:legacyActive ? [] : chart ? ["lens","chart"] : ["lens"],
+          lit:!legacyActive, memory:"A line from the previous Beacon build.",
+          active:legacyActive ? {tool:"rope",actions:["wait","move:left"]} : null,
+        }));
+      }, {legacyActive,chart:name === "windLantern"});
+      await openGame(page, origin, width === 1440 ? "/" : "/outing/");
+      await run(page);
+      assert.deepEqual(errors, [], name + " has no browser exceptions");
+      assert.deepEqual(forbidden, [], name + " has no external or backend requests");
+      const keys = await page.evaluate(() => Object.keys(localStorage));
+      assert.deepEqual(keys, ["familiar.first-light.beacon.v1"], "Existing on-device save namespace is preserved");
+      await context.close();
+      console.log(`PASS ${width}×${height} ${name}`);
     }
   } finally {
     await browser.close();
