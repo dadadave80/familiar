@@ -1,0 +1,422 @@
+{
+  "schemaVersion": 1,
+  "scope": "Raster files actually referenced by current outings/Storycraft and source-authored game/Storycraft UI layers; unused PNG masters and motion-study-only actors are excluded.",
+  "measurement": "On-disk encoded WebP bytes, SHA-256 and ImageMagick identify dimensions/channels. These are asset payloads, excluding JS/CSS/fonts, HTTP overhead and cache behavior; not measured physical-device startup.",
+  "assets": [
+    {
+      "id": "harbor",
+      "path": "web/public/assets/first-light-motion/harbor.webp",
+      "publicPath": "/assets/first-light-motion/harbor.webp",
+      "width": 1536,
+      "height": 1024,
+      "alpha": false,
+      "channels": "srgb  3.0",
+      "bytes": 388314,
+      "sha256": "8b8152e93ae42137a9e7ea16ba04e014b0c3e3957204ae25dc703b2b7b3c59b2",
+      "usage": "Arrival and home background; porch/dock placements",
+      "anchor": "full-stage cover",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/harbor.png",
+        "record": "harbor_stage"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "bram",
+      "path": "web/public/assets/first-light-motion/bram.webp",
+      "publicPath": "/assets/first-light-motion/bram.webp",
+      "width": 1173,
+      "height": 1341,
+      "alpha": true,
+      "channels": "srgba 4.0",
+      "bytes": 328270,
+      "sha256": "d014994fbb253b4b5ed523a4bf3d43efa06ad7c086ae52dea5c2f46446d01940",
+      "usage": "Bram at home",
+      "anchor": "26% x / 83% ground, 22% stage width",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/bram.png",
+        "record": "Reused bram-idle-candidate.png from approved production concept package"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "mochi-poses-v1",
+      "path": "web/public/assets/first-light-motion/mochi-poses-v1.webp",
+      "publicPath": "/assets/first-light-motion/mochi-poses-v1.webp",
+      "width": 1024,
+      "height": 1024,
+      "alpha": true,
+      "channels": "srgba 4.0",
+      "bytes": 222202,
+      "sha256": "f7c772c16b58eb5adf7954bb0d68ed3070064add8a15570f52eac734fb2bec34",
+      "usage": "Mochi in both outings, home and origin diorama",
+      "anchor": "16 cells; 4×4; 256px cell; ground 224px; pivot x128px",
+      "frames": {
+        "columns": 4,
+        "rows": 4,
+        "count": 16,
+        "cellPixels": 256
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/mochi-poses-v1.webp",
+        "record": "Runtime registered 4×4 Mochi atlas (1024×1024)"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "arena",
+      "path": "web/public/assets/first-light-motion/arena.webp",
+      "publicPath": "/assets/first-light-motion/arena.webp",
+      "width": 1536,
+      "height": 1024,
+      "alpha": false,
+      "channels": "srgb  3.0",
+      "bytes": 468598,
+      "sha256": "5dd6d3dee29be632e06c096571fa420fafd57d43f6eda168655b36fe738d4852",
+      "usage": "Beacon Court and static Storycraft origin background",
+      "anchor": "full-stage cover",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/arena.png",
+        "record": "beacon_stage"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "tidekeeper",
+      "path": "web/public/assets/first-light-motion/tidekeeper.webp",
+      "publicPath": "/assets/first-light-motion/tidekeeper.webp",
+      "width": 1536,
+      "height": 1024,
+      "alpha": true,
+      "channels": "srgba 4.0",
+      "bytes": 367548,
+      "sha256": "8581027afe1e5a55bf5e8dc4d5eaf11c70607c7ff439cfbecc0328ef244db8c6",
+      "usage": "Tidekeeper forecast/impact actor; static origin composition",
+      "anchor": "50% x / 51% ground; 42% stage width",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/tidekeeper.png",
+        "record": "guardian_clean"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "shell",
+      "path": "web/public/assets/first-light-motion/shell.webp",
+      "publicPath": "/assets/first-light-motion/shell.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "channels": "srgba 4.0",
+      "bytes": 391958,
+      "sha256": "58e45abc4560ab49b287c8e69672508c9246488a10f98398c615e1a76adb343e",
+      "usage": "Two Beacon shell halves and their opened state",
+      "anchor": "18% or 83% x / 43% y; hinge at bottom",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/shell.png",
+        "record": "motion_barrier"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "wave",
+      "path": "web/public/assets/first-light-motion/wave.webp",
+      "publicPath": "/assets/first-light-motion/wave.webp",
+      "width": 2172,
+      "height": 724,
+      "alpha": true,
+      "channels": "srgba 4.0",
+      "bytes": 241032,
+      "sha256": "95af6bb3cc82df1f4eebac429731b07fbcfc44dcfb7fc6c6276a8aeb02b870f0",
+      "usage": "Accepted Surge consequence in either outing",
+      "anchor": "lane exit x20/50/79%; renderer owns movement",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/wave.png",
+        "record": "motion_wave"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "lens",
+      "path": "web/public/assets/first-light-motion/lens.webp",
+      "publicPath": "/assets/first-light-motion/lens.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "channels": "srgba 4.0",
+      "bytes": 371462,
+      "sha256": "6e8dc354cb0c871d4fee0982c997a6fa0fbabf23feb1a187012aad608ca7f5ca",
+      "usage": "Exposed Beacon Lens, reused lantern glass and Crest origin",
+      "anchor": "Beacon x18% / ground47%; lantern uses contained image",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/lens.png",
+        "record": "motion_lens"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "moth",
+      "path": "web/public/assets/first-light-motion/moth.webp",
+      "publicPath": "/assets/first-light-motion/moth.webp",
+      "width": 1536,
+      "height": 1024,
+      "alpha": true,
+      "channels": "srgba 4.0",
+      "bytes": 124938,
+      "sha256": "10ec2436f73cb20b305938032331c9796fa1c34d1bc925e5be640c7a8c6fb2c4",
+      "usage": "Optional wind-moth rescue, home moth, Moth origin",
+      "anchor": "wild x82% / ground46%; home x66% / ground66%",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/moth.png",
+        "record": "Reused wind-moth-reference.png from approved production concept package"
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    },
+    {
+      "id": "wind-gate-v1",
+      "path": "web/public/assets/first-light-motion/wind-gate-v1.webp",
+      "publicPath": "/assets/first-light-motion/wind-gate-v1.webp",
+      "width": 1536,
+      "height": 1024,
+      "alpha": false,
+      "channels": "srgb  3.0",
+      "bytes": 368078,
+      "sha256": "c2cddd02296250fdb3919963a50ec39d10a7a62bc0141a50e3a5fddd09500b46",
+      "usage": "Existing optional Wind Gate background after beacon restoration",
+      "anchor": "full-stage cover; routing and sockets are DOM layers",
+      "frames": {
+        "count": 1
+      },
+      "creator": "OpenAI image generation; original user-approved Familiar design references",
+      "provenance": {
+        "path": "web/public/assets/first-light-motion/provenance.json",
+        "entry": "files/wind-gate-v1.webp",
+        "record": "Generated November 12, 2026 using arena.webp as the approved style/camera reference. 1536×1024, WebP quality 83. Exact prompt retained in wind-gate-v1.webp.json. Original source retained at /Users/dadadave/.codex/generated_images/01a1cfe8-5587-7891-a135-9fe1f9af91c9/exec-7b6043b8-6510-4ea3-8415-f5cabceac162.png. Runtime pointer, source/exit and socket states are rendered separately from the inert background."
+      },
+      "rights": {
+        "status": "unresolved",
+        "license": null,
+        "evidence": "Project provenance records generated or reused user-approved reference art. Separate reference-art rights and distribution terms are not independently documented in this inventory; do not infer an art license from the code license."
+      }
+    }
+  ],
+  "codeLayers": [
+    {
+      "path": "web/src/outing/Outing.tsx",
+      "layers": [
+        "custom outing compass, workshop lantern, account home and menu SVG icons",
+        "accessible navigation and contextual game HUD"
+      ],
+      "bytes": 43899,
+      "sha256": "ec4b4e303d09c73e92ff011d93700313886df53c315825af0892e6c0eea600fd",
+      "kind": "DOM/CSS/inline SVG source",
+      "dimensions": "responsive renderer geometry",
+      "alpha": "DOM compositing; no additional raster",
+      "creator": "Project-authored game and Storycraft UI",
+      "rights": {
+        "status": "repository-code-license",
+        "license": "MIT",
+        "source": "LICENSE"
+      },
+      "payloadNote": "Bundled source; byte count is source size, not a separately transferred runtime asset."
+    },
+    {
+      "path": "web/src/outing/outing.css",
+      "layers": [
+        "full-bleed coastal environment using existing raster art",
+        "wood and brass navigation",
+        "parchment objective/action surfaces",
+        "responsive registered playfield and safe-area HUD"
+      ],
+      "bytes": 45689,
+      "sha256": "5e2be8c2c52da88c54826595136a10f25863b86483aa932a09d90baa7a1fa143",
+      "kind": "DOM/CSS/inline SVG source",
+      "dimensions": "responsive renderer geometry",
+      "alpha": "DOM compositing; no additional raster",
+      "creator": "Project-authored game and Storycraft UI",
+      "rights": {
+        "status": "repository-code-license",
+        "license": "MIT",
+        "source": "LICENSE"
+      },
+      "payloadNote": "Bundled source; byte count is source size, not a separately transferred runtime asset."
+    },
+    {
+      "path": "web/src/tidebound/Storycraft.tsx",
+      "layers": [
+        "lantern body using existing lens.webp",
+        "Crest wave engraving",
+        "Moth wing aperture",
+        "static origin composition from recorded motif"
+      ],
+      "bytes": 8294,
+      "sha256": "711b2d33b1286f2038f8cee5fbf4f24d0bd1f68843fc82696e9cf3977b5f1112",
+      "kind": "DOM/CSS/inline SVG source",
+      "dimensions": "responsive renderer geometry",
+      "alpha": "DOM compositing; no additional raster",
+      "creator": "Project-authored game and Storycraft UI",
+      "rights": {
+        "status": "repository-code-license",
+        "license": "MIT",
+        "source": "LICENSE"
+      },
+      "payloadNote": "Bundled source; byte count is source size, not a separately transferred runtime asset."
+    },
+    {
+      "path": "web/src/tidebound/storycraft.css",
+      "layers": [
+        "lantern brass frame",
+        "harbor_polish enamel/glow appearance",
+        "porch anchor at x60% / ground77%",
+        "dock anchor at x82% / ground88% and reflected light",
+        "origin atlas crop"
+      ],
+      "bytes": 6711,
+      "sha256": "af1b03b3d6f49f42c3043a991614d3eb716a0c25e1ddd6021c55fefc7704eed9",
+      "kind": "DOM/CSS/inline SVG source",
+      "dimensions": "responsive renderer geometry",
+      "alpha": "DOM compositing; no additional raster",
+      "creator": "Project-authored game and Storycraft UI",
+      "rights": {
+        "status": "repository-code-license",
+        "license": "MIT",
+        "source": "LICENSE"
+      },
+      "payloadNote": "Bundled source; byte count is source size, not a separately transferred runtime asset."
+    }
+  ],
+  "payloads": {
+    "arrival": {
+      "ids": [
+        "harbor",
+        "bram",
+        "mochi-poses-v1"
+      ],
+      "bytes": 938786
+    },
+    "beaconPlayfield": {
+      "ids": [
+        "arena",
+        "tidekeeper",
+        "shell",
+        "mochi-poses-v1"
+      ],
+      "bytes": 1450306
+    },
+    "completeBeaconHomecomingWithOptionalMoth": {
+      "ids": [
+        "harbor",
+        "bram",
+        "mochi-poses-v1",
+        "arena",
+        "tidekeeper",
+        "shell",
+        "wave",
+        "lens",
+        "moth"
+      ],
+      "bytes": 2904322
+    },
+    "windGateAdditionalBackground": {
+      "ids": [
+        "wind-gate-v1"
+      ],
+      "bytes": 368078
+    },
+    "allUsedRasterAssets": {
+      "ids": [
+        "harbor",
+        "bram",
+        "mochi-poses-v1",
+        "arena",
+        "tidekeeper",
+        "shell",
+        "wave",
+        "lens",
+        "moth",
+        "wind-gate-v1"
+      ],
+      "bytes": 3272400
+    },
+    "newStorycraftRasterBytes": 0
+  },
+  "optionalReuse": "Origin diorama reuses arena/Tidekeeper/Mochi plus lens or moth. Storycraft origin images mount on the origin step. Reused lens imagery may already be loaded by the workbench; optional presentation is not claimed as a measured lazy-loading gain. Existing Wind Gate adds one background; Storycraft adds no new raster files; reused assets may still download in a fresh session.",
+  "availability": "Ordinary self-hosted assets in web/public, not permanent storage. Source hashes support integrity/export; on-chain item ownership alone does not guarantee art hosting or cross-game behavior."
+}

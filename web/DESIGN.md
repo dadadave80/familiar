@@ -1,5 +1,17 @@
 # Familiar visual system
 
+## First Light game — current direction, November 12
+
+The harbor and expedition artwork form the full browser viewport. Navigation and controls belong to the handcrafted coastal world: compact wood/brass navigation, readable parchment objectives and tactile action buttons over the scene. Preserve Familiar, Mochi, Bram, the Tidekeeper, the wind-moth, the existing warm diorama art and self-hosted type. “Tidebound” is a proposed subtitle.
+
+The desktop playfield has no exterior page frame, permanent cream sidebar or letterbox. Keep the center clear and expose the current decision first. Preparation, memory, discoveries, Workshop, Account and longer explanations use bounded menu states. The whole game page stays fixed; contained detail/account panels may scroll where useful, with reachable Back/Close controls.
+
+Portrait keeps all three registered lanes visible in a width-aligned playfield while reused coastal artwork continues behind the HUD. Resizing changes presentation only. DOM buttons and labels preserve keyboard access, 44px targets, visible focus, contrast and reduced-motion outcomes. Browser viewport filling does not require forcing OS fullscreen.
+
+Local previews, confirmed NEAR testnet ownership and uncertain operations retain explicit truthful labels. An immersive visual treatment cannot replace recovery, canonical state or receipt verification. Device and human playtest evidence belongs in `../PROGRESS.md` and `../JUDGES.md`.
+
+The sections below describe the retained November 5 legacy town at `/legacy/`; their sidebar/scroll layout is not the First Light game direction.
+
 User-approved direction: the harbor world in `../HANDOFF.md`, refined on November 5, 2026 with the chosen emphasis “Cozy town and companion, with clearer actions.” The existing identity and game behavior remain the foundation.
 
 ## World and first viewport

@@ -12,16 +12,19 @@ User specified Vite, React, TypeScript, Phaser 3 for the town canvas, vanilla CS
 Curious people who will never open a crypto wallet. Secondary audience: hackathon judges trying the game in two minutes, including AI reproducibility checks.
 
 ## Product Purpose
+First Light is Familiar's current adventure: guide Mochi through tide decisions, bring discoveries home, deliberately restore the harbor, and choose a meaningful second goal. Storycraft makes an earned lantern personal through Crest/Moth, two home sockets and a static origin. The whole-screen game world uses custom coastal navigation and controls. The local preview works before sign-in; canonical progress and transferable ownership require the separately verified testnet stack and recoverable account. No recovery claim follows from local saves or app login alone.
+
+The retained `/legacy/` prototype has the following purpose:
 Adopt a small companion, feed it, send it on errands, bake bread, trade with Bram, and let it nap. The pet is a keyless named NEAR account; its NFT determines who may act for it. Inventory and savings stay with the account on resale.
 
 ## Operating Context
-390px portrait baseline. Desktop centers the controls at 480px and widens the town to 720px. A stranger should adopt and read their first receipt within 60 seconds. Testnet only; hundreds of players and tens concurrently; public RPC, no indexer, no paid infrastructure.
+First Light fills the desktop viewport and fits mobile portrait/landscape. Keep the whole page from scrolling; useful contained menus may scroll. Preserve all three lanes, keep the live scene readable, and put deeper information behind deliberate menu states. The legacy town used a 390px portrait baseline and a separate desktop control column. Testnet only; public RPC, no indexer, no paid infrastructure. Hundreds of players and tens concurrently are a design target, not measured capacity.
 
 ## Capabilities and Constraints
-Guest-first, no sign-up. Player actions must be signed in the browser and relayed without handing the service player keys. The registry verifies NFT ownership and serializes pet actions with transfers. Receipts describe confirmed actions and link to an explorer. A stopped relayer pauses play honestly without deleting a guest identity or claiming completion. Google recovery is additive and appears only after the first errand; it requires verified NEAR Auth configuration.
+First Light starts with a local preview before sign-in. Canonical actions use the recovered player's browser-authorized key, the compatible testnet registry and current ownership. Privy email login, original-wallet restoration and raw signing have passed on Mac; second-device recovery and live game issuance remain gated. The preserved legacy pet game relays player-signed actions and has an additive Google/NEAR Auth recovery path whose live recovery is unverified. Receipts describe only confirmed actions. A stopped service pauses account actions without replacing the player or claiming completion.
 
 ## Brand Commitments
-Familiar. A small harbor town at golden hour, picture-book warmth. Warm, plain, slightly wry language. No “wallet”, “gas”, or “tx” before a receipt; real terms are glossed when introduced. No landing page, token prices, countdowns, buy-ins, pots, tutorial screens, or jargon in buttons. Sound is optional and off by default.
+Familiar. A small harbor town at golden hour, picture-book warmth. Warm, plain, slightly wry language. No “wallet”, “gas”, or “tx” before a receipt; real terms are glossed when introduced. Preserve the separately requested landing page, while the game itself is an immersive world with theme-matched controls. No token prices, countdowns, buy-ins, pots or jargon in buttons. Sound is optional and off by default.
 
 ## Evidence on Hand
 The user supplied `../HANDOFF.md`. `../PROGRESS.md` records actual commands and discrepancies. No deployed game, live receipts, screenshots, or successful auth integration existed at project start. Never fabricate them.
