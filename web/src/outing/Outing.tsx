@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { planUrl } from "../plan-url";
 import { MochiActor } from "../motion/MochiActor";
 import { MOCHI_POSES, type MochiPoseName } from "../motion/mochi";
+import { lanes, useCourtControls } from "./controls";
 import {
   ACTION_LIMIT,
   applyAction,
@@ -28,7 +29,6 @@ import {
 import "./outing.css";
 
 const art = "/assets/first-light-motion/";
-const lanes: Lane[] = ["left", "center", "right"];
 const positions = { left: 20, center: 50, right: 79 };
 const items: Record<Item, string> = {
   lens: "Beacon Lens",
@@ -127,6 +127,7 @@ function heldPose(
 }
 
 function Stage({
+  board,
   run,
   home,
   resting,
@@ -134,6 +135,7 @@ function Stage({
   inspected,
   inspect,
 }: {
+  board: RefObject<HTMLElement | null>;
   run: Run | null;
   home: Home;
   resting: boolean;
@@ -161,11 +163,13 @@ function Stage({
   );
   return (
     <section
+      ref={board}
       className={`of-stage ${atCourt ? "at-court" : "at-home"}`}
       data-testid="outing-scene"
       data-lit={home.lit}
       data-igniting={igniting}
       aria-label={atCourt ? "Beacon Court playfield" : "Pocket Harbor"}
+      aria-describedby={atCourt ? "of-control-hint" : undefined}
     >
       <div className="of-stage-art" aria-hidden="true">
         <img
@@ -384,6 +388,7 @@ export function Outing() {
     }, 220);
   }
 
+  const board = useCourtControls(toolMenu || inspected || busy ? null : run, commit);
   const actionButton = (action: Action, label = actionLabel(action)) => (
     <button
       key={action}
@@ -449,6 +454,7 @@ export function Outing() {
       <div className="of-layout">
         <div className="of-world">
           <Stage
+            board={board}
             run={run}
             home={home}
             resting={resting}
@@ -530,6 +536,11 @@ export function Outing() {
                   </button>
                 </div>
               )}
+              <p id="of-control-hint" className="of-control-hint">
+                <span className="of-key-hint">Use ← or → to move one lane.</span>
+                <span className="of-touch-hint">Swipe across the scene to move one lane.</span>{" "}
+                Each move spends one turn.
+              </p>
               <div className="of-moves" aria-label="Choose a lane">
                 {lanes.map((lane) => actionButton(`move:${lane}`))}
               </div>
@@ -613,7 +624,7 @@ export function Outing() {
                   {run.tool === "rope"
                     ? "Rope reels an exposed lens or salvage from another lane. The moth needs a personal visit."
                     : "The Lantern redirects a locked wave during Surge. At Center it can also copy the chart, even with no charges left."}{" "}
-                  Inspect any lane freely.
+                  Tap or select a lane label to inspect it for free.
                 </p>
               </details>
             </>

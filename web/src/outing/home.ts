@@ -122,5 +122,5 @@ export function challengeText(run: Outing): string {
   const url = new URL(window.location.href);
   if (url.protocol !== "https:" || url.pathname.replace(/\/$/, "") !== "/outing" ||
       /^(localhost|127\.|\[::1\]$)|\.localhost$/i.test(url.hostname)) return text;
-  return text + "\n" + new URL("/outing?challenge=" + challenge, url.origin).href;
+  return text + "\n" + new URL("/outing/?challenge=" + challenge, url.origin).href;
 }

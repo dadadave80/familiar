@@ -4,7 +4,9 @@ Familiar is a harbor-town pet game for NEAR testnet. Each pet is a keyless named
 
 The [First Light design book](https://familiar-two.vercel.app/plan/) is the public review edition of the proposed adventure. It includes all fourteen chapters, illustrations and supporting data. The [motion preview](https://familiar-two.vercel.app/motion) plays nine implemented sequences. Both open without an account.
 
-For the local playable Beacon Court prototype, run `bun run dev` and open `/outing` on the printed URL. Choose a tool, bring the lost lens home, and restore the lighthouse. An ordinary reload resumes the outing on the same browser. To test the optional invitation, open `/outing?challenge=two-shells-v1`. The existing public review edition predates this playtest build.
+[Play Beacon Court](https://familiar-two.vercel.app/outing/) without signing in. Press **←** or **→** on desktop, or swipe horizontally on the scene on a phone. Each legal move advances one turn. Tap a lane to inspect it for free. The movement buttons work with either input. An ordinary reload resumes the outing in the same browser. Installing the outing from its page launches it in a standalone window. It needs a connection to load.
+
+For local development, run `bun run dev` and open `/outing/` on the printed URL. Use `bun run test:outing-browser` for the local playtest suite, or append `https://familiar-two.vercel.app` to exercise the deployed app in isolated, signed-out browser profiles.
 
 To reproduce the review deployment, pass the external public edition's `plan` directory to `bun --no-env-file scripts/package-review.ts <plan-directory>`. The command builds the frontend and prints a temporary Vercel deployment directory containing the static files and routes. The editable plans and public edition live outside Git.
 

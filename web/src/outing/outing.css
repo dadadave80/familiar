@@ -120,6 +120,20 @@ body:has(.outing-root) {
   pointer-events: none;
   overflow: hidden;
 }
+.of-stage.at-court,
+.of-stage.at-court .of-lanes button {
+  touch-action: pan-y pinch-zoom;
+}
+.of-control-hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 8px 0;
+}
+.of-touch-hint { display: none; }
+@media (pointer: coarse) {
+  .of-touch-hint { display: inline; }
+  .of-key-hint { display: none; }
+}
 .of-stage-art img {
   position: absolute;
   display: block;

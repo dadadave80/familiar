@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "node:url";
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -16,6 +17,10 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: {
+        harbor: fileURLToPath(new URL("./index.html", import.meta.url)),
+        outing: fileURLToPath(new URL("./outing/index.html", import.meta.url)),
+      },
       output: {
         manualChunks: (id) => (id.includes("/phaser/") ? "phaser" : undefined),
       },

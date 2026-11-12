@@ -28,7 +28,7 @@ async function include(from: string, to: string) {
   await copyFile(from, to);
 }
 const assets = join(root, "web/public");
-for (const path of ["pet.svg", "manifest.webmanifest", "assets/tiny-town.png", "assets/kenney-license.txt"]) {
+for (const path of ["pet.svg", "manifest.webmanifest", "outing.webmanifest", "icons/beacon-192.png", "icons/beacon-512.png", "assets/tiny-town.png", "assets/kenney-license.txt"]) {
   await include(join(assets, path), join(site, path));
 }
 for await (const file of new Bun.Glob("licenses/*.txt").scan(assets)) {
@@ -58,7 +58,8 @@ await writeFile(join(output, "config.json"), JSON.stringify({
   routes: [
     { src: "/(.*)", headers: { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin" }, continue: true },
     { src: "/plan/?$", dest: "/plan/index.html" },
-    { src: "/(motion|outing)/?$", dest: "/index.html" },
+    { src: "/outing/?$", dest: "/outing/index.html" },
+    { src: "/motion/?$", dest: "/index.html" },
     { src: "/$", dest: "/index.html" },
     { handle: "filesystem" },
   ],

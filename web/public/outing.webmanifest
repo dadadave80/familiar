@@ -1,0 +1,15 @@
+{
+  "id": "/outing/",
+  "name": "Familiar · The Broken Beacon",
+  "short_name": "Beacon Court",
+  "description": "A turn-based outing with Mochi at Beacon Court.",
+  "start_url": "/outing/",
+  "scope": "/outing/",
+  "display": "standalone",
+  "background_color": "#f6f0e4",
+  "theme_color": "#f6f0e4",
+  "icons": [
+    { "src": "/icons/beacon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/beacon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
