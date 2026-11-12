@@ -1,0 +1,1012 @@
+{
+  "verifiedAt": "2026-11-12T20:27:15.827Z",
+  "mode": "INDEPENDENT_READ_ONLY_RPC_AUDIT",
+  "network": "testnet",
+  "rpc": "https://test.rpc.fastnear.com",
+  "root": "familiar-game.testnet",
+  "passed": true,
+  "finalBlock": {
+    "hash": "8UiAazuA4KmJAjFJkWuPnHupBzZoWpHFt5zXzR36ehF8",
+    "height": 277412238,
+    "timestampNanoseconds": "1794515222523013724"
+  },
+  "transactions": [
+    {
+      "method": "create_account",
+      "account": "relayer.familiar-game.testnet",
+      "hash": "6dS9TVzPzg7takHfVWBJYCAnj1JaujiJh1n4BLmfiGeU",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "relayer.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "AHDAYb5Kb8ep9A1JHzHhPH9Z2zHg2EHovrYj2Du6mhnN",
+          "executor": "relayer.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "EvhuPxUSYxSZ6JhZRkRQP4scQ9vwirW33E1ctH6eZXv9",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "CVPNVCPGWHraQZBfPu7XBep2ZinXU8kx1YznEnLzxHiG"
+    },
+    {
+      "method": "create_account",
+      "account": "bram.familiar-game.testnet",
+      "hash": "2Wdz1L1h2Wc6PDnU5uLqxXGQWXGR9fba9h4E7nwhziWm",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "bram.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "9PFWhMtiREK3aeb3ZzpMW2tiJfzVdrQBzkJGBxgBFZSa",
+          "executor": "bram.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "6p1BGGZZZjmEjDJnkr8FvYic1Ydm6Thd6sAbUwsRPAp3",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "3DVqvigAmc7TKZdYh4g2hMJwjZ9B62mv7pqq1A6mZCfV"
+    },
+    {
+      "method": "create_account",
+      "account": "den-1.familiar-game.testnet",
+      "hash": "8LX335roCp58jASTq2w3iuNADLipaJ7ecJyp2bBq6cx6",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "den-1.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "4iKPPiJCCVdcX5W22otQnfiekguSbcS4zUoqg1WDH2Xg",
+          "executor": "den-1.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "E3uAHyFqsBsfNE4FF7dEDZFC88N9UpQmJuvdSrY2qVzq",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "6WYYCp4PHWW3o1daKGenqJ2xwdPfY2RFVDjMFQmTahZq"
+    },
+    {
+      "method": "create_account",
+      "account": "den-2.familiar-game.testnet",
+      "hash": "CuUWJsWprbuoN4nToUaNtYZzHt9rwegJiVF67ku5wKvQ",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "den-2.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "2ZuUeZMAMJMxBAuZKP8DVCB4uehBA3KhHQBHjQ3DhciL",
+          "executor": "den-2.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "4PnanMjEYEgotdA1UeVK6kMnzV246uVyc25fMZHdab6h",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "DiSb77qwpZqepyrfr5sehnnGn1r2iDjZAHNJgTFJAuhN"
+    },
+    {
+      "method": "create_account",
+      "account": "den-3.familiar-game.testnet",
+      "hash": "6wi2E4JiKH5h29fnd47PcdyKYLEQm9GuE98LdocvKrCe",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "den-3.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "3gj7R4Y9wDzwirr8WRsRBCknxv7Q9zpokmdeMAehd32F",
+          "executor": "den-3.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "Hui6btkuTDsNbL7ZnKkXWs6tw8eXkYngJVYg5J5vH24n",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "4vkSjAwHu9dyo9sQNxU4nmp5VcWAJDqTcYbYGsjpH9W8"
+    },
+    {
+      "method": "create_account",
+      "account": "den-4.familiar-game.testnet",
+      "hash": "HZ9XL8vZnziao9ua2hedwTX3bHdQKfw76oiryDasgaYv",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "den-4.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "nfJqXLXEdqrzMATBPbxMTSxcoYeRdkTXDrfVRF652XF",
+          "executor": "den-4.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "44jeXPsTkEc531WpUNvkM4NiKN6PJMjiF9rZV2yAe4Mv",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "7aiMXWQPUMgsY3fmeuW6wGks1UKgc4195Pcu6nvmZtEg"
+    },
+    {
+      "method": "publish_global_pet",
+      "account": "familiar-game.testnet",
+      "hash": "21YexCRic4LNN24Wsi2ibYcMTGTjvketxMQyVcAfEwhV",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "5bxPWbRNceTjcUrTAfTtP7ryTvsY4vBSbcqyat9u55ZD",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "17240536033525000000000000"
+        },
+        {
+          "id": "4FeAmEFkWdxZGjuuREfJpiSyp9FKYoTvFhkf4i9GQyJy",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 1,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "48pnHN1NB6FaoPwHnciS25BuAFNNu28918eAELq4k81f"
+    },
+    {
+      "method": "create_account",
+      "account": "items.familiar-game.testnet",
+      "hash": "FoWj7Atus8iDYt2Ve82xba6Rp7qLLN6pHwxBd58gTvFe",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "items.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "FTd5qgtCnrVN1BR3AoQsFB5jgFVrYryhqjfJsahZC52R",
+          "executor": "items.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "vXp9SzZktewgQ7v4H7D8rpHr6ummr1qpokN27UBqUsY",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "Bb2ZAsEGYVtAbhR3NdEXdmR5LZX6LSyeSzWGmpSoVaY4"
+    },
+    {
+      "method": "create_account",
+      "account": "bakery.familiar-game.testnet",
+      "hash": "4m2aGfQGMM7it68vxtDyXP9SmFHzQBdAdoRBqjDYsPqn",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "bakery.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "Ermy6Nrt5NE7V8WBYy2wFpuWqbTtYY5hwLCT9igbecNc",
+          "executor": "bakery.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "5TRbewtAVMkj7q1taQVcsP9RyYmTjrpk1LXnZ1ddTZ9G",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "4KkGjVTfpESfGcqE1qW7GiUdrrK4GCziGeMPxxFwPcYD"
+    },
+    {
+      "method": "create_account",
+      "account": "market.familiar-game.testnet",
+      "hash": "FoCtpVqJFipUvtH5R6n67MRa88zhEjUPKr9HhHhNtx1p",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "market.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "6t3yebiNk9NC8hwfSdcLgkiF6X6EYtDgxcR9NjVWXPQM",
+          "executor": "market.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "7032494768750000000000"
+        },
+        {
+          "id": "ExBmv9ocni9XvoJRyT11ZdjRfCNUcjzetYyyxQQV3Cef",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "5L1iyVs9dYNtbj4hgEaJmnFrcU4RT31U3pw8RiQTKkVC"
+    },
+    {
+      "method": "deploy_items",
+      "account": "items.familiar-game.testnet",
+      "hash": "DJ9BEBwL9y15u7ZvzYBJek1J8VmGn7DFyJA3httnUKsZ",
+      "expectedSigner": "items.familiar-game.testnet",
+      "actualSigner": "items.familiar-game.testnet",
+      "actualReceiver": "items.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "DdfadxQ8dqXGtub2KJcCyJzwiazye1ESpTuHP381pswm",
+          "executor": "items.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "3125584361294800000000"
+        },
+        {
+          "id": "DnEkKzaXMUK2yEupHfHzTydjgFFdMzavx6hzAopFDFPs",
+          "executor": "items.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 1,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "CVXBe2Uo9u6QWGZB4oWWimGQRFDsZGxZ6urrbFkYUvh9"
+    },
+    {
+      "method": "deploy_bakery",
+      "account": "bakery.familiar-game.testnet",
+      "hash": "DWaEWNg9jTQpXd2oG8zXJuk9wZBhartqjNgB6UYW2W9P",
+      "expectedSigner": "bakery.familiar-game.testnet",
+      "actualSigner": "bakery.familiar-game.testnet",
+      "actualReceiver": "bakery.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "7Wyj3tBdvyoZj95B2CerhkWBvAnWnp1xWgVyjbZi8Y3f",
+          "executor": "bakery.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "859412913040400000000"
+        },
+        {
+          "id": "GkM8na4Hii93KPANPcT3ErwHQ6L5joymrEub5KzoYkPE",
+          "executor": "bakery.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 1,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "AYCCtFLPbAQugmUMLU8UhuzFYQ3x3GowonRFMXfV2uEL"
+    },
+    {
+      "method": "deploy_market",
+      "account": "market.familiar-game.testnet",
+      "hash": "HT2pKsBYhm8yBMnVuCpDUcAtPnFc5wA1uch8qmHMBhUK",
+      "expectedSigner": "market.familiar-game.testnet",
+      "actualSigner": "market.familiar-game.testnet",
+      "actualReceiver": "market.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "HSEvfWXhZkstk1R891vAJJkqKBvySFdjWb48ntrhHTA7",
+          "executor": "market.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "1677797135313900000000"
+        },
+        {
+          "id": "4GCyw33XThRV2o37TsLeddomQQXYhvUJ91nwdCnGrpwe",
+          "executor": "market.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 1,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "55jPuinYTNQkjUJ9GPhpR5UwjnP2gqGgwAcQpbhEWrYs"
+    },
+    {
+      "method": "deploy_root",
+      "account": "familiar-game.testnet",
+      "hash": "3ueACMj5CkjTG85aSTk7ZRoPAV4yCt4fFJzWLfB7LdPy",
+      "expectedSigner": "familiar-game.testnet",
+      "actualSigner": "familiar-game.testnet",
+      "actualReceiver": "familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "9nLGVbUTc3TyU4UP2gVmH2UX6LKB8JmfUKhaGFQQr3Su",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "3155040254203700000000"
+        },
+        {
+          "id": "7kj8YJmyeFYWB534QdWzHMxSzn3dQ3eszEoeCobZFfBe",
+          "executor": "familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 1,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "transactionBlockHash": "7zjd3i9SGNjGUr5vUZ4NJrj7eHMtMXJe2C6WJWQdbv3D"
+    },
+    {
+      "method": "bram_scoped_key",
+      "account": "bram.familiar-game.testnet",
+      "hash": "C76jnKSLqDLXerHfr7FumRPfBGtu2MeQN1y4ZxoMdGfr",
+      "expectedSigner": "bram.familiar-game.testnet",
+      "actualSigner": "bram.familiar-game.testnet",
+      "actualReceiver": "bram.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "7ujFAhQpK9nqoX79fuiP1XanV4wuBJCknMdw6mbTWszE",
+          "executor": "bram.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "21029830364100000000"
+        },
+        {
+          "id": "7Dy5wsYQ4qEF9K88TK31Jfrss1ctfEuEXQp4wM3EJF5T",
+          "executor": "bram.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 1,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:AL7h3wnJVNQzUFrpE3wDLBTM6q8BtkXnZ9Wdmqq6xcRV",
+      "transactionBlockHash": "i6r1rnqedsquVrcfd1YW7277kEjAymT9pvp6b85cwjy"
+    },
+    {
+      "method": "npc_deposit",
+      "account": "market.familiar-game.testnet",
+      "hash": "J81xchELMeJuHEDiME1C5nQnFZkwo9gbAJiKff8ZXAPr",
+      "expectedSigner": "bram.familiar-game.testnet",
+      "actualSigner": "bram.familiar-game.testnet",
+      "actualReceiver": "market.familiar-game.testnet",
+      "finalExecutionStatus": "FINAL",
+      "terminalSuccess": true,
+      "receipts": [
+        {
+          "id": "6M4CpVgwr6gBRPyWgaXoGraVhi3jJXXvKWYu6znoYMF3",
+          "executor": "market.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "165817450931600000000"
+        },
+        {
+          "id": "44bQNfSphnXqtguyxjZDXabvmug5gwzhRGJQYEVwUWDh",
+          "executor": "bram.familiar-game.testnet",
+          "status": "SuccessValue",
+          "tokensBurntYocto": "0"
+        }
+      ],
+      "receiptPayloadsIncluded": 2,
+      "allReceiptsSuccessful": true,
+      "successReceiptPointersResolved": true,
+      "publicSigningKey": "ed25519:AL7h3wnJVNQzUFrpE3wDLBTM6q8BtkXnZ9Wdmqq6xcRV",
+      "transactionBlockHash": "G9h9vA96rNfcB8xTVv1xPmRYb5rLcA4BRc1iP2sWYoBa"
+    }
+  ],
+  "contracts": [
+    {
+      "name": "root",
+      "account": "familiar-game.testnet",
+      "bytes": 426354,
+      "codeHash": "9tLpC99keMSufRQX9bXhxVjDNw5Yys68t54ezUpZr61q",
+      "localArtifact": "contracts/target/deploy/familiar_root.wasm",
+      "exactBytesMatch": true,
+      "accountCodeHash": "9tLpC99keMSufRQX9bXhxVjDNw5Yys68t54ezUpZr61q"
+    },
+    {
+      "name": "items",
+      "account": "items.familiar-game.testnet",
+      "bytes": 316960,
+      "codeHash": "2s2KfRFCBhe8sgX2S7H9rC8eJcgkZSMhCoCizu6A9HXJ",
+      "localArtifact": "contracts/target/deploy/familiar_items.wasm",
+      "exactBytesMatch": true,
+      "accountCodeHash": "2s2KfRFCBhe8sgX2S7H9rC8eJcgkZSMhCoCizu6A9HXJ"
+    },
+    {
+      "name": "bakery",
+      "account": "bakery.familiar-game.testnet",
+      "bytes": 111432,
+      "codeHash": "EHJca21W6P2CiwJ68BpHDT2cf6YV6ByTvGwHENeC2DDv",
+      "localArtifact": "contracts/target/deploy/familiar_bakery.wasm",
+      "exactBytesMatch": true,
+      "accountCodeHash": "EHJca21W6P2CiwJ68BpHDT2cf6YV6ByTvGwHENeC2DDv"
+    },
+    {
+      "name": "market",
+      "account": "market.familiar-game.testnet",
+      "bytes": 233715,
+      "codeHash": "4RLBp67B5ZWJ9H8BztLfthTYMjyGR7VWmtj5k3MwxAVr",
+      "localArtifact": "contracts/target/deploy/familiar_market.wasm",
+      "exactBytesMatch": true,
+      "accountCodeHash": "4RLBp67B5ZWJ9H8BztLfthTYMjyGR7VWmtj5k3MwxAVr"
+    }
+  ],
+  "globalPet": {
+    "codeHash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+    "bytes": 172393,
+    "localArtifact": "contracts/target/deploy/familiar_pet.wasm",
+    "exactBytesMatch": true
+  },
+  "configuration": {
+    "root": {
+      "relayer": "relayer.familiar-game.testnet",
+      "pet_code_hash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+      "items": "items.familiar-game.testnet",
+      "bakery": "bakery.familiar-game.testnet",
+      "market": "market.familiar-game.testnet",
+      "pool": "kiln.pool.f863973.m0"
+    },
+    "rootProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "items": "items.familiar-game.testnet",
+      "registry": "familiar-game.testnet"
+    },
+    "itemProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "registry": "familiar-game.testnet"
+    },
+    "finalizedInitializers": {
+      "items": {
+        "registry": "familiar-game.testnet",
+        "bakery": "bakery.familiar-game.testnet",
+        "market": "market.familiar-game.testnet"
+      },
+      "bakery": {
+        "items": "items.familiar-game.testnet"
+      },
+      "market": {
+        "registry": "familiar-game.testnet",
+        "items": "items.familiar-game.testnet",
+        "npc": "bram.familiar-game.testnet",
+        "dens": [
+          "den-1.familiar-game.testnet",
+          "den-2.familiar-game.testnet",
+          "den-3.familiar-game.testnet",
+          "den-4.familiar-game.testnet"
+        ]
+      },
+      "root": {
+        "relayer": "relayer.familiar-game.testnet",
+        "pet_code_hash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+        "items": "items.familiar-game.testnet",
+        "bakery": "bakery.familiar-game.testnet",
+        "market": "market.familiar-game.testnet",
+        "pool": "kiln.pool.f863973.m0"
+      }
+    },
+    "publicStateAccounts": {
+      "items": [
+        "familiar-game.testnet"
+      ],
+      "bakery": [
+        "items.familiar-game.testnet"
+      ],
+      "market": [
+        "familiar-game.testnet",
+        "items.familiar-game.testnet",
+        "bram.familiar-game.testnet",
+        "den-1.familiar-game.testnet",
+        "den-2.familiar-game.testnet",
+        "den-3.familiar-game.testnet",
+        "den-4.familiar-game.testnet"
+      ]
+    },
+    "marketNpcBalanceYocto": "1000000000000000000000000",
+    "bakeryRecipe": {
+      "inputs": {
+        "flour": "1",
+        "water": "1"
+      },
+      "output": {
+        "bread": "1"
+      }
+    }
+  },
+  "accounts": [
+    {
+      "account": "familiar-game.testnet",
+      "amountYocto": "12330717471598567200000000",
+      "lockedYocto": "0",
+      "storageBytes": 427148,
+      "storageReserveYocto": "4271480000000000000000000",
+      "liquidAfterStorageYocto": "8059237471598567200000000",
+      "codeHash": "9tLpC99keMSufRQX9bXhxVjDNw5Yys68t54ezUpZr61q",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411058000011
+        }
+      ]
+    },
+    {
+      "account": "relayer.familiar-game.testnet",
+      "amountYocto": "2000000000000000000000000",
+      "lockedYocto": "0",
+      "storageBytes": 182,
+      "storageReserveYocto": "1820000000000000000000",
+      "liquidAfterStorageYocto": "1998180000000000000000000",
+      "codeHash": "11111111111111111111111111111111",
+      "keys": [
+        {
+          "publicKey": "ed25519:9d4oSjKWWbkjwTyBM6fPFMrLRwSECG9tSBPHDHgB6CS5",
+          "permission": "FullAccess",
+          "nonce": 277411511000000
+        }
+      ]
+    },
+    {
+      "account": "bram.familiar-game.testnet",
+      "amountYocto": "199761254949510700000000",
+      "lockedYocto": "0",
+      "storageBytes": 331,
+      "storageReserveYocto": "3310000000000000000000",
+      "liquidAfterStorageYocto": "196451254949510700000000",
+      "codeHash": "11111111111111111111111111111111",
+      "keys": [
+        {
+          "publicKey": "ed25519:AL7h3wnJVNQzUFrpE3wDLBTM6q8BtkXnZ9Wdmqq6xcRV",
+          "permission": "FullAccess",
+          "nonce": 277411518000002
+        },
+        {
+          "publicKey": "ed25519:HE3UA97SD2vD5nNvBjs7PpmHxpXgEdUdFL1sWN1xypZd",
+          "permission": {
+            "FunctionCall": {
+              "allowance": "1000000000000000000000000",
+              "method_names": [
+                "set_quotes"
+              ],
+              "receiver_id": "market.familiar-game.testnet"
+            }
+          },
+          "nonce": 277411609000000
+        }
+      ]
+    },
+    {
+      "account": "den-1.familiar-game.testnet",
+      "amountYocto": "10000000000000000000000",
+      "lockedYocto": "0",
+      "storageBytes": 182,
+      "storageReserveYocto": "1820000000000000000000",
+      "liquidAfterStorageYocto": "8180000000000000000000",
+      "codeHash": "11111111111111111111111111111111",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411525000000
+        }
+      ]
+    },
+    {
+      "account": "den-2.familiar-game.testnet",
+      "amountYocto": "10000000000000000000000",
+      "lockedYocto": "0",
+      "storageBytes": 182,
+      "storageReserveYocto": "1820000000000000000000",
+      "liquidAfterStorageYocto": "8180000000000000000000",
+      "codeHash": "11111111111111111111111111111111",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411532000000
+        }
+      ]
+    },
+    {
+      "account": "den-3.familiar-game.testnet",
+      "amountYocto": "10000000000000000000000",
+      "lockedYocto": "0",
+      "storageBytes": 182,
+      "storageReserveYocto": "1820000000000000000000",
+      "liquidAfterStorageYocto": "8180000000000000000000",
+      "codeHash": "11111111111111111111111111111111",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411539000000
+        }
+      ]
+    },
+    {
+      "account": "den-4.familiar-game.testnet",
+      "amountYocto": "10000000000000000000000",
+      "lockedYocto": "0",
+      "storageBytes": 182,
+      "storageReserveYocto": "1820000000000000000000",
+      "liquidAfterStorageYocto": "8180000000000000000000",
+      "codeHash": "11111111111111111111111111111111",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411546000000
+        }
+      ]
+    },
+    {
+      "account": "items.familiar-game.testnet",
+      "amountYocto": "3666209161689786600000000",
+      "lockedYocto": "0",
+      "storageBytes": 320268,
+      "storageReserveYocto": "3202680000000000000000000",
+      "liquidAfterStorageYocto": "463529161689786600000000",
+      "codeHash": "2s2KfRFCBhe8sgX2S7H9rC8eJcgkZSMhCoCizu6A9HXJ",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411560000001
+        }
+      ]
+    },
+    {
+      "account": "bakery.familiar-game.testnet",
+      "amountYocto": "1613335376560580000000000",
+      "lockedYocto": "0",
+      "storageBytes": 111690,
+      "storageReserveYocto": "1116900000000000000000000",
+      "liquidAfterStorageYocto": "496435376560580000000000",
+      "codeHash": "EHJca21W6P2CiwJ68BpHDT2cf6YV6ByTvGwHENeC2DDv",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411566000001
+        }
+      ]
+    },
+    {
+      "account": "market.familiar-game.testnet",
+      "amountYocto": "3835263636447548200000000",
+      "lockedYocto": "0",
+      "storageBytes": 234994,
+      "storageReserveYocto": "2349940000000000000000000",
+      "liquidAfterStorageYocto": "1485323636447548200000000",
+      "codeHash": "4RLBp67B5ZWJ9H8BztLfthTYMjyGR7VWmtj5k3MwxAVr",
+      "keys": [
+        {
+          "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "permission": "FullAccess",
+          "nonce": 277411572000001
+        }
+      ]
+    }
+  ],
+  "pool": {
+    "account": "kiln.pool.f863973.m0",
+    "currentValidator": true,
+    "slashed": false,
+    "validatorEpoch": "Ja4aat2oQiB4EbbLxL1bqCBegyUuqdhWH6UgQt1JxcV",
+    "rootStakedBalanceYocto": "0"
+  },
+  "budget": {
+    "approvedCeilingYocto": "41000000000000000000000000",
+    "beforeFirstDeploymentBlock": 277411510,
+    "rootBeforeDeploymentYocto": "41000000000000000000000000",
+    "knownDeploymentAccounts": 10,
+    "currentAggregateAmountAndLockedYocto": "23685286901245992700000000",
+    "differenceFromPredeploymentYocto": "17314713098754007300000000",
+    "recordedTransactionAndReceiptTokensBurntYocto": "17314713098754007300000000",
+    "note": "Balances include storage reserves. Child transfers and the 1 NEAR Bram reserve are internal to the aggregate. Only the ten known deployment accounts are enumerated; no claim of indexer-complete account history.",
+    "aggregatePlusRecordedBurnEqualsPredeployment": true
+  },
+  "checks": [
+    {
+      "name": "RPC chain_id is testnet",
+      "passed": true
+    },
+    {
+      "name": "Recorded isolated deployment tuple is correct",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/bram.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/den-2.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/relayer.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/den-1.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/items.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/den-3.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/den-4.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction publish_global_pet/familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction deploy_items/items.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction deploy_bakery/bakery.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/market.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction create_account/bakery.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction deploy_market/market.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction npc_deposit/market.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction bram_scoped_key/bram.familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Transaction deploy_root/familiar-game.testnet finalized with exact signer/receiver and successful receipts",
+      "passed": true
+    },
+    {
+      "name": "Recorded Pet hash matches frozen artifact",
+      "passed": true
+    },
+    {
+      "name": "bakery deployed code hash and exact bytes match frozen Wasm",
+      "passed": true
+    },
+    {
+      "name": "market deployed code hash and exact bytes match frozen Wasm",
+      "passed": true
+    },
+    {
+      "name": "items deployed code hash and exact bytes match frozen Wasm",
+      "passed": true
+    },
+    {
+      "name": "root deployed code hash and exact bytes match frozen Wasm",
+      "passed": true
+    },
+    {
+      "name": "Published immutable global Pet exact bytes match frozen artifact",
+      "passed": true
+    },
+    {
+      "name": "Root configuration contains exact isolated components and Pet hash",
+      "passed": true
+    },
+    {
+      "name": "Root and Items expose exact compatible H1 protocol",
+      "passed": true
+    },
+    {
+      "name": "Root initializer matches current verified Root configuration",
+      "passed": true
+    },
+    {
+      "name": "Items initializer references only compatible Root/Bakery/Market",
+      "passed": true
+    },
+    {
+      "name": "Bakery initializer references compatible Items",
+      "passed": true
+    },
+    {
+      "name": "Market initializer references exact Root/Items/Bram/dens",
+      "passed": true
+    },
+    {
+      "name": "Current Items public STATE registry matches configured Root",
+      "passed": true
+    },
+    {
+      "name": "Current Bakery public STATE Items matches compatible contract",
+      "passed": true
+    },
+    {
+      "name": "Current Market public STATE contains exact registry/items/npc/dens",
+      "passed": true
+    },
+    {
+      "name": "Market public NPC state confirms dens and 1 NEAR operating reserve",
+      "passed": true
+    },
+    {
+      "name": "Bakery public recipe matches frozen flour/water bread recipe",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at den-1.familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at den-2.familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at den-3.familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at den-4.familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at items.familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at bakery.familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Expected isolated administrative key only at market.familiar-game.testnet",
+      "passed": true
+    },
+    {
+      "name": "Relayer has one separate FullAccess key",
+      "passed": true
+    },
+    {
+      "name": "Bram has one administrative key plus one bounded quote-only key",
+      "passed": true
+    },
+    {
+      "name": "Configured staking pool is a current non-slashed testnet validator",
+      "passed": true
+    },
+    {
+      "name": "Pool implements expected staking balance view",
+      "passed": true
+    },
+    {
+      "name": "Predeployment root funding does not exceed approved 41 test NEAR",
+      "passed": true
+    },
+    {
+      "name": "Current aggregate known deployment accounts remain within predeployment funding and 41 test NEAR",
+      "passed": true
+    },
+    {
+      "name": "Known deployment balances plus all recorded transaction/receipt burn exactly reconcile to predeployment 41 test NEAR",
+      "passed": true
+    }
+  ],
+  "blockers": [],
+  "authority": {
+    "rootAdministrativeKeyRetained": true,
+    "buildingAndDenKeysShareRootAdministrativePublicKey": true,
+    "bramAdministrativeKeyRetained": true,
+    "relayerKey": "separate FullAccess testnet sponsorship key",
+    "privateKeysRead": false,
+    "transactionsSigned": 0,
+    "mutations": 0
+  },
+  "limits": [
+    "This verifies deployment, code, configuration, keys and measured balances; it does not prove player account recovery, Mochi/item ownership restoration, gameplay completion or retention.",
+    "Artifact matching is to contracts/target/deploy frozen bytes; privileged administrative keys remain and deployed code is not claimed immutable.",
+    "Physical device results are recorded separately; no simulated fixture is counted as live acceptance."
+  ]
+}

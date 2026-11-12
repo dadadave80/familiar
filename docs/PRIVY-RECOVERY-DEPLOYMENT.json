@@ -563,7 +563,20 @@
     ]
   },
   "browserObservation": "Actual public HTTPS page initialized; Sign in with email enabled, no visible error. No identity submitted by the agent.",
-  "deviceRecovery": "pending personal second-device test",
+  "deviceRecovery": {
+    "mac": {
+      "evidence": "Agent observed private email sign-in, original wallet restore and verified raw Ed25519 signature; exported public proof independently verified",
+      "browser": "Codex in-app browser on Mac",
+      "proofLocation": "Private external specifications directory; not included in repository"
+    },
+    "android": {
+      "browser": "Chrome",
+      "evidence": "David reports same wallet ID/public key and signature verified on physical Android phone through the HTTPS page",
+      "independentlyCapturedProof": false
+    },
+    "walletGate": "One observed Mac result and one user-reported Android/Chrome result; same wallet and signing key",
+    "gameRestoration": "Fresh compatible testnet stack, David's original-key named player and successful Mac adoption of the keyless Mochi are now verified separately in TIDEBOUND-DEPLOYMENT.json, TIDEBOUND-NATIVE-GAS-UPGRADE.json and TIDEBOUND-PLAYER.json. Mochi/items/progress restoration across two physical devices remains unpassed. This historical recovery-only release performed no game issuance."
+  },
   "gameIssuance": false,
   "nearDeploymentOrFunding": false,
   "privateValuesIncluded": false

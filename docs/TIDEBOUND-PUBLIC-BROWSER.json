@@ -1,0 +1,414 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "url": "https://familiar-two.vercel.app/outing/",
+  "expectedDeploymentId": "dpl_D9v6F2tZAwXvd8SqKBfbWWdhGAN7",
+  "expectedDeploymentIdSource": "Parent-reported promoted deployment; browser QA does not independently resolve Vercel deployment identity.",
+  "observedAt": "2026-11-12T20:43:26.658Z",
+  "completedAt": "2026-11-12T20:43:44.726Z",
+  "browser": "Fresh isolated headless Chromium contexts, reduced motion, service workers blocked",
+  "results": [
+    {
+      "width": 390,
+      "height": 844,
+      "httpStatus": 200,
+      "headlessNavigationToReadyMs": 2368,
+      "measurements": [
+        {
+          "label": "390-public-home",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "minimumButtonWidth": 44,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "390-public-active",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "minimumButtonWidth": 44,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "390-public-workshop",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "minimumButtonWidth": 44,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "390-public-origin",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "minimumButtonWidth": 44,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "390-public-account",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 844
+          },
+          "minimumButtonWidth": 44,
+          "minimumButtonHeight": 44
+        }
+      ],
+      "localPreview": {
+        "version": 3,
+        "lit": true,
+        "lantern": {
+          "motif": "crest",
+          "socket": "porch"
+        }
+      },
+      "localBeaconActions": [
+        "move:left",
+        "wait",
+        "move:center",
+        "reel:lens",
+        "return"
+      ],
+      "actualEmptyEmailForm": true,
+      "emailFieldBounds": {
+        "x": 27,
+        "y": 646,
+        "width": 336,
+        "height": 56
+      },
+      "modalGeometry": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "browserExceptions": 0,
+      "failedStaticRequests": 0,
+      "walletPlayerRequests": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "httpStatus": 200,
+      "headlessNavigationToReadyMs": 1103,
+      "measurements": [
+        {
+          "label": "768-public-home",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 768,
+          "height": 1024,
+          "scrollWidth": 768,
+          "scrollHeight": 1024,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "768-public-active",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 768,
+          "height": 1024,
+          "scrollWidth": 768,
+          "scrollHeight": 1024,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024
+          },
+          "minimumButtonWidth": 58,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "768-public-workshop",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 768,
+          "height": 1024,
+          "scrollWidth": 768,
+          "scrollHeight": 1024,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "768-public-origin",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 768,
+          "height": 1024,
+          "scrollWidth": 768,
+          "scrollHeight": 1024,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "768-public-account",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 768,
+          "height": 1024,
+          "scrollWidth": 768,
+          "scrollHeight": 1024,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 768,
+            "height": 1024
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        }
+      ],
+      "localPreview": {
+        "version": 3,
+        "lit": true,
+        "lantern": {
+          "motif": "crest",
+          "socket": "porch"
+        }
+      },
+      "localBeaconActions": [
+        "move:left",
+        "wait",
+        "move:center",
+        "reel:lens",
+        "return"
+      ],
+      "actualEmptyEmailForm": true,
+      "emailFieldBounds": {
+        "x": 231,
+        "y": 523.5,
+        "width": 306,
+        "height": 56
+      },
+      "modalGeometry": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024,
+        "scrollWidth": 768,
+        "scrollHeight": 1024
+      },
+      "browserExceptions": 0,
+      "failedStaticRequests": 0,
+      "walletPlayerRequests": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "httpStatus": 200,
+      "headlessNavigationToReadyMs": 1097,
+      "measurements": [
+        {
+          "label": "1280-public-home",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 1280,
+          "height": 800,
+          "scrollWidth": 1280,
+          "scrollHeight": 800,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 1280,
+            "height": 800
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "1280-public-active",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 1280,
+          "height": 800,
+          "scrollWidth": 1280,
+          "scrollHeight": 800,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 1280,
+            "height": 800
+          },
+          "minimumButtonWidth": 58,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "1280-public-workshop",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 1280,
+          "height": 800,
+          "scrollWidth": 1280,
+          "scrollHeight": 800,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 1280,
+            "height": 800
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "1280-public-origin",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 1280,
+          "height": 800,
+          "scrollWidth": 1280,
+          "scrollHeight": 800,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 1280,
+            "height": 800
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        },
+        {
+          "label": "1280-public-account",
+          "scrollX": 0,
+          "scrollY": 0,
+          "width": 1280,
+          "height": 800,
+          "scrollWidth": 1280,
+          "scrollHeight": 800,
+          "world": {
+            "x": 0,
+            "y": 0,
+            "width": 1280,
+            "height": 800
+          },
+          "minimumButtonWidth": 90.609375,
+          "minimumButtonHeight": 44
+        }
+      ],
+      "localPreview": {
+        "version": 3,
+        "lit": true,
+        "lantern": {
+          "motif": "crest",
+          "socket": "porch"
+        }
+      },
+      "localBeaconActions": [
+        "move:left",
+        "wait",
+        "move:center",
+        "reel:lens",
+        "return"
+      ],
+      "actualEmptyEmailForm": true,
+      "emailFieldBounds": {
+        "x": 487,
+        "y": 411.5,
+        "width": 306,
+        "height": 56
+      },
+      "modalGeometry": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800
+      },
+      "browserExceptions": 0,
+      "failedStaticRequests": 0,
+      "walletPlayerRequests": 0
+    }
+  ],
+  "blockedExternalMutations": [
+    {
+      "request": "POST https://auth.privy.io/api/v1/analytics_events",
+      "count": 3
+    },
+    {
+      "request": "POST https://auth.privy.io/cdn-cgi/challenge-platform/[anonymous-challenge]",
+      "count": 3
+    }
+  ],
+  "walletPlayerRequests": [],
+  "captures": "/var/folders/25/bmz0bth90ln16n8k5w_d7hph0000gn/T/familiar-public-h1-browser-i4HOzT",
+  "reproducibility": {
+    "temporaryHarness": "/private/tmp/familiar-public-h1-qa-b39e.ts",
+    "command": "bun /private/tmp/familiar-public-h1-qa-b39e.ts"
+  },
+  "limits": [
+    "Public UI/local gameplay and empty real Privy email form only.",
+    "All wallet/player API requests and non-read network methods were blocked.",
+    "No identity entered, account or wallet created, signature requested, chain transaction broadcast or publishing performed.",
+    "No physical device, touch/keyboard hardware, cross-device game recovery, chain ownership or human playtest claim.",
+    "Headless navigation timing is an observed readiness sample, not physical-device FPS or retention evidence.",
+    "Anonymous analytics and Cloudflare challenge POSTs were blocked; authenticated signup and recovery were not exercised."
+  ]
+}

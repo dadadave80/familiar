@@ -1,0 +1,345 @@
+{
+  "checkedAt": "2026-11-12T21:12:10.436Z",
+  "kind": "reviewed named-only native-gas endowment correction; code-only/no-init/no-migration",
+  "network": "testnet",
+  "root": "familiar-game.testnet",
+  "transactionHash": "7DMCV3zM5Sir1XwRZBDwkpBqb2on3W1movcJqGAvnFkQ",
+  "finalExecutionStatus": "FINAL",
+  "actions": [
+    {
+      "kind": "DeployContract",
+      "bytes": 426382,
+      "codeHash": "3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3"
+    }
+  ],
+  "beforeCodeHash": "9tLpC99keMSufRQX9bXhxVjDNw5Yys68t54ezUpZr61q",
+  "afterCodeHash": "3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3",
+  "before": {
+    "blockHeight": 277416811,
+    "blockHash": "8eSoeetyFUZuMqLCMU6waw8Q6ASEiTvhhnpEpntRrBio",
+    "account": {
+      "amount": "11360583562061067200000000",
+      "block_hash": "8eSoeetyFUZuMqLCMU6waw8Q6ASEiTvhhnpEpntRrBio",
+      "block_height": 277416811,
+      "code_hash": "9tLpC99keMSufRQX9bXhxVjDNw5Yys68t54ezUpZr61q",
+      "locked": "0",
+      "storage_paid_at": 0,
+      "storage_usage": 428763
+    },
+    "config": {
+      "relayer": "relayer.familiar-game.testnet",
+      "pet_code_hash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+      "items": "items.familiar-game.testnet",
+      "bakery": "bakery.familiar-game.testnet",
+      "market": "market.familiar-game.testnet",
+      "pool": "kiln.pool.f863973.m0"
+    },
+    "protocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "items": "items.familiar-game.testnet",
+      "registry": "familiar-game.testnet"
+    },
+    "itemsProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "registry": "familiar-game.testnet"
+    },
+    "stateSha256": "b71759c6be49bc6ddbcd60bd5779e3f63ff26441b309ef2656a550a11088095a",
+    "bindings": [
+      "qa-maker-h1.familiar-game.testnet",
+      "qa-holder-h1.familiar-game.testnet",
+      "dadadave80.familiar-game.testnet"
+    ],
+    "nfts": [
+      [
+        {
+          "token_id": "qa-mochi-h1.familiar-game.testnet",
+          "owner_id": "qa-maker-h1.familiar-game.testnet",
+          "metadata": {
+            "title": "qa-mochi-h1.familiar-game.testnet",
+            "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+            "media": null,
+            "media_hash": null,
+            "copies": 1,
+            "issued_at": null,
+            "expires_at": null,
+            "starts_at": null,
+            "updated_at": null,
+            "extra": null,
+            "reference": null,
+            "reference_hash": null
+          },
+          "approved_account_ids": {}
+        }
+      ],
+      [],
+      []
+    ],
+    "journeys": [
+      {
+        "revision": 0,
+        "banked": [],
+        "lit": false,
+        "signaled": false,
+        "lens_claim": null,
+        "moth_claim": null,
+        "credit": "unclaimed",
+        "workshop_salvage": 0,
+        "bram_budget": 0,
+        "shells": 0,
+        "burned_shells": 0,
+        "commission_fulfilled": false,
+        "craft": null,
+        "polish": null,
+        "placement": null,
+        "claims": []
+      },
+      {
+        "revision": 0,
+        "banked": [],
+        "lit": false,
+        "signaled": false,
+        "lens_claim": null,
+        "moth_claim": null,
+        "credit": "unclaimed",
+        "workshop_salvage": 0,
+        "bram_budget": 0,
+        "shells": 0,
+        "burned_shells": 0,
+        "commission_fulfilled": false,
+        "craft": null,
+        "polish": null,
+        "placement": null,
+        "claims": []
+      }
+    ]
+  },
+  "after": {
+    "blockHeight": 277416821,
+    "blockHash": "A6FCNaqkDxQF1TZ48tLHnSfrmR4aEWkNa29vm12c9x4w",
+    "account": {
+      "amount": "11357481228896244600000000",
+      "block_hash": "A6FCNaqkDxQF1TZ48tLHnSfrmR4aEWkNa29vm12c9x4w",
+      "block_height": 277416821,
+      "code_hash": "3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3",
+      "locked": "0",
+      "storage_paid_at": 0,
+      "storage_usage": 428791
+    },
+    "config": {
+      "relayer": "relayer.familiar-game.testnet",
+      "pet_code_hash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+      "items": "items.familiar-game.testnet",
+      "bakery": "bakery.familiar-game.testnet",
+      "market": "market.familiar-game.testnet",
+      "pool": "kiln.pool.f863973.m0"
+    },
+    "protocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "items": "items.familiar-game.testnet",
+      "registry": "familiar-game.testnet"
+    },
+    "itemsProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "registry": "familiar-game.testnet"
+    },
+    "stateSha256": "b71759c6be49bc6ddbcd60bd5779e3f63ff26441b309ef2656a550a11088095a",
+    "bindings": [
+      "qa-maker-h1.familiar-game.testnet",
+      "qa-holder-h1.familiar-game.testnet",
+      "dadadave80.familiar-game.testnet"
+    ],
+    "nfts": [
+      [
+        {
+          "token_id": "qa-mochi-h1.familiar-game.testnet",
+          "owner_id": "qa-maker-h1.familiar-game.testnet",
+          "metadata": {
+            "title": "qa-mochi-h1.familiar-game.testnet",
+            "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+            "media": null,
+            "media_hash": null,
+            "copies": 1,
+            "issued_at": null,
+            "expires_at": null,
+            "starts_at": null,
+            "updated_at": null,
+            "extra": null,
+            "reference": null,
+            "reference_hash": null
+          },
+          "approved_account_ids": {}
+        }
+      ],
+      [],
+      []
+    ],
+    "journeys": [
+      {
+        "revision": 0,
+        "banked": [],
+        "lit": false,
+        "signaled": false,
+        "lens_claim": null,
+        "moth_claim": null,
+        "credit": "unclaimed",
+        "workshop_salvage": 0,
+        "bram_budget": 0,
+        "shells": 0,
+        "burned_shells": 0,
+        "commission_fulfilled": false,
+        "craft": null,
+        "polish": null,
+        "placement": null,
+        "claims": []
+      },
+      {
+        "revision": 0,
+        "banked": [],
+        "lit": false,
+        "signaled": false,
+        "lens_claim": null,
+        "moth_claim": null,
+        "credit": "unclaimed",
+        "workshop_salvage": 0,
+        "bram_budget": 0,
+        "shells": 0,
+        "burned_shells": 0,
+        "commission_fulfilled": false,
+        "craft": null,
+        "polish": null,
+        "placement": null,
+        "claims": []
+      }
+    ]
+  },
+  "storedStateDigestUnchanged": true,
+  "priorNftsBindingsAndQaProgressPreserved": true,
+  "otherContractHashesUnchanged": true,
+  "scope": "Within existing approved41testNEAR; only new named-player endowment/check becomes0.25; legacyautomatic0.05, state schema, protocol and all other code unchanged",
+  "receipt": {
+    "final_execution_status": "FINAL",
+    "receipts_outcome": [
+      {
+        "block_hash": "BmaknR6RjiVrni3ncswxcs2nmv7rE3LjMFmSgj9K1NTX",
+        "id": "Cs3dJeiZjXGnZbftR7v9sJh5daABWiDqxhtzkgm4LWp4",
+        "outcome": {
+          "executor_id": "familiar-game.testnet",
+          "gas_burnt": 27825566258608,
+          "logs": [],
+          "metadata": {
+            "contracts": [
+              {
+                "local": "9tLpC99keMSufRQX9bXhxVjDNw5Yys68t54ezUpZr61q"
+              }
+            ],
+            "gas_profile": [],
+            "version": 4
+          },
+          "receipt_ids": [
+            "35mHoM6tSUhRSUNpzZm4khsTwfhSWADkQomKNKvxboqW"
+          ],
+          "status": {
+            "SuccessValue": ""
+          },
+          "tokens_burnt": "2782556625860800000000"
+        },
+        "proof": [
+          {
+            "direction": "Left",
+            "hash": "2iCYJE63yMFyDUWt9zGfz7fU3iZGcQQYja9uwwEbLr26"
+          },
+          {
+            "direction": "Right",
+            "hash": "7Pd8DkQv8XznbXWVmbwLt1eG18u1QVy8eNSGhJtdYNbd"
+          }
+        ]
+      },
+      {
+        "block_hash": "A6FCNaqkDxQF1TZ48tLHnSfrmR4aEWkNa29vm12c9x4w",
+        "id": "35mHoM6tSUhRSUNpzZm4khsTwfhSWADkQomKNKvxboqW",
+        "outcome": {
+          "executor_id": "familiar-game.testnet",
+          "gas_burnt": 223182562500,
+          "logs": [],
+          "metadata": {
+            "contracts": [
+              {
+                "local": "3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3"
+              }
+            ],
+            "gas_profile": [],
+            "version": 4
+          },
+          "receipt_ids": [],
+          "status": {
+            "SuccessValue": ""
+          },
+          "tokens_burnt": "0"
+        },
+        "proof": [
+          {
+            "direction": "Left",
+            "hash": "4RN4b7dsC7CkuGxvNLCmUDdLbFP7WjE7CUYgF8NjUyay"
+          }
+        ]
+      }
+    ],
+    "status": {
+      "SuccessValue": ""
+    },
+    "transaction": {
+      "actions": [
+        {
+          "DeployContract": {
+            "code": "J1ycUiSnpv3pIEw3KvlX6o7N2r8l3hba59+qXJTsUdo="
+          }
+        }
+      ],
+      "hash": "7DMCV3zM5Sir1XwRZBDwkpBqb2on3W1movcJqGAvnFkQ",
+      "nonce": 277411058000015,
+      "priority_fee": 0,
+      "public_key": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+      "receiver_id": "familiar-game.testnet",
+      "signature": "ed25519:4LZUQUd2yrVugArAZiJNenxW55NLVcNjhASYfDDZA5EEW91zYXsRnS66JCZ9AWyBf9x84niwFVQ3KVhRiyAGWr7o",
+      "signer_id": "familiar-game.testnet"
+    },
+    "transaction_outcome": {
+      "block_hash": "BmaknR6RjiVrni3ncswxcs2nmv7rE3LjMFmSgj9K1NTX",
+      "id": "7DMCV3zM5Sir1XwRZBDwkpBqb2on3W1movcJqGAvnFkQ",
+      "outcome": {
+        "executor_id": "familiar-game.testnet",
+        "gas_burnt": 3197765389618,
+        "logs": [],
+        "metadata": {
+          "gas_profile": null,
+          "version": 1
+        },
+        "receipt_ids": [
+          "Cs3dJeiZjXGnZbftR7v9sJh5daABWiDqxhtzkgm4LWp4"
+        ],
+        "status": {
+          "SuccessReceiptId": "Cs3dJeiZjXGnZbftR7v9sJh5daABWiDqxhtzkgm4LWp4"
+        },
+        "tokens_burnt": "319776538961800000000"
+      },
+      "proof": [
+        {
+          "direction": "Right",
+          "hash": "52heMZasJtuJ9RGzsELK2CHSV2vBhszQYSJhENecHmhs"
+        },
+        {
+          "direction": "Right",
+          "hash": "7Pd8DkQv8XznbXWVmbwLt1eG18u1QVy8eNSGhJtdYNbd"
+        }
+      ]
+    }
+  }
+}

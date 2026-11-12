@@ -1,104 +1,103 @@
 # Reproducible claims
 
-## Tidebound candidate — November 12, 2026
+## Current Tidebound H1 evidence — November 12, 2026
 
-**Status: local/sandbox candidate; H1 live recovery/ownership gates remain blocked.** The recovery-only HTTPS check was explicitly approved and published; the game candidate remains local and no source push or submission occurred. “Tidebound” remains a proposed subtitle. The public game has the earlier Beacon build.
+**The full H1 game is public; H1 acceptance remains incomplete.** [Play Familiar](https://familiar-two.vercel.app/outing/) opens the full-screen coastal world, Beacon Court, Wind Gate and Storycraft. The isolated NEAR testnet stack and a 32-step operator-controlled gameplay run are verified. Recovery of the same player, Mochi, items and progress on two real devices, and the human playtest, remain unpassed. “Tidebound” is a proposed subtitle.
 
-### Reproduce the current work
+The current production release is `dpl_DhyHF4kWbbeKgzqRsF4Q9Hma7MnE`, recorded in [TIDEBOUND-SESSION-RELEASE.json](docs/TIDEBOUND-SESSION-RELEASE.json). All 665 public file hashes and seven HTTP checks passed. It retains the single **Adopt Mochi** button and includes the signing-refresh/storage-credit correction. The authenticated Mac adoption has since finalized and was independently checked in [TIDEBOUND-PLAYER.json](docs/TIDEBOUND-PLAYER.json). No source push, public repository, mainnet action or submission is claimed.
 
-Install with `bun install --frozen-lockfile`. Use Bun1.4.4 and the existing Rust/NEAR toolchain; the existing React/Vite/Phaser and Rust stack is preserved. The optional Privy route adds pinned SDK dependencies.
+### What is actually verified
+
+| Evidence | Measured result | Boundary |
+| --- | --- | --- |
+| [Initial deployment](docs/TIDEBOUND-DEPLOYMENT.json) | 16 FINAL transactions; 50 independent read-only checks of code, configuration, keys and balances | Initial deployment snapshot; Root was subsequently upgraded as recorded below |
+| [Root gas-endowment correction](docs/TIDEBOUND-NATIVE-GAS-UPGRADE.json) | FINAL code-only upgrade; current Root hash `3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3`; stored-state digest, previous NFTs/bindings/progress and other contract hashes preserved | Named-player funding changed to 0.25 test NEAR; no initialization or state migration |
+| [Live operator gameplay](docs/TIDEBOUND-GAMEPLAY.json) | 32 FINAL transaction graphs independently checked, including two expected Items failures and historical/final state | Operator keys, not Privy identities or a human/device study |
+| [Public browser checks](docs/TIDEBOUND-PUBLIC-BROWSER.json) | 390×844, 768×1024 and 1280×800; edge-to-edge world, 44px game targets, no page scroll, local return/lantern/origin and real empty email form | Headless Chromium; no identity submitted or wallet/player API mutation; earlier public release. Newest compiled-release checks are separate below |
+| [Current production release](docs/TIDEBOUND-SESSION-RELEASE.json) | READY; 665 public hashes match; seven HTTP checks; actual Node24 health; newest compiled game/SDK passed the same three viewport sizes | Compiled browser checks ran locally; production bytes match. At this release check the authenticated retry was untested; the later Mac adoption is verified below |
+| Source checkpoint `7d0db98` | 230 Bun tests / 60,975 assertions; 101 Rust tests; typecheck/build, formatting and strict Clippy passed; both sandbox integrations separately passed | Automated checks; sandbox accounts and browser fixtures do not count as live device recovery |
+
+The gameplay report is complete at finalized block `277421470`. Its maker recovered lens/moth and the Wind Gate vane, restored the beacon and signal, fulfilled the personal commission, and retained the protected credit until crafting. Two distinct operator-controlled keys requested the same craft; the resulting token supply is **1**. Repeated known-final claims, commission, craft and finish did not repeat their economic effects.
+
+The same lantern was polished once, placed at both porch and dock, and transferred through standard `mt_transfer`. Final recorded balances are maker **0**, recipient **1**; the recipient can place it. The former holder’s transfer is rejected, its stored placement grants no usable ownership, and a later craft call does not remint the transferred token. Receipt provenance points to the actual maker’s accepted expedition event. The recipient received no maker achievement; its later lens claim and 12-Shell commission were earned separately. A second finish attempt failed at Items with `ERR_APPEARANCE`, leaving the recipient’s 12 Shells intact in `failed-safe` state.
+
+Useful public receipts: [accepted maker origin](https://testnet.nearblocks.io/txns/B3xbiWA3CKQpAe2z5H15h7XUco9rvkPbCqYRQtMdn6DJ), [first craft](https://testnet.nearblocks.io/txns/4iH2TrYYHfZauUUjaENC8sWxKdwXbW4U6PEVLdhvKvHo), [concurrent second key](https://testnet.nearblocks.io/txns/4RziqTc7uyh5nRMYp5Aez2kHRLNTsi9bPQ7NEtt75sTH), [once-only finish](https://testnet.nearblocks.io/txns/FZaNh7ApXg4WJNNh7RpwNAkNkqiwmTToHRRFgKjMNmyg), [actual transfer](https://testnet.nearblocks.io/txns/7ZyCzoxs38xFjt3pFGxQrsHDL6NXrWx3v8weVnX6beMK). The JSON includes full receipt graphs and expected-failure executors; outer transaction success alone is insufficient.
+
+### Reproduce without an identity or live payment
+
+Install with `bun install --frozen-lockfile`. Bun 1.4.4, the existing Rust/NEAR toolchain, React/Vite/Phaser and Rust contracts are preserved. Install Chromium once with `bunx playwright install chromium`.
 
 | Action | Expected result | Evidence boundary |
 | --- | --- | --- |
-| `bun --no-env-file run dev`, open `/outing/` | Full-screen world, custom coastal navigation/controls, existing characters/art, Beacon and already implemented Wind Gate | Local browser game; no account needed |
-| Choose Rope; Move Left → Wait → Move Center → Reel Lens → Return; restore beacon | Five-action dry lens return; Crest eligibility; deliberate restoration | Pure reducer replay and device save, not chain authority |
-| Open Workshop, preview one lantern, choose porch/dock, view origin | Same lantern moves; Moth locked until an actual personal wind-moth return; static illustration labelled truthfully | Local preview, not transferable |
-| Choose two-shell challenge or Wind Gate | A different goal using the existing mechanics | Human understanding/voluntary continuation unmeasured |
-| `bun run test:tidebound-browser` | Responsive local Storycraft/reload/migration/failure checks | Chromium emulation; no device recovery |
-| `bun --no-env-file scripts/test-tidebound-account-browser.ts` | Explicit provisioning, finite commission/craft/finish, placement, stale-signout rejection | Clearly labelled synthetic provider/UI fixtures |
-| `bun run test:privy-lifecycle-browser` | Closing the actual React bridge rejects delayed login/refresh/token/sign results and preserves pending bytes | Synthetic SDK, zero external requests |
-| `bun run build:contracts`; `bun run test:tidebound-sandbox` | Complete fresh mutually configured root/pet/items/bakery/market stack; claim, commission, canonical concurrent craft, polish, standard transfer and cancellation fence | Actual disposable local NEAR chain; not live testnet |
-| `bun run test:sandbox` after build | Existing care/trade/staking/resale loop still works | Local sandbox/mock pool; not real yield |
-| `bun --no-env-file run test`; `cargo test --manifest-path contracts/Cargo.toml --workspace`; `bun --no-env-file run build` | All test/type/build gates pass | Default Rust command intentionally ignores the two separately invoked sandbox tests |
-| `cargo fmt --manifest-path contracts/Cargo.toml --all -- --check`; `cargo clippy --manifest-path contracts/Cargo.toml --workspace --all-targets -- -D warnings` | Formatting and strict lint pass | Source checks |
+| Open the public `/outing/`, or `bun --no-env-file run dev` then `/outing/` | Full-screen game world; custom coastal controls; no whole-page scroll | No account needed; useful detail/account panels may scroll internally |
+| Rope: Move Left → Wait → Move Center → Reel Lens → Return; restore beacon | Five-action dry return and deliberate restoration | Device preview until an accepted NEAR claim |
+| Workshop: preview Crest, move the same lantern porch/dock, view origin | One lantern; the actual returned outing supplies its origin; Moth requires a personal rescue | Local preview is labelled not backed up and not transferable |
+| Prepare Wind Gate or the two-shell challenge | A meaningful second goal using the existing rules | Voluntary continuation and comprehension unmeasured |
+| `bun run test:tidebound-browser`; `bun run test:outing-browser` | Gameplay, responsive layout, reload, migration, failed-save and keyboard/touch-emulation checks | Local Chromium, not physical-device results |
+| `bun --no-env-file scripts/test-tidebound-account-browser.ts` | Finite commission/craft/finish, gift-storage amount/review, stable automatic Mochi identifier, original-request preservation and sign-out checks | Clearly labelled synthetic provider/RPC fixtures |
+| `bun run test:privy-lifecycle-browser` | Closing the actual React bridge rejects late login/refresh/token/sign results | Synthetic SDK; no external requests |
+| `bun run build:contracts`; `bun run test:tidebound-sandbox`; `bun run test:sandbox` | Fresh compatible finite H1 loop and preserved legacy loop | Actual disposable local chain; mock pool, not live testnet or yield |
+| `bun --no-env-file run test`; `cargo test --manifest-path contracts/Cargo.toml --workspace`; `bun --no-env-file run build` | Unit, type and production-build checks | Default Rust command leaves the two sandbox integrations ignored; run them separately above |
+| `cargo fmt --manifest-path contracts/Cargo.toml --all -- --check`; `cargo clippy --manifest-path contracts/Cargo.toml --workspace --all-targets -- -D warnings` | Formatting and strict lint | Source checks |
 
-### Authority and exact economy
+The operator acceptance driver is `scripts/tidebound-live.ts`. It requires its explicit live mode, funded isolated operator keys and a durable journal. It is not a read-only judge command and must not be rerun to infer recovery. Inspect its recorded public evidence or reproduce the local sandbox instead.
 
-New authority is the root Tidebound ledger keyed by authorized NEAR predecessor/current companion holder. `common::expedition::replay` validates at most 15 known commands against the canonical initial checkpoint and known content/rules versions. Browser and Rust agree on every intermediate state and legal-action list in 406 pinned routes. Legal replay is not proof of personhood or elapsed labor.
+### Authority, economy and contracts
 
-First lens return creates one protected craft credit, one **new** workshop salvage and one personal 12-Shell Bram allocation. `tidebound_commission` atomically consumes salvage and moves 12 from Bram to the player once; it never spends the credit. `tidebound_craft` resolves a canonical account/chapter operation and mints one player-held supply-one MT lantern. Items records the maker’s actual accepted claim and immutable mint evidence in the same receipt. A later rescue unlocks Moth without more materials or currency. Legacy salvage IDs/uses are unchanged.
+The authoritative tuple is Root `familiar-game.testnet`, Items `items.familiar-game.testnet`, with bakery and market under the same root. Its protocol is `network:testnet`, `rules_version:tidebound_h1_v1`, `content_version:first_light_v1`. Current code hashes and immutable global pet code are recorded in the gameplay report. Root and building administrative keys remain; the entire deployment is **not claimed immutable**. The separate legacy tuple is `familiar-1105-28522e.testnet` and was not mixed into H1.
 
-`harbor_polish` costs 12 Shells once per token, preserving maker, origin, motif and token ID. Items checks the current holder and appearance revision at mutation. Lost results are queried/retried under the original operation. Cancellation returns Shells only after an authenticated items cancellation fence or consumes them on existing success; old generations cannot mutate after the fence. Standard transfer moves the original item. Recipient inventory is read from current balances, and receiving it never grants the maker’s achievement. The scene filters saved placement through current inventory.
+The root ledger authorizes by NEAR predecessor/current companion holder and replays at most 15 known commands from a canonical checkpoint. Browser/Rust intermediate states and legal-action lists agree on 406 pinned routes. Replay proves a legal accepted event, not personhood or elapsed labor.
 
-Shared standard transfer hooks reject self-transfers across direct/batch/transfer-call paths. This fixes a reproduced pinned-library balance duplication in the new Items build. **Already-deployed legacy bytecode is unchanged.**
+The first accepted lens return grants one protected craft credit, one new workshop salvage and one personal 12-Shell Bram allocation. The atomic commission consumes salvage once and never spends the protected credit. One canonical craft operation mints one supply-one player-held MT lantern. The maker’s accepted claim is stored with immutable mint evidence. A later Moth rescue unlocks the motif without renewing materials/currency. Legacy salvage meanings are unchanged; there are no online-time rewards or Shell cash redemption.
 
-### Actual networks and contracts
+Optional `harbor_polish` burns 12 Shells once per token without changing token ID, maker, origin or motif. Current-holder and appearance checks, immutable outcome queries, original-operation retry and the cancellation-generation fence prevent uncertain callbacks from authorizing remint/refund or a second payment. Shared standard transfer hooks reject the pinned library’s self-transfer duplication across direct/batch/call paths. These fixes do not change deployed legacy bytecode.
 
-The only live deployed tuple remains legacy NEAR testnet root `familiar-1105-28522e.testnet`, with `items.`, `bakery.` and `market.` subaccounts. [TIDEBOUND-BASELINE.json](docs/TIDEBOUND-BASELINE.json) records current read-only account/config/code hashes; original deployment and gameplay receipts remain below. These are not Tidebound mint/finish/gift receipts.
+Protocol 88’s gas purchase floor is 1,000,000,000 yoctoNEAR per gas, despite the observed block burn price of 100,000,000. An 180-Tgas adoption therefore needs roughly 0.18 test NEAR plus fees/storage headroom. The named-player factory now endows 0.25; legacy automatic-player funding remains 0.05. The client checks the current protocol floor, block price, storage reserve and attached deposit before persisting/signing a new request, and before resuming an unsubmitted one. Submitted receipt reconciliation remains read-only and does not require a gas quote. The endowment is not a promise to fund unlimited play.
 
-The new sandbox uses local RPC and disposable accounts named under a synthetic `.testnet` top-level account solely to exercise the testnet-only contract boundary. Names and real local transaction execution do not make it NEAR testnet. No new live contract IDs or real-device item transfers are claimed. Fresh-stack deployment must preserve old state and use separate evidence.
+The actual Items registration minimum is zero. Registration-only deposits do not create usable transfer credit. The published gift UI explicitly reviews a player-funded deficit toward a 0.02-test-NEAR available-credit budget, under the 0.08 cap, using `registration_only:false`. That credit belongs to the recipient. A changed quote requires review again; gifting remains a separate confirmed 1-yocto action plus gas. Operator QA verified a real 0.02 credit and transfer; synthetic browser checks verify the payment confirmation and changed-quote behavior. This is not an authenticated physical-device gift result.
 
-### Recovery/configuration gates
+### Recovery and current player gate
 
-Privy is the current recovery/signing spike, selected after David created an app. Pinned browser SDK3.51.3 and Node SDK0.39.0 use one email route. The existing NEAR Auth integration remains available, with its shared-client HTTPS callback restriction unresolved; it is not the selected spike. Do not combine provider bindings or auto-merge by email.
+Privy email is the selected route, using pinned React SDK 3.51.3 and Node SDK 0.39.0. Actual email login, restoration of the original wallet and verified raw Ed25519 signing were observed on the Mac. David reported the same wallet ID/key and verified signing on Android/Chrome over HTTPS. Android is user-reported; no independent Android proof JSON was captured. iPad is untested. App login and wallet signatures alone do not establish full game recovery.
 
-`bun run dev:privy-spike` loads the ignored `.env.privy.local` (server App ID/secret and matching public Vite App ID) and serves `http://localhost:3000/privy-spike/`. The real SDK initialized and David completed private email sign-in on the Mac. **That app-login result alone proves no wallet recovery.** Explicit wallet creation succeeded, the original wallet restored, and its real raw Ed25519 signature verified on the Mac. The exported public digest/signature was independently verified locally. No funding or broadcast occurred. Two-device restoration remains an unpassed gate. `bun run test:privy-browser` verifies real SDK startup/email-form rendering without entering identity or creating a wallet. Never commit the local secret file or use a `VITE_` secret.
+[`dadadave80.familiar-game.testnet`](docs/TIDEBOUND-PLAYER.json) retains only the original Privy FullAccess key. Its [adoption](https://testnet.nearblocks.io/txns/5HyavFFuKBNfLcW1aACsW9Pc1NmiAkY6wmnXG139AfiJ) is now FINAL. The independent snapshot at block `277423423` confirms one owned NFT, `mochi-d00307b6f456a69308.familiar-game.testnet`, and a keyless companion with the expected immutable global code. Journey revision remains 0/unclaimed and item inventory is empty. A prior FINAL 0.20-test-NEAR bootstrap corrected the older 0.05 endowment without changing that key. The earlier `/users/me` rejection is resolved for this action; no additional signing prompt was reported by the user. This first real player action does not prove two-device game-state restoration.
 
-The server verifies Privy JWTs with the official SDK and resolves a stable per-app/user/NEAR wallet external ID. Restore never creates. Explicit setup creates a user-owned NEAR wallet with stable idempotency; an uncertain create checks that same ID. Existing noncanonical NEAR wallets stop automatic creation. Neither server signing nor key export is exposed. Client ownership and exact raw-hash signature checks are separate. Privy provider/admin powers, email security and service liveness remain trust dependencies; independent key export/exit is not advertised.
+A player chooses a username once. **Adopt Mochi** uses a stable internal identifier derived from that canonical account; existing companion IDs and pending transaction names stay unchanged. Login/restore resolves the original DID/key/account binding and never implicitly provisions. The server uses the official JWT verifier and a stable user-owned NEAR wallet external ID; no email auto-merge, server signing or private-key export route exists. Provider/admin powers, email security and service availability remain dependencies. NEAR Auth remains an alternative with its shared-client HTTPS-origin limitation; its legacy Google route is not claimed live-verified.
 
-David chose `familiar-game.testnet` after confirming he does not control `familiar.testnet`. The candidate factory atomically reserves `player1.familiar-game.testnet` for a chosen username and canonical recovered key. Returning login resolves root.get_player; it does not make a fresh player or wallet. Name/key/companion collisions, unknown results and stale callbacks preserve the original reservation. The planned root is absent in the read-only candidate, so this is not a live username issuance claim.
+Pending native requests retain their original canonical bytes/hash/signature. Only an exact final receipt, or explicit proof of permanent protocol expiry with an unused nonce at one finalized block and a refreshed canonical snapshot, can clear the local envelope. This never releases contract reservations, refunds Shells, remints or permits a replacement payment. A consumed nonce with an unknown receipt stays pending.
 
-Mac, Android and iPad are available; **0 two-device recovery checks completed**. David approved the recovery-only HTTPS publication and reported saving the same app’s allowed origin. Second-device participation is still required. The isolated spike has no game backend, NEAR private key, broadcast, funding or purchase route. Native game gas/storage/1yocto remain player-funded; no H2 sale principal route exists.
+### Hosting and baseline disclosure
 
-Pending native actions retain their original canonical bytes and signature. Receipt reconciliation clears the local envelope only after the original final result. An explicit expiry check can also clear that envelope after proving protocol-defined expiry and an unused nonce at the same finalized block, then refreshing canonical state. It never releases a contract reservation, refunds Shells, signs replacement bytes or remints an item. A consumed nonce with an unknown receipt remains pending.
+The full H1 UI and narrow account API are public with David’s approval. The only serverless HTTP paths are `/api/health` (GET), `/api/v1/privy/wallet` (POST) and `/api/v1/privy/player` (POST), plus OPTIONS. One Node24 handler is shared through the two exact `.func` aliases; original-URL behavior was checked in cloud staging. The current bundle is 657,231 bytes, SHA256 `470686cf118acc62bc4dbfcd097fd38917f96a0f9d2b5a412336f341c935ba4e`. Public username availability reads final RPC state. Only the isolated relayer key and Privy credentials are hosted; root/admin keys remain local. Local flags default off. Process-local quota/cache resets and provider outages remain deployment limits.
 
-Runtime flags default false. An exact testnet root/items protocol tuple and approved origin must be supplied before account controls activate. Backend sponsor quotas/cache are process-local and reset on restart; contract subsidies/retry caps and spendable floors remain independent. This is not a production security audit.
+`bun run package:tidebound-review <existing-reviewed-release>` creates a local review artifact, not a deployment. It preserves every prior static file except the two explicitly replaced root/outing HTML entries, retains old hashed chunks for open tabs, and records hashes and prior private-function scope. Wrong/unknown function aliases or physical endpoints are rejected. Recovery page, design book, motion/legacy routes and old assets stay intact. `bun run test:privy-review-browser <prepared-H1-release> --h1` checks compiled UI and an empty actual email form without entering identity; Node endpoint checks are separate. The earlier recovery-only package and its 98 preserved original files remain documented in [PRIVY-RECOVERY-DEPLOYMENT.json](docs/PRIVY-RECOVERY-DEPLOYMENT.json); that is historical packaging evidence, not the current full release.
 
-### Fresh deployment candidate
+Task baseline: `4d8cb2e`; documented source checkpoint: `7d0db98`, branch `feat/tidebound-h1`. Reproduce the source comparison with `git diff --stat 4d8cb2e 7d0db98`, `git diff 4d8cb2e 7d0db98`, and `git log --oneline 4d8cb2e..7d0db98`. No submission commit or public repository URL is claimed. Earlier EVM/Sui work is lineage only; its code was not imported.
 
-Read-only preflight for `familiar-game.testnet` found the root and its items/bakery/market accounts absent. The conservative review allowance is **40.12391 testNEAR**, not an executable quote or spending approval. Root Wasm:426,354 bytes, code hash `9tLpC99keMSufRQX9bXhxVjDNw5Yys68t54ezUpZr61q`. The full five-artifact candidate is stored outside Git in David’s specifications directory. No creation, deployment or funding transaction was signed. Preserve the legacy tuple and evidence; do not mix registries.
+### Short live demo script
 
-### HTTPS recovery review package
+1. **0:00–0:40:** Open the public game. Point to Mochi, the lens goal and the visible wave target. Make the five Rope decisions above; identify the wave opening the shell and return before flooding.
+2. **0:40–1:15:** Restore the beacon. In Workshop, preview Crest, move the same lantern porch/dock and show its five-action origin. Label this browser state a local preview. Show Moth’s earned condition and Wind Gate as the next goal.
+3. **1:15–2:00:** Open the recorded testnet evidence: actual accepted maker event, the two-key craft producing one token, 12-Shell finish, both placements and the real transfer. Show supply 1, maker balance 0 and recipient balance 1. Explain that receiving the item did not grant the maker’s achievement. This is operator QA evidence, not a new live payment.
+4. **2:00–2:30:** Show the separate FINAL Mac adoption/owned-companion evidence. Open Account and the email entry surface without submitting a new identity. State the remaining same-game-state two-device, iPad and human gates. Do not narrate recovery that has not passed.
 
-`bun run package:privy-review <existing-rendered-release-directory>` prepares a local Vercel overlay for the existing Familiar project. It preserves all98 original static files byte-for-byte, adds the recovery-only page and one private572,516-byte Node24 wallet endpoint, and refuses a static path collision. It does not release the new game UI. `bun run test:privy-review-browser <prepared-release-directory>` checks the compiled recovery page and preserved site in local Chromium; the serverless function is checked separately through actual local Node HTTP. No upload, environment mutation or publication is performed by either command.
+### Complete and blocked gates
 
-The endpoint defaults off and accepts only the exact wallet URL, configured origin, bounded authenticated body and POST/OPTIONS. It has no game backend, NEAR key, signing/export or broadcast route. Runtime credentials were privately configured after David’s explicit approval, with App ID/secret stored as sensitive production variables; no secret value occurs in the artifact. Instance quotas are process-local. Actual cloud anonymous origin/auth/method checks and the public browser startup passed; authenticated HTTPS device recovery is still pending. [PRIVY-RECOVERY-DEPLOYMENT.json](docs/PRIVY-RECOVERY-DEPLOYMENT.json) records the actual production deployment, HTTP results and all98 preserved public file hashes. The page is [live here](https://familiar-two.vercel.app/privy-spike/). The external `VERCEL-RECOVERY-REVIEW.md` retains the reviewed action and scoped approval.
-
-### Playtest and performance limits
-
-Human formative study: **0/8 participants tested**, so causality, home-change, voluntary second outing and personal-choice gates are not scored. No retention, attachment, broad accessibility or revenue result is claimed. Physical Android/iPad/Mac recovery and mobile Safari behavior remain untested. Asset inventory contains 10 used raster files totalling 3,272,400 encoded bytes; Storycraft adds 0 raster bytes. See [TIDEBOUND-ASSETS.json](docs/TIDEBOUND-ASSETS.json) for hashes, dimensions, provenance and unresolved art-rights/availability limits. These byte totals exclude scripts/fonts/HTTP overhead. Local Vite startup numbers in browser logs are machine measurements, not production/device performance.
-
-### Short demo script
-
-0:00 — Open the local game and identify Mochi, the next wave and the lens goal. Make the five legal decisions and point to the wave opening the shell.
-
-0:40 — Return, restore the beacon, open Workshop, preview Crest and move the same lantern from porch to dock. Show its actual-return origin and Moth’s earned condition.
-
-1:20 — Show the second goal. State that this browser visit is a local preview.
-
-1:40 — In a separate terminal, show the local Tidebound sandbox assertions for one credit, commission, same-token finish/gift and former-holder rejection. Label the network **local sandbox**.
-
-2:20 — Show the Privy sign-only check and disabled game issuance, with the exact remaining wallet/device/contract gates. Do not narrate a successful live account recovery, mainnet settlement or full game release. Identify the published recovery-only page separately. After those gates really pass, replace this disclosure with the measured real-device/receipt evidence.
-
-### Baseline-to-candidate disclosure
-
-Task baseline: `4d8cb2e` (existing game, art, landing, Wind Gate, legacy contracts and Auth groundwork). Candidate work is on `feat/tidebound-h1`. Use `git diff --stat 4d8cb2e HEAD`, `git diff 4d8cb2e HEAD`, and `git log --oneline 4d8cb2e..HEAD` after the local commit. There is no submission commit or public repository URL yet. Earlier repository history begins November5; reused EVM/Sui lineage has not been imported. Final exact check results are recorded in PROGRESS.md.
-
-### Gate disposition
-
-| Plan tasks | Current result | Remaining gate |
+| Gate | Status | Evidence / remaining work |
 | --- | --- | --- |
-| T0 | Source, dependencies, baseline, authority and minimum cutline recorded | None for source inspection |
-| T2 / T4 | Pure event/adoption rules and complete local lantern homecoming | Confirmed ownership remains separate |
-| T3 | Scene-led local game and responsive browser checks | Physical-device performance/readability and human comprehension unmeasured |
-| T1 / T5 / T8 | Account adapter, exact-byte signing, canonical snapshot and conflict handling implemented and locally checked | Restore the same Privy wallet on a second device; named-account live binding |
-| T6 / T7 / T9 | Replay, finite ledger, idempotent mint, polish and transfer execute in the real local sandbox | Fresh compatible live testnet deployment and end-to-end receipts |
-| T10 | Existing second goals preserved and machine-playable |0/8 formative study participants; voluntary continuation unmeasured |
-| T11 / T12 | Cut from minimum H1; no Intents route or payment support claimed | H2 prerequisites, current route proof and explicit authorization/budget |
-| T13 | Local failure/retry, export and browser checks implemented | Real-device/provider outage behavior, production capacity and recovery remain unverified |
-| T14 | Reproducibility guide, honest demo, evidence and baseline diff prepared locally | Full game release, video and submission not authorized or completed; recovery-only page published with approval |
+| Source stack, working art and full-screen game | Complete for implemented scope | Existing React/Vite/Phaser/Rust preserved; full game published; public and local automated layout checks |
+| Beacon, meaningful second goal, Storycraft/home | Complete in local UI and operator chain QA | Lens/moth/vane, one lantern, porch/dock and accepted origin; human comprehension remains separate |
+| Compatible canonical testnet stack | Complete | Initial 16 transactions / 50 checks; current code-only Root upgrade and unchanged other hashes |
+| Finite economy, canonical craft/finish and real transfer | Complete for operator QA | 32 FINAL receipt graphs; supply 1; once-only economics; current-holder and recipient-achievement checks |
+| Recoverable wallet route | Partial | Mac observed; matching Android wallet/signing user-reported; this is not the complete game-state gate |
+| First actual player/Privy game action | Complete for Mac adoption | FINAL adoption by the original key; one owned keyless Mochi and correct global code. Quest/item progress recovery remains separate |
+| Same player, Mochi, items and progress on two real devices | Unpassed | Must use the recoverable route and compare canonical state; two operator keys are not two devices |
+| Human/device study | Blocked / unmeasured | 0/8 human participants; iPad untested; no retention, voluntary continuation, broad accessibility or physical-device performance claim |
+| Newest signing/storage patch | Published and production bytes verified | READY release; 665 public hashes and seven HTTP checks pass. Subsequent Mac adoption independently verified |
+| H2 / Intents funding and purchase | Not authorized / not demonstrated | No live route/funding/purchase, mainnet settlement or every-chain claim |
+| Submission/public source | Not performed | No push, public repository, submission, video completion or prize certainty claimed |
 
-H1 remains incomplete until its live/device/human gates pass. Dynamic merchants, extra recipes/arenas/replays and P2P listing are cut. No every-chain support, dry-quote execution, cash redemption or prize claim.
+H1 remains incomplete until its recovery, real-device and human gates pass. Dynamic merchants, extra recipes/arenas and P2P listings are outside the minimum. Bound Shells have no cash redemption.
 
 ## Historical legacy evidence — November5
 

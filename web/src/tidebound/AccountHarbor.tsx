@@ -147,6 +147,11 @@ export function AccountHarbor({home,returned,onSnapshot,onUseSaved,explicitConne
       {adoptionMessage && <p className="tb-account-note">{adoptionMessage}</p>}
       {!snapshot.pets.length && <button disabled={busy || !!pending} onClick={()=>void run(adoptMochi)}>Adopt Mochi</button>}
       {snapshot.pets.length>0 && <>
+        {binding && snapshot.binding.nearAccountId===binding.nearAccountId && snapshot.binding.signerPublicKey===binding.signerPublicKey && <section aria-label="Owned Mochi">
+          <h3>Mochi is home</h3>
+          <p>Confirmed for this saved account on NEAR testnet.</p>
+          <details><summary>Companion details</summary>{snapshot.pets.map(pet=><p key={pet.token_id} className="of-account-id">{pet.token_id}</p>)}</details>
+        </section>}
         {origin && <button disabled={busy || !!pending} onClick={()=>run(saveReturn)}>Save returned outing on testnet</button>}
         {!!j.lens_claim && !j.lit && <button disabled={busy || !!pending} onClick={()=>run(()=>send("tidebound_restore",{restoration:"beacon"}))}>Confirm beacon restoration</button>}
         {j.lit && j.banked.includes("vane") && !j.signaled && <button disabled={busy || !!pending} onClick={()=>run(()=>send("tidebound_restore",{restoration:"signal"}))}>Confirm signal repair</button>}

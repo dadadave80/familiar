@@ -374,15 +374,24 @@ try {
   await expect(firstAccount.getByText(/Saved progress · NEAR testnet · revision 2/)).toBeVisible();
   assert.equal(await fixture(first, f => f.provisions), 1, "returning login never provisions a second fixture player");
   await fresh.close();
-  for(const scenario of ["existing-pet-arrived","occupied-internal-name","original-pending-adoption"]) {
+  for(const scenario of ["new-unclaimed-companion","existing-pet-arrived","occupied-internal-name","original-pending-adoption"]) {
     const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),page=await context.newPage(),errors:string[]=[],external:string[]=[];
     page.on("pageerror",error=>errors.push(error.message));page.on("request",request=>{if(!request.url().startsWith(origin)&&!request.url().startsWith("data:")&&!request.url().startsWith("blob:"))external.push(request.url());});
     await page.goto(origin+"/outing/");await page.getByRole("tab",{name:"Account",exact:true}).click();await expect(page.getByRole("button",{name:"Continue with Google",exact:true})).toBeEnabled();
     await fixture(page,f=>{f.pets=[];});
+    if(scenario==="new-unclaimed-companion")await fixture(page,f=>{Object.assign(f.journey,{revision:0,banked:[],lit:false,lens_claim:null,moth_claim:null,credit:'unclaimed',workshop_salvage:0,bram_budget:0,shells:0,burned_shells:0,commission_fulfilled:false});});
     const original=scenario==="original-pending-adoption"?await fixture(page,f=>f.seedPendingAdoption("old-mochi")):null;
     await page.getByRole("button",{name:"Continue with Google",exact:true}).click();const account=page.locator(".tb-account-harbor");
     await expect(account.getByRole("button",{name:"Adopt Mochi",exact:true})).toBeVisible();await expect(account.getByRole("textbox")).toHaveCount(0);
-    if(scenario==="existing-pet-arrived") {
+    if(scenario==="new-unclaimed-companion") {
+      await expect(account.getByRole("heading",{name:"Mochi is home",exact:true})).toHaveCount(0);
+      await account.getByRole("button",{name:"Adopt Mochi",exact:true}).click();
+      await expect(account.getByRole("heading",{name:"Mochi is home",exact:true})).toBeVisible();
+      const owned=account.getByRole("region",{name:"Owned Mochi",exact:true});await expect(owned).toContainText("Confirmed for this saved account on NEAR testnet");
+      await owned.getByText("Companion details",{exact:true}).click();const petId=await fixture(page,f=>f.pets[0]!.token_id);await expect(owned.getByText(petId,{exact:true})).toBeVisible();
+      assert.equal(await fixture(page,f=>f.journey.credit),'unclaimed');assert.equal(await fixture(page,f=>f.items.length),0);
+      await expect(page.locator(".of-chapter")).toHaveText("Local preview");
+    }else if(scenario==="existing-pet-arrived") {
       await fixture(page,f=>{f.pets=[{token_id:'bramble-old.tidebound-fixture.testnet'}];});
       await account.getByRole("button",{name:"Adopt Mochi",exact:true}).click();
       await expect(account.getByRole("button",{name:"Adopt Mochi",exact:true})).toHaveCount(0);
