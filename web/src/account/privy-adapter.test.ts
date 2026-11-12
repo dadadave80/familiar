@@ -1,6 +1,7 @@
 import {expect,test} from "bun:test";
 import {actions,baseDecode,baseEncode,createTransaction,KeyPair} from "near-api-js";
-import {PrivyAccountAdapter,nearSigningDigest,privyWalletKey,signPrivyRecoveryProof,verifyPrivyWalletOwner,type PrivyAccountOptions,type PrivyIdentity,type PrivyWalletBinding} from "./privy-adapter";
+import {PrivyAccountAdapter,createPrivyConnection,nearSigningDigest,privyWalletKey,signPrivyRecoveryProof,verifyPrivyWalletOwner,type PrivyAccountOptions,type PrivyIdentity,type PrivyWalletBinding} from "./privy-adapter";
+import {AccountDoesNotExistError} from "near-api-js/rpc-errors";
 
 const root="familiar-game.testnet",account=`player1.${root}`,key=KeyPair.fromRandom("ed25519"),publicKey=key.getPublicKey().toString();
 const implicitAddress=[...baseDecode(publicKey.slice("ed25519:".length))].map(n=>n.toString(16).padStart(2,"0")).join("");
@@ -26,6 +27,16 @@ function fixture() {
   const proofProvider={async getNetworkId(){return network;},async viewBlock(){return {header:{hash:baseEncode(new Uint8Array(32)),height:100}};},async sendTransactionUntil(){broadcasts++;throw Error("must never broadcast");}};
   return {options,data,events,creates,signed,proofProvider,set itemProtocol(value:unknown){itemProtocol=value},get provisions(){return provisions},get logins(){return logins},get broadcasts(){return broadcasts},set identity(value:PrivyIdentity|null){identity=value},set registered(value:boolean){registered=value},set available(value:boolean){available=value},set network(value:string){network=value},set nonce(value:bigint){nonce=value},set badSignature(value:boolean){badSignature=value},set cancel(value:boolean){cancel=value},set storageFails(value:boolean){storageFails=value},set changedDuringSigning(value:boolean){changedDuringSigning=value}};
 }
+
+test("the production Privy connection checks names through public RPC without a dynamic HTTP endpoint",async()=>{
+  const f=fixture(),connection=createPrivyConnection({appId:"public-app",root,rpcUrl:"https://test.rpc.fastnear.com",relayerUrl:"https://unused.invalid"},f.options.session);
+  const reads:string[]=[];
+  connection.provider.getNetworkId=async()=>"testnet";
+  connection.provider.callFunction=(async({method}:any)=>{reads.push(method);return true}) as typeof connection.provider.callFunction;
+  connection.provider.viewAccount=async({accountId})=>{reads.push(accountId);throw new AccountDoesNotExistError(accountId,"11111111111111111111111111111111",100)};
+  expect(await connection.adapter.checkUsername("player2")).toMatchObject({accountId:`player2.${root}`,available:true});
+  expect(reads).toEqual(["player_name_available",`player2.${root}`]);expect(f.creates).toEqual([]);expect(f.provisions).toBe(0);
+});
 
 test("Privy creation rejects every incompatible Items protocol before wallet creation",async()=>{
   const valid={registry:root,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1"};

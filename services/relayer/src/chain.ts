@@ -9,7 +9,7 @@ import {
   type SerializedReturnValue,
 } from "near-api-js";
 import type { Backend, RelayResult } from "./app";
-import { AccountDoesNotExistError } from "near-api-js/rpc-errors";
+import { usernameAvailability } from "../../../web/src/account/username-availability";
 import { isPlayerAccount, usernameAccountId, UsernameError, type UsernameAvailability } from "../../../web/src/account/names";
 import { accountId, Quota, validateDelegate } from "./relay";
 import { confirmedValue } from "./outcome";
@@ -76,16 +76,7 @@ export function createBackend(
     assertTideboundProtocol(root,protocol,items,"ERR_AUTH_STACK");
   }
   async function availability(username:string):Promise<UsernameAvailability> {
-    const accountId=usernameAccountId(username,root);
-    const ledgerAvailable=await view<boolean>("player_name_available",{username});
-    if(typeof ledgerAvailable!=="boolean")throw new Error("ERR_AUTH_STACK");
-    let exists=true;
-    try{await provider.viewAccount({accountId,blockQuery:{finality:"final"}});}
-    catch(error){
-      if(error instanceof AccountDoesNotExistError && error.accountId===accountId)exists=false;
-      else throw error;
-    }
-    return {username,accountId,available:ledgerAvailable&&!exists,root,network:"testnet"};
+    return usernameAvailability(provider,root,username);
   }
   return {
     accountProvider:auth ? auth.provider??"near-auth":undefined,

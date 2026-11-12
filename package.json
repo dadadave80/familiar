@@ -36,7 +36,8 @@
     "test:privy-browser": "bun scripts/test-privy-browser.ts",
     "test:privy-lifecycle-browser": "bun scripts/test-privy-lifecycle-browser.ts",
     "package:privy-review": "bun --env-file=.env.privy.local scripts/package-privy-review.ts",
-    "test:privy-review-browser": "bun scripts/test-privy-review-browser.ts"
+    "test:privy-review-browser": "bun scripts/test-privy-review-browser.ts",
+    "package:tidebound-review": "bun --env-file=.env.privy.local scripts/package-tidebound-review.ts"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "5.3.0",

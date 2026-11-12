@@ -5,6 +5,7 @@ import type { PlayerBinding } from "../tidebound/domain";
 import { assertTideboundProtocol } from "../tidebound/protocol";
 import { validateNativeIntent } from "../../../services/relayer/src/auth/sign";
 import { normalizePrivyNearKey } from "./privy-key";
+import { usernameAvailability } from "./username-availability";
 
 export interface PrivyLinkedWallet {
   id?:string|null; address:string; chainType:string; walletClientType?:string;
@@ -197,7 +198,7 @@ export function createPrivyConnection(config:PrivyConnectionConfig,session:Privy
   const post=<T,>(path:string,body:unknown,token:string)=>fetch(`${base}${path}`,{method:"POST",headers:{"content-type":"application/json",authorization:`Bearer ${token}`},body:JSON.stringify(body),signal:AbortSignal.timeout(90000)}).then(read<T>);
   return {provider,adapter:new PrivyAccountAdapter({...config,items:`items.${config.root}`,provider,session,storage:globalThis.localStorage,
     wallet:(create,token)=>post("/v1/privy/wallet",{create},token),player:(username,token)=>post("/v1/privy/player",{username},token),
-    availability:username=>fetch(`${base}/v1/player-name/${encodeURIComponent(username)}`,{signal:AbortSignal.timeout(15000)}).then(read<UsernameAvailability>),
+    availability:username=>usernameAvailability(provider,config.root,username),
   })};
 }
 
