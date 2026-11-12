@@ -41,6 +41,8 @@ struct Adoption {
 struct PendingPlayer {
     account_id: AccountId,
     storage_reserve: u128,
+    operation_id: u64,
+    named: bool,
 }
 
 #[near(contract_state)]
@@ -50,6 +52,7 @@ pub struct Contract {
     config: Config,
     players: LookupMap<String, AccountId>,
     pending_players: LookupMap<String, PendingPlayer>,
+    pending_player_names: LookupMap<AccountId, String>,
     player_ids: LookupSet<AccountId>,
     adopted_players: LookupSet<AccountId>,
     counter: u64,
@@ -106,6 +109,7 @@ impl Contract {
             },
             players: LookupMap::new(b"players".as_slice()),
             pending_players: LookupMap::new(b"pendingplayers".as_slice()),
+            pending_player_names: LookupMap::new(b"pending-player-names".as_slice()),
             player_ids: LookupSet::new(b"playerids".as_slice()),
             adopted_players: LookupSet::new(b"adopted".as_slice()),
             counter: 0,
@@ -159,76 +163,58 @@ impl Contract {
         self.busy.contains(&token_id)
     }
     pub fn create_player(&mut self, public_key: PublicKey) -> PromiseOrValue<Option<AccountId>> {
-        require!(
-            env::predecessor_account_id() == self.config.relayer,
-            "ERR_RELAYER_ONLY"
-        );
-        require!(
-            public_key.curve_type() == near_sdk::CurveType::ED25519,
-            "ERR_PUBLIC_KEY"
-        );
-        let key = public_key.to_string();
-        if let Some(id) = self.players.get(&key) {
-            return PromiseOrValue::Value(Some(id.clone()));
+        self.provision_player(public_key, None)
+    }
+    pub fn create_named_player(
+        &mut self,
+        public_key: PublicKey,
+        username: String,
+    ) -> PromiseOrValue<Option<AccountId>> {
+        self.provision_player(public_key, Some(username))
+    }
+    pub fn player_name_available(&self, username: String) -> bool {
+        if !valid_name(&username) {
+            return false;
         }
-        require!(
-            self.pending_players.get(&key).is_none(),
-            "ERR_PLAYER_PENDING"
-        );
-        self.refresh_day();
-        require!(self.guests_today < 200, "ERR_DAILY_BUDGET");
-        self.guests_today += 1;
-        let storage_reserve = self.storage_reserve(PLAYER_STORAGE_RESERVE_BYTES);
-        require!(
-            self.spendable() >= PLAYER_FUND + ADOPT_FUND + ITEM_STORAGE_FUND + storage_reserve,
-            "ERR_STAMPS"
-        );
-        self.counter += 1;
-        let id: AccountId = format!("p-{}.{}", self.counter, env::current_account_id())
-            .parse()
-            .expect("ERR_ROOT_TOO_LONG");
-        self.reserved_storage = self
-            .reserved_storage
-            .checked_add(storage_reserve)
-            .expect("ERR_STORAGE_BUDGET");
-        self.pending_players.insert(
-            key.clone(),
-            PendingPlayer {
-                account_id: id.clone(),
-                storage_reserve,
-            },
-        );
-        Promise::new(id.clone())
-            .create_account()
-            .transfer(NearToken::from_yoctonear(PLAYER_FUND))
-            .add_full_access_key(public_key)
-            .then(call(
-                env::current_account_id(),
-                "on_player",
-                json!({"key":key,"account_id":id}),
-                0,
-                15,
-            ))
-            .into()
+        let Ok(account) = format!("{username}.{}", env::current_account_id()).parse() else {
+            return false;
+        };
+        self.player_name_free(&account)
     }
     #[private]
-    pub fn on_player(&mut self, key: String, account_id: AccountId) -> Option<AccountId> {
+    pub fn on_player(
+        &mut self,
+        key: String,
+        account_id: AccountId,
+        operation_id: U64,
+    ) -> Option<AccountId> {
         let pending = self.pending_players.get(&key).cloned()?;
-        if pending.account_id != account_id {
+        if pending.account_id != account_id
+            || pending.operation_id != operation_id.0
+            || (pending.named && self.pending_player_names.get(&account_id) != Some(&key))
+        {
             return None;
         }
+        if env::promise_results_count() != 1 {
+            return None;
+        }
+        let success = match env::promise_result_checked(0, 64) {
+            Ok(bytes) if bytes.is_empty() => true,
+            Err(near_sdk::PromiseError::Failed) => false,
+            _ => return None,
+        };
         self.pending_players.remove(&key);
-        if !promise_succeeded() {
-            self.reserved_storage = self
-                .reserved_storage
-                .saturating_sub(pending.storage_reserve);
+        if pending.named {
+            self.pending_player_names.remove(&account_id);
+        }
+        self.reserved_storage = self
+            .reserved_storage
+            .saturating_sub(pending.storage_reserve);
+        if !success {
             return None;
         }
         self.players.insert(key, account_id.clone());
         self.player_ids.insert(account_id.clone());
-        self.reserved_storage = self
-            .reserved_storage
-            .saturating_sub(pending.storage_reserve);
         Some(account_id)
     }
     pub fn adopt(&mut self, name: String) -> PromiseOrValue<Option<AccountId>> {
@@ -240,7 +226,9 @@ impl Contract {
             .parse()
             .expect("ERR_NAME");
         require!(
-            self.tokens.owner_by_id.get(&pet.to_string()).is_none(),
+            self.tokens.owner_by_id.get(&pet.to_string()).is_none()
+                && !self.player_ids.contains(&pet)
+                && !self.pending_player_names.contains_key(&pet),
             "ERR_NAME_TAKEN"
         );
         if let Some(pending) = self.adoptions.get(&pet) {
@@ -508,6 +496,80 @@ impl Contract {
     }
 }
 impl Contract {
+    fn player_name_free(&self, account: &AccountId) -> bool {
+        !self.player_ids.contains(account)
+            && !self.pending_player_names.contains_key(account)
+            && self.tokens.owner_by_id.get(&account.to_string()).is_none()
+            && self.adoptions.get(account).is_none()
+    }
+    fn provision_player(
+        &mut self,
+        public_key: PublicKey,
+        username: Option<String>,
+    ) -> PromiseOrValue<Option<AccountId>> {
+        require!(
+            env::predecessor_account_id() == self.config.relayer,
+            "ERR_RELAYER_ONLY"
+        );
+        require!(
+            public_key.curve_type() == near_sdk::CurveType::ED25519,
+            "ERR_PUBLIC_KEY"
+        );
+        let key = public_key.to_string();
+        if let Some(id) = self.players.get(&key) {
+            return PromiseOrValue::Value(Some(id.clone()));
+        }
+        require!(
+            self.pending_players.get(&key).is_none(),
+            "ERR_PLAYER_PENDING"
+        );
+        let operation_id = self.counter.checked_add(1).expect("ERR_PLAYER_LIMIT");
+        let named = username.is_some();
+        let name = username.unwrap_or_else(|| format!("p-{operation_id}"));
+        require!(!named || valid_name(&name), "ERR_NAME");
+        let account_id: AccountId = format!("{name}.{}", env::current_account_id())
+            .parse()
+            .expect("ERR_ROOT_TOO_LONG");
+        require!(self.player_name_free(&account_id), "ERR_USERNAME_TAKEN");
+        self.refresh_day();
+        require!(self.guests_today < 200, "ERR_DAILY_BUDGET");
+        let storage_reserve = self.storage_reserve(PLAYER_STORAGE_RESERVE_BYTES);
+        require!(
+            self.spendable() >= PLAYER_FUND + ADOPT_FUND + ITEM_STORAGE_FUND + storage_reserve,
+            "ERR_STAMPS"
+        );
+        self.guests_today += 1;
+        self.counter = operation_id;
+        self.reserved_storage = self
+            .reserved_storage
+            .checked_add(storage_reserve)
+            .expect("ERR_STORAGE_BUDGET");
+        self.pending_players.insert(
+            key.clone(),
+            PendingPlayer {
+                account_id: account_id.clone(),
+                storage_reserve,
+                operation_id,
+                named,
+            },
+        );
+        if named {
+            self.pending_player_names
+                .insert(account_id.clone(), key.clone());
+        }
+        Promise::new(account_id.clone())
+            .create_account()
+            .transfer(NearToken::from_yoctonear(PLAYER_FUND))
+            .add_full_access_key(public_key)
+            .then(call(
+                env::current_account_id(),
+                "on_player",
+                json!({"key":key,"account_id":account_id,"operation_id":U64(operation_id)}),
+                0,
+                15,
+            ))
+            .into()
+    }
     fn refresh_day(&mut self) {
         let day = env::block_timestamp() / 1_000_000_000 / 86_400;
         if day != self.budget_day {
@@ -825,6 +887,8 @@ mod tests {
             PendingPlayer {
                 account_id: account.clone(),
                 storage_reserve: guest,
+                operation_id: 1,
+                named: false,
             },
         );
         c.pending_players.flush();
@@ -839,7 +903,7 @@ mod tests {
             vec![near_sdk::PromiseResult::Successful(vec![])]
         );
         assert_eq!(
-            c.on_player(key.clone(), account.clone()),
+            c.on_player(key.clone(), account.clone(), U64(1)),
             Some(account.clone())
         );
         c.players.flush();
@@ -971,3 +1035,6 @@ mod den_tests {
         assert_eq!(c.den_bread, [0, 1, 0, 0]);
     }
 }
+
+#[cfg(test)]
+mod username_tests;

@@ -42,16 +42,21 @@ await change(pool,pool.accountId,"new",{owner:pool.accountId});
 await change(root,root.accountId,"new",{relayer:sponsor.accountId,pet_code_hash:petHash,items:items.accountId,bakery:bakery.accountId,market:market.accountId,pool:pool.accountId});
 const protocol=await view(root.accountId,"tidebound_protocol");
 assert.deepEqual(protocol,{network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1",items:items.accountId,registry:root.accountId});
-async function player(name:string) {
+async function player(username:string,name:string) {
   const key=KeyPair.fromRandom("ed25519");
-  const id=await change(sponsor,root.accountId,"create_player",{public_key:key.getPublicKey().toString()});
+  assert.equal(await view(root.accountId,"player_name_available",{username}),true);
+  const id=await change(sponsor,root.accountId,"create_named_player",{public_key:key.getPublicKey().toString(),username});
+  assert.equal(id,`${username}.${root.accountId}`);
+  assert.equal(await view(root.accountId,"player_name_available",{username}),false);
+  assert.equal(await change(sponsor,root.accountId,"create_named_player",{public_key:key.getPublicKey().toString(),username:`other-${username}`}),id);
+  assert.equal(await view(root.accountId,"player_name_available",{username:`other-${username}`}),true);
   const account=new Account(String(id),provider,key.toString());
   await sponsor.transfer({receiverId:account.accountId,amount:nearToYocto("1")}); // Disposable fixture funds for ordinary native gas/storage tests.
   const pet=await relay(account,root.accountId,"adopt",{name});
   assert.equal(pet,`${name}.${root.accountId}`);
   return {account,pet};
 }
-const alice=await player("mochi"), bob=await player("bramble");
+const alice=await player("alice","mochi"), bob=await player("bob","bramble");
 const journey=(a=alice.account)=>view(root.accountId,"tidebound_journey",{account_id:a.accountId});
 async function claim(account:Account,pet:string,operation_id:string,commands:string[]) {
   const before=await journey(account);
