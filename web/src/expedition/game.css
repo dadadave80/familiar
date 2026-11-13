@@ -39,7 +39,7 @@ html:has(.exp-game),body:has(.exp-game){margin:0;width:100%;height:100%;overflow
   .exp-departure{left:10px;right:10px;bottom:10px;width:auto;padding:10px}.exp-departure p{font-size:12px;margin-bottom:7px}.exp-departure h1{font-size:20px;margin-bottom:6px}.exp-departure .exp-text-button{font-size:11px}
   .exp-home-places .exp-place-beacon{top:87px;right:5%}.exp-home-places .exp-place-bram{top:160px;left:5%}.exp-home-places .exp-place-workbench{top:212px;left:5%}.exp-home-places .exp-place-satchel{top:212px;right:5%;left:auto}.exp-game[data-mode=harbor] .exp-feedback{top:77px;bottom:auto;max-width:52%}
 }
-@media(max-width:740px) and (orientation:landscape) and (max-height:499px){.exp-home-places .exp-place-beacon{right:280px}}
+@media(orientation:landscape) and (max-height:499px){.exp-home-places .exp-place-beacon{right:280px}}
 
 .exp-objective-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .exp-objective-row .exp-objective{margin:0;flex:1}
@@ -83,3 +83,14 @@ html:has(.exp-game),body:has(.exp-game){margin:0;width:100%;height:100%;overflow
 .harbor-routes button{margin:0}
 .exp-panel .chart-save-note{font-size:12px;margin-top:16px;color:#485744}
 @media(max-height:600px){.exp-game .exp-harbor-links{margin:0}.exp-game .exp-harbor-links button{font-size:11px}}
+
+@media (max-width:900px) and (orientation:portrait) and (min-height:500px) {
+  .exp-game[data-mode=harbor] { display:grid; grid-template-rows:minmax(0,1fr) auto; }
+  .exp-home-places { grid-row:1; position:relative; pointer-events:none; }
+  .exp-home-places button { pointer-events:auto; }
+  .exp-home-places .exp-place-beacon { top:23dvh; }
+  .exp-home-places .exp-place-bram,
+  .exp-home-places .exp-place-satchel { top:auto; bottom:8px; }
+  .exp-home-places .exp-place-workbench { top:auto; bottom:60px; }
+  .exp-game[data-mode=harbor] .exp-departure { grid-row:2; position:static; margin:0 12px max(10px,env(safe-area-inset-bottom)); }
+}

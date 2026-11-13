@@ -1,4 +1,3 @@
-import { planUrl } from "../plan-url";
 import "./landing.css";
 
 const art = "/assets/first-light-motion/";
@@ -86,10 +85,6 @@ export function Landing() {
 
       <footer className="fl-footer">
         <a className="fl-wordmark" href="/">familiar<span>.</span></a>
-        <nav aria-label="More about Familiar">
-          <a href={planUrl}>The design book</a>
-          <a href="/motion/">Mochi in motion</a>
-        </nav>
       </footer>
     </div>
   );

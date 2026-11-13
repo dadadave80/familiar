@@ -19,9 +19,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         home: fileURLToPath(new URL("./index.html", import.meta.url)),
-        legacy: fileURLToPath(new URL("./legacy/index.html", import.meta.url)),
         outing: fileURLToPath(new URL("./outing/index.html", import.meta.url)),
-        privySpike: fileURLToPath(new URL("./privy-spike/index.html", import.meta.url)),
       },
       output: {
         manualChunks: (id) => (id.includes("/phaser/") ? "phaser" : undefined),

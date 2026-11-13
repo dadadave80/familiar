@@ -1,37 +1,25 @@
-import type { CSSProperties } from "react";
-import { MOCHI_ATLAS, MOCHI_GROUND, MOCHI_WIDTH, type MochiPose } from "./mochi";
+import { MOCHI_ATLAS, MOCHI_GROUND, MOCHI_POSES } from "./mochi";
 
-export function MochiActor({ x, y, pose }: { x: number; y: number; pose: MochiPose }) {
-  const column = pose.frame % 4;
-  const row = Math.floor(pose.frame / 4);
-  const style = {
-    left: `${x}%`, top: `${y}%`, width: `${MOCHI_WIDTH}%`,
-    "--mochi-ground": `${MOCHI_GROUND * 100}%`,
-  } as CSSProperties;
+export function MochiActor() {
+  const { frame } = MOCHI_POSES.relieved;
+  const column = frame % 4;
+  const row = Math.floor(frame / 4);
   return (
     <div
-      className="motion-actor mochi-actor"
+      className="mochi-actor"
       data-testid="mochi-actor"
-      data-pose={pose.pose}
-      data-frame={pose.frame}
-      style={style}
+      data-pose="relieved"
+      data-frame={frame}
+      style={{ transform: `translate(-50%, -${MOCHI_GROUND * 100}%)` }}
       aria-hidden="true"
     >
-      <span className="actor-shadow" />
-      <span
-        className="mochi-body"
-        style={{ transform: `translateY(${-pose.lift}cqw) rotate(${pose.rotate}deg) scale(${pose.scaleX}, ${pose.scaleY})` }}
-      >
-        <span className="mochi-cell">
-          <img
-            className="mochi-atlas"
-            src={`/assets/first-light-motion/${MOCHI_ATLAS}.webp`}
-            alt=""
-            draggable={false}
-            style={{ transform: `translate(${-column * 25}%, ${-row * 25}%)` }}
-          />
-        </span>
-      </span>
+      <img
+        className="mochi-atlas"
+        src={`/assets/first-light-motion/${MOCHI_ATLAS}.webp`}
+        alt=""
+        draggable={false}
+        style={{ transform: `translate(${-column * 25}%, ${-row * 25}%)` }}
+      />
     </div>
   );
 }

@@ -1,5 +1,13 @@
 # Reproducible claims
 
+## Current source — v2 only
+
+The introduction stays first at `/`. Play Familiar opens the Phaser spatial game at `/outing/`. The old town, three-lane interface, motion lab, recovery demo and design-book entry are retired from current builds. Retired game/demo URLs redirect to v2; the old design-book URL redirects to the introduction. Classic/challenge query flags no longer select another game. Historical saved data, replay verification, entitlement identity and original pending operations are preserved without automatic migration.
+
+Current checks are `bun run test:v2-routing-browser`, `bun run test:expedition-browser -- --quick` and `bun scripts/test-passage-browser.ts`. The routing check also accepts a prepared release directory as its argument to exercise actual compiled pages and routing. Current release packaging creates fresh static output rather than retaining old bundles. Full unit/build/Rust results and local versus deployed status are recorded in PROGRESS.md.
+
+The following dated sections retain historical evidence. Commands that target removed interfaces are historical records and are no longer current test instructions. The cleanup is local until a separately authorized publication.
+
 ## Latest outing work — November 13, 2026
 
 The last published outing is source `e8b5c54`, deployment `dpl_4f7eYusFRASYvxEtUyPqQBPdD9u2`, on the existing Familiar domain. The earlier branding and chain evidence below remains historical evidence. The shore-bell discovery and companion work described here is **local only**.

@@ -57,10 +57,8 @@ body:has(.familiar-landing) {
 .fl-header { min-height: 98px; }
 .fl-wordmark { display: inline-flex; align-items: center; min-height: 44px; font: 650 34px / 1 "Familiar Display", serif; letter-spacing: -.04em; text-decoration: none; }
 .fl-wordmark span { color: #ac6040; }
-.fl-header nav,
-.fl-footer nav { display: flex; align-items: center; gap: clamp(20px, 3vw, 42px); }
-.fl-header nav > a:not(.fl-play),
-.fl-footer nav > a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+.fl-header nav { display: flex; align-items: center; gap: clamp(20px, 3vw, 42px); }
+.fl-header nav > a:not(.fl-play) { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
 
 .familiar-landing .fl-play {
   display: inline-flex;
@@ -143,8 +141,6 @@ body:has(.familiar-landing) {
   .fl-invitation { padding: 42px 0 48px; }
   .fl-invitation > p:first-of-type { font-size: 16px; }
   .fl-footer { align-items: flex-start; }
-  .fl-footer nav { display: block; }
-  .fl-footer nav a { display: flex; }
 }
 
 @media (prefers-reduced-motion: reduce) {

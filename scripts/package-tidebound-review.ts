@@ -12,7 +12,7 @@ export const RUNTIME_WEBPS=[
   ...["tide-court-v2","stone-island-v2","wooden-bridge-v2"].map(name=>`assets/expedition-v2/${name}.webp`),
   ...["harbor","mochi-poses-v1","tidekeeper","shell","lens","moth","wave","bram","tide-court-v2","stone-island-v2","wooden-bridge-v2"].map(name=>`assets/expedition-v2/runtime/${name}.webp`),
 ];
-export const RUNTIME_METADATA=["assets/first-light-motion/wind-gate-v1.webp.json","assets/expedition-v2/provenance.json","assets/expedition-v2/runtime/manifest.json"] as const;
+export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate-v1.webp.json","assets/expedition-v2/provenance.json","assets/expedition-v2/runtime/manifest.json"] as const;
 export const BRAND_ASSETS=["icons/mochi-v2.ico",...[32,180,192,512].map(size=>`icons/mochi-v2-${size}.png`),"social/familiar-harbor-v2.jpg","familiar-v2.webmanifest"];
 const primaryFunction="api/v1/privy/wallet.func";
 const aliases=["api/health.func","api/v1/privy/player.func"] as const;
@@ -43,7 +43,6 @@ export function validateRouting(config:unknown) {
 function publicBytes(bytes:Uint8Array,path:string) {
   check(!/PRIVY_APP_SECRET|VITE_PRIVY_APP_SECRET|RELAYER_PRIVATE_KEY|ROOT_PRIVATE_KEY|NPC_ADMIN_PRIVATE_KEY|NPC_PRIVATE_KEY|NEAR_PRIVATE_KEY|-----BEGIN (?:EC |RSA |OPENSSH )?PRIVATE KEY-----[\r\n]+[A-Za-z0-9+/=\r\n]{64,}-----END/.test(new TextDecoder().decode(bytes)),`Server configuration or private key material appears in the static overlay: ${path}`);
 }
-export interface StaticChange {path:string;beforeSha256:string;afterSha256:string}
 /** Add only approved art and branding that the baseline lacks; never replace its assets. */
 export async function copyRuntimeAssets(sourcePublic:string,destination:string) {
   await physicalDirectory(sourcePublic);await physicalDirectory(join(sourcePublic,"assets"));
@@ -64,25 +63,30 @@ export async function copyRuntimeAssets(sourcePublic:string,destination:string) 
   for(const write of writes){await mkdir(dirname(join(destination,write.path)),{recursive:true});await writeFile(join(destination,write.path),write.bytes);}
   return {added,reused};
 }
-/** Validate the complete overlay before copying; only the two named HTML pages may change. */
-export async function overlayGameStatic(source:string,destination:string) {
-  const originalPaths=await staticFiles(destination),originals=await Promise.all(originalPaths.map(async path=>({path,sha256:await hash(join(destination,path))})));
-  const paths=await staticFiles(source),changes:StaticChange[]=[],added:{path:string;sha256:string}[]=[],writes:{path:string;bytes:Uint8Array}[]=[];
-  for(const path of GAME_HTML)check(paths.includes(path) && originalPaths.includes(path),`Both baseline and overlay must contain ${path}.`);
-  for(const path of paths) {
-    const html=(GAME_HTML as readonly string[]).includes(path);
-    check(html || /^assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|png|jpe?g|svg|webp|avif)$/.test(path),`H1 overlay path is not approved: ${path}`);
+/** Start from an empty site so retired pages and bundles never return from an old baseline. */
+export async function copyGameStatic(source:string,destination:string) {
+  const paths=await staticFiles(source);
+  check((await staticFiles(destination)).length===0,"Current static output must be empty.");
+  for(const path of GAME_HTML)check(paths.includes(path),`The current build must contain ${path}.`);
+  const writes=await Promise.all(paths.map(async path=>{
+    check((GAME_HTML as readonly string[]).includes(path)||/^assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|png|jpe?g|svg|webp|avif)$/.test(path),`Current build path is not approved: ${path}`);
     const bytes=await readFile(join(source,path));if(/\.(?:html|js|css)$/.test(path))publicBytes(bytes,path);
-    const previous=await readFile(join(destination,path)).catch(error=>{if(error.code==="ENOENT")return null;throw error;});
-    if(previous?.equals(bytes))continue;
-    check(!previous || html,`H1 overlay would overwrite a preserved asset: ${path}`);
-    if(previous)changes.push({path,beforeSha256:digest(previous),afterSha256:digest(bytes)});else added.push({path,sha256:digest(bytes)});
-    writes.push({path,bytes});
-  }
-  for(const write of writes){await mkdir(dirname(join(destination,write.path)),{recursive:true});await writeFile(join(destination,write.path),write.bytes);}
-  const preserved=originals.filter(file=>!(GAME_HTML as readonly string[]).includes(file.path));
-  for(const file of preserved)check(await hash(join(destination,file.path))===file.sha256,`A preserved baseline file changed: ${file.path}`);
-  return {originals,preserved,changes,added};
+    return {path,bytes};
+  }));
+  for(const file of writes){await mkdir(dirname(join(destination,file.path)),{recursive:true});await writeFile(join(destination,file.path),file.bytes);}
+  return writes.map(file=>({path:file.path,sha256:digest(file.bytes)}));
+}
+// Original API URLs reach their physical functions; retired interfaces redirect without rewrites.
+export function currentRouting(config:unknown) {
+  validateRouting(config);
+  return {version:3,routes:[
+    {src:"/(.*)",headers:{"X-Content-Type-Options":"nosniff","Referrer-Policy":"strict-origin-when-cross-origin"},continue:true},
+    {src:"^/(?:legacy|motion|privy-spike)(?:/.*)?$",status:308,headers:{Location:"/outing/"}},
+    {src:"^/plan(?:/.*)?$",status:308,headers:{Location:"/"}},
+    {src:"^/(?:outing|expedition)/?$",dest:"/outing/index.html"},
+    {src:"^/$",dest:"/index.html"},
+    {handle:"filesystem"},
+  ]};
 }
 async function existingFunctionAliases(output:string) {
   await functionDirectories(output);
@@ -144,8 +148,6 @@ async function main() {
   const oldFunctionSha256=await hash(join(fn,"index.mjs")),oldAliases=await existingFunctionAliases(output);
   const scopeBefore=baselineFunctionScope(JSON.parse(await readFile(join(baseline,"review-manifest.json"),"utf8")),oldFunctionSha256,oldAliases);
   const baselineStatic=await Promise.all((await staticFiles(site)).map(async path=>({path,sha256:await hash(join(site,path))})));
-  // publicDir stays disabled. Copy only missing approved runtime art, preserving every existing byte.
-  const runtimeAssets=await copyRuntimeAssets(join(source,"web/public"),site);
   const overlay=await mkdtemp(join(tmpdir(),"familiar-tidebound-static-"));
   await build({configFile:false,plugins:[react()],root:join(source,"web"),envDir:false,envPrefix:[],publicDir:false,define:{
     "import.meta.env.VITE_PRIVY_APP_ID":JSON.stringify(appId),"import.meta.env.VITE_PRIVY_CLIENT_ID":JSON.stringify(clientId),
@@ -153,18 +155,27 @@ async function main() {
     "import.meta.env.VITE_NEAR_RPC_URL":JSON.stringify("https://test.rpc.fastnear.com"),"import.meta.env.VITE_RELAYER_URL":JSON.stringify("/api"),
     "import.meta.env.VITE_TIDEBOUND_ENABLED":JSON.stringify("true"),
   },build:{outDir:overlay,rollupOptions:{input:{home:join(source,"web/index.html"),outing:join(source,"web/outing/index.html")},output:{manualChunks:id=>id.includes("/phaser/")?"phaser":undefined}}}});
-  const staticReport=await overlayGameStatic(overlay,site);
+  await rm(site,{recursive:true});await mkdir(site);
+  const staticReport=await copyGameStatic(overlay,site);
+  const runtimeAssets=await copyRuntimeAssets(join(source,"web/public"),site);
+  const licenses=join(source,"web/public/licenses");await physicalDirectory(licenses);
+  for(const name of await staticFiles(licenses)){
+    check(/^[a-z-]+\.txt$/.test(name),"Unexpected license path.");
+    await mkdir(join(site,"licenses"),{recursive:true});await cp(join(licenses,name),join(site,"licenses",name));
+  }
+  const routing=currentRouting(JSON.parse(configBytes.toString()));
+  await writeFile(join(output,"config.json"),JSON.stringify(routing,null,2)+"\n");
   await rm(fn,{recursive:true,force:true});await mkdir(fn,{recursive:true});
   const result=await Bun.build({entrypoints:[join(source,"services/relayer/src/tidebound-http.ts")],outdir:fn,naming:"index.mjs",target:"node",format:"esm",minify:true,env:"disable"});
   check(result.success,"The private H1 HTTP function did not bundle.");
   await writeFile(join(fn,".vc-config.json"),JSON.stringify({runtime:"nodejs24.x",handler:"index.mjs",launcherType:"Nodejs",maxDuration:60,shouldAddHelpers:false}));
   const functionAliases=await installFunctionAliases(output);
-  check((await readFile(join(output,"config.json"))).equals(configBytes),"The preserved public routing configuration changed.");
-  const preserved=baselineStatic.filter(file=>!(GAME_HTML as readonly string[]).includes(file.path));
-  for(const file of preserved)check(await hash(join(site,file.path))===file.sha256,`A preserved baseline file changed: ${file.path}`);
-  const manifest={mode:"LOCAL_H1_REVIEW_ONLY",origin,baseline,release,network:"testnet",plannedRoot:gameRoot,
-    static:{baselineCount:baselineStatic.length,preservedCount:preserved.length,allowedHtmlReplacementPaths:GAME_HTML,replacedHtml:staticReport.changes,addedFiles:[...runtimeAssets.added,...staticReport.added],runtimeAssets:{allowedWebps:RUNTIME_WEBPS,allowedMetadata:RUNTIME_METADATA,allowedBranding:BRAND_ASSETS,...runtimeAssets},preservedFiles:preserved,recoveryPageUnchanged:true},
-    routing:{baselineConfigSha256:digest(configBytes),changed:false,originalFunctionRequestUrlPreserved:true},
+  const currentStatic=await Promise.all((await staticFiles(site)).map(async path=>({path,sha256:await hash(join(site,path))})));
+  const preserved=baselineStatic.filter(file=>currentStatic.some(current=>current.path===file.path&&current.sha256===file.sha256));
+  const removed=baselineStatic.filter(file=>!currentStatic.some(current=>current.path===file.path));
+  const manifest={mode:"LOCAL_H1_REVIEW_ONLY",edition:"spatial-v2-only",origin,baseline,release,network:"testnet",plannedRoot:gameRoot,
+    static:{baselineCount:baselineStatic.length,currentCount:currentStatic.length,preservedCount:preserved.length,currentFiles:currentStatic,removedFiles:removed,runtimeAssets:{allowedWebps:RUNTIME_WEBPS,allowedMetadata:RUNTIME_METADATA,allowedBranding:BRAND_ASSETS,...runtimeAssets},preservedFiles:preserved,compiledFiles:staticReport},
+    routing:{baselineConfigSha256:digest(configBytes),currentConfigSha256:await hash(join(output,"config.json")),changed:true,retiredPagesRedirected:true,originalFunctionRequestUrlPreserved:true},
     publicBuild:{provider:"privy",tideboundUiEnabled:true,root:gameRoot,relayerUrl:"/api",appIdSha256:digest(new TextEncoder().encode(appId)),environmentFilesLoaded:false},
     privateFunction:{path:primaryFunction,scopeBefore,scopeAfter:"h1",scopeChangedFromRecoveryOnly:scopeBefore==="recovery-only",beforeSha256:oldFunctionSha256,sha256:await hash(join(fn,"index.mjs")),bytes:await Bun.file(join(fn,"index.mjs")).size,runtime:"nodejs24.x",shouldAddHelpers:false,aliases:functionAliases,endpoints,enabledByDefault:false},
     requiredRuntimeEnvironmentNames:["TIDEBOUND_HTTP_ENABLED","ACCOUNT_PROVIDER","NEAR_NETWORK","NEAR_ROOT","RELAYER_ID","RELAYER_PRIVATE_KEY","PRIVY_APP_ID","PRIVY_APP_SECRET"],
