@@ -32,7 +32,8 @@
     "preflight:tidebound": "bun scripts/tidebound-preflight.ts",
     "test:privy-lifecycle-browser": "bun scripts/test-privy-lifecycle-browser.ts",
     "package:tidebound-review": "bun --env-file=.env.privy.local scripts/package-tidebound-review.ts",
-    "test:routing-browser": "bun scripts/test-routing-browser.ts"
+    "test:routing-browser": "bun scripts/test-routing-browser.ts",
+    "test:records-browser": "bun scripts/test-records-browser.ts"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "5.3.0",
