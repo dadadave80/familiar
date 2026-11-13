@@ -2,11 +2,18 @@ import type { CourtEvent } from "./types";
 
 export interface SoundLayer {
   kind:"tone"|"noise";frequency:number;gain:number;duration:number;delay?:number;to?:number;
-  waveform?:OscillatorType;filter?:BiquadFilterType;
+  waveform?:OscillatorType;filter?:BiquadFilterType;attack?:number;
 }
 export function soundRecipe(event:CourtEvent):readonly SoundLayer[] {
   switch(event.kind) {
-    case "move":return [0,.13].map(delay=>({kind:"noise",frequency:650,gain:.035,duration:.085,delay,filter:"bandpass"}));
+    case "move":{
+      if(Math.abs(event.to.y-event.from.y)>1) return [
+        {kind:"tone",frequency:260,to:180,gain:.047,duration:.13,waveform:"triangle",attack:.005},
+        {kind:"noise",frequency:820,gain:.03,duration:.12,delay:.15,filter:"bandpass"},
+        {kind:"tone",frequency:205,to:142,gain:.035,duration:.2,delay:.15,waveform:"triangle"},
+      ];
+      return [0,.13].map((delay,i)=>({kind:"noise",frequency:720+85*((event.to.x+event.to.y+i)%3),gain:.038,duration:.085,delay,filter:"bandpass"}));
+    }
     case "telegraph":return [{kind:"tone",frequency:110,to:90,gain:.025,duration:.2,waveform:"sine"}];
     case "rotate":return [{kind:"noise",frequency:410,gain:.035,duration:.16,filter:"bandpass"},{kind:"tone",frequency:196,to:160,gain:.012,duration:.1,waveform:"triangle"}];
     case "redirect":return [{kind:"noise",frequency:1800,gain:.025,duration:.25,filter:"highpass"},{kind:"tone",frequency:330,to:660,gain:.02,duration:.24}];
@@ -19,27 +26,80 @@ export function soundRecipe(event:CourtEvent):readonly SoundLayer[] {
       {kind:"tone",frequency:event.item==="moth"?1174.66:880,gain:.035,duration:.36,delay:event.rope?.1:0},
       {kind:"tone",frequency:event.item==="moth"?1567.98:1174.66,gain:.025,duration:.3,delay:.1},
     ];
-    case "return":return [587.33,739.99,880].map((frequency,index)=>({kind:"tone",frequency,gain:.03,duration:.42,delay:index*.09}));
-    case "rescue":return [440,369.99,293.66].map((frequency,index)=>({kind:"tone",frequency,gain:.025,duration:.3,delay:index*.1}));
+    case "return":return [{kind:"noise",frequency:480,gain:.035,duration:.28,filter:"lowpass"},{kind:"tone",frequency:235,to:175,gain:.034,duration:.18,delay:.18,waveform:"triangle"}];
+    case "rescue":return [{kind:"noise",frequency:620,gain:.052,duration:.52,filter:"lowpass"},{kind:"noise",frequency:310,gain:.035,duration:.2,delay:.31,filter:"bandpass"}];
   }
 }
 
-/** Opt-in foley only: no audio context, device request or sound before the player's gesture. */
+export type MusicCue = "harbor"|"departure"|"beacon";
+type Bus = "music"|"effects";
+const busGain:Record<Bus,number>={music:.65,effects:.45};
+
+// The open harbor interval comes back over a low D when the beacon finally answers.
+function score(cue:MusicCue):SoundLayer[] {
+  const d=293.66,a=220,e=329.63;
+  const notes:ReadonlyArray<readonly [number,number,number]>=cue==="departure"
+    ? [[d,0,.62],[a,.34,.78]]
+    : [[d,0,.85],[a,.51,.96],[e,1.53,1.12],...(cue==="beacon"?[[d,2.42,1.85] as const]:[])];
+  const layers:SoundLayer[]=[];
+  for(const [frequency,delay,duration] of notes){
+    layers.push({kind:"tone",frequency,delay,duration,gain:.10,waveform:"triangle",attack:.011},
+      {kind:"tone",frequency:frequency*2.003,delay,duration:.20,gain:.021,attack:.006});
+  }
+  if(cue!=="departure")layers.push({kind:"tone",frequency:d/2,delay:.10,duration:1.8,gain:.05,waveform:"triangle",attack:.36});
+  if(cue==="beacon")layers.push(
+    {kind:"tone",frequency:a,delay:2.28,duration:2.08,gain:.045,waveform:"triangle",attack:.45},
+    {kind:"tone",frequency:369.99,delay:2.55,duration:1.67,gain:.033,attack:.31},
+    {kind:"tone",frequency:d*2,delay:2.57,duration:1.30,gain:.027,attack:.04});
+  return layers;
+}
+
+/** Sound is created only after opt-in. Neither effects nor the score advance the court. */
 export class HarborAudio {
   private context:AudioContext|null=null;
-  private master:GainNode|null=null;
+  private buses:Record<Bus,GainNode>|null=null;
+  private levels:Record<Bus,number>={music:1,effects:1};
   private noise:AudioBuffer|null=null;
   private enabled=false;
   private generation=0;
-  private sources=new Set<AudioScheduledSourceNode>();
+  private sources=new Map<AudioScheduledSourceNode,{bus:Bus;gain:GainNode}>();
   constructor(private readonly createContext:()=>AudioContext=()=>new AudioContext()) {}
 
-  private stopSources(){for(const source of this.sources){try{source.stop();}catch{/* An ended sound is already silent. */}source.disconnect();}this.sources.clear();}
+  private stopSources(bus?:Bus,fade=false){
+    for(const [source,voice] of this.sources)if(!bus||voice.bus===bus){
+      if(fade&&this.context?.state==="running"&&typeof voice.gain.gain.cancelAndHoldAtTime==="function"){
+        const now=this.context.currentTime;
+        voice.gain.gain.cancelAndHoldAtTime(now);
+        voice.gain.gain.linearRampToValueAtTime(0,now+.025);
+        source.stop(now+.025);
+      }else{
+        try{source.stop();}catch{/* An ended sound is already silent. */}
+        source.disconnect();this.sources.delete(source);
+      }
+    }
+  }
+  setMix(music:number,effects:number):void {
+    for(const [bus,value] of [["music",music],["effects",effects]] as const){
+      if(!Number.isFinite(value))continue;
+      const level=Math.min(1,Math.max(0,value));
+      this.levels[bus]=level;
+      if(level===0)this.stopSources(bus);
+      if(this.buses&&this.context)this.buses[bus].gain.setTargetAtTime(busGain[bus]*level*level,this.context.currentTime,.015);
+    }
+  }
   async setEnabled(enabled:boolean):Promise<void> {
     const generation=++this.generation;this.enabled=false;
     if(!enabled){this.stopSources();if(this.context?.state==="running")await this.context.suspend();return;}
     if(!this.context||this.context.state==="closed") {
-      this.context=this.createContext();this.master=this.context.createGain();this.master.gain.value=.3;this.master.connect(this.context.destination);this.noise=null;
+      const context=this.createContext();
+      try{
+        const buses={music:context.createGain(),effects:context.createGain()};
+        for(const bus of ["music","effects"] as const){
+          buses[bus].gain.value=busGain[bus]*this.levels[bus]**2;
+          buses[bus].connect(context.destination);
+        }
+        this.buses=buses;this.context=context;this.noise=null;
+      }catch(error){await context.close();throw error;}
     }
     const context=this.context;
     if(context.state!=="running")await context.resume();
@@ -53,10 +113,19 @@ export class HarborAudio {
     this.noise=buffer;return buffer;
   }
   play(event:CourtEvent):void {
-    const context=this.context,master=this.master;if(!this.enabled||!context||!master||context.state!=="running")return;
-    try{for(const layer of soundRecipe(event)) {
-      const start=context.currentTime+(layer.delay??0),end=start+layer.duration,gain=context.createGain();
-      gain.gain.setValueAtTime(.0001,start);gain.gain.linearRampToValueAtTime(layer.gain,start+.018);gain.gain.exponentialRampToValueAtTime(.0001,end);gain.connect(master);
+    this.schedule("effects",soundRecipe(event));
+  }
+  playMusic(cue:MusicCue):void {
+    this.stopSources("music",true);
+    this.schedule("music",score(cue));
+  }
+  private schedule(bus:Bus,layers:readonly SoundLayer[]):void {
+    const context=this.context,output=this.buses?.[bus];
+    if(!this.enabled||!context||!output||!this.levels[bus]||context.state!=="running")return;
+    const now=context.currentTime;
+    try{for(const layer of layers) {
+      const start=now+(layer.delay??0),end=start+layer.duration,gain=context.createGain();
+      gain.gain.setValueAtTime(.0001,start);gain.gain.linearRampToValueAtTime(layer.gain,start+(layer.attack??.018));gain.gain.exponentialRampToValueAtTime(.0001,end);gain.connect(output);
       let source:AudioScheduledSourceNode,filter:BiquadFilterNode|undefined;
       if(layer.kind==="tone") {
         const oscillator=context.createOscillator();oscillator.type=layer.waveform??"sine";
@@ -66,12 +135,12 @@ export class HarborAudio {
         const noise=context.createBufferSource();noise.buffer=this.noiseBuffer(context);filter=context.createBiquadFilter();filter.type=layer.filter??"lowpass";
         filter.frequency.setValueAtTime(layer.frequency,start);filter.Q.value=.7;noise.connect(filter);filter.connect(gain);source=noise;
       }
-      this.sources.add(source);source.onended=()=>{this.sources.delete(source);source.disconnect();filter?.disconnect();gain.disconnect();};
+      this.sources.set(source,{bus,gain});source.onended=()=>{this.sources.delete(source);source.disconnect();filter?.disconnect();gain.disconnect();};
       source.start(start);source.stop(end);
     }}catch{this.enabled=false;this.stopSources();}
   }
   async close():Promise<void> {
-    this.generation++;this.enabled=false;this.stopSources();const context=this.context;this.context=null;this.master=null;this.noise=null;
+    this.generation++;this.enabled=false;this.stopSources();const context=this.context;this.context=null;this.buses=null;this.noise=null;
     if(context&&context.state!=="closed")await context.close();
   }
 }

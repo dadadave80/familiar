@@ -1,0 +1,24 @@
+.exp-inspect-position {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem 2rem;
+  margin: 0 0 1.4rem;
+  padding: .75rem 0;
+  border-block: 1px solid #b6a079;
+}
+.exp-inspect-position dt { font-size: .8rem; font-weight: 700; color: #485843; }
+.exp-inspect-position dd { margin: .15rem 0 0; }
+.exp-inspect-actions > div { display: flex; flex-wrap: wrap; gap: .35rem; }
+.exp-inspect-actions button[aria-pressed="true"],
+.exp-inspect-actions button[aria-pressed="true"]:hover {
+  background: #355947;
+  color: #fff6dd;
+  border-color: #355947;
+  box-shadow: none;
+}
+.exp-inspect-reading { padding-top: 1rem; border-top: 1px solid #b6a079; }
+.exp-inspect-reading h3 {
+  margin: 0 0 .45rem;
+  font: 650 1.25rem/1.2 "Fraunces Variable", serif;
+}
+.exp-inspect-reading p:last-child { margin-bottom: 0; }

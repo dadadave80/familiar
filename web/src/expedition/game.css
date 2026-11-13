@@ -40,3 +40,17 @@ html:has(.exp-game),body:has(.exp-game){margin:0;width:100%;height:100%;overflow
   .exp-home-places .exp-place-beacon{top:87px;right:5%}.exp-home-places .exp-place-bram{top:160px;left:5%}.exp-home-places .exp-place-workbench{top:212px;left:5%}.exp-home-places .exp-place-satchel{top:212px;right:5%;left:auto}.exp-game[data-mode=harbor] .exp-feedback{top:77px;bottom:auto;max-width:52%}
 }
 @media(max-width:740px) and (orientation:landscape) and (max-height:499px){.exp-home-places .exp-place-beacon{right:280px}}
+
+.exp-objective-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.exp-objective-row .exp-objective{margin:0;flex:1}
+.exp-game .exp-inspect-button{min-width:48px;min-height:44px;padding:0 5px;border:0;background:transparent;box-shadow:none;text-decoration:underline;text-underline-offset:3px;color:#2b5146;font-size:12px}
+.exp-panel .exp-mix{display:grid;gap:5px}
+.exp-panel .exp-mix label{display:grid;grid-template-columns:55px 1fr;align-items:center}
+.exp-panel .exp-mix input{width:100%;min-height:44px;accent-color:#416b5a}
+.exp-header-actions{display:flex;gap:6px;align-items:flex-start;pointer-events:auto}
+.exp-hud .exp-tide-dial{display:inline-flex;align-items:end;gap:2px;height:12px;margin-right:5px;vertical-align:baseline}
+.exp-tide-dial i{display:block;width:3px;background:#f8e9c5;opacity:.35;border-radius:2px 2px 0 0}
+.exp-tide-dial i:first-child{height:4px;opacity:1}
+.exp-tide-dial i:nth-child(2){height:8px}
+.exp-tide-dial i:nth-child(3){height:12px}
+.exp-tide-dial.phase-rising i:nth-child(2),.exp-tide-dial.phase-surge i{opacity:1}

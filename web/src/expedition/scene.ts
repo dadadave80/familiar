@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { applyCommand, waveExit, walkable, findPosition } from "./engine";
 import { COURTS } from "./rooms";
 import { commandAt } from "./input";
-import { MOCHI_POSES, type MochiPoseName } from "../motion/mochi";
+import { MOCHI_GROUND, MOCHI_POSES, walkingPose, type MochiPoseName } from "../motion/mochi";
 import type { Column, Command, CourtEvent, CourtState, CourtTransition, Find, Position } from "./types";
 
 const ART = "/assets/expedition-v2/runtime/";
@@ -28,6 +28,7 @@ export class ExpeditionScene extends Phaser.Scene {
   private snapshot:WorldSnapshot;
   private visual:CourtState|null=null;
   private ground!:Phaser.GameObjects.Graphics;
+  private shoreMarks!:Phaser.GameObjects.Graphics;
   private bridgeArt!:Phaser.GameObjects.Image;
   private wheel!:Phaser.GameObjects.Graphics;
   private forecast!:Phaser.GameObjects.Graphics;
@@ -75,6 +76,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.beam=this.add.graphics().setDepth(-2);
     this.homeProps=this.add.graphics().setDepth(6);
     this.ground=this.add.graphics().setDepth(0);
+    this.shoreMarks=this.add.graphics().setDepth(4);
     this.bridgeArt=this.add.image(0,0,"exp-bridge").setDepth(.5);
     this.wheel=this.add.graphics().setDepth(6);
     this.forecast=this.add.graphics().setDepth(2);
@@ -84,7 +86,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.keeper=this.add.image(0,0,"exp-keeper").setOrigin(.5,1).setDepth(3);
     this.bram=this.add.image(0,0,"exp-bram").setOrigin(.5,1).setDepth(5);
     this.actorShadow=this.add.ellipse(0,0,50,13,0x342719,.25).setDepth(7);
-    this.actor=this.add.sprite(0,0,"exp-mochi",12).setOrigin(.5,.875).setDepth(10);
+    this.actor=this.add.sprite(0,0,"exp-mochi",12).setOrigin(.5,MOCHI_GROUND).setDepth(10);
     this.scale.on("resize",()=>{
       if(this.playing&&this.presentationSize){const zoom=Math.min(this.scale.width/this.presentationSize.w,this.scale.height/this.presentationSize.h);this.cameras.main.setZoom(zoom).centerOn(this.presentationSize.w/2,this.presentationSize.h/2);}
       else{this.cameras.main.setZoom(1).setScroll(0,0);this.layout();}
@@ -118,7 +120,17 @@ export class ExpeditionScene extends Phaser.Scene {
   setSnapshot(snapshot:WorldSnapshot, transition:CourtTransition|null, id:number){
     const previous=this.snapshot;this.snapshot=snapshot;if(!this.actor||this.stopped)return;
     if(transition&&id!==this.lastPresentation){this.lastPresentation=id;void this.present(transition,id);}
-    else if(!this.playing){this.visual=snapshot.court;if(previous.court===snapshot.court&&snapshot.court&&previous.reducedMotion===snapshot.reducedMotion)this.paintHints(snapshot.court);else this.layout();if(!previous.court&&!snapshot.court&&!previous.home.lit&&snapshot.home.lit){this.beam.setAlpha(0);void this.tween(this.beam,{alpha:1},800);}}
+    else if(!this.playing){
+      this.visual=snapshot.court;
+      if(previous.court===snapshot.court&&snapshot.court&&previous.reducedMotion===snapshot.reducedMotion)this.paintHints(snapshot.court);
+      else this.layout();
+      if(!previous.court&&!snapshot.court&&!previous.home.lit&&snapshot.home.lit&&!snapshot.reducedMotion){
+        this.beam.setAlpha(.1);
+        this.bram.setAngle(-4);
+        void this.tween(this.beam,{alpha:1},620);
+        void this.tween(this.bram,{angle:0},440);
+      }
+    }
   }
   setGated(gated:boolean){this.gated=gated;if(gated)this.presses.clear();if(!this.actor)return;this.input.enabled=!gated;this.time.paused=gated;if(gated)this.tweens.pauseAll();else this.tweens.resumeAll();}
   private clearParts(){
@@ -132,7 +144,7 @@ export class ExpeditionScene extends Phaser.Scene {
   private layout(){
     if(!this.actor||this.stopped)return;
     this.presses.clear();
-    this.clearParts();this.ground.clear();this.homeProps.clear();this.bridgeArt.setAlpha(1);this.wheel.clear();this.forecast.clear();this.forecastLabel.setVisible(false);this.neighbors.clear();this.beam.clear().setAlpha(1);
+    this.clearParts();this.ground.clear();this.shoreMarks.clear();this.homeProps.clear();this.bridgeArt.setAlpha(1);this.wheel.clear();this.forecast.clear();this.forecastLabel.setVisible(false);this.neighbors.clear();this.beam.clear().setAlpha(1);
     const court=this.visual;
     this.backdrop.setTexture(court?"exp-court":"exp-harbor","__BASE");
     this.backdrop.setPosition(this.w/2,this.h/2);this.fit(this.backdrop,this.w,this.h);
@@ -165,8 +177,22 @@ export class ExpeditionScene extends Phaser.Scene {
     const dock=this.point({x:1,y:0});if(!(portrait&&this.h<500&&court.position.x===1&&court.position.y===0))this.text(dock.x,dock.y+(this.h<500?-tile.height*.45:tile.height*.72),"DOCK",Math.min(14,this.w/28));
     const keeperHeight=Math.min(this.h<500?f.top-(portrait?78:15):230,this.h*.26,portrait?this.w*(this.h<650?.38:.45):this.w*.52,portrait?f.top-(this.h<650?15:80):Infinity);this.keeper.setPosition(this.h<500&&!portrait?f.cx+Math.min(60,f.width*.18):portrait&&this.h<650?this.w*.72:f.cx,f.top-8).setDisplaySize(keeperHeight*1.32,keeperHeight);
     for(const item of ["lens","moth","vane"] as const){
-      const position=COURTS[court.area].finds[item];if(!position||court.banked.includes(item)||court.cargo.includes(item))continue;
+      const position=COURTS[court.area].finds[item];if(!position)continue;
       const p=this.point(position);
+      // A brass ring and bent reeds keep the two Beacon shelves distinct in silhouette.
+      if(item==="lens"){
+        const x=p.x-tile.width*.34,y=p.y+1,r=Math.max(4,tile.width*.045);
+        this.shoreMarks.lineStyle(3,0x57472f).lineBetween(x,y+r,x,y+r*2.3).strokeCircle(x,y,r);
+        this.shoreMarks.lineStyle(1.5,0xf8d386).strokeCircle(x,y,r);
+      }else if(item==="moth"){
+        const x=p.x+tile.width*.25,y=p.y+5,length=Math.min(28,tile.width*.24);
+        for(const spread of [-.18,.14,.46]){
+          const tip=x+length*spread;
+          this.shoreMarks.lineStyle(2.5,0x51613c).lineBetween(x,y,tip,y-length*.76).lineBetween(tip,y-length*.76,tip+length*.2,y-length);
+          this.shoreMarks.fillStyle(0xc6a66d).fillEllipse(tip+length*.2,y-length,3,7);
+        }
+      }
+      if(court.banked.includes(item)||court.cargo.includes(item))continue;
       if(item!=="vane"&&!findPosition(court,item)){
         const shell=this.add.image(p.x,p.y-15,"exp-shell").setDisplaySize(tile.width*.64,tile.width*.64).setDepth(5);this.shells.set(position.x,shell);
       }else if(findPosition(court,item)){
@@ -182,7 +208,11 @@ export class ExpeditionScene extends Phaser.Scene {
       const cradle=this.point({x:1,y:4});this.text(cradle.x,cradle.y+tile.height*.8,`CRADLE ${court.orientation===0?"ALIGNED":"LOCKED"}`,Math.min(12,this.w/30));
       for(const x of [0,1] as const){const p=this.point({x,y:4});this.ground.fillStyle(court.opened.includes(x)?0xffd580:0x8d7861,1);this.ground.fillCircle(p.x,p.y,8);}
     }
-    const p=this.point(court.position);this.actor.setPosition(p.x,p.y);this.actor.setDisplaySize(this.actorSize(),this.actorSize());this.actor.setFlipX(false);this.actorShadow.setPosition(p.x,p.y+2).setSize(this.actorSize()*.55,12);this.pose(court.locked!==null?"brace":"curious");
+    const p=this.point(court.position);
+    this.actor.setPosition(p.x,p.y).setDisplaySize(this.actorSize(),this.actorSize()).setFlipX(false);
+    this.actorShadow.setPosition(p.x,p.y+2).setSize(this.actorSize()*.55,Math.max(4,this.actorSize()*.10));
+    const mothNearby=court.position.y>=3&&findPosition(court,"moth")!==null;
+    this.pose(court.locked!==null?"brace":mothNearby?"look-right":"curious");
     this.drawCargo(court);this.paintHints(court);
   }
   private drawBridge(x:number,y:number,w:number,h:number){
@@ -196,13 +226,25 @@ export class ExpeditionScene extends Phaser.Scene {
       const image=this.add.image(x,y,"exp-island").setOrigin(.5,.41).setDisplaySize(w,w*source.height/source.width).setDepth(1);if(charged)image.setTint(0xffe3a3);this.surfaces.push(image);
   }
   private drawForecast(court:CourtState){
-    this.forecast.clear();this.forecastLabel.setVisible(false);const preview=this.snapshot.previewCommand?applyCommand(court,this.snapshot.previewCommand):null;
-    const predictedWave=preview?.events.find(event=>event.kind==="wave"),exit=predictedWave?.exit??waveExit(preview?.after??court);if(exit===null)return;
+    this.forecast.clear();
+    this.forecastLabel.setVisible(false);
+    const preview=this.snapshot.previewCommand?applyCommand(court,this.snapshot.previewCommand):null;
+    const predictedWave=preview?.events.find(event=>event.kind==="wave");
+    const exit=predictedWave?.exit??waveExit(preview?.after??court);
+    const source=predictedWave?.source??(preview?.after??court).locked;
+    this.keeper.setAngle(source===null?0:(source-1)*3).setTint(source===null?0xffffff:0xe5ddc9);
+    if(exit===null||source===null)return;
     const f=this.field(),p=this.point({x:exit,y:2}),width=this.tileSize().width*.7;
     this.forecast.fillStyle(0xc35235,.22);this.forecast.fillRoundedRect(p.x-width/2,f.top-30,width,f.bottom-f.top+65,12);
     this.forecast.lineStyle(3,0xf8be78,.95);this.forecast.strokeRoundedRect(p.x-width/2,f.top-30,width,f.bottom-f.top+65,12);
     for(let y=f.top+20;y<f.bottom;y+=50){this.forecast.lineBetween(p.x-9,y-7,p.x,y);this.forecast.lineBetween(p.x,y,p.x+9,y-7);}
-    const target=this.point({x:exit,y:2});this.forecastLabel.setPosition(target.x,this.h<500?f.top+35:f.top-46).setFontSize(Math.min(14,this.w/27)).setText(`WAVE → ${["LEFT","CENTER","RIGHT"][exit]}`).setVisible(true);
+    const mark=this.point({x:source,y:4}),sourceY=f.top+Math.min(27,f.dy*.44);
+    this.forecast.lineStyle(3,0x4e4534).strokeCircle(mark.x,sourceY,8);
+    this.forecast.lineStyle(2,0xffdf96).strokeCircle(mark.x,sourceY,6);
+    if(source!==exit)this.forecast.lineBetween(mark.x,sourceY,p.x,sourceY);
+    const lanes=["L","C","R"];
+    const label=source===exit?`IN + OUT · ${["LEFT","CENTER","RIGHT"][exit]}`:`IN ${lanes[source]} → OUT ${lanes[exit]}`;
+    this.forecastLabel.setPosition(p.x,this.h<500?f.top+35:f.top-46).setFontSize(Math.min(14,this.w/27)).setText(label).setVisible(true);
   }
   private paintHints(court:CourtState){
     this.neighbors.clear();const tile=this.tileSize();
@@ -223,15 +265,39 @@ export class ExpeditionScene extends Phaser.Scene {
     const portrait=this.w<=900&&this.h>this.w;
     const groundY=portrait?this.h-(this.h<500?235:316):this.h*.81;
     if(portrait){
-      this.backdrop.x-=this.backdrop.displayWidth*.2;
+      const harborWidth=this.backdrop.displayWidth;
+      const requestedX=this.w*.77-(.824-.5)*harborWidth;
+      this.backdrop.x=Phaser.Math.Clamp(requestedX,this.w-harborWidth/2,harborWidth/2);
       const source=this.textures.get("exp-island").getSourceImage() as HTMLImageElement;
       const pier=this.add.image(this.w*.40,groundY,"exp-island").setOrigin(.5,.41).setDisplaySize(this.w*.92,this.w*.92*source.height/source.width).setDepth(1);this.surfaces.push(pier);
     }
     const actorSize=Math.min(180,this.w*.28,this.h*.25);
     this.actor.setPosition(this.w*.49,groundY).setDisplaySize(actorSize,actorSize);this.pose(this.snapshot.home.lit?"relieved":"curious");this.actorShadow.setPosition(this.actor.x,this.actor.y).setSize(actorSize*.5,14);
     const b=Math.min(255,this.w*.36,this.h*.38);this.bram.setPosition(this.w*.28,portrait?groundY-4:this.h*.82).setDisplaySize(b*.75,b);
-    if(this.snapshot.home.lit){this.beam.fillStyle(0xffe4a0,.24);this.beam.fillTriangle(this.w*.83,this.h*.25,this.w*.08,this.h*.39,this.w*.07,this.h*.58);}
-    if(this.snapshot.home.moth)this.addHomeFind("moth",this.w*.57,this.h*.72,45);
+    if(this.snapshot.home.lit){
+      // Register the light to the painted lantern room, including its portrait crop.
+      const width=this.backdrop.displayWidth,height=this.backdrop.displayHeight;
+      const x=this.backdrop.x+width*(.824-.5),y=this.backdrop.y+height*(.222-.5);
+      const glow=width*.019;
+      this.beam.fillStyle(0xffdc88,.12).fillTriangle(x,y,-4,y+this.h*.065,-4,y+this.h*.24);
+      this.beam.fillStyle(0xffffc9,.14).fillTriangle(x,y,-4,y+this.h*.11,-4,y+this.h*.19);
+      this.beam.fillStyle(0xffcd65,.18).fillEllipse(x,y,glow*2.1,glow*1.6);
+      for(let ring=7;ring>0;ring--){
+        this.beam.fillStyle(0xffdc8a,.09).fillEllipse(x,y,glow*ring*.21,glow*ring*.17);
+      }
+      this.beam.fillStyle(0xffedae,.95).fillEllipse(x,y,glow*.31,glow*.48);
+      // Register broken glints to the water under the tower in the painted harbor.
+      for(let ripple=0;ripple<5;ripple++){
+        const rx=this.backdrop.x+width*(.59-.5)-ripple*width*.014;
+        const ry=this.backdrop.y+height*(.53-.5)+ripple*height*.012;
+        this.beam.fillStyle(0xffda90,.37-ripple*.045).fillEllipse(rx,ry,width*(.017+ripple*.002),Math.max(1,height*.002));
+      }
+    }
+    if(this.snapshot.home.moth){
+      const perchX=this.actor.x+actorSize*.37;
+      this.addHomeFind("moth",perchX,groundY-actorSize*.76,Math.min(45,actorSize*.30));
+      this.pose("look-right");
+    }
     if(this.snapshot.home.relic)this.addHomeFind(this.snapshot.home.relic,this.actor.x-15,groundY-actorSize*.34,26);
     if(this.snapshot.home.lit){const x=portrait?this.w*.78:this.w*.73,y=portrait?groundY+8:this.h*.79;this.homeProps.lineStyle(6,0x795a37).lineBetween(x,y,x,y-80);this.homeProps.lineStyle(2,0xead2a0).lineBetween(x-3,y-2,x-3,y-80);if(this.snapshot.home.signaled)this.addHomeFind("vane",x,y-83,53);}
     if(this.snapshot.home.lantern){
@@ -248,36 +314,81 @@ export class ExpeditionScene extends Phaser.Scene {
   }
   private async hold(duration:number){if(this.stopped)return;await new Promise<void>(resolve=>this.time.delayedCall(this.snapshot.reducedMotion?30:duration,()=>resolve()));}
   private async present(transition:CourtTransition,id:number){
-    const epoch=++this.epoch;this.presentationSize={w:this.scale.width,h:this.scale.height};this.playing=true;this.visual=transition.before;this.layout();
+    const epoch=++this.epoch;
+    this.presentationSize={w:this.scale.width,h:this.scale.height};
+    this.playing=true;
+    this.visual=this.snapshot.reducedMotion?transition.after:transition.before;
+    this.layout();
     for(const [index,event] of transition.events.entries()){
       if(this.stopped||this.epoch!==epoch)return;
-      this.hooks.beat(event,index);await this.presentEvent(event,transition.after);
+      this.hooks.beat(event,index);
+      if(this.snapshot.reducedMotion||this.visual===transition.after){
+        if(this.visual!==transition.after){this.visual=transition.after;this.layout();}
+        await this.hold(30);
+      }else await this.presentEvent(event);
     }
     if(this.stopped||this.epoch!==epoch)return;
     this.visual=transition.after;this.playing=false;this.presentationSize=null;this.cameras.main.setZoom(1).setScroll(0,0);this.layout();this.hooks.settled(id);
   }
-  private async presentEvent(event:CourtEvent,after:CourtState){
+  private followActor(){
+    this.actorShadow.setPosition(this.actor.x,this.actor.y+2);
+    for(const [index,item] of this.cargo.entries()){
+      item.setPosition(this.actor.x+(index?16:-18),this.actor.y-this.actor.displayHeight*.35);
+    }
+  }
+  private async presentEvent(event:CourtEvent){
     switch(event.kind){
       case "move":{
-        const to=this.point(event.to),frames=[4,5,6,7],size=this.actorSize();this.actor.setFlipX(event.to.x<event.from.x);this.pose(event.to.x<event.from.x?"turn-left":"turn-right");await this.hold(70);
-        await this.tween(this.actor,{x:to.x,y:to.y,onUpdate:()=>{if(!this.snapshot.reducedMotion)this.actor.setFrame(frames[Math.floor(this.time.now/75)%4]);this.actorShadow.setPosition(this.actor.x,this.actor.y+2);this.actor.setDisplaySize(size,size);for(const [i,item] of this.cargo.entries())item.setPosition(this.actor.x+(i?16:-18),this.actor.y-size*.35);}},330);
-        this.actor.setFlipX(false);this.visual={...this.visual!,position:event.to};this.pose("curious");break;
+        const from=this.point(event.from),to=this.point(event.to);
+        const dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
+        const crossing=Math.abs(event.to.y-event.from.y)===2;
+        this.pose(dx<0?"turn-left":dx>0?"turn-right":dy<0?"curious":"brace");
+        await this.hold(crossing?45:30);
+        this.actor.setFlipX(dx<0);
+        await this.tween(this.actor,{
+          x:to.x,y:to.y,ease:"Sine.easeInOut",
+          onUpdate:()=>{
+            const progress=distance===0?1:Math.min(1,Math.hypot(this.actor.x-from.x,this.actor.y-from.y)/distance);
+            this.pose(walkingPose(progress*(crossing?2:1)));
+            this.followActor();
+          },
+        },crossing?310:185);
+        this.visual={...this.visual!,position:event.to};
+        this.actor.setFlipX(false);this.pose(dx<0?"turn-left":dx>0?"turn-right":"neutral");
+        await this.hold(35);break;
       }
       case "telegraph":this.visual={...this.visual!,locked:event.column};this.pose("brace");this.drawForecast(this.visual);await this.hold(180);break;
       case "redirect":{this.pose("reach-left");const point=this.point({x:event.to,y:3});const light=this.add.circle(this.actor.x,this.actor.y-25,12,0xffdd8c,.95).setDepth(15);await this.tween(light,{x:point.x,y:point.y,alpha:.15},280);light.destroy();this.visual={...this.visual!,locked:event.to};this.drawForecast(this.visual);break;}
       case "rotate":this.pose("reach-left");await this.tween(this.wheel,{angle:(event.from+1)*120},260);this.visual={...this.visual!,orientation:event.to};this.layout();break;
       case "wave":{
         this.pose("brace");const f=this.field(),point=this.point({x:event.source,y:4}),exit=this.point({x:event.exit,y:4});const wave=this.add.image(point.x,f.top-70,"exp-wave").setDisplaySize(this.tileSize().width*1.15,90).setAlpha(.2).setDepth(14);
-        if(event.source!==event.exit)await this.tween(wave,{x:exit.x,y:f.top+f.dy*.55,alpha:.8},230);
-        await this.tween(wave,{y:f.bottom+35,alpha:1},480);await this.tween(wave,{alpha:0},90);wave.destroy();this.forecast.clear();this.visual={...this.visual!,locked:null};break;
+        if(event.source!==event.exit)await this.tween(wave,{x:exit.x,y:f.top+f.dy*.55,alpha:.8},165);
+        await this.tween(wave,{y:f.bottom+20,alpha:.9},330);
+        void this.tween(wave,{y:f.bottom+32,alpha:0},115).then(()=>wave.destroy());
+        this.forecast.clear();this.forecastLabel.setVisible(false);this.visual={...this.visual!,locked:null};break;
       }
-      case "bridge":await this.tween(this.bridgeArt,{alpha:0,y:this.bridgeArt.y+15},160);this.visual={...this.visual!,bridge:event.to};this.layout();{const resting=this.bridgeArt.y;this.bridgeArt.setAlpha(.2).setY(resting-10);await this.tween(this.bridgeArt,{alpha:1,y:resting},210);}break;
+      case "bridge":{
+        const berth=this.point({x:event.to,y:2}),direction=event.to>event.from?1:-1;
+        await this.tween(this.bridgeArt,{angle:direction*1.8,y:berth.y+3,alpha:.88},55);
+        await this.tween(this.bridgeArt,{x:berth.x,y:berth.y+2,angle:-direction*.7},190);
+        await this.tween(this.bridgeArt,{angle:0,y:berth.y,alpha:1},70);
+        this.visual={...this.visual!,bridge:event.to};this.layout();break;
+      }
       case "open":{const shell=this.shells.get(event.column);if(shell)await this.tween(shell,{y:shell.y+15,scaleX:shell.scaleX*1.25,scaleY:shell.scaleY*.55,alpha:.35},230);this.visual={...this.visual!,opened:[...new Set([...this.visual!.opened,event.column])]};this.layout();break;}
-      case "hit":{this.pose("startled");const p=this.point(event.to);await this.tween(this.actor,{x:p.x,y:p.y},300);this.visual={...this.visual!,position:event.to,resolve:event.resolve};this.layout();this.pose("relieved");break;}
+      case "hit":{this.pose("startled");const p=this.point(event.to);await this.tween(this.actor,{x:p.x,y:p.y,onUpdate:()=>this.followActor()},215);this.visual={...this.visual!,position:event.to,resolve:event.resolve};this.layout();this.pose("relieved");break;}
       case "pickup":{
-        this.pose("reach-ready");await this.hold(85);this.pose(event.rope?"pull-in":"reach-left");const from=this.point(event.from),find=this.finds.get(event.item)??this.add.image(from.x,from.y-20,`exp-${event.item}`).setDisplaySize(35,35).setDepth(14);
-        const paw=()=>{const local=MOCHI_POSES[this.actorPose].paw;return{x:this.actor.x+(local.x-.5)*this.actor.displayWidth,y:this.actor.y+(local.y-.875)*this.actor.displayHeight};};
-        await this.tween(find,{x:paw().x,y:paw().y,onUpdate:()=>{if(!event.rope)return;this.effects.clear();this.effects.lineStyle(3,0xf1d5a0);this.effects.lineBetween(paw().x,paw().y,find.x,find.y);}},event.rope?480:260);this.effects.clear();find.destroy();this.finds.delete(event.item);this.visual={...this.visual!,cargo:[...this.visual!.cargo,event.item]};this.drawCargo(this.visual);this.pose("relieved");await this.hold(140);break;
+        const from=this.point(event.from);
+        this.actor.setFlipX(from.x>this.actor.x);this.pose("reach-ready");await this.hold(60);
+        this.pose("reach-left");
+        const find=this.finds.get(event.item)??this.add.image(from.x,from.y-20,`exp-${event.item}`).setDisplaySize(35,35).setDepth(14);
+        const local=MOCHI_POSES[this.actorPose].paw,side=this.actor.flipX?-1:1;
+        const paw={x:this.actor.x+(local.x-.5)*this.actor.displayWidth*side,y:this.actor.y+(local.y-MOCHI_GROUND)*this.actor.displayHeight};
+        await this.tween(find,{...paw,onUpdate:()=>{
+          if(event.rope)this.effects.clear().lineStyle(3,0xf1d5a0).lineBetween(paw.x,paw.y,find.x,find.y);
+        }},event.rope?345:180);
+        this.effects.clear();this.pose("pull-in");
+        find.destroy();this.finds.delete(event.item);this.visual={...this.visual!,cargo:[...this.visual!.cargo,event.item]};
+        this.drawCargo(this.visual);await this.hold(55);this.actor.setFlipX(false);this.pose("relieved");await this.hold(70);break;
       }
       case "return":this.pose("relieved");await this.hold(360);break;
       case "rescue":this.pose("startled");await this.hold(360);break;

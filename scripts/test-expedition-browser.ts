@@ -9,7 +9,7 @@ import { solveCourt } from "./court-v2-solver";
 import type { Command,CourtState } from "../web/src/expedition/types";
 
 const captures=await mkdtemp(join(tmpdir(),"familiar-expedition-browser-"));
-const server=await createServer({root:resolve(import.meta.dir,"../web"),cacheDir:join(captures,"vite-cache"),envDir:false,envPrefix:[],logLevel:"error",server:{host:"127.0.0.1",port:0}});
+const server=await createServer({root:resolve(import.meta.dir,"../web"),cacheDir:join(captures,"vite-cache"),envDir:false,envPrefix:[],logLevel:"error",server:{host:"127.0.0.1",port:0,hmr:false,watch:null}});
 await server.listen();const origin=server.resolvedUrls!.local[0]!.replace(/\/$/,"");
 const browser=await chromium.launch({headless:true});
 const results:unknown[]=[];
@@ -82,10 +82,25 @@ try{
     page.on("pageerror",error=>errors.push(error.message));
     await page.route("**/api/**",route=>route.abort());
     await page.goto(`${origin}/outing/`);await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
-    await record(page,`${width}-harbor`);await page.locator('[data-action="depart"]').click();await record(page,`${width}-court`);
+    await record(page,`${width}-harbor`);
+    if(width===390) {
+      await page.getByRole("button",{name:"Enable game audio"}).click();
+      await expect(page.getByRole("button",{name:"Mute game audio"})).toBeVisible();
+    }
+    await page.locator('[data-action="depart"]').click();await record(page,`${width}-court`);
     await pointerCell(page,0,0);await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-position","0,0");
     await act(page,"wait");await expect(page.getByTestId("expedition-forecast")).toContainText("Left source → Left wave");
-    await record(page,`${width}-marked`);await act(page,"step:east");await expect(page.getByTestId("expedition-feedback")).toContainText("opens");await record(page,`${width}-bridge`);
+    await record(page,`${width}-marked`);
+    if(width===390) {
+      const prior=await page.evaluate(key=>localStorage.getItem(key),saveKey);
+      await page.getByRole("button",{name:"Inspect",exact:true}).click();
+      await page.getByRole("button",{name:"Step east",exact:true}).click();
+      await expect(page.locator(".exp-inspect-reading")).toContainText(/dry/i);
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("button",{name:"Inspect",exact:true})).toBeFocused();
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),saveKey),prior);
+    }
+    await act(page,"step:east");await expect(page.getByTestId("expedition-feedback")).toContainText("opens");await record(page,`${width}-bridge`);
     if(!quick){
       const beforeResize=await page.evaluate(key=>localStorage.getItem(key),saveKey);await page.setViewportSize({width:height,height:width});await record(page,`${width}-rotated`);assert.equal(await page.evaluate(key=>localStorage.getItem(key),saveKey),beforeResize,"resize preserves the exact accepted transcript");await page.setViewportSize({width,height});
       await act(page,"return");await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","harbor");

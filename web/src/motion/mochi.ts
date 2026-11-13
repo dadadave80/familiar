@@ -42,6 +42,10 @@ const WALK: readonly MochiPoseName[] = [
   "walk-contact-a", "walk-pass-a", "walk-contact-b", "walk-pass-b",
 ];
 
+export function walkingPose(strides: number): MochiPoseName {
+  return WALK[Math.floor(Math.max(0, strides) * WALK.length) % WALK.length]!;
+}
+
 function heldPose(time: number, beats: readonly PoseBeat[]): MochiPoseName {
   let selected: MochiPoseName = "neutral";
   for (const [at, pose] of beats) {
@@ -71,7 +75,7 @@ export function sampleMochi(id: ClipId, time: number, reduced = false): MochiPos
       if (t >= 1500 && t < 2250) {
         // Eight pose holds over the lane distance: two short cycles, never a time-only treadmill.
         const distance = (sampleScene(id, t).mochiX - 21) / 29;
-        pose = reduced ? "turn-right" : WALK[Math.min(7, Math.floor(distance * 8)) % 4]!;
+        pose = reduced ? "turn-right" : walkingPose(distance * 2);
       }
       break;
     }
