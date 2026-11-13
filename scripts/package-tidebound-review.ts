@@ -8,8 +8,7 @@ import react from "@vitejs/plugin-react";
 export const GAME_HTML=["index.html","outing/index.html"] as const;
 export const HTTP_PATHS=["/api/health","/api/v1/privy/wallet","/api/v1/privy/player"] as const;
 export const RUNTIME_WEBPS=[
-  ...["harbor","arena","wind-gate","bram","mochi","mochi-poses","tidekeeper","wave","shell","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`),
-  ...["tide-court","stone-island","wooden-bridge"].map(name=>`assets/expedition/${name}.webp`),
+  ...["harbor","arena","wind-gate","mochi","mochi-poses","tidekeeper","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`),
   ...["harbor","mochi-poses","tidekeeper","shell","lens","moth","wave","bram","tide-court","stone-island","wooden-bridge"].map(name=>`assets/expedition/runtime/${name}.webp`),
 ];
 export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate.webp.json","assets/expedition/provenance.json","assets/expedition/runtime/manifest.json"] as const;

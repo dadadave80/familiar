@@ -1,41 +1,51 @@
 # Familiar architecture
 
-This describes the implementation currently in the repository. Contracts are deployed on testnet and local services have passed real-chain checks; public backend hosting remains a separate evidence gate.
+Current source, November 13, 2026. The introduction at `/` leads to the single Phaser game at `/outing/`. Public deployment status and dated acceptance are in [JUDGES.md](../JUDGES.md); local changes are not automatically published. Superseded implementation reports are indexed in [ARCHIVED-REPORTS.md](ARCHIVED-REPORTS.md).
 
 ```mermaid
 flowchart TD
-  Browser[React + Phaser browser\nlocal guest key and receipts] -->|signed DelegateAction| Relayer[Bun / Hono Post Office]
-  Relayer -->|allowlisted signed action| Registry[Root factory + NEP-171 registry]
-  Browser -->|public views| RPC[NEAR testnet RPC]
-  Registry -->|current NFT owner + busy lock| Pet[Keyless pet account\nimmutable global code]
-  Pet --> Bakery[Forage / bread recipes]
-  Bakery --> Items[NEP-245 inventory + storage]
-  Pet --> Market[NPC desk / fixed-price resale]
-  Market --> Items
-  Market --> Registry
-  Market --> Dens[Four den treasuries]
-  Pet --> Pool[Configured staking pool]
-  NPC[Bun Bram service\nquote-only function-call key] --> Market
-  NPC --> AI[Optional bounded NEAR AI reasoning]
-  Browser --> Auth[NEAR Auth Google + testnet MPC]
+  Introduction[React introduction] --> Game[React controls + Phaser world]
+  Game --> Rules[Pure TypeScript court and passage rules]
+  Rules --> Device[Device saves + returned transcripts]
+  Game --> Harbor[HarborController + account boundary]
+  Harbor --> Provider[Privy email or configured NEAR Auth provider]
+  Harbor --> Views[Finalized NEAR testnet reads]
+  Harbor --> Native[Original native transaction envelope]
+  Native --> Provider
+  Provider -->|Privy| HTTP[Exact H1 account HTTP endpoints]
+  Provider -->|Configured Google| GoogleHTTP[Local Bun relayer account and fixed Auth endpoints]
+  HTTP --> Bridge[Verified identity and bounded account setup]
+  Native --> RPC[NEAR testnet transaction submission]
+  Views --> Root[Root registry + journey rules]
+  RPC --> Root
+  Root --> Items[Items: unique lantern, finish and current holder]
+  Root --> Pet[Keyless Mochi account]
 ```
 
-The registry is the sole authority for pet ownership. `act(token_id, action)` checks `predecessor_account_id` against the NFT owner, marks the token busy and returns the pet's promise chain. Pet `execute` accepts only the registry. Transfers, approvals and transfer-call operations serialize against this lock; the standard NFT resolver restores ownership on rejection. There is no cached pet owner that can keep authority after a transfer.
+## Play and persistence
 
-Adoption creates, funds, attaches global code and initializes a pet in a single account-creation batch. No pet access key is added. Only after inventory registration succeeds does the registry mint its token. Pending registration is serialized and bounded; retries retain the storage reservation. Root tracks future guest/NFT storage obligations separately from current protocol storage.
+`web/src/expedition/engine.ts` and `passage.ts` own deterministic rules. Phaser `scene.ts` presents their results, companion poses and input targets; React supplies essential text, buttons and contained panels. Accepted turns persist before their animation. Inspect is free, sound is opt-in, and reduced motion changes presentation rather than outcomes. The document fits the viewport.
 
-Inventory uses contract-tools' standard multi-token implementation, with seven fixed token IDs. Only registered buildings use the documented non-standard `game_mint`, `game_burn`, `game_transfer` and `game_exchange` extensions. The bakery's burn/mint recipe settles atomically in Items. Failed downstream actions do not charge pet energy or XP. The market authenticates successful item movement through registered inventory accounts, freezes trade terms, reconciles donated stock during quote updates and preserves payout claims on failed transfers.
+`Game.tsx` separates device-preview saves from account-bound saved outings. `ReturnRecords` verifies returned command transcripts and coordinates writes across tabs with Web Locks. Historical transcripts use the frozen validator in `web/src/compatibility/`; their original content IDs and operation IDs retain their meaning. Bell/Reed side discoveries are device/harbor scoped and do not issue H1 tokens, Shells or achievements. Login never silently merges preview memories into canonical progress.
 
-Market storage capacity comes only from its initialization balance, with an operating floor. NPC deposits and buyer escrow do not expand that capacity. Listings and pending trades/sales reserve bounded space before they can consume downstream state. A sale retains its reservation until actual pet-den lookup and settlement complete.
+`HarborController` reads current account, companion, checkpoint, accepted claims and item balances before reviewing canonical interactions. It verifies the original return hash before proposing another payment. Current item balance gates placement and mutation; ownership transfer does not transfer the maker's achievement. Craft, commission and finish retain the finite H1 rules: one protected first-light craft credit, one new salvage, one personal 12-Shell commission and one optional 12-Shell finish per token. Bound Shells have no cash redemption.
 
-Den bread and fee scores use fixed four-element arrays and Monday 00:00 UTC periods. Views return zero for an expired period; the first successful event resets only that period's counters. Cumulative bread/fee records, payout claims and treasury funds are retained. The UI checks both view period markers before combining scores across RPC calls.
+## Identity and transactions
 
-Staking reserve checks include the pet's actual balance and protocol storage cost. Private callbacks update principal/unstaking state only after success. The UI reads the pool directly for the current dream balance. The mock pool is confined to the sandbox test harness; production pool selection is explicit and verified during deployment.
+`account/PrivyProvider.tsx` and `privy-adapter.ts` preserve the authenticated canonical NEAR wallet and named player binding. The separately configured NEAR Auth adapter remains available through `account/client.ts` and `auth-sdk.ts`. Restore/sign-in does not provision another account. An explicit username action provisions only after identity and availability checks.
 
-The relayer decodes canonical Borsh, verifies Ed25519 signatures, checks receiver/method/argument/gas/deposit/expiry policies and the live sender access key, then submits a signed delegate with final execution waiting. Confirmation follows `SuccessReceiptId` from the inner operation's first receipt to its terminal result. Detached payout callbacks cannot turn a completed sale into a false failure. Duplicate requests reserve one in-flight result before asynchronous preflight.
+`tidebound/client.ts` persists canonical transaction bytes before provider navigation. It verifies the provider signature against those bytes, keeps an original envelope through unknown outcomes, and validates full finalized receipt graphs before settlement. Expiry clearing requires proof of permanent expiry plus an unused nonce at a pinned finalized block; it does not cancel a contract reservation or grant a refund. Ordinary movement, conversation, audio and presentation need no transaction.
 
-Bram reads inventory, recent prices and held NEAR, computes bounded bigint quotes, then submits `set_quotes` with a scoped key. The optional AI may choose one of three dials and at most 140 characters of reasoning. It never supplies prices or transaction fields. Timeout or absent credentials use the scripted line. Local service ticks every 60 seconds without overlap; an always-running production host has not been connected.
+`services/relayer/src/tidebound-http.ts` is the Node H1 function entry used by the current prepared release. It accepts only `/api/health`, `/api/v1/privy/wallet` and `/api/v1/privy/player` with their configured methods. Private runtime configuration enables it separately. App-scoped identity, exact origin, strict body/size, canonical wallet ownership and bounded account setup remain server checks. It is not a general signing or transaction relay endpoint. The optional local Bun relayer retains older allowlisted protocol support for reproducible testnet tooling.
 
-The browser owns signing and persisted guest keys. Phaser owns the town canvas; semantic React controls expose every action. Pending movement is visual anticipation, while inventory and receipts follow confirmed execution. Receipts are centralized in `web/src/receipts.ts`. Read failures pause play and retain the last confirmed state. The wide desktop layout shows the 720px town beside a 480px control column; mobile stacks them with touch-sized controls.
+## Contracts and compatibility
 
-Optional Google retention proves the derived key with an authenticated MPC signature before installing it on the player's account. The original browser key stays valid. Recovery reads the current NFT owner, proves an exact self-AddKey transaction, verifies its MPC signature before broadcast and rechecks both keys and ownership afterwards. A retry recognizes an already-installed local key. The browser backs up its current guest pass before switching the active identity. No pet key or relayer key permission is added. Legacy Auth SDK 5 and signing SDK 7 exchange canonical transaction bytes, never class instances. Shared-client origin checks currently enable localhost:3000 only; actual user OAuth and chain recovery remain unverified.
+Root owns the registry, authorization and accepted journey state. Items owns lantern mint/finish evidence and balances. Predecessor and current-holder checks remain authoritative; callbacks are private and preserve uncertain reservations. `contracts/common/src/court.rs` supplies spatial replay; `historical_returns.rs` preserves old content semantics. Fixture tests compare TypeScript/Rust transitions.
+
+Bakery, Market and configured pool IDs remain part of the existing Pet/Items initialization and historical contract system. Their sources are also used by actual-Wasm upgrade sandboxes. They are not extra current outing activities. The dynamic NPC quote worker has been retired; Bram's current commission runs in Root. The mock pool is local-test infrastructure only. Root/Items administrative keys still exist on testnet; the whole stack is not immutable, even though adopted Pets use pinned global code and no access keys.
+
+## Build and release
+
+Bun manages the workspace; Vite builds React/Phaser and Rust supplies contracts. Original PNGs and generator-only inputs stay outside `web/public/`; committed optimized WebPs are used at runtime. Provenance and source hashes are retained. The release packager builds fresh introduction/outing pages and current assets, retains exact H1 endpoint aliases, and omits retired pages and generator-only art. It prepares a local artifact and does not publish it.
+
+Full unit tests, Rust tests and browser emulation establish narrower checks than physical-phone listening, two-device earned-state recovery or human enjoyment. Those remain explicit validation gaps. GitHub-to-production automation is not configured yet.

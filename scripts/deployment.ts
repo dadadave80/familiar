@@ -1,3 +1,13 @@
+export function savings(value: string) {
+  const amount = BigInt(value || "0");
+  const whole = amount / 10n ** 24n;
+  const fraction = ((amount % 10n ** 24n) / 10n ** 20n)
+    .toString()
+    .padStart(4, "0")
+    .replace(/0+$/, "");
+  return fraction ? `${whole}.${fraction}` : whole.toString();
+}
+
 export function assertQuoteKey(permission: unknown, market: string) {
   if (
     !permission ||

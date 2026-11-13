@@ -45,8 +45,8 @@ function tideboundValues(root:string,keys:ProjectKeys):Record<string,string> {
     ROOT_PRIVATE_KEY:keys.ROOT_PRIVATE_KEY,RELAYER_ID:`relayer.${root}`,RELAYER_PRIVATE_KEY:keys.RELAYER_PRIVATE_KEY,
     NPC_ID:`bram.${root}`,NPC_ADMIN_PRIVATE_KEY:keys.NPC_ADMIN_PRIVATE_KEY,NPC_PRIVATE_KEY:keys.NPC_PRIVATE_KEY,
     // Reverify this public pool against current validators before any deployment.
-    STAKING_POOL:"kiln.pool.f863973.m0",RELAYER_PORT:"3037",NPC_PORT:"3038",WEB_ORIGINS:"https://familiar-two.vercel.app",
-    VITE_NEAR_ROOT:root,VITE_NEAR_RPC_URL:"https://test.rpc.fastnear.com",VITE_RELAYER_URL:"/api",VITE_NPC_URL:"/npc-api",
+    STAKING_POOL:"kiln.pool.f863973.m0",RELAYER_PORT:"3037",WEB_ORIGINS:"https://familiar-two.vercel.app",
+    VITE_NEAR_ROOT:root,VITE_NEAR_RPC_URL:"https://test.rpc.fastnear.com",VITE_RELAYER_URL:"/api",
     ACCOUNT_PROVIDER:"privy",VITE_ACCOUNT_PROVIDER:"privy",TIDEBOUND_ENABLED:"false",VITE_TIDEBOUND_ENABLED:"false",
   };
 }
@@ -67,6 +67,11 @@ export function verifyTideboundEnvironment(content:string,root:string):void {
   }
   const keys=Object.fromEntries(keyNames.map(name=>[name,values[name]])) as ProjectKeys;
   const expected=tideboundValues(root,keys);
+  // An earlier generator wrote this exact pair. Its private files must remain reusable.
+  if(values.NPC_PORT==="3038"&&values.VITE_NPC_URL==="/npc-api"){
+    delete values.NPC_PORT;
+    delete values.VITE_NPC_URL;
+  }
   if(Object.keys(values).length!==Object.keys(expected).length||Object.entries(expected).some(([name,value])=>values[name]!==value))
     throw Error("Preserve the existing configuration: it does not match this isolated, disabled testnet tuple.");
 }

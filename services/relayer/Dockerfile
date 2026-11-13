@@ -3,9 +3,9 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY web/package.json web/package.json
 COPY services/relayer/package.json services/relayer/package.json
-COPY services/npc/package.json services/npc/package.json
 RUN bun install --frozen-lockfile --production
-COPY services/relayer services/relayer
+COPY services/relayer/src services/relayer/src
+COPY web/src web/src
 ENV RELAYER_PORT=3037
 EXPOSE 3037
 CMD ["bun", "services/relayer/src/index.ts"]

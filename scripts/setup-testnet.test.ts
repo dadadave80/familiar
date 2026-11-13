@@ -44,6 +44,15 @@ test("prepared configuration is one exact testnet tuple, default-off and omits s
   expect(content.split("\n").filter(line=>line&&!line.startsWith("#")).some(line=>line.endsWith("="))).toBe(false);
 });
 
+test("new setup omits the retired quote worker while an intact earlier setup still verifies",()=>{
+  const current=renderTideboundEnvironment(root,fixtureKeys);
+  expect(current).not.toMatch(/^(NPC_PORT|VITE_NPC_URL)=/m);
+  const previous=current+"NPC_PORT=3038\nVITE_NPC_URL=/npc-api\n";
+  expect(()=>verifyTideboundEnvironment(previous,root)).not.toThrow();
+  expect(()=>verifyTideboundEnvironment(previous.replace("3038","9999"),root)).toThrow();
+  expect(()=>verifyTideboundEnvironment(current+"NPC_PORT=3038\n",root)).toThrow();
+});
+
 test("configuration verification rejects altered authority, flags, key reuse, duplicates and injected settings",()=>{
   const content=renderTideboundEnvironment(root,fixtureKeys);
   for(const altered of [

@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { assertQuoteKey } from "./deployment";
+import { assertQuoteKey, savings } from "./deployment";
+
+test("deployment preflight displays NEAR amounts without floating-point rounding", () => {
+  expect(savings("1000000000000000000000000")).toBe("1");
+  expect(savings("1234567890123456789012345")).toBe("1.2345");
+  expect(savings("0")).toBe("0");
+});
+
 test("deployment rejects a broad existing NPC key before funding it", () => {
   const market = "market.familiar.testnet";
   const exact = {

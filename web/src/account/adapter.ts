@@ -1,9 +1,15 @@
 import { base64Decode, base64Encode, decodeSignedTransaction, encodeTransaction, KeyType, PublicKey, Signature, SignedTransaction, type JsonRpcProvider, type Transaction } from "near-api-js";
-import type { GoogleSession } from "../auth";
 import type { PlayerBinding } from "../tidebound/domain";
 import { AUTH_ISSUER, validateAuthRequest } from "./signing-request";
 import { isPlayerAccount, usernameAccountId, UsernameError, type UsernameAvailability } from "./names";
 
+export type GoogleSession = {
+  publicKey: string;
+  userId: string;
+  clientId: string;
+  requestSignature(bytes: Uint8Array): Promise<unknown>;
+  signatureBytes(value: unknown): Uint8Array;
+};
 export type AccountSession = GoogleSession & { endSession():Promise<void> };
 export interface CredentialBinding { namespace:"near-auth"|"privy"; issuer:string; subject:string; kind:"google"|"email"|"synced-passkey"; signerBindingId:string }
 export interface PlayerIdentityRecord { playerId:string; credentials:readonly CredentialBinding[]; wallets:readonly PlayerBinding[] }

@@ -10,7 +10,6 @@
     "harbor.png": "harbor_stage",
     "tidekeeper.png": "guardian_clean",
     "lens.png": "motion_lens",
-    "mochi-step.png": "motion_mochi_step",
     "wave.png": "motion_wave",
     "mochi.png": "Reused mochi-idle-candidate.png from approved production concept package",
     "bram.png": "Reused bram-idle-candidate.png from approved production concept package",
@@ -20,6 +19,9 @@
     "mochi-walk-source.png": "Generated four-pose Mochi walking refinement source sheet (1254×1254)",
     "mochi-poses.webp": "Runtime registered 4×4 Mochi atlas (1024×1024)",
     "mochi-contact-b-source.png": "Focused opposite planted walk contact correction (1312×1199)"
+  },
+  "archivedSources": {
+    "mochi-step.png": { "promptId": "motion_mochi_step", "sha256": "b17d4c4fd463387a03926f74f0471a443ab85e834e12bea54e730a66269295fc" }
   },
   "prompts": [
     {

@@ -93,9 +93,13 @@ async function runtimeFixture() {
   for(const path of [...RUNTIME_WEBPS,...RUNTIME_METADATA,...BRAND_ASSETS]){await mkdir(dirname(join(source,path)),{recursive:true});await writeFile(join(source,path),/\.(?:json|webmanifest)$/.test(path)?'{}':`committed bytes for ${path}`);}
   return {...f,source};
 }
-test("the redesigned court ships its actual environment sprites and generation provenance",()=>{
-  for(const name of ["tide-court","stone-island","wooden-bridge"])
-    expect(RUNTIME_WEBPS).toContain(`assets/expedition/${name}.webp`);
+test("the public package ships the optimized sprites while their full-size inputs stay in source",()=>{
+  expect(RUNTIME_WEBPS).toHaveLength(19);
+  for(const name of ["tide-court","stone-island","wooden-bridge","bram","shell","wave"]){
+    expect(RUNTIME_WEBPS).toContain(`assets/expedition/runtime/${name}.webp`);
+    expect(RUNTIME_WEBPS).not.toContain(`assets/expedition/${name}.webp`);
+    expect(RUNTIME_WEBPS).not.toContain(`assets/first-light-motion/${name}.webp`);
+  }
   expect(RUNTIME_METADATA).toContain("assets/expedition/provenance.json");
 });
 test("current art, complete provenance and Wind Gate receipt are copied with hashes",async()=>{

@@ -1,9 +1,16 @@
-.git
-.env
-.env.*
-HANDOFF.md
-.data
-node_modules
-contracts/target
-web/screenshots
-web/dist
+# The relayer image needs only its Bun workspaces and the browser modules it imports.
+**
+!package.json
+!bun.lock
+!services/
+!services/relayer/
+!services/relayer/package.json
+!services/relayer/src/
+!services/relayer/src/**
+!web/
+!web/package.json
+!web/src/
+!web/src/**
+**/node_modules
+**/.env
+**/.env.*

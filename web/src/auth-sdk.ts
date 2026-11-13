@@ -1,5 +1,5 @@
 import "./browser-globals";
-import type { GoogleSession } from "./auth";
+import type { AccountSession } from "./account/adapter";
 
 // The official Auth SDK uses near-api-js 5; only canonical bytes cross into version 7.
 const [
@@ -16,7 +16,7 @@ export async function openRecoverableGoogleSession(
   rpcUrl: string,
   clientId: string,
   mode: "authenticate" | "restore" = "authenticate",
-): Promise<(GoogleSession & { endSession(): Promise<void> }) | null> {
+): Promise<AccountSession | null> {
   const provider = new JavascriptProvider({ network: "testnet", clientId });
   const { connection } = await connect({
     networkId: "testnet",
@@ -83,10 +83,4 @@ export async function openRecoverableGoogleSession(
       }).recover("ed25519");
     },
   };
-}
-
-export async function openGoogleSession(rpcUrl: string, clientId: string): Promise<GoogleSession> {
-  const session = await openRecoverableGoogleSession(rpcUrl, clientId);
-  if (!session) throw new Error("Google authentication did not finish");
-  return session;
 }

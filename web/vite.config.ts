@@ -9,10 +9,6 @@ export default defineConfig({
         target: "http://127.0.0.1:3037",
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
-      "/npc-api": {
-        target: "http://127.0.0.1:3038",
-        rewrite: (path) => path.replace(/^\/npc-api/, ""),
-      },
     },
   },
   build: {

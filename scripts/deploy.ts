@@ -10,10 +10,9 @@ import {
   teraToGas,
   type KeyPairString,
 } from "near-api-js";
-import { savings } from "../web/src/near";
 import { accountId } from "../services/relayer/src/relay";
 import legacy from "../docs/TESTNET-DEPLOYMENT.json";
-import { assertIsolatedTidebound, assertTideboundProtocol, assertQuoteKey } from "./deployment";
+import { assertIsolatedTidebound, assertTideboundProtocol, assertQuoteKey, savings } from "./deployment";
 
 if (process.env.NEAR_NETWORK !== "testnet")
   throw new Error("Deployment accepts NEAR_NETWORK=testnet only.");
