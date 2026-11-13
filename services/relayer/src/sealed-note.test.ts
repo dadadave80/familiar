@@ -180,6 +180,6 @@ test("a request that starts too late for a full completion is refused without ch
   const counting:NoteFetch=async url=>{sent++;return new Response(url.endsWith("/chat/completions")?completion:signature);};
   const relay=direct(counting);
   const late=await relay.write({...input,startedAt:Date.now()-NOTE_DEADLINE_MS+SIGNATURE_WINDOW_MS+1_000});
-  expect(late.status).toBe(503);expect(sent).toBe(0);
+  expect(late.status).toBe(503);expect(late.body).toMatchObject({code:"NOTE_LATE"});expect(sent).toBe(0);
   for(let i=0;i<3;i++)expect((await relay.write(input)).status).toBe(200);
 });

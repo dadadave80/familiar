@@ -21,6 +21,7 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
   const [note,setNote]=useState<Note|null>(stored);
   const [busy,setBusy]=useState(false);
   const [announcement,setAnnouncement]=useState("");
+  const [retryFailed,setRetryFailed]=useState<string|null>(null);
   const paper=useRef<HTMLElement>(null),focusPaper=useRef(false);
   const alive=useRef(true);useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
   useEffect(()=>{setNote(stored());},[keyList,store]);
@@ -36,7 +37,10 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
     }catch{result={state:"broken",back:{model:"",attestation:"",verifiedIn:"",reason:"The note could not be opened."}};}
     // Only finished outcomes are kept. Broken and unrecorded notes can be asked for again.
     if(result.state==="sealed"||result.state==="plain")try{store?.setItem(key!,JSON.stringify(result));}catch{ /* The note still shows for this visit. */ }
-    if(alive.current){focusPaper.current=true;setNote(result);setBusy(false);setAnnouncement(ANNOUNCE[result.state]);}
+    if(!alive.current)return;
+    // A failed retry never replaces a note the player can already read.
+    if(result.state==="broken"&&note&&note.state!=="broken"){const kept=`No new note this time. ${result.back.reason??"It could not be opened."} The note you have is still here.`;setBusy(false);setRetryFailed(kept);setAnnouncement(kept);return;}
+    focusPaper.current=true;setRetryFailed(null);setNote(result);setBusy(false);setAnnouncement(ANNOUNCE[result.state]);
   }
   const status=<p className="sn-status" role="status">{announcement}</p>;
   if(!note)return <section className="sn" aria-label="Mochi's note">
@@ -66,6 +70,7 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
         {note.state==="unrecorded"&&<button disabled={busy} onClick={()=>void ask()}>{busy?"Mochi is writing…":"Ask for a new note"}</button>}
       </>}
     </article>
+    {retryFailed&&<p className="sn-small">{retryFailed}</p>}
     {facts.model&&<details className="sn-back">
       <summary>Turn the note over</summary>
       <dl>{note.state==="sealed"?<>

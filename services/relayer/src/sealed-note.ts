@@ -103,7 +103,7 @@ export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:No
       if(!account)return {status:409,body:{code:"NOTE_NO_EVENT",error:"Mochi writes after an accepted return."}};
       // Leave room for the signature lookup; refuse before charging anything if the completion would be cut short.
       const completionMs=Math.min(options.completionTimeoutMs??COMPLETION_TIMEOUT_MS,deadline-now()-Math.min(window,SIGNATURE_WINDOW_MS));
-      if(completionMs<Math.min(MIN_COMPLETION_MS,options.completionTimeoutMs??MIN_COMPLETION_MS))return unreachable;
+      if(completionMs<Math.min(MIN_COMPLETION_MS,options.completionTimeoutMs??MIN_COMPLETION_MS))return {status:503,body:{code:"NOTE_LATE",error:"The harbor took too long to answer. Try again."}};
       const day=new Date(now()).toISOString().slice(0,10),dayKey=`${account}:${day}`;
       // Check every allowance first and charge only when all pass, so a refusal never uses up the day.
       if(!daily.allows(dayKey,now()))return {status:429,body:{code:"QUOTA_DAY",error:"Mochi has written today's notes. Try again tomorrow."}};
