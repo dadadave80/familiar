@@ -18,7 +18,7 @@ export const SIGNER_ACTIONS:readonly {receiver:"root"|"items"|"self";method:stri
   {receiver:"root",method:"tidebound_retry_operation",label:"retry an original request"},
   {receiver:"items",method:"mt_transfer",label:"gift a lantern"},
   {receiver:"items",method:"storage_deposit",label:"cover a lantern’s storage"},
-  {receiver:"self",method:"transfer",label:"an empty, zero-value check on your own account"},
+  {receiver:"self",method:"transfer",label:"a zero-value transfer to your own account"},
 ];
 
 const ONES="11111111111111111111111111111111";
