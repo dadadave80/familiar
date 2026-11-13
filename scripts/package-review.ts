@@ -2,6 +2,7 @@ import { copyFile, mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { build } from "vite";
+import { BRAND_ASSETS } from "./package-tidebound-review";
 
 // Only the rendered public edition belongs in a release. The editable plan lives outside Git.
 const book = process.argv[2];
@@ -28,7 +29,7 @@ async function include(from: string, to: string) {
   await copyFile(from, to);
 }
 const assets = join(root, "web/public");
-for (const path of ["pet.svg", "manifest.webmanifest", "outing.webmanifest", "icons/beacon-192.png", "icons/beacon-512.png", "assets/tiny-town.png", "assets/kenney-license.txt"]) {
+for (const path of ["pet.svg", "manifest.webmanifest", "outing.webmanifest", "icons/beacon-192.png", "icons/beacon-512.png", "assets/tiny-town.png", "assets/kenney-license.txt", ...BRAND_ASSETS]) {
   await include(join(assets, path), join(site, path));
 }
 for await (const file of new Bun.Glob("licenses/*.txt").scan(assets)) {

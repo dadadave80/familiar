@@ -13,6 +13,7 @@ export const RUNTIME_WEBPS=[
   ...["harbor","mochi-poses-v1","tidekeeper","shell","lens","moth","wave","bram","tide-court-v2","stone-island-v2","wooden-bridge-v2"].map(name=>`assets/expedition-v2/runtime/${name}.webp`),
 ];
 export const RUNTIME_METADATA=["assets/first-light-motion/wind-gate-v1.webp.json","assets/expedition-v2/provenance.json","assets/expedition-v2/runtime/manifest.json"] as const;
+export const BRAND_ASSETS=["icons/mochi-v2.ico",...[32,180,192,512].map(size=>`icons/mochi-v2-${size}.png`),"social/familiar-harbor-v2.jpg","familiar-v2.webmanifest"];
 const primaryFunction="api/v1/privy/wallet.func";
 const aliases=["api/health.func","api/v1/privy/player.func"] as const;
 const endpoints=[{path:HTTP_PATHS[0],methods:["GET","OPTIONS"]},...HTTP_PATHS.slice(1).map(path=>({path,methods:["POST","OPTIONS"]}))];
@@ -43,16 +44,17 @@ function publicBytes(bytes:Uint8Array,path:string) {
   check(!/PRIVY_APP_SECRET|VITE_PRIVY_APP_SECRET|RELAYER_PRIVATE_KEY|ROOT_PRIVATE_KEY|NPC_ADMIN_PRIVATE_KEY|NPC_PRIVATE_KEY|NEAR_PRIVATE_KEY|-----BEGIN (?:EC |RSA |OPENSSH )?PRIVATE KEY-----[\r\n]+[A-Za-z0-9+/=\r\n]{64,}-----END/.test(new TextDecoder().decode(bytes)),`Server configuration or private key material appears in the static overlay: ${path}`);
 }
 export interface StaticChange {path:string;beforeSha256:string;afterSha256:string}
-/** Add only committed runtime art that the older baseline lacks; never replace its art or provenance. */
+/** Add only approved art and branding that the baseline lacks; never replace its assets. */
 export async function copyRuntimeAssets(sourcePublic:string,destination:string) {
   await physicalDirectory(sourcePublic);await physicalDirectory(join(sourcePublic,"assets"));
   for(const directory of ["first-light-motion","expedition-v2","expedition-v2/runtime"])await physicalDirectory(join(sourcePublic,"assets",directory));
+  for(const directory of ["icons","social"])await physicalDirectory(join(sourcePublic,directory));
   await staticFiles(destination);
   const added:{path:string;sha256:string}[]=[],reused:{path:string;sha256:string}[]=[],writes:{path:string;bytes:Uint8Array}[]=[];
-  for(const path of [...RUNTIME_WEBPS,...RUNTIME_METADATA]) {
+  for(const path of [...RUNTIME_WEBPS,...RUNTIME_METADATA,...BRAND_ASSETS]) {
     const source=join(sourcePublic,path),stat=await lstat(source).catch(error=>{if(error.code==="ENOENT")throw Error(`A required runtime source asset is missing: ${path}`);throw error;});
     check(stat.isFile() && !stat.isSymbolicLink(),`A runtime source asset must be a regular file: ${path}`);
-    const bytes=await readFile(source);if(path.endsWith(".json"))publicBytes(bytes,path);
+    const bytes=await readFile(source);if(/\.(?:json|webmanifest)$/.test(path))publicBytes(bytes,path);
     const previous=await readFile(join(destination,path)).catch(error=>{if(error.code==="ENOENT")return null;throw error;});
     check(!previous || previous.equals(bytes),`A preserved runtime asset differs from source: ${path}`);
     const entry={path,sha256:digest(bytes)};
@@ -161,7 +163,7 @@ async function main() {
   const preserved=baselineStatic.filter(file=>!(GAME_HTML as readonly string[]).includes(file.path));
   for(const file of preserved)check(await hash(join(site,file.path))===file.sha256,`A preserved baseline file changed: ${file.path}`);
   const manifest={mode:"LOCAL_H1_REVIEW_ONLY",origin,baseline,release,network:"testnet",plannedRoot:gameRoot,
-    static:{baselineCount:baselineStatic.length,preservedCount:preserved.length,allowedHtmlReplacementPaths:GAME_HTML,replacedHtml:staticReport.changes,addedFiles:[...runtimeAssets.added,...staticReport.added],runtimeAssets:{allowedWebps:RUNTIME_WEBPS,allowedMetadata:RUNTIME_METADATA,...runtimeAssets},preservedFiles:preserved,recoveryPageUnchanged:true},
+    static:{baselineCount:baselineStatic.length,preservedCount:preserved.length,allowedHtmlReplacementPaths:GAME_HTML,replacedHtml:staticReport.changes,addedFiles:[...runtimeAssets.added,...staticReport.added],runtimeAssets:{allowedWebps:RUNTIME_WEBPS,allowedMetadata:RUNTIME_METADATA,allowedBranding:BRAND_ASSETS,...runtimeAssets},preservedFiles:preserved,recoveryPageUnchanged:true},
     routing:{baselineConfigSha256:digest(configBytes),changed:false,originalFunctionRequestUrlPreserved:true},
     publicBuild:{provider:"privy",tideboundUiEnabled:true,root:gameRoot,relayerUrl:"/api",appIdSha256:digest(new TextEncoder().encode(appId)),environmentFilesLoaded:false},
     privateFunction:{path:primaryFunction,scopeBefore,scopeAfter:"h1",scopeChangedFromRecoveryOnly:scopeBefore==="recovery-only",beforeSha256:oldFunctionSha256,sha256:await hash(join(fn,"index.mjs")),bytes:await Bun.file(join(fn,"index.mjs")).size,runtime:"nodejs24.x",shouldAddHelpers:false,aliases:functionAliases,endpoints,enabledByDefault:false},

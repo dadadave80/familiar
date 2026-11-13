@@ -89,6 +89,6 @@ export function PrivyAccountProvider({children}:Props) {
   if(!appId)return children(null,null);
   return <PrivySdkProvider appId={appId} clientId={clientId||undefined} config={{
     loginMethods:["email"],embeddedWallets:{ethereum:{createOnLogin:"off"},solana:{createOnLogin:"off"}},
-    appearance:{theme:"light",accentColor:"#3f6855",logo:"/icons/beacon-192.png"},
+    appearance:{theme:"light",accentColor:"#3f6855",logo:"/icons/mochi-v2-192.png"},
   }}><PrivyBridge appId={appId}>{children}</PrivyBridge></PrivySdkProvider>;
 }

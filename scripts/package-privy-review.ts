@@ -44,6 +44,8 @@ if(import.meta.main) {
   },build:{outDir:overlay,rollupOptions:{input:{privySpike:join(root,"web/privy-spike/index.html")}}}});
   for(const path of ["assets/first-light-motion/harbor.webp","icons/beacon-192.png"])
     if(await hash(join(site,path))!==await hash(join(root,"web/public",path)))throw Error(`The existing recovery artwork differs: ${path}`);
+  await mkdir(join(overlay,"icons"),{recursive:true});
+  await copyFile(join(root,"web/public/icons/mochi-v2-192.png"),join(overlay,"icons/mochi-v2-192.png"));
   const added=await overlayStatic(overlay,site);
   for(let i=0;i<originals.length;i++)if(await hash(join(site,originals[i]!))!==originalHashes[i])throw Error("The existing static site changed during packaging.");
   const fn=join(output,"functions/api/v1/privy/wallet.func");await mkdir(fn,{recursive:true});

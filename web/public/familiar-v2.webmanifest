@@ -1,0 +1,15 @@
+{
+  "id": "/outing/",
+  "name": "Familiar · First Light",
+  "short_name": "Familiar",
+  "description": "Read the tide with Mochi at Beacon Court and Wind Gate.",
+  "start_url": "/outing/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f0e4",
+  "theme_color": "#f6f0e4",
+  "icons": [
+    { "src": "/icons/mochi-v2-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/mochi-v2-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
