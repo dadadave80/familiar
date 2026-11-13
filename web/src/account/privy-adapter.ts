@@ -74,6 +74,8 @@ export class PrivyAccountAdapter implements RecoverableAccountAdapter {
     const token=await this.options.session.accessToken();this.sameIdentity(identity.id,generation);
     check(token,"Sign in again before requesting your canonical wallet.");return token;
   }
+  /** The current app-scoped session token, for the server to verify identity; never stored. */
+  async accessToken(){const identity=await this.identity();return identity?this.token(identity):null;}
   /** Independent of root deployment, for explicit wallet setup and the sign-only recovery spike. */
   async canonicalWallet(create=false):Promise<PrivyWalletBinding|null> {
     const generation=this.generation,expectedIdentity=this.options.session.identity()?.id;
