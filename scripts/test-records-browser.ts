@@ -79,8 +79,10 @@ try {
     const again=page.getByRole("button",{name:"Check again",exact:true});
     for(let i=0;i<30&&!(await again.evaluate(n=>n===document.activeElement));i++)await page.keyboard.press("Tab");
     await expect(again).toBeFocused();
+    await page.keyboard.press("Enter");await expect.poll(()=>rpc.count).toBe(18);await expect(again).toHaveText("Check again");
+    assert(await panel.evaluate(n=>n.contains(document.activeElement)),"focus stays in the panel after checking again");await expect(again).toBeFocused();
     const scroll=await panel.evaluate(n=>n.scrollWidth<=n.clientWidth);assert(scroll,"no horizontal scroll in the panel");
-    if(shots)for(const [name,at] of [["top",0],["middle",.5],["end",1]] as const){await panel.evaluate((n,f)=>n.scrollTo(0,(n.scrollHeight-n.clientHeight)*f),at);await page.screenshot({path:join(shots,`records-${width}x${height}-${name}.png`)});}
+    if(shots)for(const [name,at] of [["top",0],["middle",.5],["end",1]] as const){await panel.evaluate((n,f)=>n.scrollTo(0,(n.scrollHeight-n.clientHeight)*f),at);await page.waitForTimeout(250);await page.screenshot({path:join(shots,`records-${width}x${height}-${name}.png`)});}
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await page.close();
     console.log(`records ${width}x${height}: live-shape records, keyboard path, 44px targets passed`);
   }

@@ -82,7 +82,7 @@ export function keyRecord(i:{player:string;signerKey:string;provider:"privy"|"ot
     if(!keys.length)lines.push({state:"read",text:`${i.player} has no keys.`});
     for(const k of keys)lines.push({state:"read",text:`${k.public_key===i.signerKey?"This sign-in’s key":"Another key"}: ${permissionText(k)}.`,detail:shortKey(k.public_key)});
   }
-  lines.push({state:"source",text:`Familiar’s signer only prepares these harbor actions: ${SIGNER_ACTIONS.map(a=>a.label).join("; ")}. That list lives in Familiar’s code; the chain enforces only the key permission above.`});
+  lines.push({state:"source",text:`Familiar’s signer only prepares these harbor actions: ${SIGNER_ACTIONS.map(a=>a.label).join("; ")}. That list lives in Familiar’s code; the chain enforces only ${keys?"the key permission above":"your key’s permission, which couldn’t be checked just now"}.`});
   return {kind:"key",title:"The Register’s key line",lines};
 }
 

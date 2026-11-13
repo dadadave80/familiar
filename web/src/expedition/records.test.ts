@@ -71,6 +71,7 @@ test("key line reports the permission exactly and never claims a function-call k
 test("key line without the read or without the sign-in key says so",()=>{
   const failed=keyRecord({player,signerKey:signer,provider:"privy",keys:fail});
   expect(states(failed)).toEqual(["unchecked","source"]);
+  expect(failed.lines[1]!.text).toEndWith("the chain enforces only your key’s permission, which couldn’t be checked just now.");
   expect(texts(failed).join(" ")).not.toContain("Privy wallet");
   const missing=keyRecord({player,signerKey:"ed25519:Elsewhere",provider:"privy",keys:ok(playerKeys)});
   expect(missing.lines[0]).toEqual({state:"finding",text:"The key this sign-in uses isn’t on your account right now."});
