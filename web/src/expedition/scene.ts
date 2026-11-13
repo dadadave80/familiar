@@ -41,6 +41,7 @@ export class ExpeditionScene extends Phaser.Scene {
   private actorShadow!:Phaser.GameObjects.Ellipse;
   private keeper!:Phaser.GameObjects.Image;
   private bram!:Phaser.GameObjects.Image;
+  private signalVane!:Phaser.GameObjects.Image;
   private beam!:Phaser.GameObjects.Graphics;
   private homeProps!:Phaser.GameObjects.Graphics;
   private finds=new Map<Find,Phaser.GameObjects.Image>();
@@ -71,7 +72,17 @@ export class ExpeditionScene extends Phaser.Scene {
     if(this.stopped)return;
     const atlas=this.textures.get("exp-mochi"),source=atlas.getSourceImage() as HTMLImageElement;
     for(let i=0;i<16;i++)atlas.add(i,0,(i%4)*source.width/4,Math.floor(i/4)*source.height/4,source.width/4,source.height/4);
-    const vane=this.add.graphics();vane.lineStyle(7,0x745831).lineBetween(31,8,31,59).lineBetween(7,27,54,27);vane.lineStyle(4,0xe8c677).lineBetween(31,9,31,58).lineBetween(8,27,54,27);vane.fillStyle(0xe8c677).fillTriangle(50,15,50,39,63,27).fillRect(3,18,15,18).fillCircle(31,27,6);vane.generateTexture("exp-vane",64,64);vane.destroy();
+    const vane=this.add.graphics();
+    // The same swallowtail and brass boss travel from cradle to pack to signal post.
+    vane.lineStyle(6,0x4d4031).lineBetween(31,29,31,54).lineBetween(9,29,51,29);
+    vane.lineStyle(3,0xe3b36b).lineBetween(30,29,30,53).lineBetween(9,28,50,28);
+    vane.fillStyle(0x4d4031).fillTriangle(2,9,24,23,22,31).fillTriangle(2,42,22,31,24,23).fillTriangle(43,15,63,28,43,37);
+    vane.fillStyle(0x68877a).fillTriangle(5,13,21,23,20,28).fillTriangle(5,39,20,30,22,26);
+    vane.fillStyle(0xf3c476).fillTriangle(45,18,60,28,45,34);
+    vane.fillStyle(0x534635).fillCircle(31,28,7);
+    vane.fillStyle(0xffda8a).fillCircle(30,27,4);
+    vane.fillStyle(0x4d4031).fillRoundedRect(25,51,12,6,2);
+    vane.generateTexture("exp-vane",64,64);vane.destroy();
     this.backdrop=this.add.image(0,0,"exp-harbor").setOrigin(.5).setDepth(-20);
     this.beam=this.add.graphics().setDepth(-2);
     this.homeProps=this.add.graphics().setDepth(6);
@@ -85,6 +96,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.effects=this.add.graphics().setDepth(20);
     this.keeper=this.add.image(0,0,"exp-keeper").setOrigin(.5,1).setDepth(3);
     this.bram=this.add.image(0,0,"exp-bram").setOrigin(.5,1).setDepth(5);
+    this.signalVane=this.add.image(0,0,"exp-vane").setOrigin(31/64,54/64).setDepth(7).setVisible(false);
     this.actorShadow=this.add.ellipse(0,0,50,13,0x342719,.25).setDepth(7);
     this.actor=this.add.sprite(0,0,"exp-mochi",12).setOrigin(.5,MOCHI_GROUND).setDepth(10);
     this.scale.on("resize",()=>{
@@ -130,6 +142,10 @@ export class ExpeditionScene extends Phaser.Scene {
         void this.tween(this.beam,{alpha:1},620);
         void this.tween(this.bram,{angle:0},440);
       }
+      if(!previous.court&&!snapshot.court&&previous.home.relic==="vane"&&!previous.home.signaled&&snapshot.home.signaled&&!snapshot.reducedMotion){
+        this.signalVane.setAngle(-22);
+        void this.tween(this.signalVane,{angle:0},400);
+      }
     }
   }
   setGated(gated:boolean){this.gated=gated;if(gated)this.presses.clear();if(!this.actor)return;this.input.enabled=!gated;this.time.paused=gated;if(gated)this.tweens.pauseAll();else this.tweens.resumeAll();}
@@ -149,6 +165,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.backdrop.setTexture(court?"exp-court":"exp-harbor","__BASE");
     this.backdrop.setPosition(this.w/2,this.h/2);this.fit(this.backdrop,this.w,this.h);
     this.keeper.setVisible(!!court);this.bram.setVisible(!court);this.bridgeArt.setVisible(!!court);
+    this.signalVane.setVisible(!court&&this.snapshot.home.signaled);
     if(!court){this.hooks.geometry([]);this.harbor();return;}
     const f=this.field(),tile=this.tileSize();
     // Fixed short walks connect each bank. Only the long middle crossing changes with a surge.
@@ -199,15 +216,7 @@ export class ExpeditionScene extends Phaser.Scene {
         const find=this.add.image(p.x,p.y-15,`exp-${item}`).setDisplaySize(item==="moth"?51:36,item==="moth"?46:36).setDepth(6);this.finds.set(item,find);
       }
     }
-    if(court.area==="wind"){
-      const vane=this.point({x:1,y:3});this.text(vane.x,vane.y+tile.height*.65,`WHEEL ${court.orientation===0?"ALIGNED":"TURN"}`,Math.min(13,this.w/27));
-      this.wheel.setPosition(vane.x,vane.y-7).setAngle(court.orientation*120);
-      const radius=Math.min(tile.width*.22,36);this.wheel.fillStyle(0x54442b).fillCircle(0,0,radius+3);this.wheel.lineStyle(4,0xe0bc73).strokeCircle(0,0,radius);
-      for(let n=0;n<3;n++){const angle=n*2*Math.PI/3-Math.PI/2;this.wheel.lineBetween(0,0,Math.cos(angle)*radius,Math.sin(angle)*radius);}
-      this.wheel.fillStyle(0xfce0a1).fillTriangle(-7,-radius+6,7,-radius+6,0,-radius-8).fillCircle(0,0,6);
-      const cradle=this.point({x:1,y:4});this.text(cradle.x,cradle.y+tile.height*.8,`CRADLE ${court.orientation===0?"ALIGNED":"LOCKED"}`,Math.min(12,this.w/30));
-      for(const x of [0,1] as const){const p=this.point({x,y:4});this.ground.fillStyle(court.opened.includes(x)?0xffd580:0x8d7861,1);this.ground.fillCircle(p.x,p.y,8);}
-    }
+    if(court.area==="wind")this.windGate(court);
     const p=this.point(court.position);
     this.actor.setPosition(p.x,p.y).setDisplaySize(this.actorSize(),this.actorSize()).setFlipX(false);
     this.actorShadow.setPosition(p.x,p.y+2).setSize(this.actorSize()*.55,Math.max(4,this.actorSize()*.10));
@@ -218,6 +227,51 @@ export class ExpeditionScene extends Phaser.Scene {
   private drawBridge(x:number,y:number,w:number,h:number){
     // Native3:1 bridge stays undistorted; transparent ends overlap the two landing stones.
     const length=h*1.36;this.bridgeArt.setPosition(x,y).setDisplaySize(length/3,length);
+  }
+  private windGate(court:CourtState){
+    const {width}=this.tileSize(),f=this.field(),stone=this.point({x:1,y:3});
+    const radius=Math.max(9,Math.min(30,width*.20,f.dy*.34));
+    const axleX=stone.x-width*.31,axleY=stone.y-radius*.58;
+    const wood=0x594333,leather=0x916941,brass=0xe9c37d,iron=0x495f57,steel=0x91ae97;
+    const base=this.shoreMarks,wheel=this.wheel;
+    base.lineStyle(5,wood).lineBetween(axleX,axleY,axleX-radius*.45,stone.y+5).lineBetween(axleX,axleY,axleX+radius*.45,stone.y+5);
+    base.lineStyle(2,brass).lineBetween(axleX,axleY-radius*1.02,axleX,axleY-radius*1.35);
+    base.fillStyle(0xffe1a0).fillTriangle(axleX-3,axleY-radius*1.34,axleX+3,axleY-radius*1.34,axleX,axleY-radius*1.12);
+    wheel.setPosition(axleX,axleY).setAngle(court.orientation*120);
+    wheel.fillStyle(wood).fillCircle(0,0,radius*1.06).fillStyle(iron).fillCircle(0,0,radius*.91);
+    wheel.lineStyle(2,steel).strokeCircle(0,0,radius*.90);
+    for(let index=0;index<3;index++){
+      const angle=index*Math.PI*2/3-Math.PI/2,dx=Math.cos(angle),dy=Math.sin(angle);
+      wheel.fillStyle(index===0?brass:leather).fillTriangle(
+        dx*radius*.16,dy*radius*.16,
+        (dx*.90-dy*.09)*radius,(dy*.90+dx*.09)*radius,
+        (dx*.68+dy*.40)*radius,(dy*.68-dx*.40)*radius,
+      );
+      wheel.lineStyle(2,0x544433).lineBetween(dx*radius*.20,dy*radius*.20,dx*radius*.84,dy*radius*.84);
+      wheel.fillStyle(index===0?0xffe8a6:brass).fillCircle(dx*radius*.77,dy*radius*.77,Math.max(1.7,radius*.09));
+    }
+    wheel.fillStyle(wood).fillCircle(0,0,radius*.25).fillStyle(brass).fillCircle(-1,-1,radius*.15);
+    const cradle=this.point({x:1,y:4});
+    const hasVane=court.banked.includes("vane")||court.cargo.includes("vane");
+    const ready=findPosition(court,"vane")!==null;
+    const rackWidth=Math.min(24,width*.17),rackY=cradle.y-2;
+    base.fillStyle(wood).fillRoundedRect(cradle.x-rackWidth,rackY-3,rackWidth*2,7,2);
+    for(const side of [-1,1]){
+      const x=cradle.x+side*rackWidth*.72;
+      base.lineStyle(4,wood).lineBetween(x,rackY,x+side*(ready||hasVane?4:-2),rackY-9);
+      base.fillStyle(brass).fillCircle(x,rackY,1.5);
+    }
+    const compact=this.h<540;
+    if(!compact)this.text(cradle.x,cradle.y+Math.min(30,f.dy*.28),hasVane?"EMPTY CRADLE":ready?"VANE READY":"VANE CRADLE",Math.min(12,this.w/30));
+    for(const column of [0,1] as const){
+      const p=this.point({x:column,y:4});
+      const x=p.x+(column===1?.33:-.12)*width,y=p.y-2,r=Math.max(5,Math.min(12,width*.10));
+      const charged=court.opened.includes(column);
+      base.fillStyle(wood).fillEllipse(x,y+2,r*2.18,r*2);
+      base.fillStyle(brass).fillCircle(x,y,r).fillStyle(charged?0x457568:0x4a5148).fillCircle(x,y,r*.75);
+      if(charged)base.lineStyle(2,0xffedbc).lineBetween(x-r*.44,y,x-r*.1,y+r*.32).lineBetween(x-r*.1,y+r*.32,x+r*.44,y-r*.4);
+      else base.lineStyle(1.5,0xc5b28b).lineBetween(x-r*.36,y,x+r*.36,y);
+    }
   }
   private platform(x:number,y:number,w:number,charged:boolean){
       this.ground.fillStyle(0x183c3d,.22).fillEllipse(x,y+w*.1,w*1.05,w*.18);
@@ -241,7 +295,12 @@ export class ExpeditionScene extends Phaser.Scene {
     const mark=this.point({x:source,y:4}),sourceY=f.top+Math.min(27,f.dy*.44);
     this.forecast.lineStyle(3,0x4e4534).strokeCircle(mark.x,sourceY,8);
     this.forecast.lineStyle(2,0xffdf96).strokeCircle(mark.x,sourceY,6);
-    if(source!==exit)this.forecast.lineBetween(mark.x,sourceY,p.x,sourceY);
+    if(source!==exit){
+      const tip=p.x-Math.sign(p.x-mark.x)*9,tail=tip-Math.sign(p.x-mark.x)*8;
+      this.forecast.lineStyle(4,0x424b40,.9).lineBetween(mark.x,sourceY,tip,sourceY);
+      this.forecast.lineStyle(2,0xffdd91).lineBetween(mark.x,sourceY,tip,sourceY);
+      this.forecast.fillStyle(0xffdd91).fillTriangle(tip,sourceY,tail,sourceY-4,tail,sourceY+4);
+    }
     const lanes=["L","C","R"];
     const label=source===exit?`IN + OUT · ${["LEFT","CENTER","RIGHT"][exit]}`:`IN ${lanes[source]} → OUT ${lanes[exit]}`;
     this.forecastLabel.setPosition(p.x,this.h<500?f.top+35:f.top-46).setFontSize(Math.min(14,this.w/27)).setText(label).setVisible(true);
@@ -298,8 +357,22 @@ export class ExpeditionScene extends Phaser.Scene {
       this.addHomeFind("moth",perchX,groundY-actorSize*.76,Math.min(45,actorSize*.30));
       this.pose("look-right");
     }
-    if(this.snapshot.home.relic)this.addHomeFind(this.snapshot.home.relic,this.actor.x-15,groundY-actorSize*.34,26);
-    if(this.snapshot.home.lit){const x=portrait?this.w*.78:this.w*.73,y=portrait?groundY+8:this.h*.79;this.homeProps.lineStyle(6,0x795a37).lineBetween(x,y,x,y-80);this.homeProps.lineStyle(2,0xead2a0).lineBetween(x-3,y-2,x-3,y-80);if(this.snapshot.home.signaled)this.addHomeFind("vane",x,y-83,53);}
+    if(this.snapshot.home.relic){
+      const item=this.snapshot.home.relic,size=item==="vane"?Math.max(31,actorSize*.33):26;
+      this.addHomeFind(item,this.actor.x+(item==="vane"?.31:-.31)*actorSize,groundY-actorSize*.42,size);
+    }
+    if(this.snapshot.home.lit){
+      const x=portrait?this.w*.78:this.w*.70,y=portrait?groundY+8:this.h*.79;
+      const height=Math.min(93,Math.max(63,this.h*.103)),top=y-height;
+      const g=this.homeProps;
+      g.fillStyle(0x60452e).fillRoundedRect(x-5,top,10,height,2);
+      g.lineStyle(2,0xc39660).lineBetween(x-2,top+3,x-2,y-4);
+      g.fillStyle(0x766346).fillRoundedRect(x-7,top,14,7,2).fillRect(x-6,top+height*.66,12,4);
+      if(this.snapshot.home.signaled){
+        this.signalVane.setPosition(x,top+3).setDisplaySize(height*.73,height*.73);
+        this.actor.setFlipX(false);this.pose("look-right");
+      }
+    }
     if(this.snapshot.home.lantern){
       const porch=this.snapshot.home.socket==="porch",x=portrait?this.w*(porch?.72:.40):this.w*(porch?.19:.67),y=portrait?groundY+(porch?-25:30):this.h*(porch?.69:.84),g=this.homeProps;
       const frame=this.snapshot.home.polished?0x507e6c:0x8f6e3b;g.lineStyle(3,frame).strokeEllipse(x,y-35,16,17).fillStyle(frame).fillRoundedRect(x-15,y-32,30,40,5);
@@ -308,7 +381,7 @@ export class ExpeditionScene extends Phaser.Scene {
       else for(const offset of [-18,-9])g.lineBetween(x-8,y+offset,x-3,y+offset-3).lineBetween(x-3,y+offset-3,x+3,y+offset+3).lineBetween(x+3,y+offset+3,x+8,y+offset);
     }
   }
-  private addHomeFind(item:Find,x:number,y:number,size:number){const image=this.add.image(x,y,`exp-${item}`).setDisplaySize(size,size).setDepth(7);this.cargo.push(image);}
+  private addHomeFind(item:Find,x:number,y:number,size:number){const image=this.add.image(x,y,`exp-${item}`).setDisplaySize(size,size).setDepth(item==="vane"?11:7);this.cargo.push(image);}
   private async tween(targets:object,config:Omit<Phaser.Types.Tweens.TweenBuilderConfig,"targets">,duration:number){
     if(this.stopped)return;await new Promise<void>(resolve=>this.tweens.add({...config,targets,duration:this.snapshot.reducedMotion?Math.min(duration,70):duration,ease:"Sine.easeInOut",onComplete:()=>resolve()}));
   }
@@ -359,7 +432,15 @@ export class ExpeditionScene extends Phaser.Scene {
       }
       case "telegraph":this.visual={...this.visual!,locked:event.column};this.pose("brace");this.drawForecast(this.visual);await this.hold(180);break;
       case "redirect":{this.pose("reach-left");const point=this.point({x:event.to,y:3});const light=this.add.circle(this.actor.x,this.actor.y-25,12,0xffdd8c,.95).setDepth(15);await this.tween(light,{x:point.x,y:point.y,alpha:.15},280);light.destroy();this.visual={...this.visual!,locked:event.to};this.drawForecast(this.visual);break;}
-      case "rotate":this.pose("reach-left");await this.tween(this.wheel,{angle:(event.from+1)*120},260);this.visual={...this.visual!,orientation:event.to};this.layout();break;
+      case "rotate":{
+        this.actor.setFlipX(false);this.pose("reach-ready");await this.hold(45);
+        this.pose("reach-left");
+        // Angle normalizes to ±180°. Animate rotation from the current value so every detent advances clockwise.
+        const start=this.wheel.rotation;
+        await this.tween(this.wheel,{rotation:start+Math.PI*2/3},205);
+        this.pose("pull-in");await this.hold(45);
+        this.visual={...this.visual!,orientation:event.to};this.layout();break;
+      }
       case "wave":{
         this.pose("brace");const f=this.field(),point=this.point({x:event.source,y:4}),exit=this.point({x:event.exit,y:4});const wave=this.add.image(point.x,f.top-70,"exp-wave").setDisplaySize(this.tileSize().width*1.15,90).setAlpha(.2).setDepth(14);
         if(event.source!==event.exit)await this.tween(wave,{x:exit.x,y:f.top+f.dy*.55,alpha:.8},165);
@@ -374,7 +455,13 @@ export class ExpeditionScene extends Phaser.Scene {
         await this.tween(this.bridgeArt,{angle:0,y:berth.y,alpha:1},70);
         this.visual={...this.visual!,bridge:event.to};this.layout();break;
       }
-      case "open":{const shell=this.shells.get(event.column);if(shell)await this.tween(shell,{y:shell.y+15,scaleX:shell.scaleX*1.25,scaleY:shell.scaleY*.55,alpha:.35},230);this.visual={...this.visual!,opened:[...new Set([...this.visual!.opened,event.column])]};this.layout();break;}
+      case "open":{
+        const shell=this.shells.get(event.column);
+        if(shell)await this.tween(shell,{y:shell.y+15,scaleX:shell.scaleX*1.25,scaleY:shell.scaleY*.55,alpha:.35},230);
+        this.visual={...this.visual!,opened:[...new Set([...this.visual!.opened,event.column])]};this.layout();
+        if(this.visual.area==="wind")await this.hold(110);
+        break;
+      }
       case "hit":{this.pose("startled");const p=this.point(event.to);await this.tween(this.actor,{x:p.x,y:p.y,onUpdate:()=>this.followActor()},215);this.visual={...this.visual!,position:event.to,resolve:event.resolve};this.layout();this.pose("relieved");break;}
       case "pickup":{
         const from=this.point(event.from);

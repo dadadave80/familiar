@@ -8,6 +8,13 @@
 }
 .exp-inspect-position dt { font-size: .8rem; font-weight: 700; color: #485843; }
 .exp-inspect-position dd { margin: .15rem 0 0; }
+.exp-inspect-wheel { margin: 0 0 1.35rem; }
+.exp-inspect-wheel table { width: 100%; border-collapse: collapse; text-align: left; }
+.exp-inspect-wheel caption { font-weight: 750; text-align: left; padding-bottom: .3rem; }
+.exp-inspect-wheel th, .exp-inspect-wheel td { padding: .15rem .35rem .15rem 0; }
+.exp-inspect-wheel thead { color: #46553f; font-size: .85rem; border-bottom: 1px solid #b6a079; }
+.exp-inspect-wheel small { font-weight: 500; }
+.exp-inspect .exp-inspect-wheel p { margin: .4rem 0 0; }
 .exp-inspect-actions > div { display: flex; flex-wrap: wrap; gap: .35rem; }
 .exp-inspect-actions button[aria-pressed="true"],
 .exp-inspect-actions button[aria-pressed="true"]:hover {

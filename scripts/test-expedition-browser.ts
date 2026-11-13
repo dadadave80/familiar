@@ -115,7 +115,11 @@ try{
         await page.getByRole("button",{name:/Change preparation/}).click();await page.getByRole("radio",{name:"Wind Gate",exact:true}).check();await page.getByRole("button",{name:"Sail to Wind Gate",exact:true}).click();
         const wind=startCourt({area:"wind",tool:"rope",banked:["lens","moth"]}),route=solveCourt(wind,["vane"],{dry:true})!;
         await playRoute(page,route.commands,wind,`${width}-wind`);await record(page,`${width}-wind-returned`);
-        await page.getByRole("button",{name:/Beacon Light restored/}).click();await page.getByRole("button",{name:"Repair the signal post",exact:true}).click();
+        await page.getByRole("button",{name:"Fit the Signal Vane",exact:true}).click();
+        await expect(page.getByRole("heading",{name:"One missing piece."})).toBeVisible();
+        await page.getByRole("button",{name:"Repair the signal post",exact:true}).click();
+        await expect(page.getByRole("heading",{name:"The harbor finds its bearings."})).toBeVisible();
+        await record(page,`${width}-wind-repaired`);
         assert((await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),saveKey)).home.signaled,"Wind goal changes the returned harbor");
       }
     }

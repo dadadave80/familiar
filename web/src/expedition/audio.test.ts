@@ -46,6 +46,24 @@ test("crossing the plank and walking on stone sound different in both travel dir
   expect(step(1,3)).toEqual(step(3,1));
 });
 
+test("Wind Gate distinguishes the routed exit, charged channel, alignment detent and brass vane",()=>{
+  const wave = (source:0|1|2,exit:0|1|2) => soundRecipe({kind:"wave",source,exit},"wind");
+  const leftToCenter=wave(0,1).find(layer=>layer.to!==undefined);
+  const centerToLeft=wave(1,0).find(layer=>layer.to!==undefined);
+  if(leftToCenter?.to===undefined||centerToLeft?.to===undefined)throw Error("A routed wave needs a source and exit pitch");
+  expect(leftToCenter.frequency).toBe(centerToLeft.to);
+  expect(leftToCenter.to).toBe(centerToLeft.frequency);
+  expect(leftToCenter.frequency).not.toBe(leftToCenter.to);
+  expect(wave(0,0)).not.toEqual(soundRecipe({kind:"wave",source:0,exit:0},"beacon"));
+  const left=soundRecipe({kind:"open",column:0},"wind"),center=soundRecipe({kind:"open",column:1},"wind");
+  expect(left).not.toEqual(center);
+  expect(left).not.toEqual(soundRecipe({kind:"open",column:0}));
+  expect(soundRecipe({kind:"rotate",from:2,to:0})).not.toEqual(soundRecipe({kind:"rotate",from:0,to:1}));
+  const lift=(item:"vane"|"lens",rope=false)=>soundRecipe({kind:"pickup",item,rope,from:{x:1,y:4}},"wind");
+  expect(lift("vane")).not.toEqual(lift("lens"));
+  expect(lift("vane",true)).not.toEqual(lift("vane"));
+});
+
 test("music phrases replace one another, mix independently and stop on mute",async()=>{
   const oscillators:{stops:number[];starts:number[]}[]=[];
   const param=()=>({value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){},setTargetAtTime(){},cancelAndHoldAtTime(){}});
@@ -78,6 +96,15 @@ test("music phrases replace one another, mix independently and stop on mute",asy
   expect(oscillators.length).toBeGreaterThan(untilDeparture);
   audio.setMix(1,1);
   audio.playMusic("beacon");
+  const untilWind=oscillators.length;
+  audio.playMusic("wind-departure");
+  const wind=oscillators.slice(untilWind);
+  expect(wind.length).toBeGreaterThan(1);
+  const untilSignal=oscillators.length;
+  audio.playMusic("signal");
+  const signal=oscillators.slice(untilSignal);
+  expect(signal.length).toBeGreaterThan(wind.length);
+  expect(Math.max(...signal.flatMap(source=>source.starts))).toBeGreaterThan(Math.max(...wind.flatMap(source=>source.starts))+1);
   const sounding=oscillators.length;
   await audio.setEnabled(false);
   expect(oscillators.every(source=>source.stops.length>=2)).toBe(true);
