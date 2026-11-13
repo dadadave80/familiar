@@ -10,6 +10,7 @@ class BootBoundary extends React.Component<{children:React.ReactNode},{failed:bo
 async function entry() {
   const path = window.location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "");
   if (path === "" || path === "/plan" || path.startsWith("/plan/")) return (await import("./landing/Landing")).Landing;
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("storyboard")) return (await import("./opening/Storyboard")).default;
   const game=Promise.all([import("./expedition/Game"),import("./expedition/harbor-session")]);
   // `?play` skips the title screen (browser tests and direct links into play).
   if(new URLSearchParams(window.location.search).has("play")){

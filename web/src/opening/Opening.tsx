@@ -10,7 +10,7 @@ import "./opening.css";
 const ART = "/assets/expedition/runtime/";
 const cache = new Map<string, CSSProperties>();
 /** Inline style string -> React style object, so the markup stays close to the design file. */
-function sx(text: string): CSSProperties {
+export function sx(text: string): CSSProperties {
   let style = cache.get(text);
   if (!style) {
     style = Object.fromEntries(text.split(";").filter(d => d.includes(":")).map(d => {
@@ -33,6 +33,8 @@ interface Props {
   onDone(): void;
   beat?: OpeningBeat;
   attractDelay?: number;
+  /** Fill the parent box instead of the viewport (storyboard frames). */
+  framed?: boolean;
 }
 interface State { prompt: string; sound: boolean; scroll: "" | "tide" | "options" | "credits"; music: number; effects: number; cap1: string; cap2: string; lane: string }
 type Ease = "lin" | "io" | "out" | "in" | "back";
@@ -406,7 +408,7 @@ export default class Opening extends Component<Props, State> {
       </button>));
     const scrollTitle = st.scroll ? LABEL[st.scroll] : "";
     return (
-      <div className="familiar-opening">
+      <div className={this.props.framed ? "familiar-opening framed" : "familiar-opening"}>
         <div ref={this.setRoot} data-screen-label="Opening" data-testid="opening" onPointerDown={this.onTap} style={sx("position:absolute;inset:0;overflow:hidden;background:#304e40;container-type:size;font-family:'Figtree Variable',sans-serif;color:#fff1d1;user-select:none;touch-action:manipulation;cursor:default")}>
           <div data-el="world" style={sx("position:absolute;left:0;top:0;width:1536px;height:1024px;transform-origin:0 0;will-change:transform")}>
             <img src={ART + "harbor.webp"} alt="" draggable={false} style={sx("position:absolute;left:0;top:0;width:1536px;height:1024px;display:block")} />
