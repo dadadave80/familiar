@@ -55,8 +55,16 @@ console.log("\nKEY  What the player's key can do (reported, not claimed)");
 for (const k of await keys(PLAYER)) note(`${PLAYER} ${k.public_key.slice(0, 16)}… ${perm(k)}`);
 note("Who holds the key (Privy) is not visible on chain; it comes from the source (web/src/account/privy-adapter.ts). The method limit is in Familiar's signer (services/relayer/src/auth/sign.ts), not on chain.");
 
+console.log("\nSEASON  Season 2 shelf runs the reviewed code (state only; no trade claimed)");
+const SEASON = `season.${ROOT}`;
+const SEASON_CODE = process.env.JUDGE_SEASON_CODE ?? "3FbynwMm2uWs8bahXSCoqDdrKsEJ1on6rR1C277hXNzy";
+const seasonAccount = await account(SEASON);
+check(seasonAccount.code_hash === SEASON_CODE, `${SEASON} runs ${seasonAccount.code_hash} (built by scripts/build-contracts.sh on feat/season-two)`);
+const shelf = await view(SEASON, "get_shelf");
+note(`Bram's till ${shelf.till} Shells; ${shelf.goods.map((g: { good: string; stock: number; buy_price: number }) => `${g.good} ${g.stock} @ ${g.buy_price}`).join(", ")}`);
+
 console.log("\nADMIN  Keys that still control the stack (disclosed)");
-for (const id of [ROOT, ITEMS]) {
+for (const id of [ROOT, ITEMS, `season.${ROOT}`]) {
   const [a, k] = await Promise.all([account(id), keys(id)]);
   note(`${id} code ${a.code_hash}; keys: ${k.map(x => `${x.public_key.slice(0, 16)}… ${perm(x)}`).join("; ")}`);
 }
