@@ -43,8 +43,10 @@ export function validateNativeIntent(tx:Transaction,context:Pick<AuthSigningCont
     case "adopt": fields(a,["name"]); check(typeof a.name==="string" && validName(a.name)); break;
     case "tidebound_claim": {
       fields(a,["token_id","operation_id","expected_revision","initial_checkpoint_hash","rules_version","content_version","tool","commands","area"]);
-      check(token(a.token_id) && bounded(a.operation_id) && revision(a.expected_revision) && bounded(a.initial_checkpoint_hash) && a.rules_version==="tidebound_h1_v1" && a.content_version==="first_light_v1" && isTool(a.tool) && (a.area==="beacon" || a.area==="wind"));
-      check(Array.isArray(a.commands) && a.commands.length<=ACTION_LIMIT && a.commands.every(c=>typeof c==="string" && /^(wait|return|turn:vane|move:(left|center|right)|lure:(left|center|right)|take:(lens|moth|chart|salvage|vane)|reel:(lens|salvage|vane))$/.test(c)));
+      check(token(a.token_id) && bounded(a.operation_id,64) && revision(a.expected_revision) && bounded(a.initial_checkpoint_hash) && a.rules_version==="tidebound_h1_v1" && ["first_light_v1","first_light_v2"].includes(a.content_version as string) && isTool(a.tool) && (a.area==="beacon" || a.area==="wind"));
+      const v2=a.content_version==="first_light_v2";
+      const command=v2?/^(wait|return|turn:vane|step:(north|south|west|east)|lure:(left|center|right)|take:(lens|moth|vane)|reel:(lens|vane))$/:/^(wait|return|turn:vane|move:(left|center|right)|lure:(left|center|right)|take:(lens|moth|chart|salvage|vane)|reel:(lens|salvage|vane))$/;
+      check(Array.isArray(a.commands) && a.commands.length<=(v2?24:ACTION_LIMIT) && a.commands.every(c=>typeof c==="string" && command.test(c)));
       break;
     }
     case "tidebound_craft": fields(a,["token_id","motif","origin_claim_id"]); check(token(a.token_id) && (a.motif==="crest" || a.motif==="moth") && bounded(a.origin_claim_id)); break;

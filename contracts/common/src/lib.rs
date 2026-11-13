@@ -1,4 +1,5 @@
 pub mod expedition;
+pub mod expedition_v2;
 pub mod rules;
 pub mod storycraft;
 use near_sdk::{

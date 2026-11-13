@@ -2,6 +2,11 @@ use near_sdk::{AccountId, env, near, serde::Serialize, serde_json};
 
 pub const RULES_VERSION: &str = "tidebound_h1_v1";
 pub const CONTENT_VERSION: &str = "first_light_v1";
+pub const CONTENT_VERSION_V2: &str = "first_light_v2";
+pub const SUPPORTED_CONTENT_VERSIONS: [&str; 2] = [CONTENT_VERSION, CONTENT_VERSION_V2];
+pub fn supported_content_version(content: &str) -> bool {
+    SUPPORTED_CONTENT_VERSIONS.contains(&content)
+}
 pub const RECIPE: &str = "first_light_lantern_v1";
 pub const CRAFT_STORAGE_FUND: u128 = crate::rules::YOCTO * 8 / 100;
 pub const JOURNEY_STORAGE_BYTES: u64 = 8_192;
@@ -54,6 +59,20 @@ pub fn mint_evidence(
     origin_claim_id: &str,
     motif: &str,
 ) -> MintEvidence {
+    mint_evidence_for_content(items, root, maker, origin_claim_id, motif, CONTENT_VERSION)
+        .expect("fixed v1 content is supported")
+}
+pub fn mint_evidence_for_content(
+    items: &AccountId,
+    root: &AccountId,
+    maker: &AccountId,
+    origin_claim_id: &str,
+    motif: &str,
+    content_version: &str,
+) -> Option<MintEvidence> {
+    if !supported_content_version(content_version) {
+        return None;
+    }
     let id = craft_id(root, maker);
     let token_id = format!(
         "lantern:{}",
@@ -71,9 +90,9 @@ pub fn mint_evidence(
         RECIPE,
         motif,
         RULES_VERSION,
-        CONTENT_VERSION,
+        content_version,
     ));
-    MintEvidence {
+    Some(MintEvidence {
         id,
         token_id,
         maker: maker.clone(),
@@ -81,8 +100,8 @@ pub fn mint_evidence(
         motif: motif.into(),
         input_hash,
         rules_version: RULES_VERSION.into(),
-        content_version: CONTENT_VERSION.into(),
-    }
+        content_version: content_version.into(),
+    })
 }
 pub fn polish_evidence(
     items: &AccountId,
@@ -141,4 +160,41 @@ pub fn polish_fence_id(items: &AccountId, root: &AccountId, operation: &PolishEv
         &operation.token_id,
         operation.expected_appearance,
     ))
+}
+
+#[cfg(test)]
+mod content_tests {
+    use super::*;
+    #[test]
+    fn actual_v1_provenance_hash_stays_exact_and_v2_never_resets_entitlement_identity() {
+        let root: AccountId = "familiar-game.testnet".parse().unwrap();
+        let items = "items.familiar-game.testnet".parse().unwrap();
+        let maker = "qa-maker-h1.familiar-game.testnet".parse().unwrap();
+        let origin = "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5";
+        let old = mint_evidence(&items, &root, &maker, origin, "crest");
+        assert_eq!(
+            old.id,
+            "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d"
+        );
+        assert_eq!(
+            old.token_id,
+            "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce"
+        );
+        assert_eq!(
+            old.input_hash,
+            "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5"
+        );
+        let new =
+            mint_evidence_for_content(&items, &root, &maker, origin, "crest", CONTENT_VERSION_V2)
+                .unwrap();
+        assert_eq!(new.id, old.id);
+        assert_eq!(new.token_id, old.token_id);
+        assert_eq!(new.rules_version, old.rules_version);
+        assert_ne!(new.input_hash, old.input_hash);
+        assert_eq!(new.content_version, CONTENT_VERSION_V2);
+        assert!(
+            mint_evidence_for_content(&items, &root, &maker, origin, "crest", "first_light_v3")
+                .is_none()
+        );
+    }
 }

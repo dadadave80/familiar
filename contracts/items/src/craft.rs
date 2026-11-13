@@ -21,7 +21,7 @@ impl Contract {
                 && self.registry.as_str().ends_with(".testnet"),
             "ERR_TESTNET_ONLY"
         );
-        json!({"network":"testnet","rules_version":RULES_VERSION,"content_version":CONTENT_VERSION,"registry":self.registry})
+        json!({"network":"testnet","rules_version":RULES_VERSION,"content_version":CONTENT_VERSION,"supported_content_versions":SUPPORTED_CONTENT_VERSIONS,"registry":self.registry})
     }
     #[payable]
     pub fn craft_mint(&mut self, operation: MintEvidence) -> MintEvidence {
@@ -40,13 +40,15 @@ impl Contract {
                 && matches!(operation.motif.as_str(), "crest" | "moth"),
             "ERR_CRAFT_INPUT"
         );
-        let expected = mint_evidence(
+        let expected = mint_evidence_for_content(
             &env::current_account_id(),
             &self.registry,
             &operation.maker,
             &operation.origin_claim_id,
             &operation.motif,
-        );
+            &operation.content_version,
+        )
+        .unwrap_or_else(|| env::panic_str("ERR_CRAFT_INPUT"));
         require!(operation == expected, "ERR_CRAFT_INPUT");
         require!(
             env::attached_deposit().as_yoctonear() == CRAFT_STORAGE_FUND,
@@ -260,7 +262,7 @@ impl Contract {
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use familiar_common::storycraft::{CRAFT_STORAGE_FUND, MintEvidence, mint_evidence};
+    use familiar_common::storycraft::*;
     use near_sdk::{test_utils::VMContextBuilder, testing_env};
     use near_sdk_contract_tools::mt::Nep245;
 
@@ -349,6 +351,69 @@ mod tests {
         c.craft_mint(input.clone());
         input.origin_claim_id = "different-claim".into();
         ctx("root.testnet", 0);
+        c.craft_mint(input);
+    }
+    #[test]
+    fn supported_v2_mint_is_supply_one_and_keeps_its_actual_content_after_transfer() {
+        let mut c = contract();
+        let input = mint_evidence_for_content(
+            &id("items.root.testnet"),
+            &id("root.testnet"),
+            &id("alice.testnet"),
+            &"b".repeat(64),
+            "crest",
+            CONTENT_VERSION_V2,
+        )
+        .unwrap();
+        assert_eq!(c.craft_protocol()["content_version"], CONTENT_VERSION);
+        assert_eq!(
+            c.craft_protocol()["supported_content_versions"],
+            near_sdk::serde_json::json!(SUPPORTED_CONTENT_VERSIONS)
+        );
+        ctx("root.testnet", CRAFT_STORAGE_FUND);
+        assert_eq!(c.craft_mint(input.clone()), input);
+        assert_eq!(c.supply(&input.token_id), Some(1));
+        ctx("bob.testnet", 0);
+        c.deposit_to_storage_account(
+            &id("bob.testnet"),
+            NearToken::from_yoctonear(ITEM_STORAGE_FUND),
+        )
+        .unwrap();
+        ctx("alice.testnet", 1);
+        c.mt_transfer(
+            id("bob.testnet"),
+            input.token_id.clone(),
+            U128(1),
+            None,
+            None,
+        );
+        ctx("root.testnet", 0);
+        assert_eq!(c.craft_mint(input.clone()), input);
+        assert_eq!(
+            c.craft_item(input.token_id.clone())
+                .unwrap()
+                .mint
+                .content_version,
+            CONTENT_VERSION_V2
+        );
+        assert_eq!(c.supply(&input.token_id), Some(1));
+    }
+    #[test]
+    #[should_panic(expected = "ERR_CRAFT_INPUT")]
+    fn changing_only_v1_content_label_cannot_reinterpret_an_old_metadata_hash() {
+        let mut c = contract();
+        let mut input = evidence();
+        input.content_version = CONTENT_VERSION_V2.into();
+        ctx("root.testnet", CRAFT_STORAGE_FUND);
+        c.craft_mint(input);
+    }
+    #[test]
+    #[should_panic(expected = "ERR_CRAFT_INPUT")]
+    fn unsupported_content_cannot_mint_even_with_registry_authority() {
+        let mut c = contract();
+        let mut input = evidence();
+        input.content_version = "first_light_v3".into();
+        ctx("root.testnet", CRAFT_STORAGE_FUND);
         c.craft_mint(input);
     }
 }

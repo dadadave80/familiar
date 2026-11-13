@@ -42,3 +42,9 @@ test("native signing accepts exact named players and rejects nested, foreign or 
  for(const name of ["mochi","tide_cat","my-harbor"])expect(validateSigningRequest(body(root,undefined,`${name}.${root}`),context).transaction.signerId).toBe(`${name}.${root}`);
  for(const wrong of [`mochi.nested.${root}`,"mochi.other.testnet",`items.${root}`,`p-no.${root}`])expect(()=>validateSigningRequest(body(root,undefined,wrong),context)).toThrow();
 });
+test("content versions retain their own command language and decision cap",()=>{
+ const args={token_id:`mochi.${root}`,operation_id:"return:stable",expected_revision:0,initial_checkpoint_hash:"a".repeat(64),rules_version:"tidebound_h1_v1",content_version:"first_light_v2",tool:"rope",area:"beacon",commands:Array(24).fill("step:north")};
+ expect(()=>validateSigningRequest(body(root,actions.functionCall("tidebound_claim",args,50000000000000n,0n)),context)).not.toThrow();
+ for(const changed of [{commands:Array(25).fill("wait")},{commands:["move:left"]},{commands:["take:salvage"]},{content_version:"first_light_v3"},{content_version:"first_light_v1",commands:["step:north"]},{content_version:"first_light_v1",commands:Array(16).fill("wait")}])expect(()=>validateSigningRequest(body(root,actions.functionCall("tidebound_claim",{...args,...changed},50000000000000n,0n)),context)).toThrow();
+ expect(()=>validateSigningRequest(body(root,actions.functionCall("tidebound_claim",{...args,content_version:"first_light_v1",commands:["move:left","wait","return"]},50000000000000n,0n)),context)).not.toThrow();
+});

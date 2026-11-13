@@ -93,7 +93,7 @@ impl Contract {
     }
     pub fn tidebound_protocol(&self) -> near_sdk::serde_json::Value {
         self.tidebound_network();
-        json!({"network":"testnet","rules_version":RULES_VERSION,"content_version":CONTENT_VERSION,"items":self.config.items,"registry":env::current_account_id()})
+        json!({"network":"testnet","rules_version":RULES_VERSION,"content_version":CONTENT_VERSION,"supported_content_versions":SUPPORTED_CONTENT_VERSIONS,"items":self.config.items,"registry":env::current_account_id()})
     }
     #[allow(clippy::too_many_arguments)]
     pub fn tidebound_claim(
@@ -116,11 +116,17 @@ impl Contract {
             "ERR_CLAIM_INPUT"
         );
         require!(
-            rules_version == RULES_VERSION && content_version == CONTENT_VERSION,
+            rules_version == RULES_VERSION && supported_content_version(&content_version),
             "ERR_RULES_VERSION"
         );
         require!(
-            commands.len() <= 15 && commands.iter().all(|s| s.len() <= 24),
+            commands.len()
+                <= if content_version == CONTENT_VERSION {
+                    15
+                } else {
+                    24
+                }
+                && commands.iter().all(|s| s.len() <= 24),
             "ERR_COMMAND_BOUND"
         );
         require!(
@@ -161,12 +167,20 @@ impl Contract {
             "ERR_CHECKPOINT_CONFLICT"
         );
         require!(area != "wind" || journey.lit, "ERR_BEACON_REQUIRED");
-        let run = replay(&tool, &journey.banked, &commands, &area)
-            .unwrap_or_else(|_| env::panic_str("ERR_REPLAY"));
-        require!(run.outcome == "returned", "ERR_RETURN_REQUIRED");
-        let lens = area == "beacon" && run.cargo.iter().any(|i| i == "lens");
-        let moth = area == "beacon" && run.cargo.iter().any(|i| i == "moth");
-        require!(!run.cargo.is_empty(), "ERR_NO_DISCOVERY");
+        let (cargo, outcome) = if content_version == CONTENT_VERSION {
+            let run = replay(&tool, &journey.banked, &commands, &area)
+                .unwrap_or_else(|_| env::panic_str("ERR_REPLAY"));
+            (run.cargo, run.outcome)
+        } else {
+            let run =
+                familiar_common::expedition_v2::replay(&tool, &journey.banked, &commands, &area)
+                    .unwrap_or_else(|_| env::panic_str("ERR_REPLAY"));
+            (run.cargo, run.outcome)
+        };
+        require!(outcome == "returned", "ERR_RETURN_REQUIRED");
+        let lens = area == "beacon" && cargo.iter().any(|i| i == "lens");
+        let moth = area == "beacon" && cargo.iter().any(|i| i == "moth");
+        require!(!cargo.is_empty(), "ERR_NO_DISCOVERY");
         require!(journey.claims.len() < 5, "ERR_CLAIM_BOUND");
         if !self.journeys.contains_key(&account) {
             let reserve = self.storage_reserve(JOURNEY_STORAGE_BYTES);
@@ -184,7 +198,7 @@ impl Contract {
         if moth && journey.moth_claim.is_none() {
             journey.moth_claim = Some(id.clone());
         }
-        for item in run.cargo {
+        for item in cargo {
             if !journey.banked.contains(&item) {
                 journey.banked.push(item);
             }
@@ -291,13 +305,30 @@ impl Contract {
         );
         require!(env::prepaid_gas() >= Gas::from_tgas(100), "ERR_GAS");
         require!(self.spendable() >= CRAFT_STORAGE_FUND, "ERR_STAMPS");
-        let evidence = mint_evidence(
+        let origin_content = journey
+            .claims
+            .iter()
+            .find(|claim| {
+                claim.id == origin_claim_id
+                    && claim.rules_version == RULES_VERSION
+                    && supported_content_version(&claim.content_version)
+                    && if motif == "crest" {
+                        claim.lens
+                    } else {
+                        claim.moth
+                    }
+            })
+            .map(|claim| claim.content_version.as_str())
+            .unwrap_or_else(|| env::panic_str("ERR_ORIGIN_CLAIM"));
+        let evidence = mint_evidence_for_content(
             &self.config.items,
             &env::current_account_id(),
             &account,
             &origin_claim_id,
             &motif,
-        );
+            origin_content,
+        )
+        .unwrap_or_else(|| env::panic_str("ERR_ORIGIN_CLAIM"));
         let attempt = journey
             .craft
             .as_ref()
@@ -875,12 +906,206 @@ mod tests {
         );
         c
     }
+    fn spatial_lens() -> Vec<String> {
+        [
+            "step:north",
+            "step:north",
+            "step:west",
+            "wait",
+            "wait",
+            "step:east",
+            "wait",
+            "step:west",
+            "step:east",
+            "wait",
+            "step:west",
+            "step:east",
+            "reel:lens",
+            "step:west",
+            "step:east",
+            "step:west",
+            "step:south",
+            "step:east",
+            "step:south",
+            "return",
+        ]
+        .map(String::from)
+        .to_vec()
+    }
+    fn claim_v2(
+        c: &mut Contract,
+        who: &str,
+        pet: &str,
+        op: &str,
+        commands: Vec<String>,
+    ) -> Journey {
+        ctx(who);
+        let current = c.tidebound_journey(id(who));
+        c.tidebound_claim(
+            pet.into(),
+            op.into(),
+            current.revision,
+            c.tidebound_checkpoint_hash(id(who)),
+            RULES_VERSION.into(),
+            CONTENT_VERSION_V2.into(),
+            "rope".into(),
+            commands,
+            "beacon".into(),
+        )
+    }
+    fn spatial_moth() -> Vec<String> {
+        [
+            "step:north",
+            "step:north",
+            "step:north",
+            "step:north",
+            "step:east",
+            "step:west",
+            "step:east",
+            "take:moth",
+            "step:west",
+            "step:east",
+            "step:south",
+            "step:south",
+            "step:west",
+            "return",
+        ]
+        .map(String::from)
+        .to_vec()
+    }
+    #[test]
+    fn spatial_v2_claims_and_v1_origins_share_one_finite_personal_entitlement() {
+        let mut c = contract();
+        let old = claim(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "old-lens",
+            dry(),
+        );
+        let new = claim_v2(
+            &mut c,
+            "bob.testnet",
+            "bramble.root.testnet",
+            "spatial-lens",
+            spatial_lens(),
+        );
+        assert_eq!(new.claims[0].content_version, CONTENT_VERSION_V2);
+        assert_eq!(
+            (new.credit.as_str(), new.workshop_salvage, new.bram_budget),
+            ("available", 1, 12)
+        );
+        ctx("bob.testnet");
+        std::mem::forget(c.tidebound_craft(
+            "bramble.root.testnet".into(),
+            "crest".into(),
+            new.lens_claim.unwrap(),
+        ));
+        let crafted = c.tidebound_journey(id("bob.testnet")).craft.unwrap();
+        assert_eq!(crafted.evidence.content_version, CONTENT_VERSION_V2);
+        let mixed = claim_v2(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "new-moth",
+            spatial_moth(),
+        );
+        assert_eq!(mixed.lens_claim, old.lens_claim);
+        assert_eq!(mixed.claims[0].content_version, CONTENT_VERSION);
+        assert_eq!(mixed.claims[1].content_version, CONTENT_VERSION_V2);
+        assert_eq!(
+            (
+                mixed.credit.as_str(),
+                mixed.workshop_salvage,
+                mixed.bram_budget
+            ),
+            ("available", 1, 12)
+        );
+        ctx("alice.testnet");
+        std::mem::forget(c.tidebound_craft(
+            "mochi.root.testnet".into(),
+            "moth".into(),
+            mixed.moth_claim.clone().unwrap(),
+        ));
+        let actual = c
+            .tidebound_journey(id("alice.testnet"))
+            .craft
+            .unwrap()
+            .evidence;
+        assert_eq!(actual.content_version, CONTENT_VERSION_V2);
+        assert_eq!(actual.origin_claim_id, mixed.moth_claim.unwrap());
+        assert_eq!(
+            actual.id,
+            craft_id(&id("root.testnet"), &id("alice.testnet"))
+        );
+    }
+    #[test]
+    fn old_confirmed_craft_is_never_rewritten_or_reminted_by_v2_content() {
+        let mut c = ready();
+        let old = c.tidebound_journey(id("alice.testnet"));
+        ctx("alice.testnet");
+        std::mem::forget(c.tidebound_craft(
+            "mochi.root.testnet".into(),
+            "crest".into(),
+            old.lens_claim.clone().unwrap(),
+        ));
+        let op = c.tidebound_journey(id("alice.testnet")).craft.unwrap();
+        callback(PromiseResult::Successful(
+            near_sdk::serde_json::to_vec(&op.evidence).unwrap(),
+        ));
+        let confirmed =
+            c.on_tidebound_mint(id("alice.testnet"), op.evidence.id.clone(), op.attempt);
+        assert_eq!(op.evidence.content_version, CONTENT_VERSION);
+        let updated = claim_v2(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "later-v2-moth",
+            spatial_moth(),
+        );
+        assert!(updated.moth_claim.is_some());
+        assert_eq!(
+            updated.claims.last().unwrap().content_version,
+            CONTENT_VERSION_V2
+        );
+        assert_eq!(updated.credit, "consumed");
+        assert_eq!(updated.craft, confirmed.craft);
+        assert_eq!(updated.bram_budget, confirmed.bram_budget);
+        assert_eq!(updated.workshop_salvage, confirmed.workshop_salvage);
+        ctx("alice.testnet");
+        match c.tidebound_craft(
+            "mochi.root.testnet".into(),
+            "crest".into(),
+            old.lens_claim.unwrap(),
+        ) {
+            PromiseOrValue::Value(actual) => assert_eq!(actual, updated),
+            _ => panic!("a confirmed item must not mint again"),
+        }
+        assert_eq!(
+            c.tidebound_journey(id("alice.testnet"))
+                .craft
+                .unwrap()
+                .evidence,
+            op.evidence
+        );
+    }
+    #[test]
+    #[should_panic(expected = "ERR_ORIGIN_CLAIM")]
+    fn an_origin_flag_without_its_actual_accepted_claim_cannot_choose_content_version() {
+        let mut c = ready();
+        let mut j = c.tidebound_journey(id("alice.testnet"));
+        let origin = j.lens_claim.clone().unwrap();
+        j.claims.clear();
+        c.journeys.insert(id("alice.testnet"), j);
+        ctx("alice.testnet");
+        std::mem::forget(c.tidebound_craft("mochi.root.testnet".into(), "crest".into(), origin));
+    }
     #[test]
     fn protocol_exposes_only_the_exact_fresh_testnet_registry() {
         let c = contract();
         assert_eq!(
             c.tidebound_protocol(),
-            json!({"network":"testnet","rules_version":RULES_VERSION,"content_version":CONTENT_VERSION,"items":"items.root.testnet","registry":"root.testnet"})
+            json!({"network":"testnet","rules_version":RULES_VERSION,"content_version":CONTENT_VERSION,"supported_content_versions":SUPPORTED_CONTENT_VERSIONS,"items":"items.root.testnet","registry":"root.testnet"})
         );
     }
     #[test]

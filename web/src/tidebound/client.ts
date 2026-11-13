@@ -3,7 +3,7 @@ import type { RecoverableAccountAdapter } from "../account/adapter";
 import { isPlayerAccount } from "../account/names";
 import { replayOuting } from "../outing/engine";
 import { CONTENT_VERSION, RULES_VERSION, type ExpeditionTranscript, type PlayerBinding } from "./domain";
-import { assertTideboundProtocol } from "./protocol";
+import { assertTideboundContent, type SupportedContent } from "./protocol";
 import { validateNativeIntent } from "../../../services/relayer/src/auth/sign";
 import { assertNativeAffordable } from "./affordability";
 
@@ -23,7 +23,7 @@ const tokenId=(id:unknown):id is string=>typeof id==="string" && /^lantern:[a-f0
 const accountId=(id:unknown):id is string=>typeof id==="string" && id.length<=64 && /^[a-z0-9]+(?:[._-][a-z0-9]+)*\.testnet$/.test(id);
 function validMint(m:MintEvidence) {
   return m && hashId(m.id) && tokenId(m.token_id) && accountId(m.maker) && hashId(m.origin_claim_id) &&
-    ["crest","moth"].includes(m.motif) && hashId(m.input_hash) && m.rules_version===RULES_VERSION && m.content_version===CONTENT_VERSION;
+    ["crest","moth"].includes(m.motif) && hashId(m.input_hash) && m.rules_version===RULES_VERSION && [CONTENT_VERSION,"first_light_v2"].includes(m.content_version);
 }
 export function parseJourney(value:unknown):Journey {
   const j=value as Journey;
@@ -69,13 +69,13 @@ export class TideboundClient {
   async view<T>(contractId:string,method:string,args:Record<string,unknown>={}):Promise<T> {
     return await this.provider.callFunction({contractId,method,args,blockQuery:{finality:"final"}}) as unknown as T;
   }
-  async verifyStack() {
+  async verifyStack(contentVersion:SupportedContent=CONTENT_VERSION) {
     check(this.root.endsWith(".testnet") && this.itemsContract===`items.${this.root}` && await this.provider.getNetworkId()==="testnet","This harbor requires the configured NEAR testnet stack.");
     const [protocol,items]=await Promise.all([
       this.view<unknown>(this.root,"tidebound_protocol"),
       this.view<unknown>(this.itemsContract,"craft_protocol"),
     ]);
-    assertTideboundProtocol(this.root,protocol,items,"These contracts are not a compatible Tidebound stack. Legacy holdings remain untouched.");
+    assertTideboundContent(this.root,protocol,items,contentVersion);
   }
   async snapshot(binding:PlayerBinding,fromIndex=0):Promise<ChainSnapshot> {
     await this.verifyStack();
@@ -90,6 +90,7 @@ export class TideboundClient {
     const owned:CraftItem[]=[];
     for(const item of inventory.items) {
       check(validMint(item?.mint) && (item.finish==="original" && !item.finish_used && item.appearance_version===0 || item.finish==="harbor_polish" && item.finish_used===true && item.appearance_version===1),"The item metadata is unsupported.");
+      if(item.mint.content_version==="first_light_v2")await this.verifyStack("first_light_v2");
       // Ownership can change after enumeration; the mutation will check it again atomically.
       if(await this.view<string>(this.itemsContract,"mt_balance_of",{account_id:binding.nearAccountId,token_id:item.mint.token_id})==="1") owned.push(item);
     }
@@ -122,7 +123,7 @@ export class TideboundClient {
   async send(binding:PlayerBinding,method:string,args:Record<string,unknown>,options:{receiver?:string;deposit?:bigint}={}) {
     check(!this.pending(binding),"An earlier action needs its original receipt checked before another action.");
     return this.lock(binding,async()=>{
-      await this.verifyStack();
+      await this.verifyStack(method==="tidebound_claim"&&args.content_version==="first_light_v2"?"first_light_v2":CONTENT_VERSION);
       check(!this.pending(binding),"An earlier action needs its original receipt checked before another action.");
       await this.signingBinding(binding);
       const key=PublicKey.fromString(binding.signerPublicKey);
@@ -144,6 +145,8 @@ export class TideboundClient {
       [this.root,this.itemsContract].includes(tx.receiverId) && tx.publicKey.toString()===binding.signerPublicKey &&
       tx.actions.length===1 && tx.actions[0]?.functionCall?.methodName===pending.method,"The original signing context changed.");
     validateNativeIntent(tx,{root:this.root,items:this.itemsContract});
+    const call=tx.actions[0]?.functionCall;
+    if(call?.methodName==="tidebound_claim"&&JSON.parse(new TextDecoder().decode(new Uint8Array(call.args))).content_version==="first_light_v2")await this.verifyStack("first_light_v2");
     const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",new Uint8Array(encodeTransaction(tx))));
     check(baseEncode(digest)===pending.hash,"The stored transaction no longer matches its original hash.");
     if(pending.signedTransaction) {

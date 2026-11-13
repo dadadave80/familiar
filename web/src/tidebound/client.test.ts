@@ -154,6 +154,13 @@ test("both contracts must provide the full compatible protocol before signing or
     }
   }
 });
+test("v2 native claims require both advertised capabilities before pending creation or signing; v1 stays valid",async()=>{
+ const args={token_id:`mochi.${root}`,operation_id:"return:stable",expected_revision:0,initial_checkpoint_hash:"e".repeat(64),rules_version:"tidebound_h1_v1",content_version:"first_light_v2",tool:"rope",area:"beacon",commands:Array(17).fill("wait")};
+ const p={registry:root,items:itemContract,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1",supported_content_versions:["first_light_v1","first_light_v2"]};
+ const items={...p};delete (items as Partial<typeof p>).items;
+ for(const oneSided of [false,true]){const f=fixture();if(oneSided)f.rootProtocol=p;await expect(f.client.send(binding,"tidebound_claim",args)).rejects.toThrow("new expedition");expect(f.authorizationCalls).toBe(0);expect(f.broadcasts).toBe(0);expect(f.data.size).toBe(0);}
+ const f=fixture();f.rootProtocol=p;f.itemProtocol=items;await f.client.send(binding,"tidebound_claim",args);expect(f.authorizationCalls).toBe(1);expect(f.broadcasts).toBe(1);
+});
 
 test("unsupported native methods and payments fail before pending persistence or signing",async()=>{
   for(const request of [
