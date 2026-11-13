@@ -33,7 +33,10 @@ export type NoteFetch=(url:string,init:RequestInit)=>Promise<Response>;
 export function checkNoteBody(bytes:Uint8Array):NoteRefusal|null {
   if(bytes.byteLength>NOTE_BODY_LIMIT)return {status:413,code:"NOTE_TOO_LARGE"};
   let body:unknown;
-  try{body=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));}catch{return {status:400,code:"NOTE_BODY"};}
+  let text:string;
+  try{text=new TextDecoder("utf-8",{fatal:true}).decode(bytes);body=JSON.parse(text);}catch{return {status:400,code:"NOTE_BODY"};}
+  // Compact canonical JSON only: duplicate keys or alternate spellings could otherwise be read differently upstream.
+  if(JSON.stringify(body)!==text)return {status:400,code:"NOTE_BODY"};
   if(!body||typeof body!=="object"||Array.isArray(body))return {status:400,code:"NOTE_BODY"};
   const value=body as Record<string,unknown>;
   if(Object.keys(value).some(key=>!topLevel.has(key)))return {status:400,code:"NOTE_FIELDS"};

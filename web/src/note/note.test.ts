@@ -68,6 +68,7 @@ test("SDK v3 encryption round-trips through a locally generated model key pair",
   expect(headers.get("x-client-pub-key")).toMatch(/^[0-9a-f]{64}$/);
   const text=new TextDecoder().decode(bytes);expect(text).not.toContain("Pocket Harbor");expect(text).not.toContain("Mochi");
   const sent=JSON.parse(text);expect(Object.keys(sent).sort()).toEqual(["max_tokens","messages","model","stream"]);
+  expect(JSON.stringify(sent)).toBe(text);
   const tee=await mockTee(model,bytes,headers.get("x-client-pub-key")!);
   expect(tee.plaintexts).toEqual(messages.map(m=>m.content));
   const decrypted=await (await prepared.decryptResponse(new Response(tee.completion,{headers:{"content-type":"application/json"}}))).json();

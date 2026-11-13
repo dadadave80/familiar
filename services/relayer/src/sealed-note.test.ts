@@ -53,6 +53,9 @@ test("plain-field checks reject the wrong model, streaming, budget, message shap
   ];
   for(const [patch,code] of cases)expect(checkNoteBody(bytes(body(patch)))?.code).toBe(code);
   expect(checkNoteBody(bytes("[]"))?.code).toBe("NOTE_BODY");
+  for(const twisted of [body().replace('"max_tokens":120','"max_tokens":100000,"max_tokens":120'),body().replace('"stream":false','"stream":true,"stream":false'),
+    body().replace(`"model":"${NOTE_MODEL}"`,`"model":"z-ai/glm-5.3","model":"${NOTE_MODEL}"`),` ${body()}`,`${body()}\n`,body().replace('"stream":false','"stream" : false'),body().replace("glm","gl\\u006d")])
+    expect(checkNoteBody(bytes(twisted))?.code).toBe("NOTE_BODY");
   expect(checkNoteBody(bytes("{"))?.code).toBe("NOTE_BODY");
   expect(checkNoteBody(bytes(body({messages:[{role:"system",content:"0f".repeat(4000)},{role:"user",content:cipher}]})))).toEqual({status:413,code:"NOTE_TOO_LARGE"});
 });
@@ -90,8 +93,8 @@ test("requires a confirmed journey event for the server-derived account",async()
 
 test("forwards the exact browser bytes with fixed headers, returns raw bytes and the retried signature, then writes once",async()=>{
   const f=fixture({signatureMisses:2});
-  // Unusual but valid JSON spacing proves the relay forwards bytes rather than a re-serialized body.
-  const sent=` {"model":"${NOTE_MODEL}" , "messages":[{"role":"system","content":"${cipher}"},{"role":"user","content":"${cipher}"}],"stream":false,"max_tokens":96}\n`;
+  // Unusual key order proves the relay forwards bytes rather than a rebuilt body.
+  const sent=`{"max_tokens":96,"stream":false,"messages":[{"content":"${cipher}","role":"system"},{"content":"${cipher}","role":"user"}],"model":"${NOTE_MODEL}"}`;
   await serve(enabled,f,async url=>{
     const response=await post(url,sent);expect(response.status).toBe(200);
     const envelope=await response.json();
