@@ -28,7 +28,7 @@ async function seasonAct(intent:SeasonIntent) {
       if(ledger){ledger.goods[intent.good==="glass"?0:1]-=intent.qty;ledger.shells+=trade.total;}return ok(trade);}
     case "set-wish":wish={pet,owner:account,good:intent.good,limit:intent.limit,qty:intent.qty,purse:intent.limit*intent.qty,seq:1,day:0};if(ledger)ledger.shells-=wish.purse;return ok({status:"waiting",reason:"WAITING",wish,postcard:null});
     case "cancel-wish":{if(!wish)return null;postcard={pet,owner:account,good:wish.good,qty:wish.qty,limit:wish.limit,outcome:"cancelled",reason:"CANCELLED_BY_OWNER",unit_prices:[],paid:0,refunded:wish.purse,trigger:null,day:0};if(ledger)ledger.shells+=wish.purse;wish=null;return ok(postcard);}
-    case "claim":return null;
+    case "claim":return ok({day:0,content_version:intent.contentVersion,tool:intent.tool,goods:[1,1],value_fp:12_000_000,best_fp:12_000_000,score_bp:10_000});
   }
 }
 const session={state:{mode:"saved",busy:false,snapshot:{binding:{nearAccountId:account},pets:[{token_id:pet}]}},seasonAct} as unknown as HarborSession;

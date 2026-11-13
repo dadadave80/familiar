@@ -68,6 +68,12 @@ test("state mapping: confirmed only for a final success, refusals named, unknown
   expect(settle({failed:false,outcome:{status:{SuccessValue:b64({status:"refused",reason:"ERR_NOT_OWNER",wish:null,postcard:null})}}})).toEqual({kind:"refused",code:"ERR_NOT_OWNER",words:REFUSALS.ERR_NOT_OWNER!});
   expect(settleError(new Error("This action may still be executing. Check its original receipt; no new payment or craft has been started.")).kind).toBe("uncertain");
   expect(settleError(new Error("ERR_SHELLS")).kind).toBe("refused");
+  const thrown=["This action may still be executing. Check its original receipt; no new payment or craft has been started.",
+    "This saved account needs more test NEAR for gas prepayment and the attached deposit. No new signature was requested. Keep the same account and original action.",
+    "An earlier action needs its original receipt checked before another action.","The signing identity changed. Reload the saved harbor.","The signature does not match the original NEAR transaction.",
+    "The native transaction belongs to a different account or harbor.","nonce changed",""];
+  for(const message of thrown){const state=settleError(new Error(message));expect(state.kind).not.toBe("confirmed");
+    if(state.kind==="refused"||state.kind==="uncertain")expect(state.words).not.toMatch(/\b(wallet|gas|tx|transaction|signature|nonce|craft|payment|receipt)\b/i);}
 });
 
 test("wish status and postcard lines", () => {
@@ -86,6 +92,8 @@ test("wish status and postcard lines", () => {
   expect(wishBlock(13,2,99)).toMatch(/24/);
   expect(wishBlock(5,3,99)).toMatch(/1 or 2/);
   expect(wishBlock(5,1,4)).toMatch(/Shells/);
+  // Replacing a wish: the contract checks the purse against Shells held before the old purse returns.
+  expect(wishBlock(12,2,20)).toMatch(/Shells/);
 });
 
 const today=(version:"first_light_v1"|"first_light_v2"):TodayView=>({day:20771,next_day_ns:0,rules_version:"tidebound_h1_v1",content_version:version,area:"beacon",command_limit:version==="first_light_v2"?24:15,

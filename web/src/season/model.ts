@@ -161,12 +161,17 @@ export function settle<T>(final:{failed:boolean;outcome:unknown}|null):ActionSta
   if(refused&&typeof refused==="object"&&refused.status==="refused"&&typeof refused.reason==="string")return {kind:"refused",code:refused.reason,words:refusalWords(refused.reason)};
   return {kind:"confirmed",value};
 }
-/** A thrown send is never a refusal: the action may still land. */
+export const OPEN_REQUEST="An earlier request is still open. Finish it in Account & recovery (in the menu) before anything new.";
+/** A thrown send is never a refusal: the action may still land. Messages are mapped to season words, never passed through. */
 export function settleError(error:unknown):ActionState<never> {
   const message=error instanceof Error?error.message:"";
   const code=message.match(/ERR_[A-Z0-9_]+/)?.[0];
   if(code&&REFUSALS[code])return {kind:"refused",code,words:refusalWords(code)};
-  return {kind:"uncertain",words:message||"The result is not known yet. Check the original request before trying again."};
+  if(/more test NEAR/i.test(message))return {kind:"refused",code:"FUNDS",words:"Your harbor account needs a little more test NEAR before Bram can record this. Nothing was sent."};
+  if(/may still be executing/i.test(message))return {kind:"uncertain",words:"Bram has not heard whether this landed yet. Check it in Account & recovery (in the menu) before trying again."};
+  if(/earlier action|original request|original action|pending/i.test(message))return {kind:"uncertain",words:OPEN_REQUEST};
+  if(/sign in|signed-in|identity|sign-in/i.test(message))return {kind:"refused",code:"SIGN_IN",words:"Sign in again from the menu. Nothing was sent."};
+  return {kind:"uncertain",words:"Bram could not finish that just now. If a request was started, it is kept in Account & recovery (in the menu)."};
 }
 
 // ---------- Mochi's wish ----------

@@ -77,9 +77,9 @@ export class HarborController implements HarborSession {
   async noteToken(){const adapter=this.connection?.adapter as {accessToken?():Promise<string|null>}|undefined;return this.value.mode==="saved"&&this.value.binding&&adapter?.accessToken?adapter.accessToken():null;}
   async signOut(){this.guard(this.epoch);const epoch=++this.epoch;this.prepared=null;this.update({binding:null,snapshot:null,mode:"preview",review:null,busy:true,message:"Your device previews and original requests are preserved."});try{await this.connection?.adapter.endSession();}finally{if(this.live&&epoch===this.epoch)this.update({busy:false});}}
   async refresh(){const binding=this.value.binding;check(binding&&this.connection,"Sign in to check the saved harbor.");return this.work(()=>this.load(binding,this.epoch));}
-  private async work(task:()=>Promise<unknown>) {
+  private async work(task:()=>Promise<unknown>,report=true) {
     check(this.live&&!this.value.busy,"The original harbor action is still being checked.");const epoch=this.epoch;this.update({busy:true,message:""});
-    try{await task();}catch(error){if(epoch===this.epoch)this.update({message:error instanceof Error?error.message:"The original request is still being checked."});throw error;}
+    try{await task();}catch(error){if(report&&epoch===this.epoch)this.update({message:error instanceof Error?error.message:"The original request is still being checked."});throw error;}
     finally{if(epoch===this.epoch)this.update({busy:false});}
   }
   async selectSaved(){check(!this.active,"Finish this outing before choosing another harbor.");await this.refresh();check(this.value.courtSupported,"The new court is a private preview until both contracts support it. Your existing Mochi and earned progress are preserved.");check(this.value.binding,"Sign in before selecting this harbor.");this.choice(this.value.binding,"saved");this.update({mode:"saved"});this.update({returns:this.recordsFor(this.value.snapshot)});}
@@ -193,7 +193,7 @@ export class HarborController implements HarborSession {
       await client.send(binding,method,args,{receiver:season,deposit});this.guard(epoch,binding);
       const last=client.lastFinal as TideboundClient["lastFinal"]|undefined;
       final=last&&last.method===method&&last.receiver===season?{failed:last.failed,outcome:last.outcome}:null;
-    });
+    },false);
     return final;
   }
   private async original(kind:"resume"|"check"|"expiry") {return this.work(async()=>{

@@ -48,13 +48,26 @@ try{
       if(v2Day){
         await expect(page.locator(".ss-returns")).toContainText("Rope outing · 1 glass and 1 reed bundle");
         await expect(page.getByRole("button",{name:"Dock this haul"})).toBeDisabled();
-        const home=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null);
+        await page.evaluate(()=>localStorage.removeItem("familiar.season.tide.v1:preview"));
+        const before=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview")}));
         await page.getByRole("button",{name:"Sail today’s tide"}).click();
         await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","court");
         const save=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!));
         assert.equal(save.active.season,true);assert.deepEqual(save.active.state.banked,[]);assert.equal(save.active.state.area,"beacon");
-        if(home)assert.deepEqual(save.home,home,"First Light home unchanged by a tide outing");
         await page.screenshot({path:join(shots,`preview-tide-sailing-${tag}.png`)});
+        for(const command of route){
+          await page.locator(`[data-command="${command}"]`).click();
+          await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-busy","false",{timeout:15000});
+        }
+        await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","harbor",{timeout:15000});
+        await expect(page.getByTestId("expedition-feedback")).toContainText("Dock today’s haul at Bram’s shelf");
+        const after=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!).home,returns:localStorage.getItem("familiar.expedition.returns.v2:preview"),tide:JSON.parse(localStorage.getItem("familiar.season.tide.v1:preview")??"[]")}));
+        if(before.home)assert.deepEqual(after.home,before.home,"First Light home unchanged by a tide outing");else assert.deepEqual(after.home.banked,[],"tide cargo is not banked");
+        assert.equal(after.returns,before.returns,"First Light return memories unchanged");
+        assert.equal(after.tide.length,1);assert.deepEqual(after.tide[0].commands,route);assert.deepEqual(after.tide[0].cargo,["lens","moth"]);
+        await page.locator(".exp-place-bram").click();await page.getByRole("tab",{name:"Today’s tide"}).click();
+        await expect(page.locator(".ss-returns")).toContainText("Rope outing · 1 glass and 1 reed bundle");
+        await page.screenshot({path:join(shots,`preview-tide-ready-${tag}.png`)});
         await page.evaluate(()=>{localStorage.removeItem("familiar.expedition.local.v2");});
         await page.goto(new URL("/outing/?play",origin).href);
         await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
@@ -91,6 +104,12 @@ try{
       await page.getByRole("button",{name:"Take the wish back"}).click();
       await expect(page.locator(".ss-postcard")).toContainText("CANCELLED_BY_OWNER",{timeout:10000});
       await page.screenshot({path:join(shots,`harness-postcard-${tag}.png`),fullPage:true});
+      if(v2Day){
+        await page.getByRole("tab",{name:"Today’s tide"}).click();
+        await page.getByRole("button",{name:"Dock this haul"}).first().click();
+        await expect(page.locator(".ss-status")).toContainText("Docked 1 glass and 1 reed bundle: 100% of the best haul",{timeout:10000});
+        await page.screenshot({path:join(shots,`harness-docked-${tag}.png`)});
+      }
       await page.close();
       console.info(`${tag}: preview shelf/sell/tide/wish and harness ledger/refusal/sale/wish/postcard passed`);
     }

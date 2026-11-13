@@ -3,7 +3,7 @@ import type { HarborSession, SeasonIntent } from "../expedition/harbor-port";
 import { GOODS, type Good } from "./pricing";
 import {
   GOOD_INDEX, PURSE_MAX, WISH_QTY_MAX, bestHaulLine, claimable, goodName, haulLine, postcardLines, quoteBuy, quoteLine, quoteSell, reasonLine, scoreLine,
-  settle, settleError, tradeArgs, tradeBlock, wishBlock, wishStatus,
+  OPEN_REQUEST, settle, settleError, tradeArgs, tradeBlock, wishBlock, wishStatus,
   type ActionState, type Mint, type Postcard, type SeasonAccount, type ShelfView, type TodayView, type Trade, type Wish, type WishResult,
 } from "./model";
 import { PREVIEW_SAMPLE, previewTrade, previewView, readPreview, readTide, seasonView, seedPreview, writePreview, type PreviewMarket, type TideReturn } from "./data";
@@ -53,7 +53,8 @@ export default function SeasonBram({session,tool,canSail,onSailTide,tideScope}:S
   const [action,setAction]=useState<ActionState<unknown>>({kind:"idle"}),[confirmedText,setConfirmedText]=useState("");
   const [preview,setPreview]=useState<PreviewMarket|null>(()=>readPreview());
   useEffect(()=>{if(!saved&&!preview&&live.shelf){const seeded=seedPreview(live.shelf);setPreview(seeded);writePreview(seeded);}},[saved,preview,live.shelf]);
-  const busy=action.kind==="pending"||!!session?.state.busy;
+  const openRequest=saved&&!!session?.state.pending;
+  const busy=action.kind==="pending"||!!session?.state.busy||openRequest;
 
   async function act<T>(intent:SeasonIntent,label:string,done:(value:T)=>string) {
     if(!session?.seasonAct||busy)return;
@@ -89,6 +90,7 @@ export default function SeasonBram({session,tool,canSail,onSailTide,tideScope}:S
     <div className="ss-tabs" role="tablist" aria-label="Bram’s season" onKeyDown={keyTabs}>
       {TABS.map(([id,label],i)=><button key={id} ref={el=>{tabRefs.current[i]=el;}} role="tab" id={`ss-tab-${id}`} aria-controls={`ss-panel-${id}`} aria-selected={tab===id} tabIndex={tab===id?0:-1} onClick={()=>setTab(id)}>{label}</button>)}
     </div>
+    {openRequest&&action.kind!=="pending"&&<p className="ss-problem" role="status">{OPEN_REQUEST}</p>}
     <Status state={action} confirmed={confirmedText}/>
     <div role="tabpanel" id={`ss-panel-${tab}`} aria-labelledby={`ss-tab-${tab}`} className="ss-panel" aria-busy={loading}>
       {tab==="shelf"&&<Shelf live={live} saved={saved} registered={registered} busy={busy} preview={preview}
@@ -168,7 +170,7 @@ function Tide({live,saved,registered,busy,tool,canSail,onSail,scope,act}:{live:L
     <p>Every day’s tide is a fresh outing from the beacon with nothing banked. The first haul you dock each day becomes goods.</p>
     <dl className="ss-facts"><div><dt>Cargo to goods</dt><dd>{mapping}</dd></div><div><dt>Best haul</dt><dd>{bestHaulLine(today)}</dd></div></dl>
     {saved&&<p className="ss-docked" data-docked={!!minted}>{minted?<>Docked today with {haulLine(minted.goods)}: {scoreLine(minted)}.</>:"Not docked yet today."}</p>}
-    {!sailable&&<p className="ss-note">This route belongs to the first edition, and the harbor only sails Beacon Court now. Today can be docked only with a return already kept on this device; the tide turns back to Beacon Court at the next day.</p>}
+    {!sailable&&<p className="ss-note">This route belongs to the first edition, and the harbor only sails Beacon Court now, so today’s tide cannot be sailed or docked from here. Beacon Court comes back with the next day’s tide.</p>}
     {sailable&&!minted&&<fieldset className="ss-tool"><legend>Bring one tool</legend>
       {(["rope","lantern"] as const).map(t=><label key={t}><input type="radio" name="ss-tool" checked={choice===t} onChange={()=>setChoice(t)}/><span>{t==="rope"?"Rope":"Lantern"}</span></label>)}
       <button className="exp-primary" disabled={!canSail} onClick={()=>onSail(choice)}>Sail today’s tide</button>
@@ -189,7 +191,7 @@ function Tide({live,saved,registered,busy,tool,canSail,onSail,scope,act}:{live:L
 function WishTab({live,saved,registered,busy,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;act:Act}) {
   const [good,setGood]=useState<Good>("glass"),[qty,setQty]=useState(1),[limit,setLimit]=useState(8);
   const status=wishStatus(live.wish,live.postcard);
-  const shells=live.account?.shells??0,maxLimit=Math.floor(PURSE_MAX/qty),block=wishBlock(limit,qty,shells+(status.kind==="waiting"?status.wish.purse:0));
+  const shells=live.account?.shells??0,maxLimit=Math.floor(PURSE_MAX/qty),block=wishBlock(limit,qty,shells);
   const card=status.kind==="filled"||status.kind==="cancelled"?status.card:live.postcard;
   return <>
     <header className="ss-wish-head"><img src={`${ART}wish-token.webp`} alt="" width="56" height="56"/>
@@ -205,7 +207,7 @@ function WishTab({live,saved,registered,busy,act}:{live:Live;saved:boolean;regis
         <div className="ss-limit"><span id="ss-limit-label">Highest price per unit</span><Stepper value={limit} min={1} max={maxLimit} onChange={setLimit} label="Highest price per unit"/></div>
         <div className="ss-act"><button className="exp-primary" disabled={!!block} onClick={()=>void act<WishResult>({kind:"set-wish",good,limit,qty},"Bram is checking Mochi’s papers…",
           r=>r.status==="filled"?`Filled at once: ${r.postcard?postcardLines(r.postcard)[1]:""} Recorded.`:r.status==="waiting"?`Mochi’s wish is waiting. Her purse holds ${r.wish?.purse??limit*qty} Shells. Recorded.`:"Recorded.")}>Set Mochi’s wish</button>
-          <span className="ss-info">{block??`Purse ${limit*qty} of ${PURSE_MAX} Shells${status.kind==="waiting"?"; the old purse comes back first":""}`}</span></div>
+          <span className="ss-info">{block??`Purse ${limit*qty} of ${PURSE_MAX} Shells${status.kind==="waiting"?"; the old purse comes back once the new wish is placed":""}`}</span></div>
         {live.shelf&&<p className="ss-note">Bram sells {goodName(good,2)} at {live.shelf.goods.find(g=>g.good===good)?.buy_price} now. A wish whose limit covers every unit fills at once; otherwise a later trade that brings the price within it does.</p>}
       </fieldset>
     </>}
