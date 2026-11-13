@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { actions, base64Encode, baseEncode, createTransaction, encodeTransaction, KeyPair, KeyPairSigner, type JsonRpcProvider, type Transaction } from "near-api-js";
+import { actions, base64Encode, baseEncode, baseDecode, createTransaction, encodeTransaction, KeyPair, KeyPairSigner, PublicKey, Signature, SignedTransaction, KeyType, type JsonRpcProvider, type Transaction } from "near-api-js";
 import type { NearAuthAccountAdapter } from "../account/adapter";
 import type { PlayerBinding } from "./domain";
 import { claimInput, parseJourney, TideboundClient, type CraftItem, type Journey } from "./client";
@@ -77,7 +77,7 @@ function fixture() {
     async sendTransactionUntil(signed: { transaction: Transaction }) {
       broadcasts++; events.push("broadcast"); observedTransaction = signed.transaction;
       const hash = baseEncode(new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(encodeTransaction(signed.transaction)))));
-      status ??= { final_execution_status: "FINAL", status: { SuccessValue: "" }, transaction: { hash, signer_id: signed.transaction.signerId, receiver_id: signed.transaction.receiverId }, receipts_outcome: [] };
+      status ??= finalGraph(hash,signed.transaction.receiverId,{SuccessValue:""},signed.transaction.signerId);
       return { ...status, transaction: { ...status.transaction, hash } };
     },
     async viewTransactionStatusWithReceipts() { statusCalls++; return status; },
@@ -94,7 +94,7 @@ function fixture() {
   } as unknown as NearAuthAccountAdapter;
   const client = new TideboundClient(root, itemContract, provider, adapter, storage);
   return {
-    client, data, events, authorizedOperations,
+    client, provider, storage, data, events, authorizedOperations,
     set failMark(value: boolean) { failMark = value; },
     get statusCalls() { return statusCalls; }, get broadcasts() { return broadcasts; }, get authorizationCalls() { return authorizationCalls; }, get transaction() { return observedTransaction; },
     set network(value: string) { network = value; }, set registry(value: string) { registry = value; }, set actual(value: PlayerBinding) { actual = value; },
@@ -105,6 +105,78 @@ function fixture() {
     set finalHeight(value:number) {finalHeight=value;},set originalHeight(value:number){originalHeight=value;},set validity(value:unknown){validity=value;},set accessNonce(value:bigint){accessNonce=value;},set rpcUnavailable(value:boolean){rpcUnavailable=value;},set returnedBlockHash(value:string){returnedBlockHash=value;},set protocolNetwork(value:string){protocolNetwork=value;},set rawNonce(value:unknown){rawNonce=value;},set keyPermission(value:string){keyPermission=value;},set nonceBlockMismatch(value:boolean){nonceBlockMismatch=value;},
   };
 }
+
+function finalGraph(hash:string,receiver=root,status:unknown={SuccessValue:""},signer=binding.nearAccountId) {
+ const receipt="synthetic-action-receipt",refund="synthetic-refund-receipt";
+ return {final_execution_status:"FINAL",status,transaction:{hash,signer_id:signer,receiver_id:receiver},
+  transaction_outcome:{id:hash,outcome:{executor_id:signer,receipt_ids:[receipt],status:{SuccessReceiptId:receipt}}},
+  receipts_outcome:[{id:receipt,outcome:{executor_id:receiver,receipt_ids:[refund],status}},{id:refund,outcome:{executor_id:signer,receipt_ids:[],status:{SuccessValue:""}}}]};
+}
+async function prepared(f:ReturnType<typeof fixture>) {
+ f.authorization=async()=>{throw Error("synthetic approval paused");};
+ await expect(f.client.send(binding,"tidebound_commission",{})).rejects.toThrow("approval paused");
+ return f.client.pending(binding)!;
+}
+test("receipt reconciliation shares the native lock so a newer envelope cannot enter its removal window",async()=>{
+ const f=fixture(),original=await prepared(f),key=`familiar.tidebound.pending.v1:${root}:${binding.nearAccountId}`;
+ const next={...original,operationId:"native:newer-request"};
+ let release!:()=>void,entered!:()=>void,otherEntered=false;
+ const began=new Promise<void>(resolve=>entered=resolve),wait=new Promise<void>(resolve=>release=resolve);
+ f.provider.viewTransactionStatusWithReceipts=(async()=>{entered();await wait;return finalGraph(original.hash);}) as unknown as typeof f.provider.viewTransactionStatusWithReceipts;
+ const reconciliation=f.client.reconcileNative(binding).then(value=>value,error=>error);await began;
+ const other=navigator.locks.request(key,()=>{otherEntered=true;f.data.set(key,JSON.stringify(next));});
+ await new Promise(resolve=>setTimeout(resolve,0));const enteredBeforeReceipt=otherEntered;release();
+ const result=await reconciliation;await other;
+ expect(enteredBeforeReceipt).toBe(false);expect(result).toContain("finalized");expect(f.client.pending(binding)?.operationId).toBe(next.operationId);
+ expect(f.broadcasts).toBe(0);expect(f.authorizationCalls).toBe(1);
+});
+test("incomplete, unknown, cyclic and unrelated receipt graphs preserve the exact original native envelope",async()=>{
+ const corruptions=[
+  (o:any)=>{o.receipts_outcome[1].outcome.status="Unknown";},
+  (o:any)=>{o.receipts_outcome=[];},
+  (o:any)=>{delete o.transaction_outcome;},
+  (o:any)=>{o.receipts_outcome.push(structuredClone(o.receipts_outcome[0]));},
+  (o:any)=>{o.receipts_outcome[0].outcome.status={SuccessReceiptId:"missing"};},
+  (o:any)=>{o.receipts_outcome[0].outcome.status={SuccessReceiptId:o.receipts_outcome[0].id};},
+  (o:any)=>{o.transaction_outcome.outcome.executor_id="someone-else.testnet";},
+  (o:any)=>{o.receipts_outcome[0].outcome.executor_id="someone-else.testnet";},
+  (o:any)=>{o.receipts_outcome[0].outcome.receipt_ids=[];},
+ ];
+ for(const corrupt of corruptions){const f=fixture(),p=await prepared(f),key=`familiar.tidebound.pending.v1:${root}:${binding.nearAccountId}`,before=f.data.get(key),outcome=finalGraph(p.hash);corrupt(outcome);f.status=outcome;
+  await expect(f.client.reconcileNative(binding)).rejects.toThrow();expect(f.data.get(key)).toBe(before);expect(f.broadcasts).toBe(0);expect(f.authorizationCalls).toBe(1);
+ }
+});
+test("a handled child failure remains visible even when its final Root callback succeeds",async()=>{
+ const f=fixture(),p=await prepared(f),o=finalGraph(p.hash),first=o.receipts_outcome[0]!;
+ first.outcome.status={SuccessReceiptId:"synthetic-callback"} as any;first.outcome.receipt_ids.push("synthetic-items-failure","synthetic-callback");
+ o.receipts_outcome.push({id:"synthetic-items-failure",outcome:{executor_id:itemContract,receipt_ids:[],status:{Failure:{ActionError:"ERR_APPEARANCE"}} as any}},
+  {id:"synthetic-callback",outcome:{executor_id:root,receipt_ids:[],status:{SuccessValue:""}}});
+ f.status=o;expect(await f.client.reconcileNative(binding)).toContain("A receipt failed");expect(f.client.pending(binding)).toBeNull();expect(f.broadcasts).toBe(0);
+});
+test("a snapshot pins journey, checkpoint, inventory and holder reads to one final block",async()=>{
+ const f=fixture(),original=f.provider.callFunction.bind(f.provider),queries:any[]=[];
+ f.inventory={items:[item()],next_index:null};
+ f.provider.callFunction=(async(input:any)=>{queries.push(input);if(input.method==="tidebound_checkpoint_hash")return input.blockQuery.blockId?"e".repeat(64):"f".repeat(64);return original(input);}) as typeof original;
+ const snapshot=await f.client.snapshot(binding),canonical=queries.filter(q=>["tidebound_journey","tidebound_checkpoint_hash","nft_tokens_for_owner","craft_inventory","mt_balance_of"].includes(q.method));
+ expect(snapshot.journey.revision).toBe(0);expect(snapshot.checkpointHash).toBe("e".repeat(64));expect(canonical).toHaveLength(5);
+ expect(canonical.every(q=>q.blockQuery.blockId==="11111111111111111111111111111111"&&q.blockQuery.finality===undefined)).toBe(true);
+ expect(f.authorizationCalls).toBe(0);expect(f.broadcasts).toBe(0);
+});
+test("captured public FINAL native graphs retain their original signatures and reconcile offline",async()=>{
+ const report=await Bun.file(new URL("../../../docs/TIDEBOUND-V2-GAMEPLAY.json",import.meta.url)).json();let receipts=0,checked=0;
+ for(const entry of report.transactions.filter((e:any)=>e.name!=="create-maker")){
+  const raw=entry.fullFinalOutcome.transaction,call=raw.actions[0].FunctionCall;
+  const tx=createTransaction(raw.signer_id,PublicKey.fromString(raw.public_key),raw.receiver_id,BigInt(raw.nonce),[actions.functionCall(call.method_name,new Uint8Array(Buffer.from(call.args,"base64")),BigInt(call.gas),BigInt(call.deposit))],baseDecode(entry.recentBlockHash));
+  // Reuse the already-public consumed signature; never create a signature or submit a transaction.
+  const signed=new SignedTransaction({transaction:tx,signature:new Signature({keyType:KeyType.ED25519,data:baseDecode(raw.signature.slice(8))})});
+  const owner:PlayerBinding={playerId:`testnet:${report.root}:${entry.signer}`,network:"testnet",nearAccountId:entry.signer,signerPublicKey:raw.public_key,signerBindingId:"public-recorded-evidence"};
+  const data=new Map([[`familiar.tidebound.pending.v1:${report.root}:${entry.signer}`,JSON.stringify({operationId:`native:recorded-${entry.name}`,hash:entry.hash,method:entry.method,receiver:entry.receiver,transaction:base64Encode(encodeTransaction(tx)),signedTransaction:base64Encode(signed.encode()),state:"submitted"})]]);
+  const provider={async getNetworkId(){return "testnet"},async callFunction(input:any){expect(["tidebound_protocol","craft_protocol"]).toContain(input.method);return input.method==="tidebound_protocol"?report.configuration.protocol:report.configuration.itemProtocol;},async viewTransactionStatusWithReceipts(input:any){expect(input.txHash).toBe(entry.hash);expect(input.waitUntil).toBe("FINAL");return entry.fullFinalOutcome;}} as unknown as JsonRpcProvider;
+  const client=new TideboundClient(report.root,report.items,provider,{} as NearAuthAccountAdapter,{getItem:k=>data.get(k)??null,setItem:(k,v)=>{data.set(k,v)},removeItem:k=>{data.delete(k)}});
+  expect(await client.reconcileNative(owner)).toContain("Transaction finalized");expect(data.size).toBe(0);receipts+=entry.fullFinalOutcome.receipts_outcome.length;checked++;
+ }
+ expect(checked).toBe(14);expect(receipts).toBe(52);
+});
 
 test("fixed protocol and canonical signer are checked before any native authorization", async () => {
   const f = fixture(); f.registry = "legacy.testnet";
@@ -133,7 +205,7 @@ test("underfunded original requests retain their exact pending bytes and submitt
  const submitted=fixture();submitted.status={final_execution_status:"EXECUTED_OPTIMISTIC",status:"Unknown",transaction:{},receipts_outcome:[]};
  await expect(submitted.client.send(binding,"adopt",{name:"mochi"})).rejects.toThrow();
  const pending=submitted.client.pending(binding)!;submitted.accountAmount=0n;
- submitted.status={final_execution_status:"FINAL",status:{SuccessValue:""},transaction:{hash:pending.hash,signer_id:binding.nearAccountId,receiver_id:root},receipts_outcome:[]};
+ submitted.status=finalGraph(pending.hash);
  expect(await submitted.client.resumeNative(binding)).toContain("finalized");expect(submitted.broadcasts).toBe(1);
 });
 
@@ -253,7 +325,7 @@ test("a known failed receipt clears only its native envelope, never authorizes a
   f.status = { final_execution_status: "EXECUTED_OPTIMISTIC", status: "Unknown", transaction: {}, receipts_outcome: [] };
   await expect(f.client.send(binding, "tidebound_commission", {})).rejects.toThrow();
   const original = f.client.pending(binding)!;
-  f.status = { final_execution_status: "FINAL", status: { Failure: { ActionError: "ERR_FINISH_OWNER" } }, transaction: { hash: original.hash, signer_id: binding.nearAccountId, receiver_id: root }, receipts_outcome: [] };
+  f.status = finalGraph(original.hash,root,{Failure:{ActionError:"ERR_FINISH_OWNER"}});
   expect(await f.client.reconcileNative(binding)).toContain("failed");
   expect(f.client.pending(binding)).toBe(null);
   expect(f.broadcasts).toBe(1);

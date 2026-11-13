@@ -70,7 +70,10 @@ const provider={
    if(!failure && tx.receiverId===root)j.revision++;
    const hash=baseEncode(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(encodeTransaction(tx)))));
    fixture.broadcasts.push({method:call.methodName,signer:tx.signerId,receiver:tx.receiverId,deposit:call.deposit.toString(),args});
-   const outcome={final_execution_status:'FINAL',status:failure?{Failure:failure}:{SuccessValue:''},transaction:{hash,signer_id:tx.signerId,receiver_id:tx.receiverId},receipts_outcome:[]};
+   const status=failure?{Failure:failure}:{SuccessValue:''},receipt='synthetic-action-'+hash,refund='synthetic-refund-'+hash;
+   const outcome={final_execution_status:'FINAL',status,transaction:{hash,signer_id:tx.signerId,receiver_id:tx.receiverId},
+    transaction_outcome:{id:hash,outcome:{executor_id:tx.signerId,receipt_ids:[receipt],status:{SuccessReceiptId:receipt}}},
+    receipts_outcome:[{id:receipt,outcome:{executor_id:tx.receiverId,receipt_ids:[refund],status}},{id:refund,outcome:{executor_id:tx.signerId,receipt_ids:[],status:{SuccessValue:''}}}]};
    if(fixture.uncertainNext){fixture.uncertainNext=false;outcome.final_execution_status='EXECUTED_OPTIMISTIC';outcome.status='Unknown'}
    fixture.statuses[hash]=outcome;return outcome;
  },

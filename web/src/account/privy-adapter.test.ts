@@ -117,6 +117,36 @@ test("named creation is explicit, serialized and reuses the canonical wallet",as
   expect(await first).toEqual(await second);expect(f.provisions).toBe(1);expect(f.creates.filter(Boolean)).toHaveLength(1);
   expect(await adapter.checkUsername("player2")).toMatchObject({accountId:`player2.${root}`,available:true});
 });
+test("player creation stays bound to its original identity across a delayed compatibility check",async()=>{
+  const f=fixture();f.registered=false;f.available=false;
+  const original=f.options.provider.callFunction.bind(f.options.provider);
+  let release!:()=>void,entered!:()=>void;
+  const started=new Promise<void>(resolve=>entered=resolve),gate=new Promise<void>(resolve=>release=resolve);
+  f.options.provider.callFunction=(async(input:any)=>{if(input.method==="tidebound_protocol"){entered();await gate;}return original(input);}) as typeof original;
+  const adapter=new PrivyAccountAdapter(f.options),creating=adapter.provisionAccount("player1").then(value=>value,error=>error);
+  await started;await adapter.endSession();f.identity={...owner(),id:"did:privy:another-user"};await adapter.authenticateWallet();release();
+  const result=await creating;
+  expect(result).toBeInstanceOf(Error);expect(String(result)).toContain("sign-in changed");
+  expect(f.creates.filter(Boolean)).toHaveLength(0);expect(f.provisions).toBe(0);expect(f.signed).toHaveLength(0);expect(f.data.size).toBe(0);
+});
+test("a stale setup promise cannot be shared with a different signed-in identity",async()=>{
+  const f=fixture();f.registered=false;f.available=false;
+  const original=f.options.provider.callFunction.bind(f.options.provider);let release!:()=>void,entered!:()=>void;
+  const started=new Promise<void>(resolve=>entered=resolve),gate=new Promise<void>(resolve=>release=resolve);
+  f.options.provider.callFunction=(async(input:any)=>{if(input.method==="tidebound_protocol"){entered();await gate;}return original(input);}) as typeof original;
+  const adapter=new PrivyAccountAdapter(f.options),first=adapter.provisionAccount("player1").catch(error=>error);
+  await started;await adapter.endSession();f.identity={...owner(),id:"did:privy:another-user"};await adapter.authenticateWallet();
+  await expect(adapter.provisionAccount("player1")).rejects.toThrow("sign-in changed");release();expect(await first).toBeInstanceOf(Error);
+  expect(f.provisions).toBe(0);expect(f.creates.filter(Boolean)).toHaveLength(0);
+});
+test("wallet creation cannot cross sign-out and sign-in while an access token is delayed",async()=>{
+  const f=fixture();f.available=false;let release!:(token:string)=>void,entered!:()=>void,held=true;
+  const started=new Promise<void>(resolve=>entered=resolve);
+  f.options.session.accessToken=async()=>{if(held){held=false;entered();return new Promise<string>(resolve=>release=resolve);}return "private-access-token";};
+  const adapter=new PrivyAccountAdapter(f.options),first=adapter.canonicalWallet(true).catch(error=>error);
+  await started;await adapter.endSession();f.identity={...owner(),id:"did:privy:another-user"};await adapter.authenticateWallet();release("private-access-token");
+  expect(await first).toBeInstanceOf(Error);expect(f.creates.filter(Boolean)).toHaveLength(0);expect(f.provisions).toBe(0);expect(f.signed).toHaveLength(0);
+});
 test("canonical ownership checks never select a first EVM wallet or accept entity-only access",()=>{
   const user=owner();user.wallets=[{...user.wallets[0]!,id:"evm-wallet",address:"0x123",chainType:"ethereum"},...user.wallets];
   expect(verifyPrivyWalletOwner(user,wallet).toString()).toBe(publicKey);

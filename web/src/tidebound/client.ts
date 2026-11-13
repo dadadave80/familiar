@@ -18,6 +18,36 @@ export interface Journey {
 export interface ChainSnapshot { readAt:string;binding:PlayerBinding;journey:Journey;checkpointHash:string;pets:{token_id:string}[];items:CraftItem[];nextItemIndex:number|null }
 export interface PendingNative { operationId:string;hash:string;method:string;receiver:string;transaction:string;signedTransaction?:string;state:"prepared"|"signed"|"submitted" }
 function check(value:unknown,message:string):asserts value {if(!value)throw Error(message)}
+const record=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==="object"&&!Array.isArray(value);
+/** A FINAL label alone cannot settle an incomplete or contradictory receipt graph. */
+function finalReceiptFailure(value:unknown,expected:{hash:string;signer:string;receiver:string}):boolean {
+  const message="The original receipt graph is incomplete or uncertain. Keep its original pending action.";
+  check(record(value)&&value.final_execution_status==="FINAL"&&record(value.transaction)&&value.transaction.hash===expected.hash&&value.transaction.signer_id===expected.signer&&value.transaction.receiver_id===expected.receiver,message);
+  check(record(value.transaction_outcome)&&value.transaction_outcome.id===expected.hash&&record(value.transaction_outcome.outcome),message);
+  const origin=value.transaction_outcome.outcome;
+  check(origin.executor_id===expected.signer&&Array.isArray(origin.receipt_ids)&&Array.isArray(value.receipts_outcome),message);
+  type Node={executor:string;children:string[];status:Record<string,unknown>};
+  const nodes=new Map<string,Node>();
+  const status=(s:unknown):Record<string,unknown>=>{check(record(s)&&Object.keys(s).length===1,message);check(typeof s.SuccessValue==="string"||record(s.Failure)&&Object.keys(s.Failure).length>0||typeof s.SuccessReceiptId==="string"&&s.SuccessReceiptId.length>0,message);return s;};
+  const outer=status(value.status),initial=status(origin.status);
+  for(const raw of value.receipts_outcome){
+    check(record(raw)&&typeof raw.id==="string"&&raw.id.length>0&&!nodes.has(raw.id)&&record(raw.outcome),message);
+    const o=raw.outcome;check(typeof o.executor_id==="string"&&Array.isArray(o.receipt_ids)&&o.receipt_ids.every(id=>typeof id==="string"&&id.length>0)&&new Set(o.receipt_ids).size===o.receipt_ids.length,message);
+    nodes.set(raw.id,{executor:o.executor_id,children:o.receipt_ids,status:status(o.status)});
+  }
+  if("Failure"in initial){check("Failure"in outer&&origin.receipt_ids.length===0&&nodes.size===0,message);return true;}
+  check(typeof initial.SuccessReceiptId==="string"&&origin.receipt_ids.length===1&&origin.receipt_ids[0]===initial.SuccessReceiptId&&nodes.get(initial.SuccessReceiptId)?.executor===expected.receiver,message);
+  const seen=new Set<string>();
+  function visit(id:string){check(!seen.has(id),message);const node=nodes.get(id);check(node,message);seen.add(id);for(const child of node.children)visit(child);}
+  visit(initial.SuccessReceiptId);check(seen.size===nodes.size,message);
+  function terminal(s:Record<string,unknown>,path=new Set<string>()):Record<string,unknown>{
+    if(!("SuccessReceiptId"in s))return s;
+    const id=s.SuccessReceiptId;check(typeof id==="string"&&!path.has(id)&&nodes.has(id),message);path.add(id);return terminal(nodes.get(id)!.status,path);
+  }
+  const result=terminal(initial);for(const node of nodes.values())terminal(node.status);
+  check("Failure"in result?"Failure"in outer:typeof outer.SuccessValue==="string"&&outer.SuccessValue===result.SuccessValue,message);
+  return "Failure"in result||[...nodes.values()].some(node=>"Failure"in node.status);
+}
 const hashId=(id:unknown):id is string=>typeof id==="string" && /^[a-f0-9]{64}$/.test(id);
 const tokenId=(id:unknown):id is string=>typeof id==="string" && /^lantern:[a-f0-9]{64}$/.test(id);
 const accountId=(id:unknown):id is string=>typeof id==="string" && id.length<=64 && /^[a-z0-9]+(?:[._-][a-z0-9]+)*\.testnet$/.test(id);
@@ -66,33 +96,35 @@ export function nativeGas(method:string):bigint {
 /** Fixed testnet tuple, native player-funded transactions, and one persisted uncertain action per account. */
 export class TideboundClient {
   constructor(readonly root:string,readonly itemsContract:string,readonly provider:JsonRpcProvider,readonly adapter:RecoverableAccountAdapter,private readonly store:Pick<Storage,"getItem"|"setItem"|"removeItem">) {}
-  async view<T>(contractId:string,method:string,args:Record<string,unknown>={}):Promise<T> {
-    return await this.provider.callFunction({contractId,method,args,blockQuery:{finality:"final"}}) as unknown as T;
+  async view<T>(contractId:string,method:string,args:Record<string,unknown>={},blockId?:string):Promise<T> {
+    return await this.provider.callFunction({contractId,method,args,blockQuery:blockId?{blockId}:{finality:"final"}}) as unknown as T;
   }
-  async verifyStack(contentVersion:SupportedContent=CONTENT_VERSION) {
+  async verifyStack(contentVersion:SupportedContent=CONTENT_VERSION,blockId?:string) {
     check(this.root.endsWith(".testnet") && this.itemsContract===`items.${this.root}` && await this.provider.getNetworkId()==="testnet","This harbor requires the configured NEAR testnet stack.");
     const [protocol,items]=await Promise.all([
-      this.view<unknown>(this.root,"tidebound_protocol"),
-      this.view<unknown>(this.itemsContract,"craft_protocol"),
+      this.view<unknown>(this.root,"tidebound_protocol",{},blockId),
+      this.view<unknown>(this.itemsContract,"craft_protocol",{},blockId),
     ]);
     assertTideboundContent(this.root,protocol,items,contentVersion);
   }
   async snapshot(binding:PlayerBinding,fromIndex=0):Promise<ChainSnapshot> {
     await this.verifyStack();
     check(binding.network==="testnet" && isPlayerAccount(binding.nearAccountId,this.root),"The account belongs to a different harbor.");
+    const block=await this.provider.viewBlock({finality:"final"}),blockId=block.header.hash;
+    check(typeof blockId==="string"&&baseDecode(blockId).length===32,"The finalized snapshot block could not be verified.");
     const [raw,checkpointHash,pets,inventory]=await Promise.all([
-      this.view<unknown>(this.root,"tidebound_journey",{account_id:binding.nearAccountId}),
-      this.view<string>(this.root,"tidebound_checkpoint_hash",{account_id:binding.nearAccountId}),
-      this.view<{token_id:string}[]>(this.root,"nft_tokens_for_owner",{account_id:binding.nearAccountId,from_index:"0",limit:20}),
-      this.view<{items:CraftItem[];next_index:number|null}>(this.itemsContract,"craft_inventory",{account_id:binding.nearAccountId,from_index:fromIndex,limit:32}),
+      this.view<unknown>(this.root,"tidebound_journey",{account_id:binding.nearAccountId},blockId),
+      this.view<string>(this.root,"tidebound_checkpoint_hash",{account_id:binding.nearAccountId},blockId),
+      this.view<{token_id:string}[]>(this.root,"nft_tokens_for_owner",{account_id:binding.nearAccountId,from_index:"0",limit:20},blockId),
+      this.view<{items:CraftItem[];next_index:number|null}>(this.itemsContract,"craft_inventory",{account_id:binding.nearAccountId,from_index:fromIndex,limit:32},blockId),
     ]);
     check(/^[a-f0-9]{64}$/.test(checkpointHash) && Array.isArray(pets) && Array.isArray(inventory.items) && inventory.items.length<=32 && (inventory.next_index===null || (Number.isInteger(inventory.next_index) && inventory.next_index>fromIndex)),"The contract snapshot is incomplete.");
     const owned:CraftItem[]=[];
     for(const item of inventory.items) {
       check(validMint(item?.mint) && (item.finish==="original" && !item.finish_used && item.appearance_version===0 || item.finish==="harbor_polish" && item.finish_used===true && item.appearance_version===1),"The item metadata is unsupported.");
-      if(item.mint.content_version==="first_light_v2")await this.verifyStack("first_light_v2");
+      if(item.mint.content_version==="first_light_v2")await this.verifyStack("first_light_v2",blockId);
       // Ownership can change after enumeration; the mutation will check it again atomically.
-      if(await this.view<string>(this.itemsContract,"mt_balance_of",{account_id:binding.nearAccountId,token_id:item.mint.token_id})==="1") owned.push(item);
+      if(await this.view<string>(this.itemsContract,"mt_balance_of",{account_id:binding.nearAccountId,token_id:item.mint.token_id},blockId)==="1") owned.push(item);
     }
     return {readAt:new Date().toISOString(),binding,journey:parseJourney(raw),checkpointHash,pets,items:owned,nextItemIndex:inventory.next_index};
   }
@@ -177,7 +209,7 @@ export class TideboundClient {
       const nonce=BigInt(access.nonce);
       const expired=BigInt(final.header.height)>BigInt(original.header.height)+BigInt(validity);
       if(!expired || nonce>=tx.nonce) {
-        if(pending.state==="submitted" || nonce>=tx.nonce)return this.reconcileNative(binding);
+        if(pending.state==="submitted" || nonce>=tx.nonce)return this.reconcileLocked(binding);
         return "The original transaction is still valid. Resume its same saved bytes; no new action was created.";
       }
       // Pin nonce and validity to the same finalized block before clearing only this local envelope.
@@ -193,7 +225,7 @@ export class TideboundClient {
     await this.verifyStack();await this.signingBinding(binding);
     const pending=this.pending(binding);check(pending,"No original action is available to resume.");
     const {tx,hash}=await this.originalTransaction(binding,pending);
-    if(pending.state==="submitted") return this.reconcileNative(binding);
+    if(pending.state==="submitted") return this.reconcileLocked(binding);
     await this.affordable(tx);
     const signed=pending.signedTransaction ? decodeSignedTransaction(base64Decode(pending.signedTransaction)) : await this.adapter.authorizeNative(tx,pending.operationId);
     check(base64Encode(encodeTransaction(signed.transaction))===pending.transaction,"The signature belongs to a different action.");
@@ -207,19 +239,19 @@ export class TideboundClient {
     try {
       const outcome=await this.provider.sendTransactionUntil(signed,"FINAL");
       check(outcome.transaction?.hash===hash,"The node returned a different transaction. Check the original receipt.");
-      return await this.reconcileNative(binding);
+      return await this.reconcileLocked(binding);
     } catch {throw Error("This action may still be executing. Check its original receipt; no new payment or craft has been started.")}
   }
-  async reconcileNative(binding:PlayerBinding):Promise<string> {
+  async reconcileNative(binding:PlayerBinding):Promise<string> {return this.lock(binding,()=>this.reconcileLocked(binding));}
+  private async reconcileLocked(binding:PlayerBinding):Promise<string> {
     await this.verifyStack();
     check(binding.network==="testnet" && isPlayerAccount(binding.nearAccountId,this.root),"The account belongs to a different testnet harbor.");
     const pending=this.pending(binding);if(!pending)return "No native action is pending.";
     await this.originalTransaction(binding,pending);
     const outcome=await this.provider.viewTransactionStatusWithReceipts({txHash:pending.hash,accountId:binding.nearAccountId,waitUntil:"FINAL"});
-    check(outcome.transaction?.hash===pending.hash && outcome.transaction.signer_id===binding.nearAccountId && outcome.transaction.receiver_id===pending.receiver && outcome.final_execution_status==="FINAL","The original action is still uncertain. Keep checking its receipt.");
-    const failed=typeof outcome.status==="object" && "Failure" in outcome.status || outcome.receipts_outcome?.some(r=>typeof r.outcome.status==="object" && "Failure" in r.outcome.status);
-    check(typeof outcome.status==="object" && ("SuccessValue" in outcome.status || "Failure" in outcome.status),"The original action has not completed.");
-    check(this.pending(binding)?.operationId===pending.operationId,"Another tab changed this pending action.");
+    const failed=finalReceiptFailure(outcome,{hash:pending.hash,signer:binding.nearAccountId,receiver:pending.receiver});
+    const current=this.pending(binding);
+    check(current?.operationId===pending.operationId&&current.hash===pending.hash&&current.transaction===pending.transaction,"Another tab changed this pending action.");
     this.store.removeItem(this.pendingKey(binding));
     return failed ? "A receipt failed. Canonical progress and item state are read separately below; reserved operations still need reconciliation." : "Transaction finalized. Progress and ownership are read separately below.";
   }

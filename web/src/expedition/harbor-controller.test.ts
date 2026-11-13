@@ -31,7 +31,7 @@ function fixture() {
  } as unknown as HarborClient;
  const adapter={accountRoot:root,async restoreSession(){return binding;},async authenticate(){return binding;},async endSession(){},async provisionAccount(){provisions++;return binding;}} as unknown as HarborConnection["adapter"];
  const controller=new HarborController({client,adapter,async accountExists(account){existingLookups.push(account);if(account==="absent.testnet")throw Error("recipient absent");}}, {getItem:key=>data.get(key)??null,setItem:(key,value)=>{data.set(key,value);}},syntheticReturnLock());
- return {controller,data,sent,existingLookups,get snapshot(){return snapshot;},set snapshot(value:ChainSnapshot){snapshot=value;},set supported(value:boolean){supported=value;},set unknown(value:boolean){unknown=value;},get pending(){return pending;},get resumes(){return resumes;},get provisions(){return provisions;},set credit(value:bigint){credit=value;},set reads(value:(()=>Promise<void>)|null){reads=value;},set onSend(value:(method:string,args:Record<string,unknown>)=>void){onSend=value;}};
+ return {controller,adapter,data,sent,existingLookups,get snapshot(){return snapshot;},set snapshot(value:ChainSnapshot){snapshot=value;},set supported(value:boolean){supported=value;},set unknown(value:boolean){unknown=value;},get pending(){return pending;},set pending(value:PendingNative|null){pending=value;},get resumes(){return resumes;},get provisions(){return provisions;},set credit(value:bigint){credit=value;},set reads(value:(()=>Promise<void>)|null){reads=value;},set onSend(value:(method:string,args:Record<string,unknown>)=>void){onSend=value;}};
 }
 async function saved(f:ReturnType<typeof fixture>){await f.controller.setBinding(binding);await f.controller.selectSaved();}
 function earn(f:ReturnType<typeof fixture>){Object.assign(f.snapshot.journey,{revision:1,banked:["lens"],lens_claim:"b".repeat(64),credit:"available",workshop_salvage:1,bram_budget:12});}
@@ -41,6 +41,24 @@ test("restore selects no world and preserves existing Mochi, v1 saves and wallet
  const f=fixture();await f.controller.restore();expect(f.controller.state.mode).toBe("preview");expect(f.controller.state.snapshot?.pets[0]?.token_id).toBe(`mochi.${root}`);
  expect(f.data.get("familiar.first-light.beacon.v1")).toBe("unchanged-v1-save");expect(f.provisions).toBe(0);expect(f.sent).toEqual([]);
  f.supported=false;await expect(f.controller.selectSaved()).rejects.toThrow("private preview");expect(f.controller.state.mode).toBe("preview");expect(f.sent).toEqual([]);
+});
+test("waiting for sign-in does not block a local outing or merge it into a remembered saved harbor",async()=>{
+ const f=fixture();let release!:(binding:PlayerBinding)=>void;
+ f.adapter.authenticate=()=>new Promise(resolve=>release=resolve);
+ f.data.set(`familiar.expedition.authority.v2:testnet:${root}:${binding.nearAccountId}`,"saved");
+ f.pending={operationId:"native:original",hash:"original-hash",method:"adopt",receiver:root,transaction:"EXACT_ORIGINAL_BYTES",state:"prepared"};const original=structuredClone(f.pending);
+ const signingIn=f.controller.authenticate();expect(f.controller.state.busy).toBe(true);
+ const context=f.controller.runContext(preview);expect(context.authority).toBe("local-preview");f.controller.setActiveRun(context);
+ release(binding);await signingIn;
+ expect(f.controller.state.mode).toBe("preview");expect(f.controller.state.snapshot?.binding).toEqual(binding);expect(f.pending).toEqual(original);
+ await expect(f.controller.selectSaved()).rejects.toThrow("Finish this outing");expect(f.sent).toEqual([]);expect(f.provisions).toBe(0);
+});
+test("saved outings and authority switches stay blocked while canonical reads or a review are pending",async()=>{
+ const f=fixture();earn(f);await saved(f);let release!:()=>void,entered!:()=>void;
+ const began=new Promise<void>(resolve=>entered=resolve);f.reads=()=>{entered();return new Promise<void>(resolve=>release=resolve)};
+ const loading=f.controller.refresh();await began;
+ expect(()=>f.controller.runContext(preview)).toThrow("Resolve the original request");expect(()=>f.controller.selectPreview()).toThrow("Finish this outing");release();await loading;f.reads=null;
+ await f.controller.review({kind:"commission"});expect(()=>f.controller.runContext(preview)).toThrow("Resolve the original request");expect(f.sent).toEqual([]);
 });
 test("canonical workshop on another device uses accepted claims without any local origins",async()=>{
  const f=fixture();earn(f);await saved(f);expect(canonicalWorkshop(f.snapshot).motifs).toEqual(["crest"]);

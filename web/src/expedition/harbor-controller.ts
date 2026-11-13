@@ -82,7 +82,8 @@ export class HarborController implements HarborSession {
   async selectSaved(){check(!this.active,"Finish this outing before choosing another harbor.");await this.refresh();check(this.value.v2Supported,"The new court is a private preview until both contracts support it. Your existing Mochi and v1 progress are preserved.");check(this.value.binding,"Sign in before selecting this harbor.");this.choice(this.value.binding,"saved");this.update({mode:"saved"});this.update({returns:this.recordsFor(this.value.snapshot)});}
   selectPreview(){check(!this.active&&!this.value.busy,"Finish this outing before choosing another harbor.");if(this.value.binding)this.choice(this.value.binding,"preview");this.prepared=null;this.update({mode:"preview",review:null,returns:this.recordsFor(null)});}
   runContext(preview:HomeCheckpoint):RunContext {
-    check(!this.value.busy&&(this.value.mode==="preview"||!this.value.pending),"Resolve the original request before setting out from this harbor.");
+    this.guard(this.epoch);
+    check(!this.value.review&&(this.value.mode==="preview"||!this.value.busy&&!this.value.pending),"Resolve the original request before setting out from this harbor.");
     const context=this.value.mode==="saved"?(check(this.value.snapshot&&this.value.v2Supported,"The saved expedition is not ready."),this.context(this.value.snapshot)):{authority:"local-preview" as const,...structuredClone(preview)};
     return structuredClone(context);
   }

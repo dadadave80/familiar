@@ -60,7 +60,7 @@ function signatureBytes(signature:string):Uint8Array {
 export class PrivyAccountAdapter implements RecoverableAccountAdapter {
   private generation=0;
   private signedOut=false;
-  private provisioning:{username:string;result:Promise<PlayerBinding>}|null=null;
+  private provisioning:{username:string;identityId:string;generation:number;result:Promise<PlayerBinding>}|null=null;
   constructor(readonly options:PrivyAccountOptions) {}
   get accountRoot(){return this.options.root;}
   private async identity() {
@@ -70,14 +70,16 @@ export class PrivyAccountAdapter implements RecoverableAccountAdapter {
   private sameIdentity(id:string,generation=this.generation) {
     check(!this.signedOut && this.generation===generation && this.options.session.identity()?.id===id,"The sign-in changed. The original account and pending action were preserved.");
   }
-  private async token(identity:PrivyIdentity) {
-    const token=await this.options.session.accessToken();this.sameIdentity(identity.id);
+  private async token(identity:PrivyIdentity,generation=this.generation) {
+    const token=await this.options.session.accessToken();this.sameIdentity(identity.id,generation);
     check(token,"Sign in again before requesting your canonical wallet.");return token;
   }
   /** Independent of root deployment, for explicit wallet setup and the sign-only recovery spike. */
   async canonicalWallet(create=false):Promise<PrivyWalletBinding|null> {
+    const generation=this.generation,expectedIdentity=this.options.session.identity()?.id;
     const identity=await this.identity();if(!identity)return null;
-    const generation=this.generation,token=await this.token(identity);
+    check(!expectedIdentity||identity.id===expectedIdentity,"The sign-in changed. The original account and pending action were preserved.");
+    this.sameIdentity(identity.id,generation);const token=await this.token(identity,generation);
     const response=await this.options.wallet(create,token);this.sameIdentity(identity.id,generation);
     if(response.wallet===null)return null;
     privyWalletKey(response.wallet);
@@ -128,17 +130,19 @@ export class PrivyAccountAdapter implements RecoverableAccountAdapter {
   }
   async provisionAccount(username:string):Promise<PlayerBinding> {
     usernameAccountId(username,this.options.root);
-    if(this.provisioning){if(this.provisioning.username!==username)throw new UsernameError("ERR_USERNAME_PENDING");return this.provisioning.result;}
+    if(this.provisioning){this.sameIdentity(this.provisioning.identityId,this.provisioning.generation);if(this.provisioning.username!==username)throw new UsernameError("ERR_USERNAME_PENDING");return this.provisioning.result;}
+    const identity=this.options.session.identity(),generation=this.generation;
+    check(identity&&!this.signedOut,"Sign in before creating a player.");
     const result=(async()=>{
-      const existing=await this.resolveBinding();if(existing)return existing;
-      await this.compatibleStack();
-      const identity=await this.identity();check(identity,"Sign in before creating a player.");const generation=this.generation;
-      const wallet=await this.canonicalWallet(true);check(wallet,"Your canonical wallet could not be confirmed. Check it before trying player creation again.");
-      const created=await this.options.player(username,await this.token(identity));this.sameIdentity(identity.id,generation);
+      const existing=await this.resolveBinding();this.sameIdentity(identity.id,generation);if(existing)return existing;
+      await this.compatibleStack();this.sameIdentity(identity.id,generation);
+      const wallet=await this.canonicalWallet(true);this.sameIdentity(identity.id,generation);check(wallet,"Your canonical wallet could not be confirmed. Check it before trying player creation again.");
+      const token=await this.token(identity,generation);this.sameIdentity(identity.id,generation);
+      const created=await this.options.player(username,token);this.sameIdentity(identity.id,generation);
       check(created.root===this.options.root && created.network==="testnet" && isPlayerAccount(created.accountId,this.options.root),"Player creation returned a different harbor. Preserve the original request.");
-      const binding=await this.resolveBinding();check(binding?.nearAccountId===created.accountId && binding.signerPublicKey===wallet.publicKey,"Player creation is still being checked. Sign in again to resolve the same account.");return binding;
+      const binding=await this.resolveBinding();this.sameIdentity(identity.id,generation);check(binding?.nearAccountId===created.accountId && binding.signerPublicKey===wallet.publicKey,"Player creation is still being checked. Sign in again to resolve the same account.");return binding;
     })();
-    this.provisioning={username,result};try{return await result}finally{this.provisioning=null;}
+    this.provisioning={username,identityId:identity.id,generation,result};try{return await result}finally{this.provisioning=null;}
   }
   private pendingKey(operationId:string,binding:PlayerBinding) {
     check(/^[A-Za-z0-9:_-]{1,128}$/.test(operationId),"The signing operation is invalid.");
