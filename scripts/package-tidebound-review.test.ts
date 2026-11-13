@@ -50,11 +50,11 @@ test("only the existing Familiar project and original-path function routing are 
   for(const path of HTTP_PATHS)expect(()=>validateRouting({...config,routes:[{src:path+"$",dest:"/wallet"},...config.routes]})).toThrow("original request URL");
   expect(()=>validateRouting({version:3,routes:[]})).toThrow("filesystem");
 });
-test("three fixed URLs share one physical handler using relative aliases without rewrites",async()=>{
+test("four fixed URLs share one physical handler using relative aliases without rewrites",async()=>{
   const output=await mkdtemp(join(tmpdir(),"familiar-game-function-test-")),primary=join(output,"functions/api/v1/privy/wallet.func");await mkdir(primary,{recursive:true});
   await writeFile(join(primary,"index.mjs"),"export default (req,res)=>res.end(req.url)");await writeFile(join(primary,".vc-config.json"),JSON.stringify({runtime:"nodejs24.x",handler:"index.mjs",shouldAddHelpers:false}));
   const aliases=await installFunctionAliases(output);
-  expect(aliases).toEqual([{path:"api/health.func",target:"v1/privy/wallet.func"},{path:"api/v1/privy/player.func",target:"wallet.func"}]);
+  expect(aliases).toEqual([{path:"api/health.func",target:"v1/privy/wallet.func"},{path:"api/v1/privy/player.func",target:"wallet.func"},{path:"api/v1/privy/note.func",target:"wallet.func"}]);
   for(const alias of aliases){const path=join(output,"functions",alias.path);expect((await lstat(path)).isSymbolicLink()).toBe(true);expect(await readlink(path)).not.toStartWith("/");expect(await realpath(path)).toBe(await realpath(primary));expect(await readFile(join(path,"index.mjs"),"utf8")).toBe(await readFile(join(primary,"index.mjs"),"utf8"));}
   const before=await Promise.all(aliases.map(alias=>lstat(join(output,"functions",alias.path)).then(stat=>stat.ino)));
   await writeFile(join(primary,"index.mjs"),"export default (req,res)=>res.end('patched '+req.url)");
