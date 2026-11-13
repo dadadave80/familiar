@@ -25,10 +25,18 @@ try {
       },key);
       await page.goto(new URL("/outing/",origin).href);
       const original=await page.evaluate(key=>localStorage.getItem(key),key);
+      await page.getByRole("button",{name:"Harbor chart",exact:true}).click();
+      await expect(page.getByRole("heading",{name:"Wind Gate",exact:true})).toBeVisible();
+      await page.getByRole("button",{name:"Close panel",exact:true}).click();
       for(const job of ["bell","reed"] as const){
         await page.getByRole("button",{name:"Choose a crossing",exact:true}).click();
         await page.getByRole("button",{name:job==="bell"?/Bell Steps · Send supplies/:/Reed Steps · Bring the skiff home/}).click();
         const game=page.getByTestId("passage-game");
+        const beforeSound=await game.getAttribute("data-turn");
+        await page.getByRole("button",{name:"Enable game audio",exact:true}).click();
+        await expect(page.getByRole("button",{name:"Mute game audio",exact:true})).toBeVisible();
+        await page.getByRole("button",{name:"Mute game audio",exact:true}).click();
+        assert.equal(await game.getAttribute("data-turn"),beforeSound,"sound control spends no turn");
         const steps=job==="bell"?["north","west","ride","south","south","east","return"]:["north","north","west","east","east","west","north","wait","east","wait","south","ride","south","west","return"];
         for(const [index,step] of steps.entries()){
           const command=["north","west","south","east"].includes(step)?`step:${step}`:step;
@@ -46,13 +54,25 @@ try {
         await expect(game).toHaveAttribute("data-stage","delivered");
         if(job==="reed")await expect(game).toHaveAttribute("data-watched","true");
         await page.getByTestId("passage-finish").click();
-        const title=job==="bell"?"Supplies at Bell Steps.":"The reed skiff is home.";
+        const title=job==="bell"?"Supplies at Bell Steps.":"A harbor connected.";
         await expect(page.getByRole("heading",{name:title})).toBeVisible();
         await page.reload();
         await expect(page.getByRole("heading",{name:title})).toBeVisible();
         await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
         await page.screenshot({path:join(output,`${engine.name()}-${job}-harbor.png`)});
       }
+      const passageKey=key+":shore-passages.v1";
+      const beforeRest=await page.evaluate(k=>localStorage.getItem(k),passageKey);
+      await page.getByRole("button",{name:"Look over the harbor",exact:true}).click();
+      await expect(page.getByRole("heading",{name:"A harbor connected.",exact:true})).toBeVisible();
+      await expect(page.getByRole("heading",{name:"Bell Steps",exact:true})).toBeVisible();
+      await expect(page.getByText("Bram’s crates are stacked on the far work platform.",{exact:true})).toBeVisible();
+      await page.screenshot({path:join(output,`${engine.name()}-chart.png`)});
+      await page.getByRole("button",{name:"Sit with Mochi",exact:true}).click();
+      await expect(page.getByRole("heading",{name:"A moment together."})).toBeVisible();
+      await page.screenshot({path:join(output,`${engine.name()}-rest.png`)});
+      assert.equal(await page.evaluate(k=>localStorage.getItem(k),passageKey),beforeRest);
+      await page.getByRole("button",{name:"Back to the harbor",exact:true}).click();
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),original);
       await page.getByRole("button",{name:"Bram",exact:true}).click();
       await expect(page.getByText(/just as at the reeds/)).toBeVisible();

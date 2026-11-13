@@ -11,7 +11,7 @@ import "./passage-game.css";
 
 interface Props {
   job:PassageJob; initial:PassageState; mothHome:boolean; reduced:boolean; sound:boolean; audio:HarborAudio|null;
-  onSave:(next:PassageState)=>boolean; onFinish:(state:PassageState)=>void; onLeave:()=>void; blocked:boolean;
+  onSave:(next:PassageState)=>boolean; onFinish:(state:PassageState)=>void; onLeave:()=>void; onToggleSound:()=>void; blocked:boolean;
 }
 const places={bell:"Bell Steps",reed:"Reed Steps"};
 const channels=["Left","Center","Right"];
@@ -44,7 +44,7 @@ function consequence({before,after,events}:PassageTransition):string {
   return facts.join(" ");
 }
 
-export default function PassageGame({job,initial,mothHome,reduced,sound,audio,onSave,onFinish,onLeave,blocked}:Props){
+export default function PassageGame({job,initial,mothHome,reduced,sound,audio,onSave,onFinish,onLeave,onToggleSound,blocked}:Props){
   const [state,setState]=useState(initial),[result,setResult]=useState<PassageTransition|null>(null);
   const current=useRef(initial),pending=useRef<PassageTransition|null>(null),serial=useRef(0);
   const [ready,setReady]=useState(false),[fault,setFault]=useState(""),[sceneKey,setSceneKey]=useState(0);
@@ -136,8 +136,8 @@ export default function PassageGame({job,initial,mothHome,reduced,sound,audio,on
       onReady={()=>setReady(true)} onFault={message=>{setFault(message);setReady(false);pending.current=null;setResult(null);}}
       onBeat={beat} onSettled={settle} onCommand={take} onTarget={target} onInspect={inspect} onHome={()=>{}}
       onHover={pos=>{if(!busy&&!panel){const cmd=pos?commandAt(state.court,pos):null;setHover(cmd&&legal.includes(cmd)?cmd:null);}}}/>
-    <header className="exp-mast"><div className="exp-brand">familiar.<small>Device trial</small></div><h1 className="exp-place">{places[job]}</h1>
-      <button ref={harborButton} className="passage-leave" data-testid="passage-leave" onClick={leave} disabled={blocked||busy}>Harbor</button></header>
+    <header className="exp-mast"><div className="exp-brand">familiar.<small>Saved on this device</small></div><h1 className="exp-place">{places[job]}</h1>
+      <div className="passage-header-actions"><button aria-pressed={sound} aria-label={sound?"Mute game audio":"Enable game audio"} onClick={onToggleSound}>{sound?"Sound on":"Sound off"}</button><button ref={harborButton} className="passage-leave" data-testid="passage-leave" onClick={leave} disabled={blocked||busy}>Harbor</button></div></header>
     <section className="exp-hud" aria-label="Passage status"><strong>{phase} tide</strong><span>Turn {Math.min(turn+1,TURN_LIMIT)}/{TURN_LIMIT}</span><span>Resolve {state.court.resolve}/3</span></section>
     {fault?<section className="exp-fault" role="alert"><p>{fault}</p><button onClick={()=>{setFault("");setSceneKey(key=>key+1);}}>Reopen the court</button></section>
       :(!ready&&!terminal)?<section className="exp-paused" role="status">Opening {places[job]}…</section>:null}

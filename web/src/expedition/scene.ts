@@ -10,7 +10,7 @@ const ART = "/assets/expedition-v2/runtime/";
 const ASSETS = { harbor:"harbor", mochi:"mochi-poses-v1", keeper:"tidekeeper", shell:"shell", lens:"lens", moth:"moth", wave:"wave", bram:"bram" } as const;
 export type HomePlace = "sail" | "beacon" | "bram" | "workbench" | "satchel" | "account";
 export type PassageView=Pick<PassageState,"job"|"stage"|"watched"|"mothHome">&{rode?:boolean};
-export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;services?:readonly PassageJob[];watchedReeds?:boolean }
+export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;resting?:boolean;services?:readonly PassageJob[];watchedReeds?:boolean }
 export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;passage?:PassageView|null }
 export interface WorldHooks {
   command:(command:Command)=>void;
@@ -153,6 +153,11 @@ export class ExpeditionScene extends Phaser.Scene {
         this.bram.setAngle(-4);
         void this.tween(this.beam,{alpha:1},620);
         void this.tween(this.bram,{angle:0},440);
+      }
+      if(!previous.court&&!snapshot.court&&previous.home.resting!==snapshot.home.resting&&snapshot.home.resting){
+        const y=this.actor.y;
+        if(snapshot.reducedMotion)this.actor.setY(y+3);
+        else {this.actor.setY(y-3);void this.tween(this.actor,{y:y+3},260);}
       }
       if(!previous.court&&!snapshot.court&&previous.home.relic==="vane"&&!previous.home.signaled&&snapshot.home.signaled&&!snapshot.reducedMotion){
         this.signalVane.setAngle(-22);
@@ -473,7 +478,7 @@ export class ExpeditionScene extends Phaser.Scene {
       if(this.snapshot.home.motif==="moth"){g.fillStyle(0xfff3c8).fillEllipse(x-5,y-15,9,13).fillEllipse(x+5,y-15,9,13).strokeEllipse(x-5,y-15,9,13).strokeEllipse(x+5,y-15,9,13).lineBetween(x,y-21,x,y-5);}
       else for(const offset of [-18,-9])g.lineBetween(x-8,y+offset,x-3,y+offset-3).lineBetween(x-3,y+offset-3,x+3,y+offset+3).lineBetween(x+3,y+offset+3,x+8,y+offset);
     }
-    if(this.snapshot.home.watchedReeds)this.pose("relieved");
+    if(this.snapshot.home.watchedReeds||this.snapshot.home.resting)this.pose("relieved");
   }
   private addHomeFind(item:Find,x:number,y:number,size:number){const image=this.add.image(x,y,`exp-${item}`).setDisplaySize(size,size).setDepth(item==="vane"?11:7);this.cargo.push(image);}
   private async tween(targets:object,config:Omit<Phaser.Types.Tweens.TweenBuilderConfig,"targets">,duration:number){
