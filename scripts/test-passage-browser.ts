@@ -70,15 +70,119 @@ try {
       await page.screenshot({path:join(output,`${engine.name()}-chart.png`)});
       await page.getByRole("button",{name:"Sit with Mochi",exact:true}).click();
       await expect(page.getByRole("heading",{name:"A moment together."})).toBeVisible();
+      await page.getByRole("button",{name:"Offer a hand",exact:true}).click();
+      await expect(page.getByText(/Mochi rests a paw against your hand/)).toBeVisible();
       await page.screenshot({path:join(output,`${engine.name()}-rest.png`)});
       assert.equal(await page.evaluate(k=>localStorage.getItem(k),passageKey),beforeRest);
       await page.getByRole("button",{name:"Back to the harbor",exact:true}).click();
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),original);
+      const actor={x:(phone?390:1280)*.49,y:phone?480:588};
+      if(!phone){
+        await page.mouse.click(actor.x,actor.y,{button:"right"});
+        await expect(page.getByRole("heading",{name:"A moment together."})).toHaveCount(0);
+        await page.mouse.move(actor.x,actor.y);await page.mouse.down();
+        await page.mouse.move(actor.x+40,actor.y);await page.mouse.move(actor.x,actor.y);await page.mouse.up();
+        await expect(page.getByRole("heading",{name:"A moment together."})).toHaveCount(0);
+        await page.mouse.click(actor.x,actor.y);
+      }else await page.touchscreen.tap(actor.x,actor.y);
+      await expect(page.getByRole("heading",{name:"A moment together."})).toBeVisible();
+      assert.equal(await page.evaluate(k=>localStorage.getItem(k),passageKey),beforeRest,"touching Mochi has no saved reward");
+      await page.getByRole("button",{name:"Back to the harbor",exact:true}).click();
       await page.getByRole("button",{name:"Bram",exact:true}).click();
       await expect(page.getByText(/just as at the reeds/)).toBeVisible();
+      await page.getByRole("button",{name:"Close panel",exact:true}).click();
+      await page.getByRole("button",{name:"Harbor chart",exact:true}).click();
+      await page.getByRole("button",{name:"Explore with Mochi",exact:true}).click();
+      const game=page.getByTestId("passage-game");
+      await expect(game).toHaveAttribute("data-bell-rigged","false");
+      async function move(step:string){
+        const command=["north","west","south","east"].includes(step)?`step:${step}`:step;
+        const turn=Number(await game.getAttribute("data-turn"));
+        const button=page.locator(`[data-command="${command}"]`);
+        if(phone)await button.tap();else await button.click();
+        await expect(game).toHaveAttribute("data-turn",String(turn+1));
+        await expect(game).toHaveAttribute("data-busy","false");
+      }
+      for(const step of ["north","west","ride","north","east","west"])await move(step);
+      const beforeInspect=await page.evaluate(k=>localStorage.getItem(k),passageKey);
+      await page.getByTestId("passage-inspect").click();
+      await page.locator('[data-preview-command="listen"]').click();
+      await expect(page.locator(".exp-inspect-reading")).toContainText("One turn listening");
+      assert.equal(await page.evaluate(k=>localStorage.getItem(k),passageKey),beforeInspect);
+      await page.getByRole("button",{name:"Close panel",exact:true}).click();
+      if(phone)await move("listen");else{
+        await page.keyboard.press("e");
+        await expect(game).toHaveAttribute("data-turn","7");
+        await expect(game).toHaveAttribute("data-busy","false");
+      }
+      await expect(game).toHaveAttribute("data-heard-bell","true");
+      await page.reload();
+      await expect(game).toHaveAttribute("data-turn","7");
+      await expect(game).toHaveAttribute("data-heard-bell","true");
+      await expect(game).toHaveAttribute("data-bell-rigged","false");
+      await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
+      await page.screenshot({path:join(output,`${engine.name()}-bell-discovery.png`)});
+      for(const step of ["south","east","west","south","east","south","return"])await move(step);
+      await page.getByTestId("passage-finish").click();
+      await expect(page.getByTestId("expedition-feedback")).toContainText("Bram rigs a bell pull");
+      await page.reload();
+      await page.getByRole("button",{name:"Bram",exact:true}).click();
+      await expect(page.getByText(/One good tug calls the Tidekeeper/)).toBeVisible();
+      await page.getByRole("button",{name:"Close panel",exact:true}).click();
+      await page.screenshot({path:join(output,`${engine.name()}-bell-harbor.png`)});
+      for(const job of ["bell","reed"]){
+        await page.getByRole("button",{name:"Harbor chart",exact:true}).click();
+        await page.getByRole("button",{name:job==="bell"?"Try the bell pull":"Sail Reed Steps again",exact:true}).click();
+        await expect(game).toHaveAttribute("data-bell-rigged","true");
+        await move("north");await move("north");
+        await page.getByTestId("passage-inspect").click();
+        await page.locator('[data-preview-command="wait"]').click();
+        await expect(page.locator(".exp-inspect-reading")).toContainText("Mochi is splashed");
+        await page.locator('[data-preview-command="ring"]').click();
+        await expect(page.locator(".exp-inspect-reading")).toContainText("Bridge left. Mochi stays dry.");
+        await expect(game).toHaveAttribute("data-turn","2");
+        await page.getByRole("button",{name:"Close panel",exact:true}).click();
+        await page.locator('[data-command="ring"]').focus();
+        await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-preview-exit","0");
+        await expect(game).toHaveAttribute("data-turn","2");
+        if(!phone&&job==="bell")await page.screenshot({path:join(output,"chromium-bell-preview.png")});
+        if(phone&&job==="reed"){
+          const geometry=await page.getByTestId("expedition-world").getAttribute("data-tiles");
+          await page.setViewportSize({width:844,height:390});
+          await expect(page.getByTestId("expedition-world")).not.toHaveAttribute("data-tiles",geometry!);
+          const sound=page.getByRole("button",{name:"Enable game audio",exact:true});
+          const hud=await page.locator(".exp-hud").boundingBox(),audio=await sound.boundingBox();
+          assert(hud&&audio&&hud.x+hud.width<=audio.x,"tide status leaves the sound control visible in landscape");
+          await sound.tap();
+          await page.getByRole("button",{name:"Mute game audio",exact:true}).tap();
+          await expect(game).toHaveAttribute("data-turn","2");
+        }
+        if(phone){
+          const tile=JSON.parse((await page.getByTestId("expedition-world").getAttribute("data-tiles"))!).find((t:any)=>t.position.x===1&&t.position.y===3);
+          await page.touchscreen.tap(tile.x,tile.y);
+          await expect(game).toHaveAttribute("data-turn","3");
+          await expect(game).toHaveAttribute("data-busy","false");
+        }else await move("ring");
+        await expect(game).toHaveAttribute("data-pull-spent","true");
+        assert.equal(await page.locator('[data-command="ring"]').count(),0);
+        const overflow=await page.evaluate(()=>({x:document.documentElement.scrollWidth-innerWidth,y:document.documentElement.scrollHeight-innerHeight}));
+        assert.deepEqual(overflow,{x:0,y:0});
+        await page.screenshot({path:join(output,`${engine.name()}-${job}-bell-pull.png`)});
+        await page.reload();
+        await expect(game).toHaveAttribute("data-turn","3");
+        await expect(game).toHaveAttribute("data-pull-spent","true");
+        await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
+        for(const step of job==="bell"?["west","south","ride","south","south","east","return"]:["wait","east","ride","south","west","return"])await move(step);
+        await expect(game).toHaveAttribute("data-stage","delivered");
+        await expect(page.locator(".exp-hud")).toContainText("Resolve 3/3");
+        await page.getByTestId("passage-finish").click();
+        if(phone)await page.setViewportSize({width:390,height:844});
+      }
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),original,"companion and discovery never rewrite the H1 save");
+      assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)!).heardBell,passageKey),true);
       assert.deepEqual(errors,[],"all court and harbor textures decode");
       if(record){const video=page.video()!;await page.close();await video.saveAs(join(output,"both-crossings.webm"));}
-      console.info(engine.name(),"Bell and Reed deliveries, interrupted runs, moth memory and independent save passed");
+      console.info(engine.name(),"Bell and Reed deliveries, discovery, bell routes, touch/keyboard, interrupted runs, companion and independent save passed");
     }finally{await browser.close();}
   }
   console.info(output);

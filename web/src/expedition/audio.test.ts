@@ -25,7 +25,7 @@ test("no audio context is created before opt-in and a late resume cannot outlive
     close:async()=>{closed++;context.state="closed";},createOscillator:()=>{oscillators++;throw Error("Must remain silent");},
   };
   const audio=new HarborAudio(()=>{created++;return context as unknown as AudioContext;});
-  audio.playPassage("watch");audio.playPassage("ride");
+  audio.playPassage("watch");audio.playPassage("ride");audio.playPassage("listen");audio.playPassage("bell");
   audio.play({kind:"telegraph",column:0});expect(created).toBe(0);
   const enabling=audio.setEnabled(true);expect(created).toBe(1);
   await audio.close();resume();await enabling;
@@ -86,6 +86,7 @@ test("music phrases replace one another, mix independently and stop on mute",asy
   expect(harbor.length).toBeGreaterThan(2);
   expect(Math.max(...harbor.flatMap(source=>source.starts))).toBeGreaterThan(context.currentTime+.5);
   audio.play({kind:"telegraph",column:1});
+  audio.playPassage("bell");audio.playPassage("listen");
   expect(oscillators).toHaveLength(harbor.length);
   audio.playMusic("departure");
   expect(harbor.every(source=>source.stops.length===2)).toBe(true);
@@ -95,6 +96,18 @@ test("music phrases replace one another, mix independently and stop on mute",asy
   expect(oscillators).toHaveLength(untilDeparture);
   audio.play({kind:"telegraph",column:1});
   expect(oscillators.length).toBeGreaterThan(untilDeparture);
+  const beforeListen=oscillators.length;
+  audio.playPassage("listen");
+  const listening=oscillators.slice(beforeListen);
+  expect(listening).toHaveLength(2);
+  const beforeBell=oscillators.length;
+  audio.playPassage("bell");
+  const brass=oscillators.slice(beforeBell);
+  expect(brass).toHaveLength(3);
+  expect(brass.every(source=>source.starts[0]===context.currentTime)).toBe(true);
+  expect(listening[1]!.starts[0]).toBeGreaterThan(context.currentTime);
+  audio.setMix(1,0);
+  expect([...listening,...brass].every(source=>source.stops.length===2)).toBe(true);
   audio.setMix(1,1);
   audio.playMusic("beacon");
   const untilWind=oscillators.length;
@@ -110,5 +123,6 @@ test("music phrases replace one another, mix independently and stop on mute",asy
   await audio.setEnabled(false);
   expect(oscillators.every(source=>source.stops.length>=2)).toBe(true);
   audio.playMusic("harbor");
+  audio.playPassage("bell");audio.playPassage("listen");
   expect(oscillators).toHaveLength(sounding);
 });

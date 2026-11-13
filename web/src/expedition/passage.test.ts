@@ -87,3 +87,49 @@ test("an illegal command or invalid saved start never becomes an accepted action
   expect(replayPassage("bell", [], "false")).toBeNull();
   expect(replayPassage("bell", Array(25).fill("wait"))).toBeNull();
 });
+
+test("Mochi can hear the bell once in the exposed west hollow on low tide", () => {
+  const approach = [N,W,"ride",N,E,W] as const;
+  const earlyTrip = replayPassage("bell", approach)!;
+  expect(passageCommands(earlyTrip)).not.toContain("listen");
+  expect(replayPassage("bell", [...approach, "listen"])).toBeNull();
+  const state = replayPassage("bell", approach, false, false, true)!;
+  expect(passageCommands(state)).toContain("listen");
+  const listening = applyPassage(state, "listen")!;
+  expect(listening.after.heardBell).toBe(true);
+  expect(listening.after.bellRigged).toBe(false);
+  expect(listening.after.court).toEqual(applyPassage(state, "wait")!.after.court);
+  expect(listening.events).toEqual(applyPassage(state, "wait")!.events);
+  expect(applyPassage(state, "wait")!.after.heardBell).toBe(false);
+  expect(passageCommands({ ...state, heardBell: true })).not.toContain("listen");
+  expect(passageCommands({ ...state, job: "reed" })).not.toContain("listen");
+  expect(passageCommands({ ...state, court: { ...state.court, opened: [] } })).not.toContain("listen");
+  expect(passageCommands(applyPassage(state, "wait")!.after)).not.toContain("listen");
+  expect(passageCommands(replayPassage("bell", [N,W,"ride"], false, false, true)!)).not.toContain("listen");
+});
+
+test("a rigged bell changes a marked surge, keeps the rope and enables different dry routes", () => {
+  const unrigged = replayPassage("bell", [N,N])!;
+  const atBell = replayPassage("bell", [N,N], false, true)!;
+  expect(applyPassage(unrigged, "ring")).toBeNull();
+  const wait = applyPassage(atBell, "wait")!;
+  expect(wait.after.court).toMatchObject({ bridge: 1, resolve: 2, opened: [] });
+  const ring = applyPassage(atBell, "ring")!;
+  expect(ring.events).toEqual([
+    { kind:"redirect", from:1, to:0 }, { kind:"wave", source:0, exit:0 },
+    { kind:"bridge", from:1, to:0 }, { kind:"open", column:0 },
+  ]);
+  expect(ring.after.court).toMatchObject({ position:{x:1,y:3}, bridge:0, resolve:3, turn:3, tool:"rope", uses:2 });
+  expect(applyPassage(replayPassage("bell", [N,N,"ring","wait","wait"], false, true)!, "ring")).toBeNull();
+  expect(applyPassage(replayPassage("bell", [N,W], false, true)!, "ring")).toBeNull();
+  expect(replayPassage("reed", [N,N,"ring"], false, 1)).toBeNull();
+  for (const [job, route] of [
+    ["bell", [N,N,"ring",W,S,"ride",S,S,E,"return"]],
+    ["reed", [N,N,"ring","wait",E,"ride",S,W,"return"]],
+  ] as const) {
+    const safe = replayPassage(job, route, false, true)!;
+    expect(safe.court.resolve).toBe(3);
+    expect(passageDelivered(safe)).toBe(true);
+    expect(replayPassage(job, route)).toBeNull();
+  }
+});

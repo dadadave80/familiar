@@ -4,14 +4,15 @@ import { COURTS } from "./rooms";
 import { commandAt } from "./input";
 import { PASSAGE_LANDINGS, type PassageJob, type PassageState } from "./passage";
 import { MOCHI_GROUND, MOCHI_POSES, walkingPose, type MochiPoseName } from "../motion/mochi";
+import { companionIdle, type Attention } from "./companion";
 import type { Column, Command, CourtEvent, CourtState, CourtTransition, Find, Position } from "./types";
 
 const ART = "/assets/expedition-v2/runtime/";
 const ASSETS = { harbor:"harbor", mochi:"mochi-poses-v1", keeper:"tidekeeper", shell:"shell", lens:"lens", moth:"moth", wave:"wave", bram:"bram" } as const;
-export type HomePlace = "sail" | "beacon" | "bram" | "workbench" | "satchel" | "account";
-export type PassageView=Pick<PassageState,"job"|"stage"|"watched"|"mothHome">&{rode?:boolean};
-export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;resting?:boolean;services?:readonly PassageJob[];watchedReeds?:boolean }
-export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;passage?:PassageView|null }
+export type HomePlace = "sail" | "beacon" | "bram" | "workbench" | "satchel" | "account" | "mochi";
+export type PassageView=Pick<PassageState,"job"|"stage"|"watched"|"mothHome"|"bellRigged"|"heardBell"|"archOpen">&{rode?:boolean;listened?:boolean;rang?:boolean;pullSpent?:boolean};
+export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;resting?:boolean;services?:readonly PassageJob[];watchedReeds?:boolean;heardBell?:boolean;greeting?:number }
+export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;previewWave?:{source:Column;exit:Column};passage?:PassageView|null }
 export interface WorldHooks {
   command:(command:Command)=>void;
   target:(position:Position)=>void;
@@ -34,6 +35,7 @@ export class ExpeditionScene extends Phaser.Scene {
   private shoreMarks!:Phaser.GameObjects.Graphics;
   private bridgeArt!:Phaser.GameObjects.Image;
   private wheel!:Phaser.GameObjects.Graphics;
+  private shoreBell!:Phaser.GameObjects.Graphics;
   private skiff!:Phaser.GameObjects.Graphics;
   private forecast!:Phaser.GameObjects.Graphics;
   private forecastLabel!:Phaser.GameObjects.Text;
@@ -60,6 +62,8 @@ export class ExpeditionScene extends Phaser.Scene {
   private playing=false;
   private gated=false;
   private stopped=false;
+  private idleElapsed=0;
+  private idleScale={x:1,y:1};
   private presentationSize:{w:number;h:number}|null=null;
   private get w(){return this.presentationSize?.w??this.scale.width;}
   private get h(){return this.presentationSize?.h??this.scale.height;}
@@ -100,6 +104,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.shoreMarks=this.add.graphics().setDepth(4);
     this.bridgeArt=this.add.image(0,0,"exp-bridge").setDepth(.5);
     this.wheel=this.add.graphics().setDepth(6);
+    this.shoreBell=this.add.graphics().setDepth(6);
     this.skiff=this.add.graphics().setDepth(8);
     this.forecast=this.add.graphics().setDepth(2);
     this.forecastLabel=this.add.text(0,0,"",{fontFamily:"Figtree Variable, sans-serif",fontStyle:"bold",color:"#fff5d8",backgroundColor:"#314d42",padding:{x:7,y:4},align:"center"}).setOrigin(.5).setDepth(12);
@@ -110,6 +115,13 @@ export class ExpeditionScene extends Phaser.Scene {
     this.signalVane=this.add.image(0,0,"exp-vane").setOrigin(31/64,54/64).setDepth(7).setVisible(false);
     this.actorShadow=this.add.ellipse(0,0,50,13,0x342719,.25).setDepth(7);
     this.actor=this.add.sprite(0,0,"exp-mochi",12).setOrigin(.5,MOCHI_GROUND).setDepth(10);
+    this.actor.setInteractive({useHandCursor:true}).on("pointerdown",(pointer:Phaser.Input.Pointer)=>{
+      if(!this.visual&&!this.gated)this.presses.set(pointer.id,{target:"mochi",x:pointer.x,y:pointer.y,dragged:false});
+    }).on("pointerup",(pointer:Phaser.Input.Pointer)=>{
+      const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);
+      if(!this.visual&&!this.gated&&!pointer.wasCanceled&&press?.target==="mochi"&&!press.dragged&&
+        Math.hypot(pointer.x-press.x,pointer.y-press.y)<=12&&(pointer.wasTouch||pointer.leftButtonReleased()))this.hooks.home("mochi");
+    });
     this.scale.on("resize",()=>{
       if(this.playing&&this.presentationSize){const zoom=Math.min(this.scale.width/this.presentationSize.w,this.scale.height/this.presentationSize.h);this.cameras.main.setZoom(zoom).centerOn(this.presentationSize.w/2,this.presentationSize.h/2);}
       else{this.cameras.main.setZoom(1).setScroll(0,0);this.layout();}
@@ -136,6 +148,30 @@ export class ExpeditionScene extends Phaser.Scene {
   point(position:Position){const f=this.field();return{x:f.cx+(position.x-1)*f.dx,y:f.bottom-position.y*f.dy};}
   private tileSize(){const f=this.field();return{width:Math.min(f.dx*.99,220),height:Math.max(33,Math.min(f.dy*.65,72))};}
   private pose(name:MochiPoseName){this.actorPose=name;this.actor.setFrame(MOCHI_POSES[name].frame);}
+  private attention():Attention {
+    const court=this.visual,passage=this.shownPassage;
+    if(!court){
+      const home=this.snapshot.home,pendingArch=home.signaled&&home.services?.includes("bell")&&home.services.includes("reed")&&!home.heardBell;
+      return home.resting?"rest":pendingArch?"left":home.moth?"right":"player";
+    }
+    if(court.outcome!=="active")return "rest";
+    if(court.locked!==null)return "water";
+    if(passage?.job==="bell"&&passage.archOpen&&court.opened.includes(0)&&!passage.heardBell&&!passage.bellRigged&&court.position.y>=3)return "left";
+    if(court.position.y>=3&&findPosition(court,"moth")&&!passage?.mothHome)return "right";
+    return "player";
+  }
+  private resetIdle(){
+    this.idleElapsed=0;this.idleScale={x:this.actor.scaleX,y:this.actor.scaleY};
+    this.actor.setAngle(0);
+    if(this.snapshot.reducedMotion)this.pose(companionIdle(0,this.attention(),true).pose);
+  }
+  update(_time:number,delta:number){
+    if(!this.actor||this.playing||this.gated||this.stopped||this.snapshot.reducedMotion||document.hidden)return;
+    this.idleElapsed+=Math.min(delta,100);
+    const idle=companionIdle(this.idleElapsed,this.attention(),false);
+    if(this.idleElapsed>1200)this.pose(idle.pose);
+    this.actor.setScale(this.idleScale.x,this.idleScale.y*idle.breath);
+  }
   private actorSize(){return Math.min(this.field().dx*.66,this.field().dy*1.1,112);}
   private fit(image:Phaser.GameObjects.Image,width:number,height:number){const source=image.texture.getSourceImage() as HTMLImageElement;image.setScale(Math.max(width/source.width,height/source.height));}
   private text(x:number,y:number,text:string,size=14){const label=this.add.text(x,y,text,{fontFamily:"Figtree Variable, sans-serif",fontSize:`${size}px`,fontStyle:"bold",color:"#fff5d8",backgroundColor:"#314d42",padding:{x:7,y:4},align:"center"}).setOrigin(.5).setDepth(12);this.labels.push(label);return label;}
@@ -159,6 +195,14 @@ export class ExpeditionScene extends Phaser.Scene {
         if(snapshot.reducedMotion)this.actor.setY(y+3);
         else {this.actor.setY(y-3);void this.tween(this.actor,{y:y+3},260);}
       }
+      if(!snapshot.court&&previous.home.greeting!==snapshot.home.greeting&&snapshot.home.greeting){
+        this.pose("reach-ready");
+        if(!snapshot.reducedMotion){
+          this.idleElapsed=0;
+          const greeting=snapshot.home.greeting;
+          this.time.delayedCall(350,()=>{if(!this.visual&&!this.stopped&&this.snapshot.home.resting&&this.snapshot.home.greeting===greeting)this.pose("relieved");});
+        }
+      }
       if(!previous.court&&!snapshot.court&&previous.home.relic==="vane"&&!previous.home.signaled&&snapshot.home.signaled&&!snapshot.reducedMotion){
         this.signalVane.setAngle(-22);
         void this.tween(this.signalVane,{angle:0},400);
@@ -177,14 +221,14 @@ export class ExpeditionScene extends Phaser.Scene {
   private layout(){
     if(!this.actor||this.stopped)return;
     this.presses.clear();
-    this.skiff.clear().setVisible(false);
+    this.skiff.clear().setVisible(false);this.shoreBell.clear().setAngle(0);
     this.clearParts();this.ground.clear();this.shoreMarks.clear();this.homeProps.clear();this.bridgeArt.setAlpha(1);this.wheel.clear();this.forecast.clear();this.forecastLabel.setVisible(false);this.neighbors.clear();this.beam.clear().setAlpha(1);
     const court=this.visual;
     this.backdrop.setTexture(court?"exp-court":"exp-harbor","__BASE");
     this.backdrop.setPosition(this.w/2,this.h/2);this.fit(this.backdrop,this.w,this.h);
     this.keeper.setVisible(!!court);this.bram.setVisible(!court);this.bridgeArt.setVisible(!!court);
     this.signalVane.setVisible(!court&&this.snapshot.home.signaled);
-    if(!court){this.hooks.geometry([]);this.harbor();return;}
+    if(!court){this.hooks.geometry([]);this.harbor();this.resetIdle();return;}
     const f=this.field(),tile=this.tileSize();
     // Fixed short walks connect each bank. Only the long middle crossing changes with a surge.
     for(const y of [0,3])for(const x of [0,1,2] as const){const from=this.point({x,y}),to=this.point({x,y:y+1}),length=f.dy*1.35;const link=this.add.image(from.x,(from.y+to.y)/2,"exp-bridge").setDisplaySize(length/3,length).setDepth(.4);this.surfaces.push(link);}
@@ -242,7 +286,7 @@ export class ExpeditionScene extends Phaser.Scene {
     const mothNearby=court.position.y>=3&&findPosition(court,"moth")!==null&&!this.shownPassage?.mothHome;
     const watching=this.shownPassage?.watched&&mothNearby&&court.position.x===1&&court.position.y===4;
     this.pose(watching?"relieved":court.locked!==null?"brace":mothNearby?"look-right":"curious");
-    this.drawCargo(court);this.paintHints(court);
+    this.drawCargo(court);this.paintHints(court);this.resetIdle();
   }
   private drawBridge(x:number,y:number,w:number,h:number){
     // Native3:1 bridge stays undistorted; transparent ends overlap the two landing stones.
@@ -298,6 +342,21 @@ export class ExpeditionScene extends Phaser.Scene {
       }
     }
     if(bell&&delivered)this.supplyCrate(g,far.x-tile.width*.22,far.y-12,Math.max(12,tile.width*.15));
+    if((bell&&passage.archOpen)||passage.bellRigged){
+      const hollow=this.point({x:0,y:4}),r=Math.min(23,tile.width*.22),x=hollow.x-tile.width*.25,y=hollow.y-12;
+      g.lineStyle(9,0x5c6658).beginPath().arc(x,y,r,Math.PI,0).strokePath();
+      g.lineStyle(6,0xc2ad7c).beginPath().arc(x,y-1,r,Math.PI,0).strokePath();
+      for(const a of [Math.PI*.2,Math.PI*.4,Math.PI*.6,Math.PI*.8])g.lineStyle(1,0x6c715c).lineBetween(x+Math.cos(a)*(r-4),y-Math.sin(a)*(r-4),x+Math.cos(a)*(r+3),y-Math.sin(a)*(r+3));
+      const exposed=court.opened.includes(0)||passage.bellRigged;
+      this.shoreBell.setPosition(x,y-r*.3);
+      this.shoreBell.fillStyle(exposed?0xddb875:0x6b8a7c).fillTriangle(0,-r*.65,-r*.42,r*.15,r*.42,r*.15).fillCircle(0,r*.26,2);
+      if(passage.bellRigged){
+        const pull=this.point({x:1,y:3});
+        g.lineStyle(1.5,passage.pullSpent?0x8c9581:0xe7c995).lineBetween(x,y-r,pull.x-tile.width*.24,pull.y-17);
+        g.lineStyle(3,0x766047).lineBetween(pull.x-tile.width*.24,pull.y-25,pull.x-tile.width*.24,pull.y+2);
+        g.lineStyle(2,passage.pullSpent?0x8c9581:0xffdb8d).strokeCircle(pull.x-tile.width*.24,pull.y-8,4);
+      }
+    }
     const crew=bell?far:near;
     const height=Math.min(64,f.dy*.77,tile.width*.53);
     this.bram.setVisible(true).setFlipX(!bell).setPosition(crew.x+side*tile.width*.27,crew.y+4).setDisplaySize(height*.75,height);
@@ -362,7 +421,8 @@ export class ExpeditionScene extends Phaser.Scene {
     this.forecast.clear();
     this.forecastLabel.setVisible(false);
     const preview=this.snapshot.previewCommand?applyCommand(court,this.snapshot.previewCommand):null;
-    const predictedWave=preview?.events.find(event=>event.kind==="wave");
+    const bellPreview=!this.playing?this.snapshot.previewWave:undefined;
+    const predictedWave=bellPreview??preview?.events.find(event=>event.kind==="wave");
     const exit=predictedWave?.exit??waveExit(preview?.after??court);
     const source=predictedWave?.source??(preview?.after??court).locked;
     this.keeper.setAngle(source===null?0:(source-1)*3).setTint(source===null?0xffffff:0xe5ddc9);
@@ -382,7 +442,7 @@ export class ExpeditionScene extends Phaser.Scene {
     }
     const lanes=["L","C","R"];
     const label=source===exit?`IN + OUT · ${["LEFT","CENTER","RIGHT"][exit]}`:`IN ${lanes[source]} → OUT ${lanes[exit]}`;
-    this.forecastLabel.setPosition(p.x,this.h<500?f.top+35:f.top-46).setFontSize(Math.min(14,this.w/27)).setText(label).setVisible(true);
+    this.forecastLabel.setPosition(p.x,this.h<500?f.top+35:f.top-46).setFontSize(Math.min(14,this.w/27)).setText(bellPreview?`IF BELL · ${["LEFT","CENTER","RIGHT"][exit]}`:label).setVisible(true);
   }
   private paintHints(court:CourtState){
     this.neighbors.clear();const tile=this.tileSize();
@@ -479,6 +539,12 @@ export class ExpeditionScene extends Phaser.Scene {
       else for(const offset of [-18,-9])g.lineBetween(x-8,y+offset,x-3,y+offset-3).lineBetween(x-3,y+offset-3,x+3,y+offset+3).lineBetween(x+3,y+offset+3,x+8,y+offset);
     }
     if(this.snapshot.home.watchedReeds||this.snapshot.home.resting)this.pose("relieved");
+    if(this.snapshot.home.heardBell){
+      const g=this.homeProps,x=this.w*(portrait?.65:.62),y=groundY+8;
+      g.lineStyle(3,0x77583a).lineBetween(x,y,x,y-30).lineBetween(x,y-30,x+16,y-30);
+      g.fillStyle(0xe3bc79).fillTriangle(x+15,y-28,x+9,y-17,x+22,y-17).fillCircle(x+15,y-15,2);
+      g.lineStyle(1.5,0xe0bf86).lineBetween(x+15,y-13,x+15,y+2).strokeCircle(x+15,y+5,3);
+    }
   }
   private addHomeFind(item:Find,x:number,y:number,size:number){const image=this.add.image(x,y,`exp-${item}`).setDisplaySize(size,size).setDepth(item==="vane"?11:7);this.cargo.push(image);}
   private async tween(targets:object,config:Omit<Phaser.Types.Tweens.TweenBuilderConfig,"targets">,duration:number){
@@ -492,6 +558,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.visual=this.snapshot.reducedMotion?transition.after:transition.before;
     if(this.snapshot.reducedMotion)this.shownPassage=this.snapshot.passage??null;
     const beganWatching=this.snapshot.passage?.watched&&!this.shownPassage?.watched;
+    const beganListening=this.snapshot.passage?.listened&&!this.shownPassage?.heardBell;
     this.layout();
     for(const [index,event] of transition.events.entries()){
       if(this.stopped||this.epoch!==epoch)return;
@@ -506,6 +573,11 @@ export class ExpeditionScene extends Phaser.Scene {
       this.pose("look-right");
       const moth=this.finds.get("moth");
       if(moth)await this.tween(moth,{x:moth.x+this.tileSize().width*.29,angle:-12,scaleX:moth.scaleX*.67,scaleY:moth.scaleY*.67},180);
+    }
+    if(beganListening&&!this.snapshot.reducedMotion){
+      this.pose("turn-left");await this.hold(220);
+      this.pose("curious");await this.hold(320);
+      this.pose("relieved");await this.hold(180);
     }
     if(this.stopped||this.epoch!==epoch)return;
     this.visual=transition.after;this.shownPassage=this.snapshot.passage??null;this.playing=false;this.presentationSize=null;this.cameras.main.setZoom(1).setScroll(0,0);this.layout();this.hooks.settled(id);
@@ -553,7 +625,19 @@ export class ExpeditionScene extends Phaser.Scene {
         await this.hold(35);break;
       }
       case "telegraph":this.visual={...this.visual!,locked:event.column};this.pose("brace");this.drawForecast(this.visual);await this.hold(180);break;
-      case "redirect":{this.pose("reach-left");const point=this.point({x:event.to,y:3});const light=this.add.circle(this.actor.x,this.actor.y-25,12,0xffdd8c,.95).setDepth(15);await this.tween(light,{x:point.x,y:point.y,alpha:.15},280);light.destroy();this.visual={...this.visual!,locked:event.to};this.drawForecast(this.visual);break;}
+      case "redirect":{
+        this.pose("reach-left");
+        if(this.snapshot.passage?.rang){
+          await this.hold(70);this.pose("pull-in");
+          await this.tween(this.shoreBell,{angle:-13},90);
+          await this.tween(this.shoreBell,{angle:9},110);
+          await this.tween(this.shoreBell,{angle:0},140);
+        }else{
+          const point=this.point({x:event.to,y:3}),light=this.add.circle(this.actor.x,this.actor.y-25,12,0xffdd8c,.95).setDepth(15);
+          await this.tween(light,{x:point.x,y:point.y,alpha:.15},280);light.destroy();
+        }
+        this.visual={...this.visual!,locked:event.to};this.drawForecast(this.visual);break;
+      }
       case "rotate":{
         this.actor.setFlipX(false);this.pose("reach-ready");await this.hold(45);
         this.pose("reach-left");

@@ -16,6 +16,7 @@
   .passage-tray .exp-forecast { margin-bottom:.25rem!important; }
 }
 @media (orientation:landscape) and (max-height:499px) {
+  .passage-game .exp-hud { right:calc(max(12px,env(safe-area-inset-right)) + 154px); width:128px; }
   .passage-game .passage-tray { max-height:calc(100dvh - 75px); overflow-y:auto; overscroll-behavior:contain; }
   .passage-game .passage-feedback { bottom:4px; padding:4px 8px; max-width:calc(100% - 280px); }
 }

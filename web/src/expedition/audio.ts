@@ -57,6 +57,26 @@ export function soundRecipe(event:CourtEvent,area:Area="beacon"):readonly SoundL
 export type MusicCue = "harbor"|"departure"|"beacon"|"wind-departure"|"signal";
 type Bus = "music"|"effects";
 const busGain:Record<Bus,number>={music:.65,effects:.45};
+const passageSounds = {
+  ride: [
+    {kind:"noise",frequency:1120,gain:.056,duration:.26,filter:"bandpass",attack:.065},
+    {kind:"tone",frequency:182,to:238,gain:.06,duration:.31,waveform:"triangle",attack:.055},
+    {kind:"tone",frequency:195,to:143,gain:.043,duration:.19,delay:.37,waveform:"triangle",attack:.006},
+  ],
+  watch: [
+    {kind:"noise",frequency:1640,gain:.043,duration:.27,filter:"bandpass",attack:.08},
+    {kind:"noise",frequency:1930,gain:.036,duration:.18,delay:.26,filter:"bandpass",attack:.05},
+  ],
+  listen: [
+    {kind:"tone",frequency:147,to:145,gain:.039,duration:.82,attack:.19},
+    {kind:"tone",frequency:294,gain:.023,duration:.62,delay:.085,attack:.17},
+  ],
+  bell: [
+    {kind:"tone",frequency:294,gain:.078,duration:.91,attack:.005},
+    {kind:"tone",frequency:718,to:716,gain:.043,duration:.48,attack:.004},
+    {kind:"tone",frequency:1209,gain:.024,duration:.17,attack:.003},
+  ],
+} satisfies Record<string, SoundLayer[]>;
 
 // Wind Gate's rising reed call finds its lower answering phrase at the repaired post.
 function score(cue:MusicCue):SoundLayer[] {
@@ -151,15 +171,8 @@ export class HarborAudio {
   play(event:CourtEvent,area:Area="beacon"):void {
     this.schedule("effects",soundRecipe(event,area));
   }
-  playPassage(moment:"ride"|"watch"):void {
-    this.schedule("effects",moment==="ride"?[
-      {kind:"noise",frequency:1120,gain:.056,duration:.26,filter:"bandpass",attack:.065},
-      {kind:"tone",frequency:182,to:238,gain:.06,duration:.31,waveform:"triangle",attack:.055},
-      {kind:"tone",frequency:195,to:143,gain:.043,duration:.19,delay:.37,waveform:"triangle",attack:.006},
-    ]:[
-      {kind:"noise",frequency:1640,gain:.043,duration:.27,filter:"bandpass",attack:.08},
-      {kind:"noise",frequency:1930,gain:.036,duration:.18,delay:.26,filter:"bandpass",attack:.05},
-    ]);
+  playPassage(moment:keyof typeof passageSounds):void {
+    this.schedule("effects",passageSounds[moment]);
   }
   playMusic(cue:MusicCue):void {
     this.stopSources("music",true);

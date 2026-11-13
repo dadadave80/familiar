@@ -14,6 +14,8 @@ Curious people who will never open a crypto wallet. Secondary audience: hackatho
 ## Product Purpose
 First Light is Familiar's current adventure: guide Mochi through tide decisions, bring discoveries home, deliberately restore the harbor, and choose a meaningful second goal. Storycraft makes an earned lantern personal through Crest/Moth, two home sockets and a static origin. The whole-screen game world uses custom coastal navigation and controls. The local preview works before sign-in; canonical progress and transferable ownership require the separately verified testnet stack and recoverable account. No recovery claim follows from local saves or app login alone.
 
+Bell Steps and Reed Steps connect the restored harbor to supply and skiff crossings. After the signal and both services are safely restored, Bram clears the Bell arch. Following Mochi's attention there at low tide reveals a bell. A safe return rigs a single-use pull for future Bell/Reed outings, changing the next surge and bridge route. These side outings and shared discoveries remain device-local, separate from accepted H1 progress. Mochi's contextual idle attention and optional hand greeting spend no decisions and earn no currency or affection points.
+
 The retained `/legacy/` prototype has the following purpose:
 Adopt a small companion, feed it, send it on errands, bake bread, trade with Bram, and let it nap. The pet is a keyless named NEAR account; its NFT determines who may act for it. Inventory and savings stay with the account on resale.
 

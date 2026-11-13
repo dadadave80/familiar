@@ -45,9 +45,12 @@ export default function World(props:ExpeditionWorldProps){
     const delivered=passage.stage==="delivered",bell=passage.job==="bell";
     const location=bell?(delivered?"far left work steps":"near left Bell Steps"):(delivered?"near right quay":"far right Reed Steps");
     description=`${bell?"Bram’s supplies":"The empty skiff"} at the ${location}. ${passage.watched?"Mochi and you watched the reeds. ":""}Movement and service controls follow.`;
+    if(passage.heardBell)description+=" Mochi heard the old bell in the far-left hollow.";
+    if(passage.bellRigged)description+=` Bell pull at far center, ${passage.pullSpent?"used":"one pull available"}.`;
   }else if(!court&&home.services?.length){
     if(home.services.includes("bell"))description+=" Bram’s supplies have reached the Bell work steps.";
     if(home.services.includes("reed"))description+=" The Reed skiff is moored on the harbor side.";
   }
-  return <div ref={mount} className="exp-world" data-testid="expedition-world" data-ready={ready} data-tiles={JSON.stringify(tiles)} data-position={court?`${court.position.x},${court.position.y}`:"home"} data-turn={court?.turn??0} data-passage={passage?.job} data-service-stage={passage?.stage} data-home-services={home.services?.join(" ")} data-lantern-motif={!court&&home.lantern?home.motif:undefined} data-lantern-finish={!court&&home.lantern?home.polished?"harbor_polish":"original":undefined} role="img" aria-label={description}/>;
+  if(!court&&home.heardBell)description+=" Bram has rigged the shore bell pull for future crossings.";
+  return <div ref={mount} className="exp-world" data-testid="expedition-world" data-ready={ready} data-tiles={JSON.stringify(tiles)} data-position={court?`${court.position.x},${court.position.y}`:"home"} data-turn={court?.turn??0} data-passage={passage?.job} data-service-stage={passage?.stage} data-home-services={home.services?.join(" ")} data-preview-exit={props.snapshot.previewWave?.exit} data-lantern-motif={!court&&home.lantern?home.motif:undefined} data-lantern-finish={!court&&home.lantern?home.polished?"harbor_polish":"original":undefined} role="img" aria-label={description}/>;
 }

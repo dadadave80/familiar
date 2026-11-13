@@ -21,7 +21,10 @@ const arrows={north:"↑",west:"←",east:"→",south:"↓"};
 const home:WorldSnapshot["home"]={lit:true,signaled:false,moth:false,lantern:false,socket:"dock",motif:"crest",polished:false,relic:null};
 const at=(a:Position,b:Position)=>a.x===b.x&&a.y===b.y;
 const where=(p:Position)=>`${channels[p.x]} ${rows[p.y]}`;
-const name=(command:PassageCommand)=>command==="ride"?"Ride line":commandName(command);
+const passageNames={ride:"Ride line",listen:"Listen with Mochi",ring:"Ring shore bell"} as const;
+const isPassageAction=(command:PassageCommand|null):command is keyof typeof passageNames=>
+  command==="ride"||command==="listen"||command==="ring";
+const name=(command:PassageCommand)=>isPassageAction(command)?passageNames[command]:commandName(command);
 const done=(s:PassageState)=>s.court.outcome!=="active";
 
 function objective(state:PassageState):string {
@@ -30,9 +33,14 @@ function objective(state:PassageState):string {
   return state.stage==="waiting"?"Find the empty skiff at the far-right landing.":"Guide the skiff to the near-right landing.";
 }
 function consequence({before,after,events}:PassageTransition):string {
-  if(after.court.outcome==="rescued")return "Bram brings Mochi home. The crossing can be tried again.";
+  if(after.court.outcome==="rescued")return after.heardBell&&!after.bellRigged?"Bram brings Mochi home. The bell needs another visit before he can rig its pull.":"Bram brings Mochi home. The crossing can be tried again.";
+  if(after.court.outcome==="returned"&&after.heardBell&&!after.bellRigged)return "Safely home. Tell Bram about the bell so he can rig a pull for the next crossing.";
   if(after.court.outcome==="returned")return passageDelivered(after)?"Mochi is safely back. Bring the crossing home.":"Mochi came home safely. The job can wait.";
   const facts:string[]=[];
+  const last=after.commands.at(-1);
+  if(last==="listen")facts.push("One turn listening. Mochi pricks an ear as a low bell answers from the hollow arch. The tide begins to rise.");
+  const redirect=events.find(event=>event.kind==="redirect");
+  if(last==="ring"&&redirect)facts.push(`The bell uses its one pull to draw the marked source from ${channels[redirect.from]} to Left.`);
   if(after.watched&&!before.watched)facts.push("Mochi lowers a paw. The moth settles among the reeds.");
   if(before.stage!==after.stage)facts.push(after.stage==="dispatched"
     ?(after.job==="bell"?"Bram has the load ready.":"The skiff is ready to come home.")
@@ -41,6 +49,9 @@ function consequence({before,after,events}:PassageTransition):string {
   if(wave)facts.push(`${channels[wave.exit]} surge. Bridge ${channels[after.court.bridge]!.toLowerCase()}. ${after.court.resolve<before.court.resolve?"Mochi is splashed.":"Mochi stays dry."}`);
   else if(mark)facts.push(`${channels[mark.column]} is marked for the next surge.`);
   else if(!facts.length)facts.push("Next, the rising tide marks Mochi’s column.");
+  if(after.job==="bell"&&after.archOpen&&!after.bellRigged&&!after.heardBell&&events.some(event=>event.kind==="open"&&event.column===0)) {
+    facts.push("Mochi’s ears tilt toward a hollow arch on the far-left shore.");
+  }
   return facts.join(" ");
 }
 
@@ -56,9 +67,13 @@ export default function PassageGame({job,initial,mothHome,reduced,sound,audio,on
   const busy=!!result,terminal=done(state),paused=away||blocked||!!panel||!!fault;
   const legal=passageCommands(state),landings=PASSAGE_LANDINGS[job];
   const turn=state.court.turn,phase=phaseOf(state.court),watch=canWatchMoth(state);
-  const ride=result?.after.commands.at(-1)==="ride";
-  const passage=useMemo(()=>({job,stage:state.stage,watched:state.watched,mothHome,rode:ride}),[job,state.stage,state.watched,mothHome,ride]);
-  const snapshot=useMemo<WorldSnapshot>(()=>({court:state.court,home,reducedMotion:reduced,previewCommand:hover==="ride"?null:hover,passage}),[state.court,reduced,hover,passage]);
+  const last=result?.after.commands.at(-1),pullSpent=state.commands.includes("ring");
+  const specialPreview=useMemo(()=>isPassageAction(hover)?applyPassage(state,hover):null,[state,hover]);
+  const previewWave=hover==="ring"?specialPreview?.events.find(event=>event.kind==="wave"):undefined;
+  const passage=useMemo(()=>({job,stage:state.stage,watched:state.watched,mothHome,rode:last==="ride",
+    archOpen:state.archOpen,bellRigged:state.bellRigged,heardBell:state.heardBell,pullSpent,listened:last==="listen",rang:last==="ring"}),
+    [job,state.stage,state.watched,mothHome,state.archOpen,state.bellRigged,state.heardBell,pullSpent,last]);
+  const snapshot=useMemo<WorldSnapshot>(()=>({court:state.court,home,reducedMotion:reduced,previewCommand:isPassageAction(hover)?null:hover,previewWave,passage}),[state.court,reduced,hover,previewWave,passage]);
   const animation=useMemo<CourtTransition|null>(()=>result?{before:result.before.court,after:result.after.court,events:result.events}:null,[result]);
   const inspection=choice?applyPassage(state,choice):null;
 
@@ -87,13 +102,18 @@ export default function PassageGame({job,initial,mothHome,reduced,sound,audio,on
   function beat(event:CourtEvent){
     const accepted=pending.current;
     if(!accepted||!sound||away||document.hidden)return;
-    if(event.kind==="move"&&accepted.after.commands.at(-1)==="ride")audio?.playPassage("ride");
+    const command=accepted.after.commands.at(-1);
+    if(event.kind==="move"&&command==="ride")audio?.playPassage("ride");
+    else if(event.kind==="redirect"&&command==="ring")audio?.playPassage("bell");
     else audio?.play(event);
   }
   function settle(id:number){
     const accepted=pending.current;
     if(id!==serial.current||!accepted)return;
-    if(sound&&!away&&!document.hidden&&accepted.after.watched&&!accepted.before.watched)audio?.playPassage("watch");
+    if(sound&&!away&&!document.hidden) {
+      if(accepted.after.commands.at(-1)==="listen")audio?.playPassage("listen");
+      else if(accepted.after.watched&&!accepted.before.watched)audio?.playPassage("watch");
+    }
     setNotice(consequence(accepted));pending.current=null;setResult(null);
   }
   function inspect(position:Position|null=null){
@@ -101,12 +121,16 @@ export default function PassageGame({job,initial,mothHome,reduced,sound,audio,on
     opener.current=inspectButton.current;
     setChoice(null);setSpot(position);setPanel("inspect");
   }
+  const contextAction=legal.find(isPassageAction);
+  function actionAt(position:Position):PassageCommand|null{
+    if((contextAction==="listen"||contextAction==="ring")&&at(position,state.court.position))return contextAction;
+    const cmd=commandAt(state.court,position);
+    if(cmd&&legal.includes(cmd))return cmd;
+    return contextAction==="ride"&&at(position,landings.arrival)?"ride":null;
+  }
   function target(position:Position){
-    const court=current.current.court,cmd=commandAt(court,position);
-    const options=passageCommands(current.current);
-    if(cmd&&options.includes(cmd))take(cmd);
-    else if(options.includes("ride")&&at(position,landings.arrival))take("ride");
-    else inspect(position);
+    const cmd=actionAt(position);
+    if(cmd)take(cmd);else inspect(position);
   }
   function leave(){
     if(blocked)return;
@@ -121,21 +145,27 @@ export default function PassageGame({job,initial,mothHome,reduced,sound,audio,on
           (event.target instanceof Element&&event.target.closest('input,textarea,select,[contenteditable=true],dialog')))return;
       const key=event.key.toLowerCase();
       if(key===" "&&event.target instanceof Element&&event.target.closest("button,a"))return;
-      const commands:Record<string,PassageCommand>={arrowup:"step:north",w:"step:north",arrowdown:"step:south",s:"step:south",arrowleft:"step:west",a:"step:west",arrowright:"step:east",d:"step:east"," ":"wait",e:"ride",r:"return"};
+      const commands:Partial<Record<string,PassageCommand>>={arrowup:"step:north",w:"step:north",arrowdown:"step:south",s:"step:south",arrowleft:"step:west",a:"step:west",arrowright:"step:east",d:"step:east"," ":"wait",e:contextAction,r:"return"};
       const cmd=commands[key];if(!cmd&&key!=="i")return;
       event.preventDefault();
       if(cmd)take(cmd);else inspect();
     }
     window.addEventListener("keydown",keys);return ()=>window.removeEventListener("keydown",keys);
   });
-  const localForecast=hover==="ride"?"Ride to the opposite landing and stay dry through this surge.":forecast(state.court,hover);
+  const clearedArch=job==="bell"&&state.archOpen&&!state.heardBell&&!state.bellRigged;
+  const localForecast=specialPreview?consequence(specialPreview):forecast(state.court,isPassageAction(hover)?null:hover);
+  let invitation="";
+  if(contextAction==="listen")invitation="Listen for one turn at the hollow arch.";
+  else if(contextAction==="ring")invitation="Pull once this outing to draw this surge left.";
+  else if(contextAction==="ride")invitation="The skiff line is taut. Ride this surge, or guide from shore.";
+  else if(watch)invitation="Mochi faces the moth in the still reeds. Wait to watch together.";
   const placeHint=spot&&at(spot,landings.departure)?"Bram starts this trip here.":spot&&at(spot,landings.arrival)?"This is where Bram’s trip ends.":null;
   const finishText=state.court.outcome==="rescued"?"Bram has Mochi safe.":passageDelivered(state)?job==="bell"?"The supplies reached the worksite.":"Bram’s skiff is home.":"A safe return.";
-  return <main className="exp-game passage-game" data-mode="court" data-testid="passage-game" data-job={job} data-stage={state.stage} data-turn={turn} data-outcome={state.court.outcome} data-busy={busy} data-watched={state.watched}>
+  return <main className="exp-game passage-game" data-mode="court" data-testid="passage-game" data-job={job} data-stage={state.stage} data-turn={turn} data-outcome={state.court.outcome} data-busy={busy} data-watched={state.watched} data-heard-bell={state.heardBell} data-bell-rigged={state.bellRigged} data-pull-spent={pullSpent}>
     <World key={sceneKey} snapshot={snapshot} transition={animation} presentationId={serial.current} paused={paused}
       onReady={()=>setReady(true)} onFault={message=>{setFault(message);setReady(false);pending.current=null;setResult(null);}}
       onBeat={beat} onSettled={settle} onCommand={take} onTarget={target} onInspect={inspect} onHome={()=>{}}
-      onHover={pos=>{if(!busy&&!panel){const cmd=pos?commandAt(state.court,pos):null;setHover(cmd&&legal.includes(cmd)?cmd:null);}}}/>
+      onHover={pos=>{if(!busy&&!panel)setHover(pos?actionAt(pos):null);}}/>
     <header className="exp-mast"><div className="exp-brand">familiar.<small>Saved on this device</small></div><h1 className="exp-place">{places[job]}</h1>
       <div className="passage-header-actions"><button aria-pressed={sound} aria-label={sound?"Mute game audio":"Enable game audio"} onClick={onToggleSound}>{sound?"Sound on":"Sound off"}</button><button ref={harborButton} className="passage-leave" data-testid="passage-leave" onClick={leave} disabled={blocked||busy}>Harbor</button></div></header>
     <section className="exp-hud" aria-label="Passage status"><strong>{phase} tide</strong><span>Turn {Math.min(turn+1,TURN_LIMIT)}/{TURN_LIMIT}</span><span>Resolve {state.court.resolve}/3</span></section>
@@ -144,16 +174,19 @@ export default function PassageGame({job,initial,mothHome,reduced,sound,audio,on
     {blocked?<p className="exp-paused" role="status">This passage is paused while another view holds the harbor.</p>:away&&!panel?<p className="exp-paused">Mochi is waiting. Return to this window to continue.</p>:null}
     {terminal&&!busy?<section className="exp-departure passage-finish" aria-label="Passage return">
       <h2>{finishText}</h2><p>{passageDelivered(state)?"Bring word of the crossing back to Bram.":"The landing is ready for another trip."}</p>
+      {state.heardBell&&!state.bellRigged&&<p>{state.court.outcome==="returned"?"Tell Bram what you heard. He can rig a bell pull at the far-center landing before your next outing.":"Bram couldn’t rig a pull on this trip. You can visit the hollow arch again."}</p>}
       <button className="exp-primary" data-testid="passage-finish" disabled={blocked} onClick={()=>onFinish(current.current)}>Back to the harbor</button>
     </section>:<section className="exp-command-tray passage-tray" aria-label="Guide Mochi">
       <div className="exp-objective-row"><p className="exp-objective">{objective(state)}</p><button ref={inspectButton} className="exp-inspect-button" data-testid="passage-inspect" disabled={!ready||paused||busy} onClick={()=>inspect()}>Inspect</button></div>
-      <p className="exp-forecast">{watch?"Mochi faces the moth in the still reeds. Wait to watch together.":legal.includes("ride")&&!hover?"The skiff line is taut. Ride this surge, or guide from shore.":localForecast}</p>
+      <p className="exp-forecast">{!hover&&invitation?invitation:localForecast}</p>
       <span className="exp-sr-only">Mochi is at the {where(state.court.position)}. The bridge is at {channels[state.court.bridge]}.</span>
       <div className="exp-current-controls"><div className="exp-directions" aria-label="Movement">
         {directions.map(dir=>{const cmd=`step:${dir}` as const;return <button key={dir} className={`exp-${dir}`} data-command={cmd} aria-label={`Move ${dir}`} disabled={!ready||paused||busy||!legal.includes(cmd)} onMouseEnter={()=>setHover(cmd)} onMouseLeave={()=>setHover(null)} onFocus={()=>setHover(cmd)} onBlur={()=>setHover(null)} onClick={()=>take(cmd)}>{arrows[dir]}</button>;})}
         <button className="exp-wait" data-command="wait" aria-label={watch?"Wait and watch the moth":"Wait for the tide"} disabled={!ready||busy||paused} onClick={()=>take("wait")}>Wait</button>
       </div><div className="exp-context-actions">
-        {legal.includes("ride")&&<button className="exp-primary" data-command="ride" disabled={!ready||paused||busy} onClick={()=>take("ride")}>Ride line</button>}
+        {contextAction&&<button className="exp-primary" data-command={contextAction} aria-keyshortcuts="E"
+          disabled={!ready||paused||busy} onMouseEnter={()=>setHover(contextAction)} onMouseLeave={()=>setHover(null)}
+          onFocus={()=>setHover(contextAction)} onBlur={()=>setHover(null)} onClick={()=>take(contextAction)}>{name(contextAction)}</button>}
         {legal.includes("return")&&<button data-command="return" disabled={!ready||paused||busy} onClick={()=>take("return")}>Return to harbor</button>}
         {retry&&<button disabled={!ready||paused||busy} onClick={()=>take(retry)}>Retry {name(retry).toLowerCase()}</button>}
       </div></div>
@@ -169,6 +202,9 @@ export default function PassageGame({job,initial,mothHome,reduced,sound,audio,on
         <dl className="exp-inspect-position"><div><dt>Mochi</dt><dd>{where(state.court.position)}</dd></div><div><dt>Bridge</dt><dd>{channels[state.court.bridge]} crossing</dd></div></dl>
         {spot&&<p><strong>{where(spot)}.</strong> {placeHint??(spot.y===2?"A surge in this column draws the bridge here.":"A stone foothold.")}</p>}
         {job==="reed"&&<p>{mothHome?"Mochi’s moth is already home. Only the bent reeds stir here.":state.watched?"You saw the moth settle here together.":watch?"Mochi faces the moth to your right. Waiting here lets it settle.":state.court.opened.includes(2)?"The moth is out beside the reeds. It settles at rising tide if you wait with Mochi at the center of the far shore.":"Bent reeds shelter the far-right shore. A right surge opens the shell there."}</p>}
+        {clearedArch&&<p>{state.court.opened.includes(0)?"Mochi turns an ear toward the hollow arch on the far-left shore. At low tide you can spend a turn listening there.":"Bram’s crew cleared the hollow arch on the far-left shore. A left surge washes through it."}</p>}
+        {state.heardBell&&!state.bellRigged&&<p>You heard the bell with Mochi. Return safely to tell Bram about the sound.</p>}
+        {state.bellRigged&&<p>{pullSpent?"The bell pull hangs slack. You used it on this outing.":"Bram’s pull is at the far-center landing. Once this outing you can ring it to draw a marked surge left."}</p>}
         <fieldset className="exp-inspect-actions"><legend>Compare a move · no turns spent</legend><div>{legal.map(cmd=><button key={cmd} data-preview-command={cmd} aria-pressed={choice===cmd} onClick={()=>setChoice(cmd)}>{name(cmd)}</button>)}</div></fieldset>
         <div className="exp-inspect-reading" role="status"><p>{inspection?`${consequence(inspection)} ${done(inspection.after)?"":`Mochi ends at the ${where(inspection.after.court.position)}.`}`:forecast(state.court,null)}</p></div>
       </>}
