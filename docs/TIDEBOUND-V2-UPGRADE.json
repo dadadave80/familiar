@@ -1,0 +1,1336 @@
+{
+  "version": 1,
+  "kind": "actual-testnet-additive-spatial-content-code-only-upgrade",
+  "verifiedAt": "2026-11-13T00:14:48.325Z",
+  "network": "testnet",
+  "root": "familiar-game.testnet",
+  "items": "items.familiar-game.testnet",
+  "rulesVersion": "tidebound_h1_v1",
+  "supportedContentVersions": [
+    "first_light_v1",
+    "first_light_v2"
+  ],
+  "authorization": {
+    "grossFundingCeilingTestNEAR": "41",
+    "additionalCeilingYocto": "250000000000000000000000",
+    "conservativeReviewedCostYocto": "157879689908833000000000",
+    "noNewFunding": true,
+    "noLegacyFunds": true
+  },
+  "originalReviewSha256": "bc31f49cf0ba464536006b04cabec0c9883c0f8cf6372f1156ab1894d045b542",
+  "interruption": {
+    "reason": "RPC429 during the fresh pre-submit proof",
+    "originalItemsHash": "HeE8Nt8NNDPRjmTqRdJXxNWmceND86QHzELhLb9Hx9HF",
+    "originalPreparedBytesPreserved": true,
+    "originalStopRetained": true,
+    "unusedNonceAndValidityProved": true,
+    "rpcPacingMs": 250,
+    "exactItemsSubmissions": 1,
+    "originalJournalDigestBeforeContinuation": "e3bd2ddb7a362c7162019c16c68b6aad0dc7f2345c3a37f1425cc235445867d5"
+  },
+  "before": {
+    "block": {
+      "hash": "DZ7uGbS51uWY5UXsBwaeWj7a5YVSQr85iVRfcxXACHov",
+      "height": 277432124
+    },
+    "codes": {
+      "familiar-game.testnet": "3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3",
+      "items.familiar-game.testnet": "2s2KfRFCBhe8sgX2S7H9rC8eJcgkZSMhCoCizu6A9HXJ",
+      "bakery.familiar-game.testnet": "EHJca21W6P2CiwJ68BpHDT2cf6YV6ByTvGwHENeC2DDv",
+      "market.familiar-game.testnet": "4RLBp67B5ZWJ9H8BztLfthTYMjyGR7VWmtj5k3MwxAVr"
+    },
+    "config": {
+      "relayer": "relayer.familiar-game.testnet",
+      "pet_code_hash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+      "items": "items.familiar-game.testnet",
+      "bakery": "bakery.familiar-game.testnet",
+      "market": "market.familiar-game.testnet",
+      "pool": "kiln.pool.f863973.m0"
+    },
+    "rootProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "items": "items.familiar-game.testnet",
+      "registry": "familiar-game.testnet"
+    },
+    "itemProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "registry": "familiar-game.testnet"
+    },
+    "storedStateSha256": {
+      "root": "c72544ffe24bcf52bf1ce54a155229b26b81ae83ff4dcebe5a2fb8c53c88f0e7",
+      "items": "d82bec6be221ce8dcd8ee8d6a16a60784e9bac0382d523d1262690487c8130a7"
+    },
+    "protected": {
+      "adminKeys": {
+        "familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ],
+        "items.familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ],
+        "bakery.familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ],
+        "market.familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ]
+      },
+      "players": [
+        {
+          "account": "dadadave80.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "locked": "0",
+          "keys": [
+            {
+              "publicKey": "ed25519:3cF1GvuN29XtVe2VzCNuvXLv7JmrSY7FKSgAsXEaEcjV",
+              "permission": "FullAccess"
+            }
+          ],
+          "bindings": [
+            {
+              "publicKey": "ed25519:3cF1GvuN29XtVe2VzCNuvXLv7JmrSY7FKSgAsXEaEcjV",
+              "player": "dadadave80.familiar-game.testnet"
+            }
+          ],
+          "journey": {
+            "revision": 0,
+            "banked": [],
+            "lit": false,
+            "signaled": false,
+            "lens_claim": null,
+            "moth_claim": null,
+            "credit": "unclaimed",
+            "workshop_salvage": 0,
+            "bram_budget": 0,
+            "shells": 0,
+            "burned_shells": 0,
+            "commission_fulfilled": false,
+            "craft": null,
+            "polish": null,
+            "placement": null,
+            "claims": []
+          },
+          "checkpoint": "92fa953527d7ab3cd492b14ae64f26427a6bd0322de02eef89df8099357dfdc5",
+          "nftSupply": "1",
+          "nfts": [
+            {
+              "token_id": "mochi-d00307b6f456a69308.familiar-game.testnet",
+              "owner_id": "dadadave80.familiar-game.testnet",
+              "metadata": {
+                "title": "mochi-d00307b6f456a69308.familiar-game.testnet",
+                "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+                "media": null,
+                "media_hash": null,
+                "copies": 1,
+                "issued_at": null,
+                "expires_at": null,
+                "starts_at": null,
+                "updated_at": null,
+                "extra": null,
+                "reference": null,
+                "reference_hash": null
+              },
+              "approved_account_ids": {}
+            }
+          ],
+          "inventories": [
+            {
+              "items": [],
+              "next_index": null
+            }
+          ]
+        },
+        {
+          "account": "qa-maker-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "locked": "0",
+          "keys": [
+            {
+              "publicKey": "ed25519:2DP5Amx7h1JJ17P2B1VvwHMYf9adeuKuitqEEqWsRXt5",
+              "permission": "FullAccess"
+            },
+            {
+              "publicKey": "ed25519:Di7QPiWUz21DnQucab8pe6qYPAnWpZnQWXYPfwa8kn3S",
+              "permission": "FullAccess"
+            }
+          ],
+          "bindings": [
+            {
+              "publicKey": "ed25519:2DP5Amx7h1JJ17P2B1VvwHMYf9adeuKuitqEEqWsRXt5",
+              "player": "qa-maker-h1.familiar-game.testnet"
+            },
+            {
+              "publicKey": "ed25519:Di7QPiWUz21DnQucab8pe6qYPAnWpZnQWXYPfwa8kn3S",
+              "player": null
+            }
+          ],
+          "journey": {
+            "revision": 11,
+            "banked": [
+              "lens",
+              "moth",
+              "vane"
+            ],
+            "lit": true,
+            "signaled": true,
+            "lens_claim": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+            "moth_claim": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+            "credit": "consumed",
+            "workshop_salvage": 0,
+            "bram_budget": 0,
+            "shells": 0,
+            "burned_shells": 12,
+            "commission_fulfilled": true,
+            "craft": {
+              "evidence": {
+                "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+                "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                "maker": "qa-maker-h1.familiar-game.testnet",
+                "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+                "motif": "crest",
+                "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              },
+              "pet_id": "qa-mochi-h1.familiar-game.testnet",
+              "state": "confirmed",
+              "attempt": 1,
+              "uncertain_prior": false
+            },
+            "polish": {
+              "evidence": {
+                "id": "2e16a4e72bf2f85a4537e3e2223571dafa33df577f71318ecaecb951fd9a7638",
+                "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                "expected_holder": "qa-maker-h1.familiar-game.testnet",
+                "expected_appearance": 0,
+                "generation": 7,
+                "input_hash": "7a96dd9e522a8fec0ea9b03e2ac7ebb1f50bc5b26f6600de27e609c4dc5b2150"
+              },
+              "state": "confirmed",
+              "attempt": 1,
+              "uncertain_prior": false
+            },
+            "placement": {
+              "item_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+              "socket": "dock"
+            },
+            "claims": [
+              {
+                "operation_id": "operator-qa:maker-lens-moth",
+                "id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+                "input_hash": "7289e472f0e88c788edbc1bb36ac7359854419102ec5010392510e09585dc00b",
+                "lens": true,
+                "moth": true,
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              },
+              {
+                "operation_id": "operator-qa:maker-wind-vane",
+                "id": "be6ec9d4bde579ad041995d9a5a17d3473b77fd24c9866535cf1ed5a7fdf5c39",
+                "input_hash": "0a356c5cedbc1382d38a7d20487cdba3851ec4d8bf79716341300e053ecfa2aa",
+                "lens": false,
+                "moth": false,
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              }
+            ]
+          },
+          "checkpoint": "0740000838081f8c09c2da219c04477684025e4747d0a65b9fcdfa2512a72d16",
+          "nftSupply": "1",
+          "nfts": [
+            {
+              "token_id": "qa-mochi-h1.familiar-game.testnet",
+              "owner_id": "qa-maker-h1.familiar-game.testnet",
+              "metadata": {
+                "title": "qa-mochi-h1.familiar-game.testnet",
+                "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+                "media": null,
+                "media_hash": null,
+                "copies": 1,
+                "issued_at": null,
+                "expires_at": null,
+                "starts_at": null,
+                "updated_at": null,
+                "extra": null,
+                "reference": null,
+                "reference_hash": null
+              },
+              "approved_account_ids": {}
+            }
+          ],
+          "inventories": [
+            {
+              "items": [],
+              "next_index": null
+            }
+          ]
+        },
+        {
+          "account": "qa-holder-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "locked": "0",
+          "keys": [
+            {
+              "publicKey": "ed25519:C6zbG8EzQY6xWj95pcKXyzgqb9B4BXh3XWu3VaDxQBDu",
+              "permission": "FullAccess"
+            }
+          ],
+          "bindings": [
+            {
+              "publicKey": "ed25519:C6zbG8EzQY6xWj95pcKXyzgqb9B4BXh3XWu3VaDxQBDu",
+              "player": "qa-holder-h1.familiar-game.testnet"
+            }
+          ],
+          "journey": {
+            "revision": 5,
+            "banked": [
+              "lens"
+            ],
+            "lit": false,
+            "signaled": false,
+            "lens_claim": "bc8a2f686420f1296ea01fc00d6c40e3ca64573a4c98d142a2e353c861585677",
+            "moth_claim": null,
+            "credit": "available",
+            "workshop_salvage": 0,
+            "bram_budget": 0,
+            "shells": 12,
+            "burned_shells": 0,
+            "commission_fulfilled": true,
+            "craft": null,
+            "polish": {
+              "evidence": {
+                "id": "76ced7a73e4fb0e8b0db2ad6f9d3c2eba90181726b190e3240f4da3663da9633",
+                "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                "expected_holder": "qa-holder-h1.familiar-game.testnet",
+                "expected_appearance": 0,
+                "generation": 3,
+                "input_hash": "8f3ca285567b2268e339e90dae1e5dc1969f3ec798d6a74905d03de2307d8a5e"
+              },
+              "state": "failed-safe",
+              "attempt": 1,
+              "uncertain_prior": false
+            },
+            "placement": {
+              "item_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+              "socket": "dock"
+            },
+            "claims": [
+              {
+                "operation_id": "operator-qa:holder-independent-lens",
+                "id": "bc8a2f686420f1296ea01fc00d6c40e3ca64573a4c98d142a2e353c861585677",
+                "input_hash": "cd97cd4adedf276c84c1bde3a6e967f36c785d849ecfe8d6a6c772076ef49e56",
+                "lens": true,
+                "moth": false,
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              }
+            ]
+          },
+          "checkpoint": "847c741c2ec6d18b40a39cced02f873d2884ddb38e5bbb4cfa576722d9e78bda",
+          "nftSupply": "1",
+          "nfts": [
+            {
+              "token_id": "qa-bramble-h1.familiar-game.testnet",
+              "owner_id": "qa-holder-h1.familiar-game.testnet",
+              "metadata": {
+                "title": "qa-bramble-h1.familiar-game.testnet",
+                "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+                "media": null,
+                "media_hash": null,
+                "copies": 1,
+                "issued_at": null,
+                "expires_at": null,
+                "starts_at": null,
+                "updated_at": null,
+                "extra": null,
+                "reference": null,
+                "reference_hash": null
+              },
+              "approved_account_ids": {}
+            }
+          ],
+          "inventories": [
+            {
+              "items": [
+                {
+                  "mint": {
+                    "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+                    "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                    "maker": "qa-maker-h1.familiar-game.testnet",
+                    "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+                    "motif": "crest",
+                    "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+                    "rules_version": "tidebound_h1_v1",
+                    "content_version": "first_light_v1"
+                  },
+                  "finish": "harbor_polish",
+                  "appearance_version": 1,
+                  "finish_used": true
+                }
+              ],
+              "next_index": null
+            }
+          ]
+        }
+      ],
+      "pets": [
+        {
+          "tokenId": "mochi-d00307b6f456a69308.familiar-game.testnet",
+          "owner": "dadadave80.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "globalHash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+          "locked": "0",
+          "keys": [],
+          "state": {
+            "sha256": "4fa68afb0c086e7edfad80bf4db24ca571129266cf7f811efb513be03a5d5454",
+            "value": "FQAAAGZhbWlsaWFyLWdhbWUudGVzdG5ldBsAAABpdGVtcy5mYW1pbGlhci1nYW1lLnRlc3RuZXQcAAAAYmFrZXJ5LmZhbWlsaWFyLWdhbWUudGVzdG5ldBwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0FAAAAGtpbG4ucG9vbC5mODYzOTczLm0wRmU59moAAAAAAAAAAAAAAAADZTn2agAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        },
+        {
+          "tokenId": "qa-mochi-h1.familiar-game.testnet",
+          "owner": "qa-maker-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "globalHash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+          "locked": "0",
+          "keys": [],
+          "state": {
+            "sha256": "f2b2a7113aa97d86b818543dfcd11dbfd6ea2a766e93f426b23578d4724c3c1a",
+            "value": "FQAAAGZhbWlsaWFyLWdhbWUudGVzdG5ldBsAAABpdGVtcy5mYW1pbGlhci1nYW1lLnRlc3RuZXQcAAAAYmFrZXJ5LmZhbWlsaWFyLWdhbWUudGVzdG5ldBwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0FAAAAGtpbG4ucG9vbC5mODYzOTczLm0wRncl9moAAAAAAAAAAAAAAAADdyX2agAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        },
+        {
+          "tokenId": "qa-bramble-h1.familiar-game.testnet",
+          "owner": "qa-holder-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "globalHash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+          "locked": "0",
+          "keys": [],
+          "state": {
+            "sha256": "767d119dda1829fc7173f49abeda541f4e3c7361d16893266d1688d5c9a1cf36",
+            "value": "FQAAAGZhbWlsaWFyLWdhbWUudGVzdG5ldBsAAABpdGVtcy5mYW1pbGlhci1nYW1lLnRlc3RuZXQcAAAAYmFrZXJ5LmZhbWlsaWFyLWdhbWUudGVzdG5ldBwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0FAAAAGtpbG4ucG9vbC5mODYzOTczLm0wRgcw9moAAAAAAAAAAAAAAAADBzD2agAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        }
+      ],
+      "storageCredits": [
+        {
+          "accountId": "market.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "ARwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        },
+        {
+          "accountId": "mochi-d00307b6f456a69308.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "AS4AAABtb2NoaS1kMDAzMDdiNmY0NTZhNjkzMDguZmFtaWxpYXItZ2FtZS50ZXN0bmV0",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        },
+        {
+          "accountId": "qa-bramble-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "ASMAAABxYS1icmFtYmxlLWgxLmZhbWlsaWFyLWdhbWUudGVzdG5ldA==",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        },
+        {
+          "accountId": "qa-holder-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "18240000000000000000000",
+          "keyBase64": "ASIAAABxYS1ob2xkZXItaDEuZmFtaWxpYXItZ2FtZS50ZXN0bmV0",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAAJVWgNnK3AMAAAAAAAA="
+        },
+        {
+          "accountId": "qa-maker-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "17600000000000000000000",
+          "keyBase64": "ASEAAABxYS1tYWtlci1oMS5mYW1pbGlhci1nYW1lLnRlc3RuZXQ=",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAABs0vxAZugMAAAAAAAA="
+        },
+        {
+          "accountId": "qa-mochi-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "ASEAAABxYS1tb2NoaS1oMS5mYW1pbGlhci1nYW1lLnRlc3RuZXQ=",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        }
+      ],
+      "items": [
+        {
+          "tokenId": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+          "item": {
+            "mint": {
+              "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+              "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+              "maker": "qa-maker-h1.familiar-game.testnet",
+              "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+              "motif": "crest",
+              "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+              "rules_version": "tidebound_h1_v1",
+              "content_version": "first_light_v1"
+            },
+            "finish": "harbor_polish",
+            "appearance_version": 1,
+            "finish_used": true
+          },
+          "supply": "1",
+          "mintReceipt": {
+            "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+            "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+            "maker": "qa-maker-h1.familiar-game.testnet",
+            "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+            "motif": "crest",
+            "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+            "rules_version": "tidebound_h1_v1",
+            "content_version": "first_light_v1"
+          },
+          "balances": [
+            {
+              "account": "dadadave80.familiar-game.testnet",
+              "balance": "0"
+            },
+            {
+              "account": "qa-maker-h1.familiar-game.testnet",
+              "balance": "0"
+            },
+            {
+              "account": "qa-holder-h1.familiar-game.testnet",
+              "balance": "1"
+            }
+          ]
+        }
+      ],
+      "polishReceipts": [
+        {
+          "operationId": "2e16a4e72bf2f85a4537e3e2223571dafa33df577f71318ecaecb951fd9a7638",
+          "evidence": {
+            "id": "2e16a4e72bf2f85a4537e3e2223571dafa33df577f71318ecaecb951fd9a7638",
+            "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+            "expected_holder": "qa-maker-h1.familiar-game.testnet",
+            "expected_appearance": 0,
+            "generation": 7,
+            "input_hash": "7a96dd9e522a8fec0ea9b03e2ac7ebb1f50bc5b26f6600de27e609c4dc5b2150"
+          }
+        },
+        {
+          "operationId": "76ced7a73e4fb0e8b0db2ad6f9d3c2eba90181726b190e3240f4da3663da9633",
+          "evidence": null
+        }
+      ],
+      "nftTotalSupply": "3"
+    }
+  },
+  "after": {
+    "block": {
+      "hash": "22xZfMbAZtFd3SatRGfT7RrJrvQctKt5udVwoeHjUtzh",
+      "height": 277435202
+    },
+    "codes": {
+      "familiar-game.testnet": "4xtG29913j2BNpJaX16YQwMrP7WEE6mQp5UaBWFqb8xt",
+      "items.familiar-game.testnet": "8wXoHBcJwoX9fUkz83uG5bmnM18hNWGJBceXx5dvGNa2",
+      "bakery.familiar-game.testnet": "EHJca21W6P2CiwJ68BpHDT2cf6YV6ByTvGwHENeC2DDv",
+      "market.familiar-game.testnet": "4RLBp67B5ZWJ9H8BztLfthTYMjyGR7VWmtj5k3MwxAVr"
+    },
+    "config": {
+      "relayer": "relayer.familiar-game.testnet",
+      "pet_code_hash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+      "items": "items.familiar-game.testnet",
+      "bakery": "bakery.familiar-game.testnet",
+      "market": "market.familiar-game.testnet",
+      "pool": "kiln.pool.f863973.m0"
+    },
+    "rootProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "supported_content_versions": [
+        "first_light_v1",
+        "first_light_v2"
+      ],
+      "items": "items.familiar-game.testnet",
+      "registry": "familiar-game.testnet"
+    },
+    "itemProtocol": {
+      "network": "testnet",
+      "rules_version": "tidebound_h1_v1",
+      "content_version": "first_light_v1",
+      "supported_content_versions": [
+        "first_light_v1",
+        "first_light_v2"
+      ],
+      "registry": "familiar-game.testnet"
+    },
+    "storedStateSha256": {
+      "root": "c72544ffe24bcf52bf1ce54a155229b26b81ae83ff4dcebe5a2fb8c53c88f0e7",
+      "items": "d82bec6be221ce8dcd8ee8d6a16a60784e9bac0382d523d1262690487c8130a7"
+    },
+    "protected": {
+      "adminKeys": {
+        "familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ],
+        "items.familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ],
+        "bakery.familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ],
+        "market.familiar-game.testnet": [
+          {
+            "publicKey": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+            "permission": "FullAccess"
+          }
+        ]
+      },
+      "players": [
+        {
+          "account": "dadadave80.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "locked": "0",
+          "keys": [
+            {
+              "publicKey": "ed25519:3cF1GvuN29XtVe2VzCNuvXLv7JmrSY7FKSgAsXEaEcjV",
+              "permission": "FullAccess"
+            }
+          ],
+          "bindings": [
+            {
+              "publicKey": "ed25519:3cF1GvuN29XtVe2VzCNuvXLv7JmrSY7FKSgAsXEaEcjV",
+              "player": "dadadave80.familiar-game.testnet"
+            }
+          ],
+          "journey": {
+            "revision": 0,
+            "banked": [],
+            "lit": false,
+            "signaled": false,
+            "lens_claim": null,
+            "moth_claim": null,
+            "credit": "unclaimed",
+            "workshop_salvage": 0,
+            "bram_budget": 0,
+            "shells": 0,
+            "burned_shells": 0,
+            "commission_fulfilled": false,
+            "craft": null,
+            "polish": null,
+            "placement": null,
+            "claims": []
+          },
+          "checkpoint": "92fa953527d7ab3cd492b14ae64f26427a6bd0322de02eef89df8099357dfdc5",
+          "nftSupply": "1",
+          "nfts": [
+            {
+              "token_id": "mochi-d00307b6f456a69308.familiar-game.testnet",
+              "owner_id": "dadadave80.familiar-game.testnet",
+              "metadata": {
+                "title": "mochi-d00307b6f456a69308.familiar-game.testnet",
+                "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+                "media": null,
+                "media_hash": null,
+                "copies": 1,
+                "issued_at": null,
+                "expires_at": null,
+                "starts_at": null,
+                "updated_at": null,
+                "extra": null,
+                "reference": null,
+                "reference_hash": null
+              },
+              "approved_account_ids": {}
+            }
+          ],
+          "inventories": [
+            {
+              "items": [],
+              "next_index": null
+            }
+          ]
+        },
+        {
+          "account": "qa-maker-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "locked": "0",
+          "keys": [
+            {
+              "publicKey": "ed25519:2DP5Amx7h1JJ17P2B1VvwHMYf9adeuKuitqEEqWsRXt5",
+              "permission": "FullAccess"
+            },
+            {
+              "publicKey": "ed25519:Di7QPiWUz21DnQucab8pe6qYPAnWpZnQWXYPfwa8kn3S",
+              "permission": "FullAccess"
+            }
+          ],
+          "bindings": [
+            {
+              "publicKey": "ed25519:2DP5Amx7h1JJ17P2B1VvwHMYf9adeuKuitqEEqWsRXt5",
+              "player": "qa-maker-h1.familiar-game.testnet"
+            },
+            {
+              "publicKey": "ed25519:Di7QPiWUz21DnQucab8pe6qYPAnWpZnQWXYPfwa8kn3S",
+              "player": null
+            }
+          ],
+          "journey": {
+            "revision": 11,
+            "banked": [
+              "lens",
+              "moth",
+              "vane"
+            ],
+            "lit": true,
+            "signaled": true,
+            "lens_claim": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+            "moth_claim": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+            "credit": "consumed",
+            "workshop_salvage": 0,
+            "bram_budget": 0,
+            "shells": 0,
+            "burned_shells": 12,
+            "commission_fulfilled": true,
+            "craft": {
+              "evidence": {
+                "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+                "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                "maker": "qa-maker-h1.familiar-game.testnet",
+                "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+                "motif": "crest",
+                "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              },
+              "pet_id": "qa-mochi-h1.familiar-game.testnet",
+              "state": "confirmed",
+              "attempt": 1,
+              "uncertain_prior": false
+            },
+            "polish": {
+              "evidence": {
+                "id": "2e16a4e72bf2f85a4537e3e2223571dafa33df577f71318ecaecb951fd9a7638",
+                "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                "expected_holder": "qa-maker-h1.familiar-game.testnet",
+                "expected_appearance": 0,
+                "generation": 7,
+                "input_hash": "7a96dd9e522a8fec0ea9b03e2ac7ebb1f50bc5b26f6600de27e609c4dc5b2150"
+              },
+              "state": "confirmed",
+              "attempt": 1,
+              "uncertain_prior": false
+            },
+            "placement": {
+              "item_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+              "socket": "dock"
+            },
+            "claims": [
+              {
+                "operation_id": "operator-qa:maker-lens-moth",
+                "id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+                "input_hash": "7289e472f0e88c788edbc1bb36ac7359854419102ec5010392510e09585dc00b",
+                "lens": true,
+                "moth": true,
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              },
+              {
+                "operation_id": "operator-qa:maker-wind-vane",
+                "id": "be6ec9d4bde579ad041995d9a5a17d3473b77fd24c9866535cf1ed5a7fdf5c39",
+                "input_hash": "0a356c5cedbc1382d38a7d20487cdba3851ec4d8bf79716341300e053ecfa2aa",
+                "lens": false,
+                "moth": false,
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              }
+            ]
+          },
+          "checkpoint": "0740000838081f8c09c2da219c04477684025e4747d0a65b9fcdfa2512a72d16",
+          "nftSupply": "1",
+          "nfts": [
+            {
+              "token_id": "qa-mochi-h1.familiar-game.testnet",
+              "owner_id": "qa-maker-h1.familiar-game.testnet",
+              "metadata": {
+                "title": "qa-mochi-h1.familiar-game.testnet",
+                "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+                "media": null,
+                "media_hash": null,
+                "copies": 1,
+                "issued_at": null,
+                "expires_at": null,
+                "starts_at": null,
+                "updated_at": null,
+                "extra": null,
+                "reference": null,
+                "reference_hash": null
+              },
+              "approved_account_ids": {}
+            }
+          ],
+          "inventories": [
+            {
+              "items": [],
+              "next_index": null
+            }
+          ]
+        },
+        {
+          "account": "qa-holder-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "locked": "0",
+          "keys": [
+            {
+              "publicKey": "ed25519:C6zbG8EzQY6xWj95pcKXyzgqb9B4BXh3XWu3VaDxQBDu",
+              "permission": "FullAccess"
+            }
+          ],
+          "bindings": [
+            {
+              "publicKey": "ed25519:C6zbG8EzQY6xWj95pcKXyzgqb9B4BXh3XWu3VaDxQBDu",
+              "player": "qa-holder-h1.familiar-game.testnet"
+            }
+          ],
+          "journey": {
+            "revision": 5,
+            "banked": [
+              "lens"
+            ],
+            "lit": false,
+            "signaled": false,
+            "lens_claim": "bc8a2f686420f1296ea01fc00d6c40e3ca64573a4c98d142a2e353c861585677",
+            "moth_claim": null,
+            "credit": "available",
+            "workshop_salvage": 0,
+            "bram_budget": 0,
+            "shells": 12,
+            "burned_shells": 0,
+            "commission_fulfilled": true,
+            "craft": null,
+            "polish": {
+              "evidence": {
+                "id": "76ced7a73e4fb0e8b0db2ad6f9d3c2eba90181726b190e3240f4da3663da9633",
+                "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                "expected_holder": "qa-holder-h1.familiar-game.testnet",
+                "expected_appearance": 0,
+                "generation": 3,
+                "input_hash": "8f3ca285567b2268e339e90dae1e5dc1969f3ec798d6a74905d03de2307d8a5e"
+              },
+              "state": "failed-safe",
+              "attempt": 1,
+              "uncertain_prior": false
+            },
+            "placement": {
+              "item_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+              "socket": "dock"
+            },
+            "claims": [
+              {
+                "operation_id": "operator-qa:holder-independent-lens",
+                "id": "bc8a2f686420f1296ea01fc00d6c40e3ca64573a4c98d142a2e353c861585677",
+                "input_hash": "cd97cd4adedf276c84c1bde3a6e967f36c785d849ecfe8d6a6c772076ef49e56",
+                "lens": true,
+                "moth": false,
+                "rules_version": "tidebound_h1_v1",
+                "content_version": "first_light_v1"
+              }
+            ]
+          },
+          "checkpoint": "847c741c2ec6d18b40a39cced02f873d2884ddb38e5bbb4cfa576722d9e78bda",
+          "nftSupply": "1",
+          "nfts": [
+            {
+              "token_id": "qa-bramble-h1.familiar-game.testnet",
+              "owner_id": "qa-holder-h1.familiar-game.testnet",
+              "metadata": {
+                "title": "qa-bramble-h1.familiar-game.testnet",
+                "description": "A keyless Familiar pet account. Inventory and savings stay with this account.",
+                "media": null,
+                "media_hash": null,
+                "copies": 1,
+                "issued_at": null,
+                "expires_at": null,
+                "starts_at": null,
+                "updated_at": null,
+                "extra": null,
+                "reference": null,
+                "reference_hash": null
+              },
+              "approved_account_ids": {}
+            }
+          ],
+          "inventories": [
+            {
+              "items": [
+                {
+                  "mint": {
+                    "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+                    "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+                    "maker": "qa-maker-h1.familiar-game.testnet",
+                    "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+                    "motif": "crest",
+                    "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+                    "rules_version": "tidebound_h1_v1",
+                    "content_version": "first_light_v1"
+                  },
+                  "finish": "harbor_polish",
+                  "appearance_version": 1,
+                  "finish_used": true
+                }
+              ],
+              "next_index": null
+            }
+          ]
+        }
+      ],
+      "pets": [
+        {
+          "tokenId": "mochi-d00307b6f456a69308.familiar-game.testnet",
+          "owner": "dadadave80.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "globalHash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+          "locked": "0",
+          "keys": [],
+          "state": {
+            "sha256": "4fa68afb0c086e7edfad80bf4db24ca571129266cf7f811efb513be03a5d5454",
+            "value": "FQAAAGZhbWlsaWFyLWdhbWUudGVzdG5ldBsAAABpdGVtcy5mYW1pbGlhci1nYW1lLnRlc3RuZXQcAAAAYmFrZXJ5LmZhbWlsaWFyLWdhbWUudGVzdG5ldBwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0FAAAAGtpbG4ucG9vbC5mODYzOTczLm0wRmU59moAAAAAAAAAAAAAAAADZTn2agAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        },
+        {
+          "tokenId": "qa-mochi-h1.familiar-game.testnet",
+          "owner": "qa-maker-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "globalHash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+          "locked": "0",
+          "keys": [],
+          "state": {
+            "sha256": "f2b2a7113aa97d86b818543dfcd11dbfd6ea2a766e93f426b23578d4724c3c1a",
+            "value": "FQAAAGZhbWlsaWFyLWdhbWUudGVzdG5ldBsAAABpdGVtcy5mYW1pbGlhci1nYW1lLnRlc3RuZXQcAAAAYmFrZXJ5LmZhbWlsaWFyLWdhbWUudGVzdG5ldBwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0FAAAAGtpbG4ucG9vbC5mODYzOTczLm0wRncl9moAAAAAAAAAAAAAAAADdyX2agAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        },
+        {
+          "tokenId": "qa-bramble-h1.familiar-game.testnet",
+          "owner": "qa-holder-h1.familiar-game.testnet",
+          "codeHash": "11111111111111111111111111111111",
+          "globalHash": "CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J",
+          "locked": "0",
+          "keys": [],
+          "state": {
+            "sha256": "767d119dda1829fc7173f49abeda541f4e3c7361d16893266d1688d5c9a1cf36",
+            "value": "FQAAAGZhbWlsaWFyLWdhbWUudGVzdG5ldBsAAABpdGVtcy5mYW1pbGlhci1nYW1lLnRlc3RuZXQcAAAAYmFrZXJ5LmZhbWlsaWFyLWdhbWUudGVzdG5ldBwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0FAAAAGtpbG4ucG9vbC5mODYzOTczLm0wRgcw9moAAAAAAAAAAAAAAAADBzD2agAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+          }
+        }
+      ],
+      "storageCredits": [
+        {
+          "accountId": "market.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "ARwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        },
+        {
+          "accountId": "mochi-d00307b6f456a69308.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "AS4AAABtb2NoaS1kMDAzMDdiNmY0NTZhNjkzMDguZmFtaWxpYXItZ2FtZS50ZXN0bmV0",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        },
+        {
+          "accountId": "qa-bramble-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "ASMAAABxYS1icmFtYmxlLWgxLmZhbWlsaWFyLWdhbWUudGVzdG5ldA==",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        },
+        {
+          "accountId": "qa-holder-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "18240000000000000000000",
+          "keyBase64": "ASIAAABxYS1ob2xkZXItaDEuZmFtaWxpYXItZ2FtZS50ZXN0bmV0",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAAJVWgNnK3AMAAAAAAAA="
+        },
+        {
+          "accountId": "qa-maker-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "17600000000000000000000",
+          "keyBase64": "ASEAAABxYS1tYWtlci1oMS5mYW1pbGlhci1nYW1lLnRlc3RuZXQ=",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAABs0vxAZugMAAAAAAAA="
+        },
+        {
+          "accountId": "qa-mochi-h1.familiar-game.testnet",
+          "total": "20000000000000000000000",
+          "available": "20000000000000000000000",
+          "keyBase64": "ASEAAABxYS1tb2NoaS1oMS5mYW1pbGlhci1nYW1lLnRlc3RuZXQ=",
+          "valueBase64": "AACAZHWTwTM8BAAAAAAAAAAAgGR1k8EzPAQAAAAAAAA="
+        }
+      ],
+      "items": [
+        {
+          "tokenId": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+          "item": {
+            "mint": {
+              "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+              "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+              "maker": "qa-maker-h1.familiar-game.testnet",
+              "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+              "motif": "crest",
+              "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+              "rules_version": "tidebound_h1_v1",
+              "content_version": "first_light_v1"
+            },
+            "finish": "harbor_polish",
+            "appearance_version": 1,
+            "finish_used": true
+          },
+          "supply": "1",
+          "mintReceipt": {
+            "id": "77dc2ef6e50ee7d57a4b6c126aefd60a269feb59e9834a9769ce5329460a386d",
+            "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+            "maker": "qa-maker-h1.familiar-game.testnet",
+            "origin_claim_id": "8c5cbc6a02e6a0878b90723334c9e2e682e690a76758922ee445225a560072e5",
+            "motif": "crest",
+            "input_hash": "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5",
+            "rules_version": "tidebound_h1_v1",
+            "content_version": "first_light_v1"
+          },
+          "balances": [
+            {
+              "account": "dadadave80.familiar-game.testnet",
+              "balance": "0"
+            },
+            {
+              "account": "qa-maker-h1.familiar-game.testnet",
+              "balance": "0"
+            },
+            {
+              "account": "qa-holder-h1.familiar-game.testnet",
+              "balance": "1"
+            }
+          ]
+        }
+      ],
+      "polishReceipts": [
+        {
+          "operationId": "2e16a4e72bf2f85a4537e3e2223571dafa33df577f71318ecaecb951fd9a7638",
+          "evidence": {
+            "id": "2e16a4e72bf2f85a4537e3e2223571dafa33df577f71318ecaecb951fd9a7638",
+            "token_id": "lantern:736e2621a98076c3f125280866ee7f239380ee9733ef67b9bbc42fdd4e7d18ce",
+            "expected_holder": "qa-maker-h1.familiar-game.testnet",
+            "expected_appearance": 0,
+            "generation": 7,
+            "input_hash": "7a96dd9e522a8fec0ea9b03e2ac7ebb1f50bc5b26f6600de27e609c4dc5b2150"
+          }
+        },
+        {
+          "operationId": "76ced7a73e4fb0e8b0db2ad6f9d3c2eba90181726b190e3240f4da3663da9633",
+          "evidence": null
+        }
+      ],
+      "nftTotalSupply": "3"
+    }
+  },
+  "actualCodes": [
+    {
+      "account": "items.familiar-game.testnet",
+      "bytes": 317448,
+      "codeHash": "8wXoHBcJwoX9fUkz83uG5bmnM18hNWGJBceXx5dvGNa2",
+      "actualDeployedBytesMatchCandidate": true,
+      "block": {
+        "hash": "22xZfMbAZtFd3SatRGfT7RrJrvQctKt5udVwoeHjUtzh",
+        "height": 277435202
+      }
+    },
+    {
+      "account": "familiar-game.testnet",
+      "bytes": 433139,
+      "codeHash": "4xtG29913j2BNpJaX16YQwMrP7WEE6mQp5UaBWFqb8xt",
+      "actualDeployedBytesMatchCandidate": true,
+      "block": {
+        "hash": "22xZfMbAZtFd3SatRGfT7RrJrvQctKt5udVwoeHjUtzh",
+        "height": 277435202
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "account": "items.familiar-game.testnet",
+      "hash": "HeE8Nt8NNDPRjmTqRdJXxNWmceND86QHzELhLb9Hx9HF",
+      "state": "final",
+      "codeHash": "8wXoHBcJwoX9fUkz83uG5bmnM18hNWGJBceXx5dvGNa2",
+      "exactSignatureAndEnvelopeVerified": true,
+      "fullFinalOutcome": {
+        "final_execution_status": "FINAL",
+        "receipts_outcome": [
+          {
+            "block_hash": "GNfMGbzCrHJJzN4LYaa1LU9Md5SCXxk9XeqGZHCwsNK4",
+            "id": "FYaTKEiXqUap9i9VLj3iExE3F7zgTKPdRPZkdW6418iW",
+            "outcome": {
+              "executor_id": "items.familiar-game.testnet",
+              "gas_burnt": 20791377176912,
+              "logs": [],
+              "metadata": {
+                "contracts": [
+                  {
+                    "local": "2s2KfRFCBhe8sgX2S7H9rC8eJcgkZSMhCoCizu6A9HXJ"
+                  }
+                ],
+                "gas_profile": [],
+                "version": 4
+              },
+              "receipt_ids": [
+                "ERqNW7N7XNC6NK469UFbS2ATjvuS8r8zehNS8zVcG9Vd"
+              ],
+              "status": {
+                "SuccessValue": ""
+              },
+              "tokens_burnt": "2079137717691200000000"
+            },
+            "proof": [
+              {
+                "direction": "Left",
+                "hash": "68mBi1BeFDrCEcMUyXCZNnm2f6k4CYvUb8fuXXfv5f1f"
+              }
+            ]
+          },
+          {
+            "block_hash": "Fa2272TgvGfH5dLN7AuxifxPB85npL5ctKPfhsqW899y",
+            "id": "ERqNW7N7XNC6NK469UFbS2ATjvuS8r8zehNS8zVcG9Vd",
+            "outcome": {
+              "executor_id": "items.familiar-game.testnet",
+              "gas_burnt": 223182562500,
+              "logs": [],
+              "metadata": {
+                "contracts": [
+                  {
+                    "local": "8wXoHBcJwoX9fUkz83uG5bmnM18hNWGJBceXx5dvGNa2"
+                  }
+                ],
+                "gas_profile": [],
+                "version": 4
+              },
+              "receipt_ids": [],
+              "status": {
+                "SuccessValue": ""
+              },
+              "tokens_burnt": "0"
+            },
+            "proof": [
+              {
+                "direction": "Left",
+                "hash": "5eRwZrX9Tg9SLyhJgWyk3dUmWAFJjSpkZueGeujU4CEU"
+              },
+              {
+                "direction": "Left",
+                "hash": "uuA3HNTxwdGTR5QqGyTVZVPiE6g4J8Cntka1X53oNay"
+              }
+            ]
+          }
+        ],
+        "status": {
+          "SuccessValue": ""
+        },
+        "transaction": {
+          "actions": [
+            {
+              "DeployContract": {
+                "code": "dfn+2Dvn/KZoVkde3KCs/qFKmmIMuo+rP/9D1kYCCRc="
+              }
+            }
+          ],
+          "hash": "HeE8Nt8NNDPRjmTqRdJXxNWmceND86QHzELhLb9Hx9HF",
+          "nonce": 277411560000002,
+          "priority_fee": 0,
+          "public_key": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "receiver_id": "items.familiar-game.testnet",
+          "signature": "ed25519:5bqBm2WwnykHB2g8LW7qXwWiB7meoDR9kmMngureD3297haHZGon7TrzkTAX5WYZDaro3GCSJZ1n2uoJ1tfnmsNJ",
+          "signer_id": "items.familiar-game.testnet"
+        },
+        "transaction_outcome": {
+          "block_hash": "GNfMGbzCrHJJzN4LYaa1LU9Md5SCXxk9XeqGZHCwsNK4",
+          "id": "HeE8Nt8NNDPRjmTqRdJXxNWmceND86QHzELhLb9Hx9HF",
+          "outcome": {
+            "executor_id": "items.familiar-game.testnet",
+            "gas_burnt": 2455598156552,
+            "logs": [],
+            "metadata": {
+              "gas_profile": null,
+              "version": 1
+            },
+            "receipt_ids": [
+              "FYaTKEiXqUap9i9VLj3iExE3F7zgTKPdRPZkdW6418iW"
+            ],
+            "status": {
+              "SuccessReceiptId": "FYaTKEiXqUap9i9VLj3iExE3F7zgTKPdRPZkdW6418iW"
+            },
+            "tokens_burnt": "245559815655200000000"
+          },
+          "proof": [
+            {
+              "direction": "Left",
+              "hash": "JBFH88hMZ3JBNtSjJFEMxoBMjKQA812fUGJqFK6sSNdA"
+            },
+            {
+              "direction": "Right",
+              "hash": "264fCtujfr1tnZuNENJTfKok2j3cynPisKYRdNwmJYQy"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "account": "familiar-game.testnet",
+      "hash": "EeLo8cF1uiY4nQ67fVQh2VnrNxx3vQEvHCrTGBz91SYi",
+      "state": "final",
+      "codeHash": "4xtG29913j2BNpJaX16YQwMrP7WEE6mQp5UaBWFqb8xt",
+      "exactSignatureAndEnvelopeVerified": true,
+      "fullFinalOutcome": {
+        "final_execution_status": "FINAL",
+        "receipts_outcome": [
+          {
+            "block_hash": "CPnMQ86F58bNsaRuSNgfdfT63cvze81Fzyj93pe5aFaT",
+            "id": "HiMX2ebga52EhhUM1djJmH9BFtz1McaBvdqkxHLfvuEj",
+            "outcome": {
+              "executor_id": "familiar-game.testnet",
+              "gas_burnt": 28261885641216,
+              "logs": [],
+              "metadata": {
+                "contracts": [
+                  {
+                    "local": "3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3"
+                  }
+                ],
+                "gas_profile": [],
+                "version": 4
+              },
+              "receipt_ids": [
+                "Gq5hDvqWdoF6z76c9JSaRghaM8QpME9QgFXh4TFukqLr"
+              ],
+              "status": {
+                "SuccessValue": ""
+              },
+              "tokens_burnt": "2826188564121600000000"
+            },
+            "proof": [
+              {
+                "direction": "Left",
+                "hash": "TMM1aWs2eV7Capqe9QTWjh3dQksd4BKG36pJwDi86rL"
+              }
+            ]
+          },
+          {
+            "block_hash": "6GcHJNCjmWbHM4XHufAHsSpopP6Zja4AFTzQGt8NisoN",
+            "id": "Gq5hDvqWdoF6z76c9JSaRghaM8QpME9QgFXh4TFukqLr",
+            "outcome": {
+              "executor_id": "familiar-game.testnet",
+              "gas_burnt": 223182562500,
+              "logs": [],
+              "metadata": {
+                "contracts": [
+                  {
+                    "local": "4xtG29913j2BNpJaX16YQwMrP7WEE6mQp5UaBWFqb8xt"
+                  }
+                ],
+                "gas_profile": [],
+                "version": 4
+              },
+              "receipt_ids": [],
+              "status": {
+                "SuccessValue": ""
+              },
+              "tokens_burnt": "0"
+            },
+            "proof": []
+          }
+        ],
+        "status": {
+          "SuccessValue": ""
+        },
+        "transaction": {
+          "actions": [
+            {
+              "DeployContract": {
+                "code": "OuP2xqZJZUcAhGaXoMzwVb6H1TVCu4YqqlSFjg1rOPU="
+              }
+            }
+          ],
+          "hash": "EeLo8cF1uiY4nQ67fVQh2VnrNxx3vQEvHCrTGBz91SYi",
+          "nonce": 277411058000018,
+          "priority_fee": 0,
+          "public_key": "ed25519:9gqucqLaUsuGCLoK9HFDthu5nDXXZmzASyE6rZa6QNw",
+          "receiver_id": "familiar-game.testnet",
+          "signature": "ed25519:2teXddQ9BCj4enHq3xwmhCAXjRMdTyrAGnfV6L8Ae1mLMTRKuq4JFeNUfjeKjGFtzdqoEHMHkqGm7by7sQKLhjS2",
+          "signer_id": "familiar-game.testnet"
+        },
+        "transaction_outcome": {
+          "block_hash": "CPnMQ86F58bNsaRuSNgfdfT63cvze81Fzyj93pe5aFaT",
+          "id": "EeLo8cF1uiY4nQ67fVQh2VnrNxx3vQEvHCrTGBz91SYi",
+          "outcome": {
+            "executor_id": "familiar-game.testnet",
+            "gas_burnt": 3243800823861,
+            "logs": [],
+            "metadata": {
+              "gas_profile": null,
+              "version": 1
+            },
+            "receipt_ids": [
+              "HiMX2ebga52EhhUM1djJmH9BFtz1McaBvdqkxHLfvuEj"
+            ],
+            "status": {
+              "SuccessReceiptId": "HiMX2ebga52EhhUM1djJmH9BFtz1McaBvdqkxHLfvuEj"
+            },
+            "tokens_burnt": "324380082386100000000"
+          },
+          "proof": [
+            {
+              "direction": "Right",
+              "hash": "Cp88ej2T6t6qpTeoS9msRRYLjHUK17wFHTBnr4DUUz17"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "measuredCost": {
+    "gasBurntYocto": "5475266179854100000000",
+    "additionalStorageReserveYocto": "72450000000000000000000",
+    "gasPlusAdditionalStorageReserveYocto": "77925266179854100000000",
+    "storageReserveIsEncumberedBalanceNotBurn": true,
+    "withinConservativeBound": true
+  },
+  "checks": {
+    "bothFinalReceiptGraphs": true,
+    "actualWasmBytes": true,
+    "rootAndItemsStateDigestsUnchanged": true,
+    "configBindingsNFTsKeylessPetsAndOldItemsPreserved": true,
+    "otherBuildingsAndGlobalPetUntouched": true,
+    "noInitializationMigrationTransferOrKeyAction": true
+  },
+  "limits": [
+    "Testnet code/state compatibility; not mainnet or physical-device recovery.",
+    "No fresh v2 gameplay or fun claim follows from an upgrade.",
+    "Administrative contract keys remain; the whole stack is not immutable."
+  ]
+}

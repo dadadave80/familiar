@@ -1,20 +1,80 @@
 # Reproducible claims
 
-## Current Tidebound H1 evidence — November 12, 2026
+## Spatial redesign — November 13, 2026
+
+**The redesigned game is published; H1 acceptance remains incomplete.** [Play Familiar](https://familiar-two.vercel.app/outing/) opens the new spatial Phaser game from source `2f6ce40`, deployment `dpl_g7RKfNoNHbZ8ws4b3HsTPmbfX9cE`. [Release evidence](docs/TIDEBOUND-V2-RELEASE.json) records all **691 matching public hashes**, seven live HTTP checks, and the actual anonymous public browser run at 390×844, 768×1024 and 1280×800: a dry 14-decision Lens return, restoration, Crest lantern, static origin, Wind guidance and real empty Privy email forms. No identity, signature or wallet/player API mutation occurred. All 33 shipped images decoded. `/outing/?classic=1` and existing two-shell invitations preserve the old rules and saves. The prior deployment `dpl_DhyHF4kWbbeKgzqRsF4Q9Hma7MnE` remains the rollback.
+
+The [compatible testnet update](docs/TIDEBOUND-V2-UPGRADE.json) **is complete**: Items [HeE8Nt8NNDPRjmTqRdJXxNWmceND86QHzELhLb9Hx9HF](https://testnet.nearblocks.io/txns/HeE8Nt8NNDPRjmTqRdJXxNWmceND86QHzELhLb9Hx9HF), then Root [EeLo8cF1uiY4nQ67fVQh2VnrNxx3vQEvHCrTGBz91SYi](https://testnet.nearblocks.io/txns/EeLo8cF1uiY4nQ67fVQh2VnrNxx3vQEvHCrTGBz91SYi). Final snapshot 277435202 verifies actual deployed bytes, unchanged Root/Items STATE digests, configuration and selected ownership/progress. Root 433,139 bytes / hash `4xtG29913j2BNpJaX16YQwMrP7WEE6mQp5UaBWFqb8xt`; Items 317,448 bytes / hash `8wXoHBcJwoX9fUkz83uG5bmnM18hNWGJBceXx5dvGNa2`. Both retain primary `first_light_v1`, advertise v1/v2, and retain economy `tidebound_h1_v1`. The immutable global Pet hash remains `CQQ63d8dNsM8oVCeEsU57USX212396zFmhtnqjgeXi1J`; Bakery/Market are unchanged. Administrative keys remain: the entire stack is not immutable.
+
+The original prepared Items signature was preserved through an RPC429 interruption and submitted once only after unused-nonce/validity/state proof. Root was signed after Items FINAL/readback. Actual gas burn 0.0054752661798541 testNEAR plus added encumbered storage 0.07245 totals 0.0779252661798541, below the reviewed 0.157879689908833 and 0.25 cap within the original 41 funding. Storage reserve is balance held for storage, not burned NEAR. No new funding, state migration, unrelated deployment or legacy funds were used.
+
+**Fresh v2 live gameplay acceptance is blocked.** The prepared `scripts/tidebound-v2-live.ts` has not run: automatic approval review rejected its new QA allocation/mint/finish/recipient effects pending specific user approval. Its hard Root allocation cap is 1 testNEAR from existing funds; recipient credit is at most 0.002 from the new operator player. No new v2 QA account, mint, finish or transfer is claimed. The 32 real v1 transaction graphs below remain historical acceptance evidence. The v2 mixed sandbox and browser fixtures do not replace a live v2 run or two physical devices.
+
+### Complete and blocked gates
+
+| Gate | Status |
+| --- | --- |
+| Spatial game, second goal, one expressive lantern and home sockets | Implemented and published; browser checks pass |
+| Compatible testnet code and preserved old player/Mochi/items | Complete; two FINAL receipts, exact Wasm bytes and unchanged state verified |
+| Finite H1 commission/craft/finish/real transfer | Complete for recorded v1 operator run; v2 mixed sandbox passes |
+| Fresh v2 live operator acceptance | Blocked by automatic approval review; specific approval pending; process never started |
+| Recovery of the same earned item and progress on two physical devices | Unpassed; Mac adoption and Android wallet report are narrower evidence |
+| Human enjoyment, retention, iPad and physical audio/performance | Unmeasured / untested; 0 of 8 planned participants |
+| H2, mainnet, source push, public repository and submission | Not authorized or performed |
+
+### Reproduce the new game without credentials
+
+```sh
+bun install --frozen-lockfile
+bun --no-env-file run dev
+# Open the printed local origin at /outing/.
+```
+
+Use Rope. One tested dry Lens+Moth route is: **North, North, West, Wait, Wait, East, Reel Beacon Lens, East, West, East, Carry wind-moth, West, East, South, West, South, Return.** It takes 17 accepted decisions and returns with Resolve 3/3. The 14-decision Lens-only route is fixed in `scripts/test-privy-review-browser.ts`; Wind's 14-decision wheel route is in the shared fixture/solver tests. Every accepted decision is saved before its animation; invalid inputs consume nothing.
+
+Short demo script:
+
+1. Show the marked source, choose a safe neighboring platform, then point to the wave opening an oyster and moving the bridge. Retrieve the lens and wind-moth and cross back to the dock.
+2. Follow **Bring the lens to the beacon**, restore it, choose the earned Moth lantern at the workbench, show the static origin and place it at the dock. Label this unconfigured device state a preview. Open Wind Gate and show how its wheel changes source-to-exit routing.
+3. Show the actual upgrade receipts above and the original accepted-maker/mint/finish/transfer evidence below. Distinguish those recorded testnet events from the current device preview. Do not create a new payment or claim recovery during this demo.
+
+| Final check | Actual result / boundary |
+| --- | --- |
+| `bun --no-env-file run test` | 294 pass, 0 fail, 74,221 assertions, 51 files |
+| `cargo test --manifest-path contracts/Cargo.toml --workspace` | 117 passed; two sandbox integrations are intentionally ignored by this default command |
+| `bun --no-env-file run build` | Typecheck and production build pass; existing large Phaser chunk warning remains |
+| `cargo fmt --manifest-path contracts/Cargo.toml --all -- --check` and strict all-target Clippy | Pass |
+| `bun --no-env-file run test:expedition-browser` | 320×568, 390×844, 768×1024, 1280×800, 1920×1080, 2560×1080, 844×390 plus rotations; actual canvas/keyboard inputs, dry returns, one queued move, mid-wave/reel resize, context/art failures, save retry and two-tab lease pass |
+| `bun --no-env-file run test:expedition-harbor-browser` | Synthetic canonical fresh-device eligibility, actual visible Crest/original vs Moth/polish pixels, stale-holder removal, no inherited achievement, busy-review dismissal, durable returns/export and identity fences pass; no identity or chain execution |
+| `bun --no-env-file scripts/test-privy-review-browser.ts <prepared-release> --h1` | Exact 691-file compiled candidate and actual published alias; 33 images; three sizes; actual SDK/empty email forms, dry return/home/origin, classic links; zero wallet/player mutations. Provider analytics/report POSTs were blocked by the test guard |
+| `bun --no-env-file scripts/tidebound-v2-live.ts` | LOCAL_POLICY_ONLY; zero RPC, keys, signatures or mutations; not a live acceptance command |
+| Mixed sandbox with exact five frozen v1 Wasms → Root/Items-only update | Passed in 49.47 s; unchanged state/Pet/old item, new v2 claims/craft/finish/transfer, old/current-holder rules and later v1 claims |
+| Separate legacy local sandbox | Passed in 106.36 s |
+| Developer desktop playthrough | Scripted 17-decision Lens+Moth return, restoration, Moth preview/origin/dock and Wind unlock observed; elapsed time not measured |
+| Human / physical-device results | 0/8 human participants; iPad/input/audio/performance untested; Android same-wallet signing is user-reported, full earned-item/progress recovery on two devices unpassed |
+
+Shared parity includes 134 cases, 2,735 states and 2,601 transitions with exact state, legal-command and ordered-event comparisons. Reproduce it with the common Rust tests and the engine/solver unit tests. To reproduce the historical exact-binary upgrade sandbox, provide all five `SANDBOX_V1_{ROOT,ITEMS,PET,BAKERY,MARKET}_WASM` paths; each is checked against its frozen public code hash. Verified local copies are preserved outside Git at `/Users/dadadave/.codex/specs/familiar-tidebound-2026-11-12/FROZEN-V1-ARTIFACTS/manifest.json`. Without those variables, the command tests a fresh local v2 stack. Never deploy freshly rebuilt Pet/Bakery/Market binaries into this live tuple: common-library rebuild metadata can change their hashes even when those sources are unchanged.
+
+Baseline for the whole handoff is `4d8cb2e`; branch `feat/tidebound-h1`. Inspect `git diff --stat 4d8cb2e HEAD`, `git diff 4d8cb2e HEAD` and `git log --oneline 4d8cb2e..HEAD`. These are baseline-to-review-source comparisons; no submission, public-repository URL or source push is claimed.
+
+## Prior published Tidebound H1 evidence — November 12, 2026
+
+The following section describes the earlier three-lane release and its v1 receipts. Its five-action demo, old code hashes and historical source counts do not describe the new spatial game above.
+
 
 **The full H1 game is public; H1 acceptance remains incomplete.** [Play Familiar](https://familiar-two.vercel.app/outing/) opens the full-screen coastal world, Beacon Court, Wind Gate and Storycraft. The isolated NEAR testnet stack and a 32-step operator-controlled gameplay run are verified. Recovery of the same player, Mochi, items and progress on two real devices, and the human playtest, remain unpassed. “Tidebound” is a proposed subtitle.
 
-The current production release is `dpl_DhyHF4kWbbeKgzqRsF4Q9Hma7MnE`, recorded in [TIDEBOUND-SESSION-RELEASE.json](docs/TIDEBOUND-SESSION-RELEASE.json). All 665 public file hashes and seven HTTP checks passed. It retains the single **Adopt Mochi** button and includes the signing-refresh/storage-credit correction. The authenticated Mac adoption has since finalized and was independently checked in [TIDEBOUND-PLAYER.json](docs/TIDEBOUND-PLAYER.json). No source push, public repository, mainnet action or submission is claimed.
+The November 12 production release was `dpl_DhyHF4kWbbeKgzqRsF4Q9Hma7MnE`, recorded in [TIDEBOUND-SESSION-RELEASE.json](docs/TIDEBOUND-SESSION-RELEASE.json). All 665 public file hashes and seven HTTP checks passed. It retains the single **Adopt Mochi** button and includes the signing-refresh/storage-credit correction. The authenticated Mac adoption has since finalized and was independently checked in [TIDEBOUND-PLAYER.json](docs/TIDEBOUND-PLAYER.json). No source push, public repository, mainnet action or submission is claimed.
 
 ### What is actually verified
 
 | Evidence | Measured result | Boundary |
 | --- | --- | --- |
 | [Initial deployment](docs/TIDEBOUND-DEPLOYMENT.json) | 16 FINAL transactions; 50 independent read-only checks of code, configuration, keys and balances | Initial deployment snapshot; Root was subsequently upgraded as recorded below |
-| [Root gas-endowment correction](docs/TIDEBOUND-NATIVE-GAS-UPGRADE.json) | FINAL code-only upgrade; current Root hash `3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3`; stored-state digest, previous NFTs/bindings/progress and other contract hashes preserved | Named-player funding changed to 0.25 test NEAR; no initialization or state migration |
+| [Root gas-endowment correction](docs/TIDEBOUND-NATIVE-GAS-UPGRADE.json) | FINAL code-only upgrade; then-current Root hash `3eeoimzgrF1M9amhaRHs9jpSrPuSw1QYJFhoPAsFLyH3`; stored-state digest, previous NFTs/bindings/progress and other contract hashes preserved | Named-player funding changed to 0.25 test NEAR; no initialization or state migration |
 | [Live operator gameplay](docs/TIDEBOUND-GAMEPLAY.json) | 32 FINAL transaction graphs independently checked, including two expected Items failures and historical/final state | Operator keys, not Privy identities or a human/device study |
 | [Public browser checks](docs/TIDEBOUND-PUBLIC-BROWSER.json) | 390×844, 768×1024 and 1280×800; edge-to-edge world, 44px game targets, no page scroll, local return/lantern/origin and real empty email form | Headless Chromium; no identity submitted or wallet/player API mutation; earlier public release. Newest compiled-release checks are separate below |
-| [Current production release](docs/TIDEBOUND-SESSION-RELEASE.json) | READY; 665 public hashes match; seven HTTP checks; actual Node24 health; newest compiled game/SDK passed the same three viewport sizes | Compiled browser checks ran locally; production bytes match. At this release check the authenticated retry was untested; the later Mac adoption is verified below |
+| [November 12 production release](docs/TIDEBOUND-SESSION-RELEASE.json) | READY; 665 public hashes match; seven HTTP checks; actual Node24 health; newest compiled game/SDK passed the same three viewport sizes | Compiled browser checks ran locally; production bytes match. At this release check the authenticated retry was untested; the later Mac adoption is verified below |
 | Source checkpoint `7d0db98` | 230 Bun tests / 60,975 assertions; 101 Rust tests; typecheck/build, formatting and strict Clippy passed; both sandbox integrations separately passed | Automated checks; sandbox accounts and browser fixtures do not count as live device recovery |
 
 The gameplay report is complete at finalized block `277421470`. Its maker recovered lens/moth and the Wind Gate vane, restored the beacon and signal, fulfilled the personal commission, and retained the protected credit until crafting. Two distinct operator-controlled keys requested the same craft; the resulting token supply is **1**. Repeated known-final claims, commission, craft and finish did not repeat their economic effects.
@@ -29,7 +89,7 @@ Install with `bun install --frozen-lockfile`. Bun 1.4.4, the existing Rust/NEAR 
 
 | Action | Expected result | Evidence boundary |
 | --- | --- | --- |
-| Open the public `/outing/`, or `bun --no-env-file run dev` then `/outing/` | Full-screen game world; custom coastal controls; no whole-page scroll | No account needed; useful detail/account panels may scroll internally |
+| Open the preserved `/outing/?classic=1`, or run local dev then that route | Full-screen game world; custom coastal controls; no whole-page scroll | No account needed; useful detail/account panels may scroll internally |
 | Rope: Move Left → Wait → Move Center → Reel Lens → Return; restore beacon | Five-action dry return and deliberate restoration | Device preview until an accepted NEAR claim |
 | Workshop: preview Crest, move the same lantern porch/dock, view origin | One lantern; the actual returned outing supplies its origin; Moth requires a personal rescue | Local preview is labelled not backed up and not transferable |
 | Prepare Wind Gate or the two-shell challenge | A meaningful second goal using the existing rules | Voluntary continuation and comprehension unmeasured |
@@ -76,7 +136,7 @@ Task baseline: `4d8cb2e`; documented source checkpoint: `7d0db98`, branch `feat/
 
 ### Short live demo script
 
-1. **0:00–0:40:** Open the public game. Point to Mochi, the lens goal and the visible wave target. Make the five Rope decisions above; identify the wave opening the shell and return before flooding.
+1. **0:00–0:40:** Open the preserved `/outing/?classic=1` game. Point to Mochi, the lens goal and the visible wave target. Make the five Rope decisions above; identify the wave opening the shell and return before flooding.
 2. **0:40–1:15:** Restore the beacon. In Workshop, preview Crest, move the same lantern porch/dock and show its five-action origin. Label this browser state a local preview. Show Moth’s earned condition and Wind Gate as the next goal.
 3. **1:15–2:00:** Open the recorded testnet evidence: actual accepted maker event, the two-key craft producing one token, 12-Shell finish, both placements and the real transfer. Show supply 1, maker balance 0 and recipient balance 1. Explain that receiving the item did not grant the maker’s achievement. This is operator QA evidence, not a new live payment.
 4. **2:00–2:30:** Show the separate FINAL Mac adoption/owned-companion evidence. Open Account and the email entry surface without submitting a new identity. State the remaining same-game-state two-device, iPad and human gates. Do not narrate recovery that has not passed.
