@@ -25,7 +25,7 @@ export interface WorkshopModel {
 }
 export interface HarborState {
   mode:"preview"|"saved";binding:PlayerBinding|null;snapshot:ChainSnapshot|null;busy:boolean;message:string;
-  pending:PendingNative|null;review:WorldReview|null;v2Supported:boolean;returns:readonly ReturnRecord[];workshop:WorkshopModel;
+  pending:PendingNative|null;review:WorldReview|null;courtSupported:boolean;returns:readonly ReturnRecord[];workshop:WorkshopModel;
 }
 export interface HarborSession {
   readonly state:HarborState;

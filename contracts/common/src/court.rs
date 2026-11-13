@@ -564,9 +564,9 @@ mod differential_tests {
         cases: Vec<Case>,
     }
     #[test]
-    fn every_v2_intermediate_state_legal_order_and_event_matches_the_browser() {
+    fn every_court_intermediate_state_legal_order_and_event_matches_the_browser() {
         let fixtures: Fixtures =
-            serde_json::from_str(include_str!("../fixtures/court_v2.json")).unwrap();
+            serde_json::from_str(include_str!("../fixtures/court.json")).unwrap();
         assert_eq!(fixtures.version, CONTENT_VERSION);
         assert_eq!(fixtures.cases.len(), 134);
         let mut count = 0;

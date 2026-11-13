@@ -69,7 +69,7 @@ export function applyPassage(before: PassageState, candidate: unknown): PassageT
   let court: CourtState;
   let events: readonly CourtEvent[];
   if (command === "ride") {
-    // Resolve the edge-lane surge from a dry footing so v2 still handles every world effect, including the flood.
+    // Resolve the edge-lane surge from a dry footing so the court still handles every world effect, including the flood.
     const sheltered = { ...before.court, position: { x: 1 as const, y: arrival.y } };
     const surge = applyCommand(sheltered, "wait")!;
     court = { ...surge.after, position: arrival };

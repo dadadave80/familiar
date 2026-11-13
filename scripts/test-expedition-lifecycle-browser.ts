@@ -4,7 +4,7 @@ import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {chromium,expect,type Page} from '@playwright/test';
 import {createServer,transformWithOxc} from 'vite';
-import courtFixtures from '../contracts/common/fixtures/court_v2.json';
+import courtFixtures from '../contracts/common/fixtures/court.json';
 const project=resolve(import.meta.dir,'..'),scratch=await mkdtemp(join(tmpdir(),'familiar-expedition-lifecycle-'));
 const out=process.argv.find(arg=>arg.startsWith('--captures='))?.slice(11)??scratch;await mkdir(out,{recursive:true});
 const phase=process.argv.find(arg=>arg.startsWith('--phase='))?.slice(8)??'after';

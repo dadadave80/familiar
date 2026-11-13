@@ -1,6 +1,6 @@
 import {PublicKey,KeyType} from "near-api-js";
 import {isPlayerAccount} from "../account/names";
-import {replayOuting} from "../outing/engine";
+import {replayOuting} from "../compatibility/return-rules";
 import {replayCourt} from "./engine";
 import {CONTENT_VERSION,type CourtState,type BankedItem} from "./types";
 import type {RunContext} from "./harbor-port";

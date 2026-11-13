@@ -25,7 +25,7 @@ async function claimHash(record:ReturnRecord) {
 }
 /** One instance per game. It holds no player private key and exposes no arbitrary signing method. */
 export class HarborController implements HarborSession {
-  private value:HarborState={mode:"preview",binding:null,snapshot:null,busy:false,message:"",pending:null,review:null,v2Supported:false,returns:[],workshop:blankWorkshop};
+  private value:HarborState={mode:"preview",binding:null,snapshot:null,busy:false,message:"",pending:null,review:null,courtSupported:false,returns:[],workshop:blankWorkshop};
   private listeners=new Set<()=>void>();private epoch=0;private live=true;private active:RunContext|null=null;private prepared:Prepared|null=null;
   readonly records:ReturnRecords;
   constructor(private readonly connection:HarborConnection|null,private readonly store:Pick<Storage,"getItem"|"setItem">,recordLock?:ReturnRecordLock){this.records=new ReturnRecords(store,recordLock);}
@@ -52,8 +52,8 @@ export class HarborController implements HarborSession {
   private async load(binding:PlayerBinding,epoch:number) {
     const snapshot=await this.connection!.client.snapshot(binding);this.guard(epoch,binding);
     check(bindingMatches(snapshot.binding,binding),"The snapshot belongs to another signed-in harbor. Keep the original context.");
-    let v2Supported=false;try{await this.connection!.client.verifyStack("first_light_v2");this.guard(epoch,binding);v2Supported=true;}catch{this.guard(epoch,binding);}
-    this.update({snapshot,v2Supported,returns:this.recordsFor(snapshot)});return snapshot;
+    let courtSupported=false;try{await this.connection!.client.verifyStack("first_light_v2");this.guard(epoch,binding);courtSupported=true;}catch{this.guard(epoch,binding);}
+    this.update({snapshot,courtSupported,returns:this.recordsFor(snapshot)});return snapshot;
   }
   private choiceKey(binding:PlayerBinding){return `familiar.expedition.authority.v2:testnet:${this.connection!.client.root}:${binding.nearAccountId}`;}
   private choice(binding:PlayerBinding,mode:"saved"|"preview") {const key=this.choiceKey(binding);this.store.setItem(key,mode);check(this.store.getItem(key)===mode,"This harbor choice could not be saved. The earlier preview is preserved.");}
@@ -63,7 +63,7 @@ export class HarborController implements HarborSession {
     const epoch=++this.epoch;this.prepared=null;this.update({binding,snapshot:null,mode:"preview",review:null,busy:!!binding,message:""});
     try{if(binding){await this.load(binding,epoch);this.guard(epoch,binding);
       const activeMatches=!this.active||this.active.authority==="near-testnet"&&this.active.accountId===binding.nearAccountId&&this.active.publicKey===binding.signerPublicKey;
-      if(this.value.v2Supported&&activeMatches&&this.store.getItem(this.choiceKey(binding))==="saved"){this.update({mode:"saved"});this.update({returns:this.recordsFor(this.value.snapshot)});}
+      if(this.value.courtSupported&&activeMatches&&this.store.getItem(this.choiceKey(binding))==="saved"){this.update({mode:"saved"});this.update({returns:this.recordsFor(this.value.snapshot)});}
     }}catch(error){if(epoch===this.epoch)this.update({message:error instanceof Error?error.message:"The saved harbor could not be read."});}
     finally{if(epoch===this.epoch)this.update({busy:false});}
   }
@@ -79,18 +79,18 @@ export class HarborController implements HarborSession {
     try{await task();}catch(error){if(epoch===this.epoch)this.update({message:error instanceof Error?error.message:"The original request is still being checked."});throw error;}
     finally{if(epoch===this.epoch)this.update({busy:false});}
   }
-  async selectSaved(){check(!this.active,"Finish this outing before choosing another harbor.");await this.refresh();check(this.value.v2Supported,"The new court is a private preview until both contracts support it. Your existing Mochi and v1 progress are preserved.");check(this.value.binding,"Sign in before selecting this harbor.");this.choice(this.value.binding,"saved");this.update({mode:"saved"});this.update({returns:this.recordsFor(this.value.snapshot)});}
+  async selectSaved(){check(!this.active,"Finish this outing before choosing another harbor.");await this.refresh();check(this.value.courtSupported,"The new court is a private preview until both contracts support it. Your existing Mochi and earned progress are preserved.");check(this.value.binding,"Sign in before selecting this harbor.");this.choice(this.value.binding,"saved");this.update({mode:"saved"});this.update({returns:this.recordsFor(this.value.snapshot)});}
   selectPreview(){check(!this.active&&!this.value.busy,"Finish this outing before choosing another harbor.");if(this.value.binding)this.choice(this.value.binding,"preview");this.prepared=null;this.update({mode:"preview",review:null,returns:this.recordsFor(null)});}
   runContext(preview:HomeCheckpoint):RunContext {
     this.guard(this.epoch);
     check(!this.value.review&&(this.value.mode==="preview"||!this.value.busy&&!this.value.pending),"Resolve the original request before setting out from this harbor.");
-    const context=this.value.mode==="saved"?(check(this.value.snapshot&&this.value.v2Supported,"The saved expedition is not ready."),this.context(this.value.snapshot)):{authority:"local-preview" as const,...structuredClone(preview)};
+    const context=this.value.mode==="saved"?(check(this.value.snapshot&&this.value.courtSupported,"The saved expedition is not ready."),this.context(this.value.snapshot)):{authority:"local-preview" as const,...structuredClone(preview)};
     return structuredClone(context);
   }
   setActiveRun(context:RunContext|null){if(context)validateRunContext(context);this.active=context?structuredClone(context):null;}
   async captureReturn(state:CourtState,context:RunContext) {const epoch=this.epoch,record=await this.records.capture(state,context);if(this.live&&epoch===this.epoch)this.update({returns:this.recordsFor(this.value.snapshot)});return record;}
   cancelReview(){check(!this.value.busy,"The original request is still being checked.");this.prepared=null;this.update({review:null});}
-  private requireSaved() {const binding=this.value.binding;check(this.connection&&binding,"Sign in with the original identity first.");check(this.value.mode==="saved","Choose the saved harbor explicitly. Local memories are never merged on sign-in.");check(this.value.v2Supported,"Both contracts must support the new court before a saved world action. Your original state is preserved.");check(!this.active,"Bring Mochi home before this harbor interaction.");check(!this.connection.client.pending(binding),"Check the original request before preparing another action.");return binding;}
+  private requireSaved() {const binding=this.value.binding;check(this.connection&&binding,"Sign in with the original identity first.");check(this.value.mode==="saved","Choose the saved harbor explicitly. Local memories are never merged on sign-in.");check(this.value.courtSupported,"Both contracts must support the new court before a saved world action. Your original state is preserved.");check(!this.active,"Bring Mochi home before this harbor interaction.");check(!this.connection.client.pending(binding),"Check the original request before preparing another action.");return binding;}
   private async storage(recipient:string) {const [bounds,balance]=await Promise.all([this.connection!.client.view(this.connection!.client.itemsContract,"storage_balance_bounds"),this.connection!.client.view(this.connection!.client.itemsContract,"storage_balance_of",{account_id:recipient})]);return quoteItemStorage(bounds,balance);}
   async review(intent:WorldIntent) {
     return this.work(async()=>{

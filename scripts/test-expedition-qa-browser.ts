@@ -64,7 +64,7 @@ try{
   if(blockedSdk){await expect(sdkFailure.getByRole("alert")).toContainText("original requests are unchanged");await expect(sdkFailure.getByRole("link",{name:"Reload Familiar"})).toBeVisible();await capture(sdkFailure,"after-lazy-account-download-failure");}
   await sdkContext.close();
   const loadingContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),loading=await loadingContext.newPage();let release!:()=>void;const held=new Promise<void>(r=>{release=r;});
-  await loading.route("**/assets/expedition-v2/runtime/lens.webp",async route=>{await held;await route.continue();});await loading.goto(origin+"/outing/");
+  await loading.route("**/assets/expedition/runtime/lens.webp",async route=>{await held;await route.continue();});await loading.goto(origin+"/outing/");
   await expect(loading.getByRole("heading",{name:"Unpacking the harbor."})).toBeVisible();assert.equal(await loading.locator('[data-action="depart"]').count(),0,"No departure before the scene is ready");assert.equal(await loading.evaluate(k=>localStorage.getItem(k),key),null);await capture(loading,"after-art-loading-gate");release();await ready(loading);await expect(loading.locator('[data-action="depart"]')).toBeEnabled();await loadingContext.close();
  }
  if(engine===chromium){

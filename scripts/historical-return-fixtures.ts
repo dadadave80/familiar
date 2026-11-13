@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { replayOuting, legalActions, applyAction } from "../web/src/outing/engine";
+import { replayOuting, legalActions, applyAction } from "../web/src/compatibility/return-rules";
 
 export function stateHash(value:unknown):string {
   const canonical=(v:unknown):unknown=>Array.isArray(v) ? v.map(canonical) : v && typeof v === "object"
@@ -32,5 +32,5 @@ export function expeditionFixtures() {
   })}));
 }
 if(import.meta.main) {
-  await Bun.write(new URL("../contracts/common/tests/expedition-fixtures.json",import.meta.url),JSON.stringify(expeditionFixtures())+"\n");
+  await Bun.write(new URL("../contracts/common/tests/historical-return-fixtures.json",import.meta.url),JSON.stringify(expeditionFixtures())+"\n");
 }

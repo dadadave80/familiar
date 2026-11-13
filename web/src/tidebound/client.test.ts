@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { actions, base64Encode, baseEncode, baseDecode, createTransaction, encodeTransaction, KeyPair, KeyPairSigner, PublicKey, Signature, SignedTransaction, KeyType, type JsonRpcProvider, type Transaction } from "near-api-js";
 import type { NearAuthAccountAdapter } from "../account/adapter";
 import type { PlayerBinding } from "./domain";
-import { claimInput, parseJourney, TideboundClient, type CraftItem, type Journey } from "./client";
+import { parseJourney, TideboundClient, type CraftItem, type Journey } from "./client";
 
 const lockQueues = new Map<string, Promise<void>>();
 const priorLocks = Object.getOwnPropertyDescriptor(globalThis.navigator, "locks");
@@ -163,7 +163,7 @@ test("a snapshot pins journey, checkpoint, inventory and holder reads to one fin
  expect(f.authorizationCalls).toBe(0);expect(f.broadcasts).toBe(0);
 });
 test("captured public FINAL native graphs retain their original signatures and reconcile offline",async()=>{
- const report=await Bun.file(new URL("../../../docs/TIDEBOUND-V2-GAMEPLAY.json",import.meta.url)).json();let receipts=0,checked=0;
+ const report=await Bun.file(new URL("../../../docs/FAMILIAR-GAMEPLAY.json",import.meta.url)).json();let receipts=0,checked=0;
  for(const entry of report.transactions.filter((e:any)=>e.name!=="create-maker")){
   const raw=entry.fullFinalOutcome.transaction,call=raw.actions[0].FunctionCall;
   const tx=createTransaction(raw.signer_id,PublicKey.fromString(raw.public_key),raw.receiver_id,BigInt(raw.nonce),[actions.functionCall(call.method_name,new Uint8Array(Buffer.from(call.args,"base64")),BigInt(call.gas),BigInt(call.deposit))],baseDecode(entry.recentBlockHash));
@@ -226,7 +226,7 @@ test("both contracts must provide the full compatible protocol before signing or
     }
   }
 });
-test("v2 native claims require both advertised capabilities before pending creation or signing; v1 stays valid",async()=>{
+test("spatial native claims require both advertised capabilities before pending creation or signing; historical content stays valid",async()=>{
  const args={token_id:`mochi.${root}`,operation_id:"return:stable",expected_revision:0,initial_checkpoint_hash:"e".repeat(64),rules_version:"tidebound_h1_v1",content_version:"first_light_v2",tool:"rope",area:"beacon",commands:Array(17).fill("wait")};
  const p={registry:root,items:itemContract,network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1",supported_content_versions:["first_light_v1","first_light_v2"]};
  const items={...p};delete (items as Partial<typeof p>).items;
@@ -331,15 +331,7 @@ test("a known failed receipt clears only its native envelope, never authorizes a
   expect(f.broadcasts).toBe(1);
 });
 
-test("claim context uses the exact canonical checkpoint and a recomputed legal return", async () => {
-  const f = fixture(); const snapshot = await f.client.snapshot(binding);
-  const transcript = { tool: "rope" as const, banked: [], actions: ["move:left", "wait", "move:center", "reel:lens", "return"] as const, area: "beacon" as const };
-  const valid = { ...transcript, actions: [...transcript.actions] };
-  expect(claimInput(snapshot, valid, "one")).toMatchObject({ token_id: `mochi.${root}`, expected_revision: 0, initial_checkpoint_hash: "e".repeat(64), rules_version: "tidebound_h1_v1" });
-  expect(() => claimInput(snapshot, { ...valid, banked: ["lens"] }, "two")).toThrow("different checkpoint");
-  expect(() => claimInput(snapshot, { ...valid, actions: ["take:lens", "return"] }, "bad")).toThrow("legal returned");
-  expect(f.authorizationCalls).toBe(0);
-});
+
 
 test("malformed ledger combinations are rejected instead of showing a confirmed harbor", () => {
   const invalid: unknown[] = [

@@ -1,4 +1,4 @@
-export const MOCHI_ATLAS = "mochi-poses-v1";
+export const MOCHI_ATLAS = "mochi-poses";
 export const MOCHI_GROUND = .875;
 
 // Frame-local paw coordinates share the registered atlas canvas and ground line.

@@ -8,12 +8,12 @@ import react from "@vitejs/plugin-react";
 export const GAME_HTML=["index.html","outing/index.html"] as const;
 export const HTTP_PATHS=["/api/health","/api/v1/privy/wallet","/api/v1/privy/player"] as const;
 export const RUNTIME_WEBPS=[
-  ...["harbor","arena","wind-gate-v1","bram","mochi","mochi-poses-v1","tidekeeper","wave","shell","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`),
-  ...["tide-court-v2","stone-island-v2","wooden-bridge-v2"].map(name=>`assets/expedition-v2/${name}.webp`),
-  ...["harbor","mochi-poses-v1","tidekeeper","shell","lens","moth","wave","bram","tide-court-v2","stone-island-v2","wooden-bridge-v2"].map(name=>`assets/expedition-v2/runtime/${name}.webp`),
+  ...["harbor","arena","wind-gate","bram","mochi","mochi-poses","tidekeeper","wave","shell","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`),
+  ...["tide-court","stone-island","wooden-bridge"].map(name=>`assets/expedition/${name}.webp`),
+  ...["harbor","mochi-poses","tidekeeper","shell","lens","moth","wave","bram","tide-court","stone-island","wooden-bridge"].map(name=>`assets/expedition/runtime/${name}.webp`),
 ];
-export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate-v1.webp.json","assets/expedition-v2/provenance.json","assets/expedition-v2/runtime/manifest.json"] as const;
-export const BRAND_ASSETS=["icons/mochi-v2.ico",...[32,180,192,512].map(size=>`icons/mochi-v2-${size}.png`),"social/familiar-harbor-v2.jpg","familiar-v2.webmanifest"];
+export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate.webp.json","assets/expedition/provenance.json","assets/expedition/runtime/manifest.json"] as const;
+export const BRAND_ASSETS=["icons/mochi.ico",...[32,180,192,512].map(size=>`icons/mochi-${size}.png`),"social/familiar-harbor.jpg","familiar.webmanifest"];
 const primaryFunction="api/v1/privy/wallet.func";
 const aliases=["api/health.func","api/v1/privy/player.func"] as const;
 const endpoints=[{path:HTTP_PATHS[0],methods:["GET","OPTIONS"]},...HTTP_PATHS.slice(1).map(path=>({path,methods:["POST","OPTIONS"]}))];
@@ -46,7 +46,7 @@ function publicBytes(bytes:Uint8Array,path:string) {
 /** Add only approved art and branding that the baseline lacks; never replace its assets. */
 export async function copyRuntimeAssets(sourcePublic:string,destination:string) {
   await physicalDirectory(sourcePublic);await physicalDirectory(join(sourcePublic,"assets"));
-  for(const directory of ["first-light-motion","expedition-v2","expedition-v2/runtime"])await physicalDirectory(join(sourcePublic,"assets",directory));
+  for(const directory of ["first-light-motion","expedition","expedition/runtime"])await physicalDirectory(join(sourcePublic,"assets",directory));
   for(const directory of ["icons","social"])await physicalDirectory(join(sourcePublic,directory));
   await staticFiles(destination);
   const added:{path:string;sha256:string}[]=[],reused:{path:string;sha256:string}[]=[],writes:{path:string;bytes:Uint8Array}[]=[];
@@ -173,7 +173,7 @@ async function main() {
   const currentStatic=await Promise.all((await staticFiles(site)).map(async path=>({path,sha256:await hash(join(site,path))})));
   const preserved=baselineStatic.filter(file=>currentStatic.some(current=>current.path===file.path&&current.sha256===file.sha256));
   const removed=baselineStatic.filter(file=>!currentStatic.some(current=>current.path===file.path));
-  const manifest={mode:"LOCAL_H1_REVIEW_ONLY",edition:"spatial-v2-only",origin,baseline,release,network:"testnet",plannedRoot:gameRoot,
+  const manifest={mode:"LOCAL_H1_REVIEW_ONLY",edition:"familiar",origin,baseline,release,network:"testnet",plannedRoot:gameRoot,
     static:{baselineCount:baselineStatic.length,currentCount:currentStatic.length,preservedCount:preserved.length,currentFiles:currentStatic,removedFiles:removed,runtimeAssets:{allowedWebps:RUNTIME_WEBPS,allowedMetadata:RUNTIME_METADATA,allowedBranding:BRAND_ASSETS,...runtimeAssets},preservedFiles:preserved,compiledFiles:staticReport},
     routing:{baselineConfigSha256:digest(configBytes),currentConfigSha256:await hash(join(output,"config.json")),changed:true,retiredPagesRedirected:true,originalFunctionRequestUrlPreserved:true},
     publicBuild:{provider:"privy",tideboundUiEnabled:true,root:gameRoot,relayerUrl:"/api",appIdSha256:digest(new TextEncoder().encode(appId)),environmentFilesLoaded:false},

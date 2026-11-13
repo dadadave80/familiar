@@ -68,7 +68,7 @@ export function HarborAccountPanel() {
       <button disabled={blocked} onClick={()=>void act(()=>state.pending?.state==="submitted"?controller.checkOriginal():controller.resumeOriginal())}>{state.pending.state==="submitted"?"Check original receipt":"Resume original action"}</button>
       <button disabled={blocked} onClick={()=>void act(()=>controller.resolveExpired())}>Check permanent expiry</button><p>Only proven expiry with an unused nonce can clear its local envelope. No contract reservation or Shell refund is inferred.</p>
     </section>}
-    {!state.v2Supported&&state.binding&&<p>The current contracts do not yet advertise both sides of the new expedition. Existing Mochi, v1 items and pending requests stay intact. New returns remain private memories.</p>}
+    {!state.courtSupported&&state.binding&&<p>The current contracts do not yet advertise both sides of the new expedition. Existing Mochi, earned items and pending requests stay intact. New returns remain private memories.</p>}
     <details><summary>Return memories</summary><p>A copy of this branch’s returned expeditions, without credentials or signed requests.</p><button onClick={downloadMemories}>Download return memories</button></details>
     {(problem||state.message)&&<p role="status">{problem||state.message}</p>}
   </section>;

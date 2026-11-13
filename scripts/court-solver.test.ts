@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { applyCommand, legalCommands, replayCourt, startCourt, walkable } from "../web/src/expedition/engine";
-import { solveCourt } from "./court-v2-solver";
+import { solveCourt } from "./court-solver";
 
 test("both tools have dry spatial return routes, and the second goal actually uses its mechanism",()=>{
   for(const area of ["beacon","wind"] as const)for(const tool of ["rope","lantern"] as const) {

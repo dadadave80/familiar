@@ -2,8 +2,8 @@ use near_sdk::{AccountId, env, near, serde::Serialize, serde_json};
 
 pub const RULES_VERSION: &str = "tidebound_h1_v1";
 pub const CONTENT_VERSION: &str = "first_light_v1";
-pub const CONTENT_VERSION_V2: &str = "first_light_v2";
-pub const SUPPORTED_CONTENT_VERSIONS: [&str; 2] = [CONTENT_VERSION, CONTENT_VERSION_V2];
+pub const COURT_CONTENT_VERSION: &str = "first_light_v2";
+pub const SUPPORTED_CONTENT_VERSIONS: [&str; 2] = [CONTENT_VERSION, COURT_CONTENT_VERSION];
 pub fn supported_content_version(content: &str) -> bool {
     SUPPORTED_CONTENT_VERSIONS.contains(&content)
 }
@@ -166,7 +166,7 @@ pub fn polish_fence_id(items: &AccountId, root: &AccountId, operation: &PolishEv
 mod content_tests {
     use super::*;
     #[test]
-    fn actual_v1_provenance_hash_stays_exact_and_v2_never_resets_entitlement_identity() {
+    fn historical_hash_stays_exact_and_spatial_content_keeps_entitlements() {
         let root: AccountId = "familiar-game.testnet".parse().unwrap();
         let items = "items.familiar-game.testnet".parse().unwrap();
         let maker = "qa-maker-h1.familiar-game.testnet".parse().unwrap();
@@ -184,14 +184,20 @@ mod content_tests {
             old.input_hash,
             "6b46b09684e496852fe4efb9cca606f0c799f4efdb61adde3acc7f54ef2203a5"
         );
-        let new =
-            mint_evidence_for_content(&items, &root, &maker, origin, "crest", CONTENT_VERSION_V2)
-                .unwrap();
+        let new = mint_evidence_for_content(
+            &items,
+            &root,
+            &maker,
+            origin,
+            "crest",
+            COURT_CONTENT_VERSION,
+        )
+        .unwrap();
         assert_eq!(new.id, old.id);
         assert_eq!(new.token_id, old.token_id);
         assert_eq!(new.rules_version, old.rules_version);
         assert_ne!(new.input_hash, old.input_hash);
-        assert_eq!(new.content_version, CONTENT_VERSION_V2);
+        assert_eq!(new.content_version, COURT_CONTENT_VERSION);
         assert!(
             mint_evidence_for_content(&items, &root, &maker, origin, "crest", "first_light_v3")
                 .is_none()

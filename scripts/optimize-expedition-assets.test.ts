@@ -3,7 +3,7 @@ import {createHash} from "node:crypto";
 import {resolve} from "node:path";
 
 test("the shipped runtime art stays within transfer budget and preserves every source",async()=>{
- const root=resolve(import.meta.dir,"../web/public"),manifest=await Bun.file(`${root}/assets/expedition-v2/runtime/manifest.json`).json();
+ const root=resolve(import.meta.dir,"../web/public"),manifest=await Bun.file(`${root}/assets/expedition/runtime/manifest.json`).json();
  expect(manifest.files).toHaveLength(11);let originalBytes=0,runtimeBytes=0;
  for(const item of manifest.files){
   const source=await Bun.file(`${root}/${item.source}`).bytes(),runtime=await Bun.file(`${root}/${item.output}`).bytes();

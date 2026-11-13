@@ -354,7 +354,7 @@ mod tests {
         c.craft_mint(input);
     }
     #[test]
-    fn supported_v2_mint_is_supply_one_and_keeps_its_actual_content_after_transfer() {
+    fn supported_spatial_mint_is_supply_one_and_keeps_its_actual_content_after_transfer() {
         let mut c = contract();
         let input = mint_evidence_for_content(
             &id("items.root.testnet"),
@@ -362,7 +362,7 @@ mod tests {
             &id("alice.testnet"),
             &"b".repeat(64),
             "crest",
-            CONTENT_VERSION_V2,
+            COURT_CONTENT_VERSION,
         )
         .unwrap();
         assert_eq!(c.craft_protocol()["content_version"], CONTENT_VERSION);
@@ -394,7 +394,7 @@ mod tests {
                 .unwrap()
                 .mint
                 .content_version,
-            CONTENT_VERSION_V2
+            COURT_CONTENT_VERSION
         );
         assert_eq!(c.supply(&input.token_id), Some(1));
     }
@@ -403,7 +403,7 @@ mod tests {
     fn changing_only_v1_content_label_cannot_reinterpret_an_old_metadata_hash() {
         let mut c = contract();
         let mut input = evidence();
-        input.content_version = CONTENT_VERSION_V2.into();
+        input.content_version = COURT_CONTENT_VERSION.into();
         ctx("root.testnet", CRAFT_STORAGE_FUND);
         c.craft_mint(input);
     }

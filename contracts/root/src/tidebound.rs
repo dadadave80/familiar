@@ -1,5 +1,5 @@
 use crate::{Contract, ContractExt};
-use familiar_common::{call, emit, expedition::replay, storycraft::*};
+use familiar_common::{call, emit, historical_returns::replay, storycraft::*};
 use near_sdk::{
     AccountId, Gas, PromiseError, PromiseOrValue, env, near, require, serde_json::json,
 };
@@ -172,9 +172,8 @@ impl Contract {
                 .unwrap_or_else(|_| env::panic_str("ERR_REPLAY"));
             (run.cargo, run.outcome)
         } else {
-            let run =
-                familiar_common::expedition_v2::replay(&tool, &journey.banked, &commands, &area)
-                    .unwrap_or_else(|_| env::panic_str("ERR_REPLAY"));
+            let run = familiar_common::court::replay(&tool, &journey.banked, &commands, &area)
+                .unwrap_or_else(|_| env::panic_str("ERR_REPLAY"));
             (run.cargo, run.outcome)
         };
         require!(outcome == "returned", "ERR_RETURN_REQUIRED");
@@ -932,7 +931,7 @@ mod tests {
         .map(String::from)
         .to_vec()
     }
-    fn claim_v2(
+    fn claim_court(
         c: &mut Contract,
         who: &str,
         pet: &str,
@@ -947,7 +946,7 @@ mod tests {
             current.revision,
             c.tidebound_checkpoint_hash(id(who)),
             RULES_VERSION.into(),
-            CONTENT_VERSION_V2.into(),
+            COURT_CONTENT_VERSION.into(),
             "rope".into(),
             commands,
             "beacon".into(),
@@ -974,7 +973,7 @@ mod tests {
         .to_vec()
     }
     #[test]
-    fn spatial_v2_claims_and_v1_origins_share_one_finite_personal_entitlement() {
+    fn spatial_claims_and_historical_origins_share_one_finite_personal_entitlement() {
         let mut c = contract();
         let old = claim(
             &mut c,
@@ -983,14 +982,14 @@ mod tests {
             "old-lens",
             dry(),
         );
-        let new = claim_v2(
+        let new = claim_court(
             &mut c,
             "bob.testnet",
             "bramble.root.testnet",
             "spatial-lens",
             spatial_lens(),
         );
-        assert_eq!(new.claims[0].content_version, CONTENT_VERSION_V2);
+        assert_eq!(new.claims[0].content_version, COURT_CONTENT_VERSION);
         assert_eq!(
             (new.credit.as_str(), new.workshop_salvage, new.bram_budget),
             ("available", 1, 12)
@@ -1002,8 +1001,8 @@ mod tests {
             new.lens_claim.unwrap(),
         ));
         let crafted = c.tidebound_journey(id("bob.testnet")).craft.unwrap();
-        assert_eq!(crafted.evidence.content_version, CONTENT_VERSION_V2);
-        let mixed = claim_v2(
+        assert_eq!(crafted.evidence.content_version, COURT_CONTENT_VERSION);
+        let mixed = claim_court(
             &mut c,
             "alice.testnet",
             "mochi.root.testnet",
@@ -1012,7 +1011,7 @@ mod tests {
         );
         assert_eq!(mixed.lens_claim, old.lens_claim);
         assert_eq!(mixed.claims[0].content_version, CONTENT_VERSION);
-        assert_eq!(mixed.claims[1].content_version, CONTENT_VERSION_V2);
+        assert_eq!(mixed.claims[1].content_version, COURT_CONTENT_VERSION);
         assert_eq!(
             (
                 mixed.credit.as_str(),
@@ -1032,7 +1031,7 @@ mod tests {
             .craft
             .unwrap()
             .evidence;
-        assert_eq!(actual.content_version, CONTENT_VERSION_V2);
+        assert_eq!(actual.content_version, COURT_CONTENT_VERSION);
         assert_eq!(actual.origin_claim_id, mixed.moth_claim.unwrap());
         assert_eq!(
             actual.id,
@@ -1040,7 +1039,7 @@ mod tests {
         );
     }
     #[test]
-    fn old_confirmed_craft_is_never_rewritten_or_reminted_by_v2_content() {
+    fn old_confirmed_craft_is_never_rewritten_or_reminted_by_current_content() {
         let mut c = ready();
         let old = c.tidebound_journey(id("alice.testnet"));
         ctx("alice.testnet");
@@ -1056,7 +1055,7 @@ mod tests {
         let confirmed =
             c.on_tidebound_mint(id("alice.testnet"), op.evidence.id.clone(), op.attempt);
         assert_eq!(op.evidence.content_version, CONTENT_VERSION);
-        let updated = claim_v2(
+        let updated = claim_court(
             &mut c,
             "alice.testnet",
             "mochi.root.testnet",
@@ -1066,7 +1065,7 @@ mod tests {
         assert!(updated.moth_claim.is_some());
         assert_eq!(
             updated.claims.last().unwrap().content_version,
-            CONTENT_VERSION_V2
+            COURT_CONTENT_VERSION
         );
         assert_eq!(updated.credit, "consumed");
         assert_eq!(updated.craft, confirmed.craft);

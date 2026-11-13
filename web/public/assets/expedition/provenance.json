@@ -7,9 +7,9 @@
   "processing": "Native cwebp quality88, alpha100; island resized to1024px wide, bridge384px wide. Original PNGs preserved; no semantic image edit.",
   "assets": [
     {
-      "name": "tide-court-v2",
-      "source": "web/assets/source/expedition-v2/tide-court-v2.png",
-      "runtime": "web/public/assets/expedition-v2/tide-court-v2.webp",
+      "name": "tide-court",
+      "source": "web/assets/source/expedition/tide-court.png",
+      "runtime": "web/public/assets/expedition/tide-court.webp",
       "transparent": false,
       "sourceSha256": "52d886453ba7cd30a71bf16f81dc4a96cde31f8402d3f64200c675579e8d113d",
       "runtimeSha256": "5e72cf2bf26c47f2132a16584885cc0048230993bcd3721721f871cabec74a44",
@@ -18,9 +18,9 @@
       "prompt": "Create a new game environment variant using the supplied Familiar coastal arena as the visual style reference. Preserve the warm handmade miniature diorama look: tactile clay sandstone, moss, peach sunset, turquoise sea, tiny daisies and coral. This is a production background for a 2D Phaser spatial tide-routing puzzle, not a screenshot or concept UI. Wide landscape composition, slightly elevated three-quarter camera looking down at water. The entire central 75 percent and lower foreground must be open shallow turquoise sea, subtle soft ripples and readable quiet water. Ruined rounded sandstone arches, coral and flowers frame ONLY far left and right outer edges; distant coast and peach sky occupy only the upper fifth. Central water needs ample uninterrupted space for separately rendered stepping stone islands and a Tidekeeper character. Do not paint any platforms, stepping stones, paths, bridges, shells, cats, crabs, guardian, people, UI, arrows, labels, grid, icons, text, logos or watermark into the image. No large central building or lighthouse. A coherent continuous environment, beautifully lit like the reference, complete edge to edge without borders. Generate one background image only."
     },
     {
-      "name": "stone-island-v2",
-      "source": "web/assets/source/expedition-v2/stone-island-v2.png",
-      "runtime": "web/public/assets/expedition-v2/stone-island-v2.webp",
+      "name": "stone-island",
+      "source": "web/assets/source/expedition/stone-island.png",
+      "runtime": "web/public/assets/expedition/stone-island.webp",
       "transparent": true,
       "sourceSha256": "e4eddb2d6764995fc71fa10f867b9d800f9574d5e0cfed3d94841f696131a833",
       "runtimeSha256": "0635473ce14e79f02046762ddbd55e967be85fecf93f08270dc51f2f637f3def",
@@ -29,9 +29,9 @@
       "prompt": "Create a new individual game sprite using the supplied Familiar arena only as a material and style reference. A SINGLE irregular rounded sandstone stepping island, warm handcrafted miniature diorama, tactile pale golden clay stone masonry, worn softly chipped edges, a few tiny moss tufts at the outer edge. Camera slightly elevated three-quarter front view, top surface visible as a wide oval. Top surface must be broad flat clean walkable stone, with a subtle carved spiral, no tall objects. Visible layered stone ledge on the front gives real thickness and volume. One self-contained organic oval rock platform centered with generous empty transparent margin on all sides, width about three times its total visible height. Actual transparent alpha background, no water, no terrain or other islands, no drop-shadow rectangle, no ground plane, no sky, no bridge, no guardian, no characters, no arrows, no UI/text/numbers/logos/watermarks. Preserve the reference's richly handcrafted clay-and-sandstone rendering and warm golden light. This sprite will be placed on rendered water and support Mochi standing on its top; produce a clean crisp alpha cutout, one object only."
     },
     {
-      "name": "wooden-bridge-v2",
-      "source": "web/assets/source/expedition-v2/wooden-bridge-v2.png",
-      "runtime": "web/public/assets/expedition-v2/wooden-bridge-v2.webp",
+      "name": "wooden-bridge",
+      "source": "web/assets/source/expedition/wooden-bridge.png",
+      "runtime": "web/public/assets/expedition/wooden-bridge.webp",
       "transparent": true,
       "width": 384,
       "sourceSha256": "cb8af6abe9df75ae9128c6dbc08b15eba21c85dee6fe940b14b9a6c3a6706e85",

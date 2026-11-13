@@ -5,7 +5,7 @@ import {join,resolve} from "node:path";
 import {chromium,expect} from "@playwright/test";
 import {createServer,transformWithOxc} from "vite";
 import {KeyPair} from "near-api-js";
-import courtFixtures from "../contracts/common/fixtures/court_v2.json";
+import courtFixtures from "../contracts/common/fixtures/court.json";
 
 // Actual React controller/provider/panel; all account/RPC ports below are isolated synthetic fixtures.
 const id="\0expedition-harbor-fixture.tsx",dir=await mkdtemp(join(tmpdir(),"familiar-expedition-harbor-"));

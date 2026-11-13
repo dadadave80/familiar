@@ -13,7 +13,7 @@ async function fixture() {
   await writeFile(join(overlay,"index.html"),"new home");await writeFile(join(overlay,"outing/index.html"),"new game");
   return {root,baseline,overlay,content};
 }
-test("current releases copy only the introduction, v2 game and their fresh chunks",async()=>{
+test("current releases copy only the introduction, Familiar game and their fresh chunks",async()=>{
   const f=await fixture(),site=join(f.root,"current");await mkdir(site);
   await writeFile(join(f.overlay,"assets/new-Def67890.js"),"current game chunk");
   const files=await copyGameStatic(f.overlay,site);
@@ -94,9 +94,9 @@ async function runtimeFixture() {
   return {...f,source};
 }
 test("the redesigned court ships its actual environment sprites and generation provenance",()=>{
-  for(const name of ["tide-court-v2","stone-island-v2","wooden-bridge-v2"])
-    expect(RUNTIME_WEBPS).toContain(`assets/expedition-v2/${name}.webp`);
-  expect(RUNTIME_METADATA).toContain("assets/expedition-v2/provenance.json");
+  for(const name of ["tide-court","stone-island","wooden-bridge"])
+    expect(RUNTIME_WEBPS).toContain(`assets/expedition/${name}.webp`);
+  expect(RUNTIME_METADATA).toContain("assets/expedition/provenance.json");
 });
 test("current art, complete provenance and Wind Gate receipt are copied with hashes",async()=>{
   const f=await runtimeFixture(),harbor=RUNTIME_WEBPS[0]!;
@@ -105,14 +105,14 @@ test("current art, complete provenance and Wind Gate receipt are copied with has
   await writeFile(join(f.source,"assets/first-light-motion/unapproved.png"),'unused source art');
   const report=await copyRuntimeAssets(f.source,f.baseline);
   expect(report.reused.map(file=>file.path)).toEqual([harbor,provenance]);expect(report.added).toHaveLength(RUNTIME_WEBPS.length+RUNTIME_METADATA.length+BRAND_ASSETS.length-2);
-  expect(report.added.some(file=>file.path==="assets/first-light-motion/wind-gate-v1.webp" && /^[a-f0-9]{64}$/.test(file.sha256))).toBe(true);
-  expect(report.added.some(file=>file.path==="assets/first-light-motion/wind-gate-v1.webp.json")).toBe(true);
+  expect(report.added.some(file=>file.path==="assets/first-light-motion/wind-gate.webp" && /^[a-f0-9]{64}$/.test(file.sha256))).toBe(true);
+  expect(report.added.some(file=>file.path==="assets/first-light-motion/wind-gate.webp.json")).toBe(true);
   for(const file of report.added)expect(await readFile(join(f.baseline,file.path))).toEqual(await readFile(join(f.source,file.path)));
   expect(await readFile(join(f.baseline,provenance),"utf8")).toBe('old public provenance');
   expect((await staticFiles(f.baseline)).some(path=>path.endsWith("unapproved.png"))).toBe(false);
 });
 test("a symlinked new-art directory cannot turn the publication allowlist into an arbitrary file read",async()=>{
-  for(const relative of ["assets/expedition-v2","assets/expedition-v2/runtime","icons","social"]){
+  for(const relative of ["assets/expedition","assets/expedition/runtime","icons","social"]){
   const f=await runtimeFixture(),directory=join(f.source,relative),outside=join(f.root,"outside-art");
   await rename(directory,outside);await symlink(outside,directory,"dir");
   const before=await staticFiles(f.baseline);
@@ -121,14 +121,14 @@ test("a symlinked new-art directory cannot turn the publication allowlist into a
   }
 });
 test("a conflicting existing runtime image or receipt rejects all additions before writing",async()=>{
-  for(const path of [RUNTIME_WEBPS[2]!,RUNTIME_METADATA[0],BRAND_ASSETS[0]!,"familiar-v2.webmanifest"]) {
+  for(const path of [RUNTIME_WEBPS[2]!,RUNTIME_METADATA[0],BRAND_ASSETS[0]!,"familiar.webmanifest"]) {
     const f=await runtimeFixture();await mkdir(dirname(join(f.baseline,path)),{recursive:true});await writeFile(join(f.baseline,path),'preserved older bytes');
     const before=await staticFiles(f.baseline);await expect(copyRuntimeAssets(f.source,f.baseline)).rejects.toThrow("preserved runtime asset differs");
     expect(await staticFiles(f.baseline)).toEqual(before);expect(await readFile(join(f.baseline,path),"utf8")).toBe('preserved older bytes');
   }
 });
 test("missing or symlinked runtime sources fail without adding earlier valid images",async()=>{
-  for(const kind of ["missing","symlink"])for(const path of [RUNTIME_WEBPS[6]!,"familiar-v2.webmanifest"]) {
+  for(const kind of ["missing","symlink"])for(const path of [RUNTIME_WEBPS[6]!,"familiar.webmanifest"]) {
     const f=await runtimeFixture();await rm(join(f.source,path));
     if(kind==="symlink")await symlink(join(f.source,RUNTIME_WEBPS[0]!),join(f.source,path));
     const before=await staticFiles(f.baseline);await expect(copyRuntimeAssets(f.source,f.baseline)).rejects.toThrow(kind==="missing"?"source asset is missing":"regular file");
@@ -137,7 +137,7 @@ test("missing or symlinked runtime sources fail without adding earlier valid ima
 });
 test("branding manifests cannot expose server configuration in the public package",async()=>{
   const f=await runtimeFixture(),before=await staticFiles(f.baseline);
-  await writeFile(join(f.source,"familiar-v2.webmanifest"),'{"leak":"PRIVY_APP_SECRET"}');
+  await writeFile(join(f.source,"familiar.webmanifest"),'{"leak":"PRIVY_APP_SECRET"}');
   await expect(copyRuntimeAssets(f.source,f.baseline)).rejects.toThrow("Server configuration");
   expect(await staticFiles(f.baseline)).toEqual(before);
 });

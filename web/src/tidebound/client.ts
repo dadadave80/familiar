@@ -1,8 +1,7 @@
 import { actions, base64Encode, base64Decode, baseEncode, baseDecode, createTransaction, decodeTransaction, decodeSignedTransaction, encodeTransaction, PublicKey, teraToGas, type AccessKeyViewRaw, type JsonRpcProvider } from "near-api-js";
 import type { RecoverableAccountAdapter } from "../account/adapter";
 import { isPlayerAccount } from "../account/names";
-import { replayOuting } from "../outing/engine";
-import { CONTENT_VERSION, RULES_VERSION, type ExpeditionTranscript, type PlayerBinding } from "./domain";
+import { CONTENT_VERSION, RULES_VERSION, type PlayerBinding } from "./domain";
 import { assertTideboundContent, type SupportedContent } from "./protocol";
 import { validateNativeIntent } from "../../../services/relayer/src/auth/sign";
 import { assertNativeAffordable } from "./affordability";
@@ -20,7 +19,7 @@ export interface PendingNative { operationId:string;hash:string;method:string;re
 function check(value:unknown,message:string):asserts value {if(!value)throw Error(message)}
 const record=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==="object"&&!Array.isArray(value);
 /** A FINAL label alone cannot settle an incomplete or contradictory receipt graph. */
-function finalReceiptFailure(value:unknown,expected:{hash:string;signer:string;receiver:string}):boolean {
+export function finalReceiptFailure(value:unknown,expected:{hash:string;signer:string;receiver:string}):boolean {
   const message="The original receipt graph is incomplete or uncertain. Keep its original pending action.";
   check(record(value)&&value.final_execution_status==="FINAL"&&record(value.transaction)&&value.transaction.hash===expected.hash&&value.transaction.signer_id===expected.signer&&value.transaction.receiver_id===expected.receiver,message);
   check(record(value.transaction_outcome)&&value.transaction_outcome.id===expected.hash&&record(value.transaction_outcome.outcome),message);
@@ -77,14 +76,6 @@ export function parseJourney(value:unknown):Journey {
     (!j.commission_fulfilled || (j.workshop_salvage===0 && j.bram_budget===0)),"The saved journey violates the finite chapter rules. Refresh the canonical account.");
   return j;
 }
-export function claimInput(snapshot:ChainSnapshot,transcript:ExpeditionTranscript,operationId:string) {
-  check(JSON.stringify(snapshot.journey.banked)===JSON.stringify(transcript.banked),"This outing began from a different checkpoint. Keep it as a private preview and start from the saved harbor.");
-  const run=replayOuting(transcript.tool,transcript.banked,transcript.actions,transcript.area);
-  check(run?.outcome==="returned" && run.cargo.length>0,"Only a legal returned discovery can be saved on NEAR.");
-  check(snapshot.pets[0],"Adopt Mochi in this testnet harbor before saving an outing.");
-  return {token_id:snapshot.pets[0].token_id,operation_id:operationId,expected_revision:snapshot.journey.revision,initial_checkpoint_hash:snapshot.checkpointHash,rules_version:RULES_VERSION,content_version:CONTENT_VERSION,tool:transcript.tool,commands:transcript.actions,area:transcript.area};
-}
-
 export function nativeGas(method:string):bigint {
   if(method==="adopt")return teraToGas(180);
   if(["tidebound_craft","tidebound_retry_operation"].includes(method))return teraToGas(120);

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { applyAction, legalActions, packSlots, phaseOf, replayOuting, startOuting, waveExit, type Lane } from "./engine";
+import { applyAction, legalActions, packSlots, phaseOf, replayOuting, startOuting, waveExit, type Lane } from "./return-rules";
 
 test("the rising tide commits to the post-move lane and a successful dodge exposes the lens", () => {
   const start = startOuting("rope");

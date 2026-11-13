@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { applyCommand, legalCommands, startCourt } from "../web/src/expedition/engine";
 import { CONTENT_VERSION, type BankedItem, type Command, type CourtEvent, type CourtStart, type CourtState, type Find } from "../web/src/expedition/types";
-import { solveCourt } from "./court-v2-solver";
+import { solveCourt } from "./court-solver";
 
 const cases:{id:string;start:CourtStart;commands:readonly Command[];states:CourtState[];legal:Command[][];events:(readonly CourtEvent[])[]}[]=[];
 function record(id:string,start:CourtStart,commands:readonly Command[]) {
@@ -31,5 +31,5 @@ for(const area of ["beacon","wind"] as const)for(const tool of ["rope","lantern"
   }
 }
 const directory=join(import.meta.dir,"../contracts/common/fixtures");await mkdir(directory,{recursive:true});
-const path=join(directory,"court_v2.json");await writeFile(path,JSON.stringify({version:CONTENT_VERSION,cases})+"\n");
+const path=join(directory,"court.json");await writeFile(path,JSON.stringify({version:CONTENT_VERSION,cases})+"\n");
 console.info(JSON.stringify({path,cases:cases.length,states:cases.reduce((sum,value)=>sum+value.states.length,0),bytes:Bun.file(path).size}));

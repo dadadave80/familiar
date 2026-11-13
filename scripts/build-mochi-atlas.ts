@@ -6,7 +6,7 @@ import { join } from "node:path";
 // and cwebp. Poses share a body pivot and a ground line; crouches retain their
 // shorter silhouette rather than being stretched to the standing pose's height.
 const art = join(import.meta.dir, "../web/assets/source/first-light-motion");
-const atlasOutput = join(import.meta.dir, "../web/public/assets/first-light-motion/mochi-poses-v1.webp");
+const atlasOutput = join(import.meta.dir, "../web/public/assets/first-light-motion/mochi-poses.webp");
 const poses = [
   ["pose", 0, 174], ["pose", 1, 174], ["pose", 2, 176], ["pose", 3, 176],
   ["walk", 0, 330], ["walk", 1, 316], ["contact", 0, 650], ["walk", 3, 320],
@@ -22,9 +22,9 @@ function run(args: string[]) {
 
 const temporary = await mkdtemp(join(tmpdir(), "familiar-mochi-register-"));
 try {
-  run(["magick", join(art, "mochi-poses-source-v1.png"), "-crop", "4x4@", "+repage", join(temporary, "pose-%02d.png")]);
-  run(["magick", join(art, "mochi-walk-source-v1.png"), "-crop", "2x2@", "+repage", join(temporary, "walk-%02d.png")]);
-  run(["magick", join(art, "mochi-contact-b-source-v1.png"), join(temporary, "contact-00.png")]);
+  run(["magick", join(art, "mochi-poses-source.png"), "-crop", "4x4@", "+repage", join(temporary, "pose-%02d.png")]);
+  run(["magick", join(art, "mochi-walk-source.png"), "-crop", "2x2@", "+repage", join(temporary, "walk-%02d.png")]);
+  run(["magick", join(art, "mochi-contact-b-source.png"), join(temporary, "contact-00.png")]);
   const cells: string[] = [];
   for (const [index, [source, frame, pivot]] of poses.entries()) {
     const input = join(temporary, `${source}-${String(frame).padStart(2, "0")}.png`);

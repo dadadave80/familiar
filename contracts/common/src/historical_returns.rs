@@ -241,9 +241,10 @@ mod differential_tests {
     }
     #[test]
     fn every_intermediate_state_matches_the_browser_rules() {
-        let fixtures: Vec<Fixture> =
-            near_sdk::serde_json::from_str(include_str!("../tests/expedition-fixtures.json"))
-                .unwrap();
+        let fixtures: Vec<Fixture> = near_sdk::serde_json::from_str(include_str!(
+            "../tests/historical-return-fixtures.json"
+        ))
+        .unwrap();
         for (i, f) in fixtures.iter().enumerate() {
             for n in 0..=f.commands.len() {
                 let actual = replay(&f.tool, &f.banked, &f.commands[..n], &f.area).unwrap();

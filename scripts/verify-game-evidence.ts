@@ -2,11 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { actions, createTransaction, PublicKey, baseDecode, baseEncode, base64Decode, encodeTransaction } from "near-api-js";
-import { verifyFinalOutcome } from "./tidebound-live";
-import { assertV2QAIntent } from "./tidebound-v2-live";
+import { assertGameIntent, verifyFinalOutcome } from "./game-evidence";
 
 // Verify the recorded proof without querying the network, reading keys or signing.
-const report = JSON.parse(await readFile(new URL("../docs/TIDEBOUND-V2-GAMEPLAY.json", import.meta.url), "utf8"));
+const report = JSON.parse(await readFile(new URL("../docs/FAMILIAR-GAMEPLAY.json", import.meta.url), "utf8"));
 assert.equal(report.kind, "independently-verified-live-v2-operator-acceptance");
 assert.equal(report.network, "testnet");
 assert.equal(report.transactions.length, 15);
@@ -31,7 +30,7 @@ for (const entry of report.transactions) {
   assert.equal(actual.hash, entry.hash);
   assert(actual.signature.startsWith("ed25519:"));
   assert(publicKey.verify(digest, baseDecode(actual.signature.slice(8))));
-  assertV2QAIntent(transaction, entry.name, report.actors.makerPublicKey);
+  assertGameIntent(transaction, entry.name, report.actors.makerPublicKey);
   verifyFinalOutcome(entry.fullFinalOutcome, { hash: entry.hash, signer: entry.signer, receiver: entry.receiver });
 }
 

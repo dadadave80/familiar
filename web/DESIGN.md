@@ -10,10 +10,10 @@ Portrait keeps all three columns and both banks visible. Organic sandstone platf
 
 Resizing changes presentation only. DOM buttons and labels preserve keyboard access, 44px targets, visible focus, contrast and reduced-motion outcomes. Browser viewport filling does not require forcing OS fullscreen. The engine saves an accepted decision before animation; one next direction may queue while Mochi completes it. Hidden tabs clear that queue. A single browser tab owns the active preview branch, preventing competing tabs from replacing moves.
 
-At home, Beacon, Bram, Workbench and Satchel are places in the scene. The primary action follows the returned cargo, then restoration, then an earned light, then Wind Gate. Account lives in the menu. The origin diorama distinguishes a validated device memory from an actual maker's accepted NEAR event. The v2 game is the only playable edition. Old routes and invitation flags open v2 without modifying their original saved records.
+At home, Beacon, Bram, Workbench and Satchel are places in the scene. The primary action follows the returned cargo, then restoration, then an earned light, then Wind Gate. Account lives in the menu. The origin diorama distinguishes a validated device memory from an actual maker's accepted NEAR event. Familiar has one playable edition. Old routes and invitation flags open the current game without modifying their original saved records.
 
 Local previews, confirmed NEAR testnet ownership and uncertain operations retain explicit truthful labels. An immersive visual treatment cannot replace recovery, canonical state or receipt verification. Device and human playtest evidence belongs in `../PROGRESS.md` and `../JUDGES.md`.
 
 ## Introduction and current entry
 
-The homepage remains the introduction with its Play Familiar action to `/outing/`. Keep the warm coastal imagery and self-hosted Fraunces/Figtree typography. The retired town, motion lab and recovery demo have no navigation links or build entries. Shared Mochi poses and the lantern/origin artwork remain part of v2, with essential meaning available through DOM controls and text.
+The homepage remains the introduction with its Play Familiar action to `/outing/`. Keep the warm coastal imagery and self-hosted Fraunces/Figtree typography. The retired town, motion lab and recovery demo have no navigation links or build entries. Shared Mochi poses and the lantern/origin artwork remain part of Familiar, with essential meaning available through DOM controls and text.

@@ -80,7 +80,7 @@ try {
       }
       await page.reload();
       await expect(world).toHaveAttribute("data-turn", "1");
-      console.info(`${engine.name()}: introduction, account boundary, ${paths.length} game entry URLs, v2 resume and preserved original records passed`);
+      console.info(`${engine.name()}: introduction, account boundary, ${paths.length} game entry URLs, saved-run resume and preserved original records passed`);
     } finally { await browser.close(); }
   }
 } finally { await server?.close();compiled?.stop(true); }

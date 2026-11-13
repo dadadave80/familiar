@@ -63,7 +63,7 @@ export function Landing() {
 
         <section className="fl-wind" aria-labelledby="fl-wind-title">
           <figure className="fl-wind-scene">
-            <img src={`${art}wind-gate-v1.webp`} width="1536" height="1024" alt="Wind Gate concept illustration, where stone channels route the tide through a turning wheel." loading="lazy" />
+            <img src={`${art}wind-gate.webp`} width="1536" height="1024" alt="Wind Gate concept illustration, where stone channels route the tide through a turning wheel." loading="lazy" />
             <figcaption>Wind Gate concept art. This outing opens after you restore the lighthouse.</figcaption>
           </figure>
           <div className="fl-wind-copy">

@@ -1,10 +1,10 @@
 import {expect,test} from "bun:test";
 import {applyCommand,startCourt,replayCourt} from "./engine";
-import {ReturnRecords,decodeReturnRecord,returnRecordKey} from "./return-record";
+import {ReturnRecords,decodeReturnRecord,returnRecordKey,type ReturnRecord} from "./return-record";
 import {KeyPair} from "near-api-js";
 import type {RunContext} from "./harbor-port";
 import {syntheticReturnLock} from "./return-record.fixture";
-import fixtures from "../../../contracts/common/fixtures/court_v2.json";
+import fixtures from "../../../contracts/common/fixtures/court.json";
 const context:RunContext={authority:"near-testnet",network:"testnet",root:"familiar-game.testnet",accountId:"alice.familiar-game.testnet",companionId:"mochi.familiar-game.testnet",publicKey:KeyPair.fromRandom("ed25519").getPublicKey().toString(),revision:0,checkpointHash:"a".repeat(64),banked:[],lit:false,signaled:false};
 const returned=()=>applyCommand(startCourt({area:"beacon",tool:"rope",banked:[]}),"return")!.after;
 test("an interleaved second writer cannot lose its successfully captured return",async()=>{
@@ -31,7 +31,7 @@ test("more than 32 original memories remain readable without silently dropping a
  for(let revision=0;revision<40;revision++)await records.capture(returned(),{...context,revision});
  expect(records.read(context)).toHaveLength(40);expect(records.read(context).every(r=>r.disposition==="staged")).toBe(true);
 });
-test("v1 return decoding remains unchanged and malformed, foreign or relabelled v2 records fail closed",async()=>{
+test("historical return decoding remains unchanged and malformed, foreign or relabelled current records fail closed",async()=>{
  const data=new Map<string,string>(),records=new ReturnRecords({getItem:key=>data.get(key)??null,setItem:(key,value)=>{data.set(key,value);}},syntheticReturnLock()),r=await records.capture(returned(),context);
  expect(decodeReturnRecord({...r,contentVersion:"first_light_v1",commands:["return"]}).contentVersion).toBe("first_light_v1");
  for(const changed of [{contentVersion:"new"},{cargo:["lens"]},{commands:["move:left"]},{context:{...context,network:"mainnet"}},{context:{...context,root:"foreign.testnet"}},{disposition:"accepted"}])expect(()=>decodeReturnRecord({...r,...changed})).toThrow();
@@ -50,4 +50,17 @@ test("crossing the readable memory bound fails before overwriting the earlier hi
  }
  const key=returnRecordKey(context),before=`[${rows.join(",")}]`;data.set(key,before);
  await expect(records.capture(returned(),context)).rejects.toThrow("memory limit");expect(data.get(key)).toBe(before);expect(records.read(context)).toHaveLength(rows.length);
+});
+
+test("a historical lens return survives beside a current return without relabelling its operation",async()=>{
+ const data=new Map<string,string>(),store={getItem:(key:string)=>data.get(key)??null,setItem:(key:string,value:string)=>{data.set(key,value);}};
+ const historical:ReturnRecord={schemaVersion:1,id:"historical-lens",operationId:"return:historical-lens",contentVersion:"first_light_v1",context,area:"beacon",tool:"rope",banked:[],commands:["move:left","wait","move:center","reel:lens","return"],outcome:"returned",cargo:["lens"],disposition:"staged"};
+ data.set(returnRecordKey(context),JSON.stringify([historical]));
+ const records=new ReturnRecords(store,syntheticReturnLock());
+ expect(records.read(context)).toEqual([historical]);
+ const row=fixtures.cases.find(c=>c.id==="beacon-rope-objective")!;
+ await records.capture(replayCourt(row.start,row.commands)!,context);
+ const reopened=new ReturnRecords(store,syntheticReturnLock()).read(context);
+ expect(reopened).toHaveLength(2);expect(reopened[0]).toEqual(historical);
+ for(const change of [{cargo:["moth"]},{commands:["take:lens","return"]},{contentVersion:"first_light_v2"}])expect(()=>decodeReturnRecord({...historical,...change})).toThrow();
 });

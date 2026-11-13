@@ -151,7 +151,7 @@ assert.deepEqual(await relay(alice.account,root.accountId,"tidebound_craft",requ
 assert.deepEqual(await view(items.accountId,"craft_item",{token_id:token}),polished);assert.equal(await view(items.accountId,"mt_supply",{token_id:token}),"1");
 console.log(`PASS isolated sandbox: ${oldRoot?"actual frozen v1→v2":"same-layout"} code-only Root/Items upgrade retains exact STATE, existing identity, owner, progress, finish and v1 retry.`);
 
-const fixtures=await Bun.file("contracts/common/fixtures/court_v2.json").json();
+const fixtures=await Bun.file("contracts/common/fixtures/court.json").json();
 const spatial=fixtures.cases.find((c:any)=>c.id==="beacon-rope-rescue");assert(spatial&&spatial.commands.length>15);
 const clara=await player("clara","willow"),newClaim=await claim(clara.account,clara.pet,"spatial-first",spatial.commands,"first_light_v2");
 assert.equal(newClaim.result.claims[0].content_version,"first_light_v2");assert.equal(newClaim.result.lens_claim,newClaim.result.moth_claim);assert.equal(newClaim.result.credit,"available");assert.equal(newClaim.result.workshop_salvage,1);assert.equal(newClaim.result.bram_budget,12);

@@ -3,7 +3,7 @@ import { validateAuthRequest } from "../../../../web/src/account/signing-request
 import { accountId } from "../relay";
 import { isPlayerAccount } from "../../../../web/src/account/names";
 import { validName } from "../../../../web/src/rules";
-import { ACTION_LIMIT, isTool } from "../../../../web/src/outing/engine";
+import { ACTION_LIMIT, isTool } from "../../../../web/src/compatibility/return-rules";
 import { ITEM_STORAGE_CAP } from "../../../../web/src/tidebound/storage";
 
 export interface AuthSigningContext { root:string; items:string; clientId:string; origin:string; origins:readonly string[] }

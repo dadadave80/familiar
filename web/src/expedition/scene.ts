@@ -7,8 +7,8 @@ import { MOCHI_GROUND, MOCHI_POSES, walkingPose, type MochiPoseName } from "../m
 import { companionIdle, type Attention } from "./companion";
 import type { Column, Command, CourtEvent, CourtState, CourtTransition, Find, Position } from "./types";
 
-const ART = "/assets/expedition-v2/runtime/";
-const ASSETS = { harbor:"harbor", mochi:"mochi-poses-v1", keeper:"tidekeeper", shell:"shell", lens:"lens", moth:"moth", wave:"wave", bram:"bram" } as const;
+const ART = "/assets/expedition/runtime/";
+const ASSETS = { harbor:"harbor", mochi:"mochi-poses", keeper:"tidekeeper", shell:"shell", lens:"lens", moth:"moth", wave:"wave", bram:"bram" } as const;
 export type HomePlace = "sail" | "beacon" | "bram" | "workbench" | "satchel" | "account" | "mochi";
 export type PassageView=Pick<PassageState,"job"|"stage"|"watched"|"mothHome"|"bellRigged"|"heardBell"|"archOpen">&{rode?:boolean;listened?:boolean;rang?:boolean;pullSpent?:boolean};
 export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;resting?:boolean;services?:readonly PassageJob[];watchedReeds?:boolean;heardBell?:boolean;greeting?:number }
@@ -71,9 +71,9 @@ export class ExpeditionScene extends Phaser.Scene {
   constructor(snapshot:WorldSnapshot,hooks:WorldHooks){super("expedition-world");this.snapshot=snapshot;this.hooks=hooks;}
   preload(){
     for(const [key,path] of Object.entries(ASSETS))this.load.image(`exp-${key}`,`${ART}${path}.webp`);
-    this.load.image("exp-court",`${ART}tide-court-v2.webp`);
-    this.load.image("exp-island",`${ART}stone-island-v2.webp`);
-    this.load.image("exp-bridge",`${ART}wooden-bridge-v2.webp`);
+    this.load.image("exp-court",`${ART}tide-court.webp`);
+    this.load.image("exp-island",`${ART}stone-island.webp`);
+    this.load.image("exp-bridge",`${ART}wooden-bridge.webp`);
     this.load.on("loaderror",(file:Phaser.Loader.File)=>{this.stopped=true;this.hooks.fault(`The ${file.key.replace("exp-","")} artwork did not load. Your saved moves are safe. Retry the scene.`);});
   }
   create(){
