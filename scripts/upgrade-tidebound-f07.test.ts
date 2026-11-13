@@ -1,0 +1,24 @@
+import {expect,test} from "bun:test";
+import {base64Encode,baseDecode,nearToYocto} from "near-api-js";
+import {F07,parseF07Arguments,assertF07Scope,assertF07Action,f07Quote} from "./upgrade-tidebound-f07";
+import {UPGRADE,type Snapshot} from "./upgrade-tidebound-v2";
+const dir="/Users/dadadave/.codex/specs/familiar-qa-2026-11-13";
+// Public frozen full Root STATE at277431055; the v2 and F07 schemas retain this exact layout.
+const state="FQAAAGZhbWlsaWFyLWdhbWUudGVzdG5ldPsFAAAAAAAAAQAAAAAAAAACAAAAdHYDAAAAAAAAAAIAAAB0bgEBAAAAbQEBAAAAZQEBAAAAYQECAAAAYW4dAAAAcmVsYXllci5mYW1pbGlhci1nYW1lLnRlc3RuZXSpbwTzTtbqqFL7FqgG3IREP0rrJmtNjxBR1ykcYgmztRsAAABpdGVtcy5mYW1pbGlhci1nYW1lLnRlc3RuZXQcAAAAYmFrZXJ5LmZhbWlsaWFyLWdhbWUudGVzdG5ldBwAAABtYXJrZXQuZmFtaWxpYXItZ2FtZS50ZXN0bmV0FAAAAGtpbG4ucG9vbC5mODYzOTczLm0wBwAAAHBsYXllcnMOAAAAcGVuZGluZ3BsYXllcnMUAAAAcGVuZGluZy1wbGF5ZXItbmFtZXMJAAAAcGxheWVyaWRzBwAAAGFkb3B0ZWQDAAAAAAAAAAkAAABhZG9wdGlvbnMEAAAAYnVzeQQAAABkZW5zAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJcLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFRAAAAAAAAAwADAAMAAAAAAHoiwcixIgAAAAAAAAsAAAB0Yi1qb3VybmV5cwAA";
+function baseline():Snapshot{const p={network:"testnet",rules_version:"tidebound_h1_v1",content_version:"first_light_v1",registry:UPGRADE.root,supported_content_versions:["first_light_v1","first_light_v2"]};return{codes:{[UPGRADE.root]:F07.oldCode,[UPGRADE.items]:UPGRADE.candidates.items.codeHash,[UPGRADE.config.bakery]:UPGRADE.unchanged.bakery,[UPGRADE.config.market]:UPGRADE.unchanged.market},config:UPGRADE.config,rootProtocol:{...p,items:UPGRADE.items},itemProtocol:p,state:{},protected:{},accounts:{},protocol:{},gasPrice:"100000000",block:{hash:"synthetic",height:1},observedPets:[],itemAvailableCredit:"0"};}
+test("F07 is a separate read-only policy until exact review approval and never permits a reset or another target",()=>{
+ expect(parseF07Arguments([])).toEqual({live:false});expect(parseF07Arguments([`--review-dir=${dir}`])).toEqual({live:false,directory:dir});expect(parseF07Arguments([`--review-dir=${dir}`,"--live",`--approve=${"a".repeat(64)}`]).live).toBe(true);
+ for(const flags of [["--live"],[`--review-dir=${dir}`,"--root=other.testnet"],[`--review-dir=${dir}`,"--resume"],[`--review-dir=${dir}`,"--fund"],[`--review-dir=${dir}`,"--live"]])expect(()=>parseF07Arguments(flags)).toThrow();
+ expect(F07.candidate.bytes-F07.oldBytes).toBe(3285);expect(BigInt(F07.historicalGasPlusStorage)+BigInt(F07.additionalConservativeCap)).toBeLessThan(BigInt(F07.combinedCeiling));
+});
+test("only exact Root old/new code and one Root code-only action can pass the correction guard",()=>{
+ const before=baseline(),after={...before,codes:{...before.codes,[UPGRADE.root]:F07.candidate.codeHash}};expect(()=>assertF07Scope(before,false)).not.toThrow();expect(()=>assertF07Scope(after,true)).not.toThrow();
+ for(const changed of [{...after,codes:{...after.codes,[UPGRADE.items]:"wrong"}},{...after,config:{...UPGRADE.config,pet_code_hash:"changed"}}])expect(()=>assertF07Scope(changed,true)).toThrow();
+ const action={DeployContract:{code:base64Encode(baseDecode(F07.candidate.codeHash))}};expect(()=>assertF07Action(UPGRADE.root,[action])).not.toThrow();for(const [account,a]of[[UPGRADE.items,[action]],[UPGRADE.root,[action,{FunctionCall:{method_name:"new"}}]],[UPGRADE.root,[{Transfer:{deposit:"1"}}]]] as const)expect(()=>assertF07Action(account,a)).toThrow();
+});
+test("new storage uses only3285bytes and gas prepayment is kept distinct from final burn under both ceilings",()=>{
+ const fee={send_sir:2,send_not_sir:3,execution:5},protocol={chain_id:"testnet",protocol_version:88,runtime_config:{min_gas_purchase_price:"1000000000",storage_amount_per_byte:"10000000000000000000",transaction_costs:{action_receipt_creation_config:fee,action_creation_config:{deploy_contract_cost:fee,deploy_contract_cost_per_byte:fee}}}};
+ const s={accounts:{[UPGRADE.root]:{amount:nearToYocto("10").toString(),storage_usage:440000}},state:{root:{value:state}},codes:{[UPGRADE.root]:F07.oldCode},protocol,gasPrice:"100000000"} as unknown as Snapshot,q=f07Quote(s);
+ expect(q.additionalStorageReserve).toBe(nearToYocto("0.03285"));expect(q.gasPrepayment).toBe((16n+8n*436424n)*1000000000n);expect(q.required).toBe(q.gasPrepayment+q.additionalStorageReserve);expect(q.reservedStorage).toBe(nearToYocto("0.16384"));expect(q.operatingFloor).toBe(nearToYocto("2.25"));expect(q.required).toBeLessThan(BigInt(F07.additionalConservativeCap));expect(q.note).toContain("not a claim about final gas burn");
+ expect(()=>f07Quote({...s,protocol:{...protocol,runtime_config:{...protocol.runtime_config,min_gas_purchase_price:"1000000000000000000"}}})).toThrow();expect(()=>f07Quote({...s,codes:{[UPGRADE.root]:"unknown-layout"}})).toThrow();
+});

@@ -240,6 +240,25 @@ impl Contract {
                 pending.owner == owner && pending.created,
                 "ERR_ADOPTION_PENDING"
             );
+            if pending.registration_inflight {
+                // A failed/lost callback must not cause another registration deposit or a
+                // permanent lock. Only configured Items' positive evidence can settle it.
+                return call(
+                    self.config.items.clone(),
+                    "is_pet",
+                    json!({"account_id":pet}),
+                    0,
+                    15,
+                )
+                .then(call(
+                    env::current_account_id(),
+                    "on_adoption_registration_evidence",
+                    json!({"pet":pet,"owner_id":owner}),
+                    0,
+                    25,
+                ))
+                .into();
+            }
             return self
                 .register_pet(pet)
                 .map_or(PromiseOrValue::Value(None), Into::into);
@@ -304,40 +323,24 @@ impl Contract {
         if !promise_bool() {
             return None;
         }
-        if self.tokens.owner_by_id.get(&pet.to_string()).is_some() {
-            self.adoptions.remove(&pet);
-            self.reserved_storage = self
-                .reserved_storage
-                .saturating_sub(pending.storage_reserve);
-            return Some(pet);
+        self.finish_adoption(pet, pending)
+    }
+    #[private]
+    pub fn on_adoption_registration_evidence(
+        &mut self,
+        pet: AccountId,
+        owner_id: AccountId,
+    ) -> Option<AccountId> {
+        let pending = self.adoptions.get(&pet).cloned().filter(|pending| {
+            pending.owner == owner_id && pending.created && pending.registration_inflight
+        })?;
+        // False, malformed and failed view results retain the original in-flight record.
+        // The creation receipt must already have succeeded; a fake preexisting account
+        // cannot gain an ownership NFT merely by returning a compatible get_state.
+        if !promise_bool() {
+            return None;
         }
-        let token_id = pet.to_string();
-        self.tokens.internal_mint_with_refund(
-            token_id.clone(),
-            pending.owner.clone(),
-            Some(TokenMetadata {
-                title: Some(pet.to_string()),
-                description: Some(
-                    "A keyless Familiar pet account. Inventory and savings stay with this account."
-                        .into(),
-                ),
-                copies: Some(1),
-                ..Default::default()
-            }),
-            None,
-        );
-        NftMint {
-            owner_id: &pending.owner,
-            token_ids: &[&token_id],
-            memo: None,
-        }
-        .emit();
-        self.adoptions.remove(&pet);
-        self.reserved_storage = self
-            .reserved_storage
-            .saturating_sub(pending.storage_reserve);
-        emit("pet_adopted", json!({"pet":pet,"owner":pending.owner}));
-        Some(pet)
+        self.finish_adoption(pet, pending)
     }
     pub fn act(&mut self, token_id: TokenId, action: Action) -> Promise {
         require!(env::prepaid_gas() >= Gas::from_tgas(240), "ERR_GAS");
@@ -500,6 +503,42 @@ impl Contract {
     }
 }
 impl Contract {
+    fn finish_adoption(&mut self, pet: AccountId, pending: Adoption) -> Option<AccountId> {
+        if self.tokens.owner_by_id.get(&pet.to_string()).is_some() {
+            self.adoptions.remove(&pet);
+            self.reserved_storage = self
+                .reserved_storage
+                .saturating_sub(pending.storage_reserve);
+            return Some(pet);
+        }
+        let token_id = pet.to_string();
+        self.tokens.internal_mint_with_refund(
+            token_id.clone(),
+            pending.owner.clone(),
+            Some(TokenMetadata {
+                title: Some(pet.to_string()),
+                description: Some(
+                    "A keyless Familiar pet account. Inventory and savings stay with this account."
+                        .into(),
+                ),
+                copies: Some(1),
+                ..Default::default()
+            }),
+            None,
+        );
+        NftMint {
+            owner_id: &pending.owner,
+            token_ids: &[&token_id],
+            memo: None,
+        }
+        .emit();
+        self.adoptions.remove(&pet);
+        self.reserved_storage = self
+            .reserved_storage
+            .saturating_sub(pending.storage_reserve);
+        emit("pet_adopted", json!({"pet":pet,"owner":pending.owner}));
+        Some(pet)
+    }
     fn player_name_free(&self, account: &AccountId) -> bool {
         !self.player_ids.contains(account)
             && !self.pending_player_names.contains_key(account)
@@ -1045,5 +1084,7 @@ mod den_tests {
     }
 }
 
+#[cfg(test)]
+mod adoption_recovery_tests;
 #[cfg(test)]
 mod username_tests;
