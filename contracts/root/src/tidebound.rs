@@ -1241,6 +1241,46 @@ mod tests {
         );
     }
     #[test]
+    #[should_panic(expected = "ERR_RETURN_REQUIRED")]
+    fn break_a_current_court_that_never_brings_mochi_home_is_refused() {
+        let mut c = contract();
+        let mut doctored = spatial_lens();
+        doctored.pop();
+        claim_court(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "first",
+            doctored,
+        );
+    }
+    #[test]
+    #[should_panic(expected = "ERR_REPLAY")]
+    fn break_an_illegal_step_in_the_current_court_is_refused() {
+        let mut c = contract();
+        let mut doctored = spatial_lens();
+        doctored.insert(0, "step:teleport".into());
+        claim_court(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "first",
+            doctored,
+        );
+    }
+    #[test]
+    fn break_the_current_court_accepts_the_honest_route() {
+        let mut c = contract();
+        let j = claim_court(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "first",
+            spatial_lens(),
+        );
+        assert_eq!(j.claims.len(), 1);
+    }
+    #[test]
     #[should_panic(expected = "ERR_COMMISSION_UNAVAILABLE")]
     fn break_shells_without_an_accepted_court_are_refused() {
         let mut c = contract();

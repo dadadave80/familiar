@@ -3,7 +3,6 @@
 const RPC = process.env.JUDGE_RPC ?? "https://test.rpc.fastnear.com";
 const ROOT = process.env.JUDGE_ROOT ?? "familiar-game.testnet";
 const ITEMS = `items.${ROOT}`;
-const PETS = ["qa-mochi-v2", "qa-mochi-h1", "mochi-d00307b6f456a69308"].map(p => `${p}.${ROOT}`);
 const PLAYER = `qa-maker-h1.${ROOT}`;
 
 type Key = { public_key: string; access_key: { permission: "FullAccess" | { FunctionCall: { receiver_id: string; method_names: string[] } } } };
@@ -30,26 +29,31 @@ console.log(`Familiar judge — ${ROOT} via ${RPC}\n`);
 
 console.log("SELF  Mochi has no access keys and runs code pinned by hash");
 const config = await view(ROOT, "get_config");
-const pinned = config.pet_code_hash as string;
-note(`${ROOT} get_config.pet_code_hash = ${pinned}`);
-for (const pet of PETS) {
+const pinned = config.pet_code_hash;
+check(typeof pinned === "string" && /^[1-9A-HJ-NP-Za-km-z]{43,44}$/.test(pinned), `${ROOT} get_config.pet_code_hash = ${pinned}`);
+const supply = Number(await view(ROOT, "nft_total_supply"));
+const pets: string[] = [];
+for (let i = 0; i < supply; i += 50) pets.push(...(await view(ROOT, "nft_tokens", { from_index: String(i), limit: 50 })).map((t: { token_id: string }) => t.token_id));
+check(supply > 0 && pets.length === supply, `${ROOT} has ${supply} pets; checking every one`);
+for (const pet of pets) {
   const [a, k, token] = await Promise.all([account(pet), keys(pet), view(ROOT, "nft_token", { token_id: pet })]);
   check(k.length === 0, `${pet} has ${k.length} access keys`);
-  check(a.global_contract_hash === pinned && a.code_hash === "11111111111111111111111111111111", `${pet} runs global code ${a.global_contract_hash} (no local code)`);
+  check(typeof pinned === "string" && a.global_contract_hash === pinned && a.code_hash === "11111111111111111111111111111111", `${pet} runs global code ${a.global_contract_hash} (no local code)`);
   check(token?.owner_id !== undefined, `${pet} papers on ${ROOT}: owned by ${token?.owner_id}`);
 }
 
-console.log("\nREFEREE  Shells come from a court the contract replayed");
+console.log("\nREFEREE  Ledger state left by replayed courts (the replay rule itself is source, checked by make break)");
 const protocol = await view(ROOT, "tidebound_protocol");
 note(`rules ${protocol.rules_version}, content ${protocol.content_version}, items ${protocol.items}`);
 const journey = await view(ROOT, "tidebound_journey", { account_id: PLAYER });
 check(journey.claims.length > 0, `${PLAYER} has ${journey.claims.length} accepted claims: ${journey.claims.map((c: { id: string }) => c.id).join(", ")}`);
 check(journey.commission_fulfilled && journey.shells + journey.burned_shells === 12, `${PLAYER} was granted 12 Shells once (${journey.shells} held, ${journey.burned_shells} spent)`);
+note("This is a snapshot of state, not proof of the deployed code: deployed root code is reported below and does not match the HEAD build recorded in docs/FAMILIAR-GAMEPLAY.json.");
 note("Replay proves the steps are legal and bring Mochi home, not that a person played them; see docs/THREAT-MODEL.md.");
 
 console.log("\nKEY  What the player's key can do (reported, not claimed)");
 for (const k of await keys(PLAYER)) note(`${PLAYER} ${k.public_key.slice(0, 16)}… ${perm(k)}`);
-note("Familiar's signer prepares only named harbor actions (services/relayer/src/auth/sign.ts); the chain does not enforce that limit.");
+note("Who holds the key (Privy) is not visible on chain; it comes from the source (web/src/account/privy-adapter.ts). The method limit is in Familiar's signer (services/relayer/src/auth/sign.ts), not on chain.");
 
 console.log("\nADMIN  Keys that still control the stack (disclosed)");
 for (const id of [ROOT, ITEMS]) {

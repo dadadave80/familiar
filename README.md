@@ -28,13 +28,13 @@ Make is a shortcut layer; the underlying `bun run` commands still work. Browser 
 
 ## NEAR in Familiar
 
-Live stack: root `familiar-game.testnet`, items `items.familiar-game.testnet`. `make judge` reads every line below from public RPC.
+Live stack: root `familiar-game.testnet`, items `items.familiar-game.testnet`. `make judge` reads current chain state over public RPC with no keys; `make break` runs the source rules. The deployed root code differs from the HEAD build recorded in `docs/FAMILIAR-GAMEPLAY.json`, so source tests describe HEAD, not necessarily the deployed bytes.
 
 | Claim | What is true on testnet | Check | Limit |
 | --- | --- | --- | --- |
-| Mochi is a real account | Each pet is a sub-account with no access keys, running global code pinned by hash (`get_config.pet_code_hash`); its NFT papers on the root name the owner | `make judge` | Root and Items still have admin keys, so the whole stack is not immutable |
-| The court is refereed | `tidebound_claim` replays the submitted steps and accepts only a court that brings Mochi home; 12 Shells are granted once per account | `make judge`, `make break` | Replay proves the steps are legal, not that a person played them; one pet passed between accounts can earn each its own Shells |
-| Your key | Your account key is held by your Privy wallet; Familiar's signer prepares only named harbor actions | `make judge` lists the key; `make break` runs the signer refusals | The key is full-access; the method limit is enforced by the signer, not by the chain |
+| Mochi is a real account | Every pet the root lists (`nft_tokens`) is a sub-account with no access keys, running global code pinned by hash (`get_config.pet_code_hash`); its NFT papers on the root name the owner | `make judge` | Root and Items still have admin keys, so the whole stack is not immutable |
+| The court is refereed | In source, `tidebound_claim` replays the submitted steps and accepts only a court that brings Mochi home, and 12 Shells are granted once per account; on chain, the test player's accepted claims and Shells match that | `make break` (rule), `make judge` (state) | Replay proves the steps are legal, not that a person played them; one pet passed between accounts can earn each its own Shells |
+| Your key | Your account key is held by your Privy wallet; Familiar's signer prepares only named harbor actions | `make judge` lists the key's permission; custody and the method limit come from source (`privy-adapter.ts`, `sign.ts`), checked by `make break` | The key is full-access; the method limit is enforced by the signer, not by the chain |
 
 ## Source
 
