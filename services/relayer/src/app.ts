@@ -96,11 +96,12 @@ export function createApp(
   });
   // Exact encrypted bytes; only plain routing/budget fields are checked. Message content is never decoded or logged.
   app.post("/v1/privy/note",async c=>{
+    const startedAt=Date.now();
     if(!notes)return c.json({code:"NOTE_DISABLED",error:"Mochi's sealed note is not enabled for this harbor."},503);
     const bytes=new Uint8Array(await c.req.arrayBuffer());
     const wallet=await privy!.wallet(c.req.header("authorization")!.slice(7),false);
     if(!wallet)return c.json({code:"ERR_PRIVY_WALLET_REQUIRED",error:"Create your recoverable wallet explicitly before asking for a note."},409);
-    const result=await notes.write({walletPublicKey:wallet.publicKey,bytes,clientPublicKey:c.req.header("x-client-pub-key"),modelPublicKey:c.req.header("x-model-pub-key")});
+    const result=await notes.write({startedAt,walletPublicKey:wallet.publicKey,bytes,clientPublicKey:c.req.header("x-client-pub-key"),modelPublicKey:c.req.header("x-model-pub-key")});
     return c.json(result.body as Record<string,unknown>,result.status as 200);
   });
   app.use("/v1/*", async (c, next) => {

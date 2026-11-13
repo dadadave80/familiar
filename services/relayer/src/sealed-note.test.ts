@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { createTideboundHttpHandler, type TideboundHttpEnvironment } from "./tidebound-http";
 import type { Backend } from "./app";
 import type { PrivyService } from "./auth/privy";
-import { checkNoteBody, createNoteRelay, NOTE_MODEL, type NoteChain, type NoteFetch } from "./sealed-note";
+import { checkNoteBody, createNoteRelay, NOTE_DEADLINE_MS, NOTE_MODEL, SIGNATURE_WINDOW_MS, type NoteChain, type NoteFetch } from "./sealed-note";
 
 const origin="https://familiar-two.vercel.app",root="familiar-game.testnet",account=`mochi.${root}`;
 const key="synthetic-near-ai-key-never-real";
@@ -123,7 +123,7 @@ test("a failed upstream call releases the note; repeated attempts hit the per-ac
   expect(f.forwarded.filter(r=>r.url.endsWith("/chat/completions")).length).toBe(3);
 });
 
-const direct=(fetch:NoteFetch,options:{now?:()=>number;completionTimeoutMs?:number;signatureWindowMs?:number;signatureDelayMs?:number}={})=>
+const direct=(fetch:NoteFetch,options:{now?:()=>number;completionTimeoutMs?:number;signatureWindowMs?:number;signatureDelayMs?:number;chain?:NoteChain}={})=>
   createNoteRelay({apiKey:key,chain:{player:async()=>account,confirmedClaims:async()=>1},fetch,...options});
 const input={walletPublicKey:"ed25519:synthetic",bytes:new TextEncoder().encode(body()) as Uint8Array<ArrayBuffer>,clientPublicKey:clientKey,modelPublicKey:modelKey};
 const answers:NoteFetch=async url=>new Response(url.endsWith("/chat/completions")?completion:signature);
@@ -134,7 +134,7 @@ test("allows three notes per account per UTC day across hourly windows, then res
   for(let i=0;i<3;i++)expect((await relay.write(input)).status).toBe(200);
   expect((await relay.write(input)).status).toBe(429);
   clock=Date.parse("2026-11-14T22:00:00Z");
-  const daily=await relay.write(input);expect(daily.status).toBe(429);expect(daily.body).toMatchObject({code:"QUOTA"});
+  const daily=await relay.write(input);expect(daily.status).toBe(429);expect(daily.body).toMatchObject({code:"QUOTA_DAY"});
   clock=Date.parse("2026-11-15T00:01:00Z");
   expect((await relay.write(input)).status).toBe(200);
 });
@@ -154,4 +154,32 @@ test("signature polling stops at its window and returns the completion without a
   const result=await direct(missing,{signatureWindowMs:120,signatureDelayMs:20}).write(input);
   expect(result.status).toBe(200);expect((result.body as {signature:unknown}).signature).toBeNull();
   expect(polls).toBeGreaterThan(2);expect(Date.now()-started).toBeLessThan(1_000);
+});
+
+test("a refusal by the hourly cap never uses up the next day's notes",async()=>{
+  let clock=Date.parse("2026-11-14T23:50:00Z");
+  const relay=direct(answers,{now:()=>clock});
+  for(let i=0;i<3;i++)expect((await relay.write(input)).status).toBe(200);
+  clock=Date.parse("2026-11-15T00:10:00Z");
+  for(let i=0;i<5;i++){const refused=await relay.write(input);expect(refused.status).toBe(429);expect(refused.body).toMatchObject({code:"QUOTA"});}
+  clock=Date.parse("2026-11-15T01:00:00Z");
+  for(let i=0;i<3;i++)expect((await relay.write(input)).status).toBe(200);
+});
+
+test("a stalled register read is refused before any note is charged or sent",async()=>{
+  let sent=0;
+  const counting:NoteFetch=async url=>{sent++;return new Response(url.endsWith("/chat/completions")?completion:signature);};
+  const stalled:NoteChain={player:()=>new Promise(()=>{}),confirmedClaims:async()=>1};
+  const relay=createNoteRelay({apiKey:key,chain:stalled,fetch:counting});
+  const late=await relay.write({...input,startedAt:Date.now()-NOTE_DEADLINE_MS+20});
+  expect(late.status).toBe(503);expect(late.body).toMatchObject({code:"NOTE_CHAIN"});expect(sent).toBe(0);
+});
+
+test("a request that starts too late for a full completion is refused without charging",async()=>{
+  let sent=0;
+  const counting:NoteFetch=async url=>{sent++;return new Response(url.endsWith("/chat/completions")?completion:signature);};
+  const relay=direct(counting);
+  const late=await relay.write({...input,startedAt:Date.now()-NOTE_DEADLINE_MS+SIGNATURE_WINDOW_MS+1_000});
+  expect(late.status).toBe(503);expect(sent).toBe(0);
+  for(let i=0;i<3;i++)expect((await relay.write(input)).status).toBe(200);
 });

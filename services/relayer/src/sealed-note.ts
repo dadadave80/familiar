@@ -61,8 +61,9 @@ const wait=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const base64=(bytes:Uint8Array)=>Buffer.from(bytes).toString("base64");
 
 export const NOTES_PER_ACCOUNT_DAY=3;
-/** Worst case stays inside the 60 s function limit: views, a 35 s completion, then at most 10 s of signature polling. */
-export const COMPLETION_TIMEOUT_MS=35_000,SIGNATURE_WINDOW_MS=10_000;
+/** Every step is bounded from the request's start so the whole call ends before the 60 s function limit. */
+export const NOTE_DEADLINE_MS=55_000,CHAIN_TIMEOUT_MS=8_000,COMPLETION_TIMEOUT_MS=35_000,SIGNATURE_WINDOW_MS=10_000,MIN_COMPLETION_MS=10_000;
+const within=<T,>(work:Promise<T>,ms:number)=>Promise.race([work,new Promise<never>((_,reject)=>setTimeout(()=>reject(Error("timeout")),Math.max(0,ms)))]);
 
 export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:NoteFetch;signatureWindowMs?:number;signatureDelayMs?:number;completionTimeoutMs?:number;now?:()=>number}) {
   const send=options.fetch??((url,init)=>fetch(url,init));
@@ -70,8 +71,8 @@ export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:No
   // Process-local, like the existing account quotas. A broken note can be retried within the allowance;
   // showing one note per accepted claim is the client's job.
   const daily=new Quota(NOTES_PER_ACCOUNT_DAY,86_400_000),perAccount=new Quota(3,3_600_000),all=new Quota(120,3_600_000,1);
-  async function signature(id:string):Promise<Uint8Array|null> {
-    const deadline=now()+window;
+  async function signature(id:string,limit:number):Promise<Uint8Array|null> {
+    const deadline=Math.min(now()+window,limit);
     for(let attempt=0;now()<deadline;attempt++){
       if(attempt)await wait(Math.min(delay,Math.max(0,deadline-now())));
       const remaining=deadline-now();if(remaining<=0)break;
@@ -87,18 +88,30 @@ export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:No
     return null;
   }
   return {
-    async write(input:{walletPublicKey:string;bytes:Uint8Array<ArrayBuffer>;clientPublicKey:string|undefined;modelPublicKey:string|undefined}):Promise<{status:number;body:unknown}> {
+    async write(input:{startedAt?:number;walletPublicKey:string;bytes:Uint8Array<ArrayBuffer>;clientPublicKey:string|undefined;modelPublicKey:string|undefined}):Promise<{status:number;body:unknown}> {
       const refused=checkNoteBody(input.bytes);
       if(refused)return {status:refused.status,body:{code:refused.code,error:"Mochi's note could not be sent in that form."}};
       if(!input.clientPublicKey||!hexKey.test(input.clientPublicKey)||!input.modelPublicKey||!hexKey.test(input.modelPublicKey))
         return {status:400,body:{code:"NOTE_KEYS",error:"Mochi's note needs both sealing keys."}};
-      const account=await options.chain.player(input.walletPublicKey);
-      if(!account||await options.chain.confirmedClaims(account)<1)return {status:409,body:{code:"NOTE_NO_EVENT",error:"Mochi writes after an accepted return."}};
-      const day=new Date(now()).toISOString().slice(0,10);
-      if(!daily.take(`${account}:${day}`,now())||!perAccount.take(account,now())||!all.take("all",now()))return {status:429,body:{code:"QUOTA",error:"Mochi is resting the pen. Try again tomorrow."}};
+      const deadline=(input.startedAt??now())+NOTE_DEADLINE_MS;
+      const unreachable={status:503,body:{code:"NOTE_CHAIN",error:"The harbor register could not be read. Try again."}};
+      let account:string|null;
+      try{
+        account=await within(options.chain.player(input.walletPublicKey),Math.min(CHAIN_TIMEOUT_MS,deadline-now()));
+        if(account&&await within(options.chain.confirmedClaims(account),Math.min(CHAIN_TIMEOUT_MS,deadline-now()))<1)account=null;
+      }catch{return unreachable;}
+      if(!account)return {status:409,body:{code:"NOTE_NO_EVENT",error:"Mochi writes after an accepted return."}};
+      // Leave room for the signature lookup; refuse before charging anything if the completion would be cut short.
+      const completionMs=Math.min(options.completionTimeoutMs??COMPLETION_TIMEOUT_MS,deadline-now()-Math.min(window,SIGNATURE_WINDOW_MS));
+      if(completionMs<Math.min(MIN_COMPLETION_MS,options.completionTimeoutMs??MIN_COMPLETION_MS))return unreachable;
+      const day=new Date(now()).toISOString().slice(0,10),dayKey=`${account}:${day}`;
+      // Check every allowance first and charge only when all pass, so a refusal never uses up the day.
+      if(!daily.allows(dayKey,now()))return {status:429,body:{code:"QUOTA_DAY",error:"Mochi has written today's notes. Try again tomorrow."}};
+      if(!perAccount.allows(account,now())||!all.allows("all",now()))return {status:429,body:{code:"QUOTA",error:"Mochi is resting the pen. Try again in a little while."}};
+      daily.take(dayKey,now());perAccount.take(account,now());all.take("all",now());
       let completion:Uint8Array;
       try{
-        const response=await send(`${upstream}/chat/completions`,{method:"POST",redirect:"error",body:input.bytes,signal:AbortSignal.timeout(options.completionTimeoutMs??COMPLETION_TIMEOUT_MS),headers:{
+        const response=await send(`${upstream}/chat/completions`,{method:"POST",redirect:"error",body:input.bytes,signal:AbortSignal.timeout(completionMs),headers:{
           authorization:`Bearer ${options.apiKey}`,"content-type":"application/json","accept-encoding":"identity",
           "x-signing-algo":"ed25519","x-encryption-version":"3","x-encrypt-all-fields":"true","x-no-aliasing":"true",
           "x-client-pub-key":input.clientPublicKey,"x-model-pub-key":input.modelPublicKey,
@@ -110,7 +123,7 @@ export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:No
       }
       let id:unknown;
       try{id=JSON.parse(new TextDecoder().decode(completion)).id;}catch{id=null;}
-      const signed=typeof id==="string"&&chatId.test(id)?await signature(id):null;
+      const signed=typeof id==="string"&&chatId.test(id)?await signature(id,deadline):null;
       return {status:200,body:{completion:base64(completion),signature:signed?base64(signed):null}};
     },
   };

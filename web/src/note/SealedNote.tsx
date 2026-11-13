@@ -43,7 +43,7 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
     {status}
     <p className="sn-invite">Mochi has been chewing a pencil since the last return.</p>
     <button className="exp-primary" disabled={busy} aria-busy={busy} onClick={()=>void ask()}>{busy?"Mochi is writing…":"Ask Mochi for a note"}</button>
-    <p className="sn-small">One note per accepted return. Only the harbor's name and your recent accepted returns are sent.</p>
+    <p className="sn-small">One note per harbor. Only the harbor's name and your recent accepted returns are sent.</p>
   </section>;
   const facts=note.back;
   const again=<button disabled={busy} onClick={()=>void ask()}>{busy?"Trying again…":"Ask again"}</button>;
@@ -53,7 +53,7 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
       {note.state==="broken"?<>
         <h3>The note got wet on the way.</h3>
         <p>{facts.reason??"It could not be opened."} Nothing unreadable is shown as Mochi's.</p>
-        {facts.code!=="QUOTA"&&facts.code!=="NOTE_NO_EVENT"&&again}
+        {facts.code!=="QUOTA_DAY"&&facts.code!=="NOTE_NO_EVENT"&&again}
       </>:<>
         <p className="sn-text">{note.text}</p>
         <footer className="sn-mark">
@@ -63,7 +63,7 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
           </>:note.state==="unrecorded"?<span><strong>Seal not recorded yet.</strong> NEAR AI had not stored the signature when the note arrived, so this one is not kept. Asking again writes a new note.</span>
           :<span><strong>Not sealed.</strong> {facts.reason}</span>}
         </footer>
-        {note.state==="unrecorded"&&again}
+        {note.state==="unrecorded"&&<button disabled={busy} onClick={()=>void ask()}>{busy?"Mochi is writing…":"Ask for a new note"}</button>}
       </>}
     </article>
     {facts.model&&<details className="sn-back">
