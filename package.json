@@ -14,6 +14,7 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "build": "bun run typecheck && bun run --cwd web build",
+    "build:release": "bun --no-env-file scripts/build-release.ts",
     "test:contracts": "cargo test --manifest-path contracts/Cargo.toml --workspace",
     "test:sandbox": "cargo test --manifest-path contracts/Cargo.toml -p familiar-root --test sandbox -- --ignored --nocapture",
     "test:expedition-browser": "bun scripts/test-expedition-browser.ts",

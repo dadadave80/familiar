@@ -1,54 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "bun run build",
-  "installCommand": "bun install --frozen-lockfile",
-  "outputDirectory": "web/dist",
   "framework": null,
-  "rewrites": [
-    {
-      "source": "/outing",
-      "destination": "/outing/index.html"
-    },
-    {
-      "source": "/expedition/:path*",
-      "destination": "/outing/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/legacy/:path*",
-      "destination": "/outing/",
-      "permanent": true
-    },
-    {
-      "source": "/motion/:path*",
-      "destination": "/outing/",
-      "permanent": true
-    },
-    {
-      "source": "/privy-spike/:path*",
-      "destination": "/outing/",
-      "permanent": true
-    },
-    {
-      "source": "/plan/:path*",
-      "destination": "/",
-      "permanent": true
-    }
-  ]
+  "installCommand": "bun install --frozen-lockfile",
+  "buildCommand": "bun --no-env-file run build:release"
 }

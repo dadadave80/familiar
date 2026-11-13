@@ -76,8 +76,8 @@ export async function copyGameStatic(source:string,destination:string) {
   return writes.map(file=>({path:file.path,sha256:digest(file.bytes)}));
 }
 // Original API URLs reach their physical functions; retired interfaces redirect without rewrites.
-export function currentRouting(config:unknown) {
-  validateRouting(config);
+export function currentRouting(config?:unknown) {
+  if(config!==undefined)validateRouting(config);
   return {version:3,routes:[
     {src:"/(.*)",headers:{"X-Content-Type-Options":"nosniff","Referrer-Policy":"strict-origin-when-cross-origin"},continue:true},
     {src:"^/(?:legacy|motion|privy-spike)(?:/.*)?$",status:308,headers:{Location:"/outing/"}},
@@ -117,6 +117,35 @@ export async function installFunctionAliases(output:string) {
   for(const path of aliases)if(!existing.some(alias=>alias.path===path)){const target=join(functions,path);await mkdir(dirname(target),{recursive:true});await symlink(relative(dirname(target),primary),target,"dir");check(await realpath(target)===await realpath(primary),"An H1 alias escaped its physical handler.");}
   return Promise.all(aliases.map(async path=>({path,target:await readlink(join(functions,path))})));
 }
+
+export async function buildAccountFunction(source:string,output:string){
+  const fn=join(output,"functions",primaryFunction);
+  await mkdir(fn,{recursive:true});
+  const result=await Bun.build({entrypoints:[join(source,"services/relayer/src/tidebound-http.ts")],outdir:fn,naming:"index.mjs",target:"node",format:"esm",minify:true,env:"disable"});
+  check(result.success,"The private H1 HTTP function did not bundle.");
+  await writeFile(join(fn,".vc-config.json"),JSON.stringify({runtime:"nodejs24.x",handler:"index.mjs",launcherType:"Nodejs",maxDuration:60,shouldAddHelpers:false}));
+  return installFunctionAliases(output);
+}
+
+export async function buildGameSite(source:string,site:string,appId:string,clientId:string){
+  const overlay=await mkdtemp(join(tmpdir(),"familiar-game-static-"));
+  try{
+    await build({configFile:false,plugins:[react()],root:join(source,"web"),envDir:false,envPrefix:[],publicDir:false,define:{
+      "import.meta.env.VITE_PRIVY_APP_ID":JSON.stringify(appId),"import.meta.env.VITE_PRIVY_CLIENT_ID":JSON.stringify(clientId),
+      "import.meta.env.VITE_ACCOUNT_PROVIDER":JSON.stringify("privy"),"import.meta.env.VITE_NEAR_ROOT":JSON.stringify(gameRoot),
+      "import.meta.env.VITE_NEAR_RPC_URL":JSON.stringify("https://test.rpc.fastnear.com"),"import.meta.env.VITE_RELAYER_URL":JSON.stringify("/api"),
+      "import.meta.env.VITE_TIDEBOUND_ENABLED":JSON.stringify(appId?"true":"false"),
+    },build:{outDir:overlay,rollupOptions:{input:{home:join(source,"web/index.html"),outing:join(source,"web/outing/index.html")},output:{manualChunks:id=>id.includes("/phaser/")?"phaser":undefined}}}});
+    const staticReport=await copyGameStatic(overlay,site);
+    const runtimeAssets=await copyRuntimeAssets(join(source,"web/public"),site);
+    const licenses=join(source,"web/public/licenses");await physicalDirectory(licenses);
+    for(const name of await staticFiles(licenses)){
+      check(/^[a-z-]+\.txt$/.test(name),"Unexpected license path.");
+      await mkdir(join(site,"licenses"),{recursive:true});await cp(join(licenses,name),join(site,"licenses",name));
+    }
+    return {staticReport,runtimeAssets};
+  }finally{await rm(overlay,{recursive:true,force:true});}
+}
 /** Scope is declared by the prior review manifest, then bound to its actual handler hash and aliases. */
 export function baselineFunctionScope(manifest:unknown,actualHash:string,actualAliases:{path:string;target:string}[]):"recovery-only"|"h1" {
   check(manifest && typeof manifest==="object" && "privateFunction" in manifest && manifest.privateFunction && typeof manifest.privateFunction==="object","The baseline's private function scope is unverified.");
@@ -147,28 +176,12 @@ async function main() {
   const oldFunctionSha256=await hash(join(fn,"index.mjs")),oldAliases=await existingFunctionAliases(output);
   const scopeBefore=baselineFunctionScope(JSON.parse(await readFile(join(baseline,"review-manifest.json"),"utf8")),oldFunctionSha256,oldAliases);
   const baselineStatic=await Promise.all((await staticFiles(site)).map(async path=>({path,sha256:await hash(join(site,path))})));
-  const overlay=await mkdtemp(join(tmpdir(),"familiar-tidebound-static-"));
-  await build({configFile:false,plugins:[react()],root:join(source,"web"),envDir:false,envPrefix:[],publicDir:false,define:{
-    "import.meta.env.VITE_PRIVY_APP_ID":JSON.stringify(appId),"import.meta.env.VITE_PRIVY_CLIENT_ID":JSON.stringify(clientId),
-    "import.meta.env.VITE_ACCOUNT_PROVIDER":JSON.stringify("privy"),"import.meta.env.VITE_NEAR_ROOT":JSON.stringify(gameRoot),
-    "import.meta.env.VITE_NEAR_RPC_URL":JSON.stringify("https://test.rpc.fastnear.com"),"import.meta.env.VITE_RELAYER_URL":JSON.stringify("/api"),
-    "import.meta.env.VITE_TIDEBOUND_ENABLED":JSON.stringify("true"),
-  },build:{outDir:overlay,rollupOptions:{input:{home:join(source,"web/index.html"),outing:join(source,"web/outing/index.html")},output:{manualChunks:id=>id.includes("/phaser/")?"phaser":undefined}}}});
   await rm(site,{recursive:true});await mkdir(site);
-  const staticReport=await copyGameStatic(overlay,site);
-  const runtimeAssets=await copyRuntimeAssets(join(source,"web/public"),site);
-  const licenses=join(source,"web/public/licenses");await physicalDirectory(licenses);
-  for(const name of await staticFiles(licenses)){
-    check(/^[a-z-]+\.txt$/.test(name),"Unexpected license path.");
-    await mkdir(join(site,"licenses"),{recursive:true});await cp(join(licenses,name),join(site,"licenses",name));
-  }
+  const {staticReport,runtimeAssets}=await buildGameSite(source,site,appId,clientId);
   const routing=currentRouting(JSON.parse(configBytes.toString()));
   await writeFile(join(output,"config.json"),JSON.stringify(routing,null,2)+"\n");
-  await rm(fn,{recursive:true,force:true});await mkdir(fn,{recursive:true});
-  const result=await Bun.build({entrypoints:[join(source,"services/relayer/src/tidebound-http.ts")],outdir:fn,naming:"index.mjs",target:"node",format:"esm",minify:true,env:"disable"});
-  check(result.success,"The private H1 HTTP function did not bundle.");
-  await writeFile(join(fn,".vc-config.json"),JSON.stringify({runtime:"nodejs24.x",handler:"index.mjs",launcherType:"Nodejs",maxDuration:60,shouldAddHelpers:false}));
-  const functionAliases=await installFunctionAliases(output);
+  await rm(fn,{recursive:true,force:true});
+  const functionAliases=await buildAccountFunction(source,output);
   const currentStatic=await Promise.all((await staticFiles(site)).map(async path=>({path,sha256:await hash(join(site,path))})));
   const preserved=baselineStatic.filter(file=>currentStatic.some(current=>current.path===file.path&&current.sha256===file.sha256));
   const removed=baselineStatic.filter(file=>!currentStatic.some(current=>current.path===file.path));

@@ -1,0 +1,49 @@
+name: Familiar checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Tests, build and evidence
+    runs-on: ubuntu-24.04
+    env:
+      RUSTUP_TOOLCHAIN: 1.99.1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+      - name: Install Rust
+        run: rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal
+      - run: bun install --frozen-lockfile
+      - run: make check
+      - run: make evidence
+      - name: Build production artifact
+        env:
+          VERCEL_ENV: production
+          PRIVY_APP_ID: ci-public-fixture
+        run: |
+          bun run build:release
+          test -f .vercel/output/static/index.html
+          test -f .vercel/output/static/outing/index.html
+          test -f .vercel/output/functions/api/health.func/index.mjs
+          test -f .vercel/output/functions/api/v1/privy/player.func/index.mjs
+      - name: Build device-only preview
+        env:
+          VERCEL_ENV: preview
+        run: |
+          bun run build:release
+          test ! -e .vercel/output/functions
