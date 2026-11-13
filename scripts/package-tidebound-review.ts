@@ -131,7 +131,7 @@ export async function buildAccountFunction(source:string,output:string){
   return installFunctionAliases(output);
 }
 
-export async function buildGameSite(source:string,site:string,appId:string,clientId:string){
+export async function buildGameSite(source:string,site:string,appId:string,clientId:string,sealedNote=false){
   const overlay=await mkdtemp(join(tmpdir(),"familiar-game-static-"));
   try{
     await build({configFile:false,plugins:[react()],root:join(source,"web"),envDir:false,envPrefix:[],publicDir:false,define:{
@@ -139,6 +139,7 @@ export async function buildGameSite(source:string,site:string,appId:string,clien
       "import.meta.env.VITE_ACCOUNT_PROVIDER":JSON.stringify("privy"),"import.meta.env.VITE_NEAR_ROOT":JSON.stringify(gameRoot),
       "import.meta.env.VITE_NEAR_RPC_URL":JSON.stringify("https://test.rpc.fastnear.com"),"import.meta.env.VITE_RELAYER_URL":JSON.stringify("/api"),
       "import.meta.env.VITE_TIDEBOUND_ENABLED":JSON.stringify(appId?"true":"false"),
+      "import.meta.env.VITE_SEALED_NOTE_ENABLED":JSON.stringify(appId&&sealedNote?"true":"false"),
     },build:{outDir:overlay,rollupOptions:{input:{home:join(source,"web/index.html"),outing:join(source,"web/outing/index.html")},output:{manualChunks:id=>id.includes("/phaser/")?"phaser":undefined}}}});
     const staticReport=await copyGameStatic(overlay,site);
     const runtimeAssets=await copyRuntimeAssets(join(source,"web/public"),site);
