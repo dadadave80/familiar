@@ -53,7 +53,14 @@ try {
       await page.evaluate(records => { for (const [key, value] of Object.entries(records)) localStorage.setItem(key, value); }, oldRecords);
       await page.getByRole("link", { name: "Play Familiar", exact: true }).first().click();
       await expect(page).toHaveURL(new URL("/outing/", origin).href);
-      const game = page.getByTestId("expedition-game"), world = page.getByTestId("expedition-world");
+      const game = page.getByTestId("expedition-game"), world = page.getByTestId("expedition-world"), opening = page.getByTestId("opening");
+      const passTitle = async (path: string) => {
+        await expect(opening, path).toHaveAttribute("data-mode", "title");
+        await page.keyboard.press("Enter");
+        await page.locator('[data-plank="continue"],[data-plank="new"]').click();
+        await expect(opening, path).toHaveCount(0);
+      };
+      await passTitle("/outing/");
       await expect(world).toHaveAttribute("data-ready", "true");
       await page.getByRole("button", { name: "Game menu" }).click();
       await page.getByRole("button", { name: "Account & recovery" }).click();
@@ -72,6 +79,7 @@ try {
       const paths = ["/legacy/", "/motion/", "/privy-spike/", "/expedition/", "/outing/?classic=1", "/outing/?challenge=two-shells-v1", "/legacy/index.html", "/privy-spike/index.html", "/outing/index.html"];
       for (const path of paths) {
         await page.goto(new URL(path, origin).href);
+        await passTitle(path);
         await expect(game, path).toHaveAttribute("data-mode", "court");
         await expect(world, path).toHaveAttribute("data-position", "0,0");
         await expect(world, path).toHaveAttribute("data-ready", "true");
@@ -79,6 +87,7 @@ try {
         assert.deepEqual(await page.evaluate(keys => Object.fromEntries(keys.map(key => [key, localStorage.getItem(key)])), Object.keys(oldRecords)), oldRecords, path);
       }
       await page.reload();
+      await passTitle("reload");
       await expect(world).toHaveAttribute("data-turn", "1");
       console.info(`${engine.name()}: introduction, account boundary, ${paths.length} game entry URLs, saved-run resume and preserved original records passed`);
     } finally { await browser.close(); }

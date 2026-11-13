@@ -37,7 +37,7 @@ try{
   const context=await browser.newContext({viewport:{width,height},hasTouch:touch,isMobile:touch,deviceScaleFactor:touch?2:1,reducedMotion:"reduce"}),page=await context.newPage(),errors:string[]=[],mutations:string[]=[];
   page.on("pageerror",e=>errors.push(e.message));await context.route("**/*",route=>{if(!["GET","HEAD","OPTIONS"].includes(route.request().method())){mutations.push(new URL(route.request().url()).pathname);return route.abort();}return route.continue();});
   try{
-   await page.goto(origin+"/outing/");await ready(page);const geometry=await bounds(page,`${width}x${height}-home`);await capture(page,`${width}x${height}-home`);
+   await page.goto(origin+"/outing/?play");await ready(page);const geometry=await bounds(page,`${width}x${height}-home`);await capture(page,`${width}x${height}-home`);
    const action=page.locator('[data-action="depart"]');if(touch)await action.tap();else await action.click();await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","court");
    await bounds(page,`${width}x${height}-court`);await capture(page,`${width}x${height}-court`);
    const tiles=JSON.parse((await page.getByTestId("expedition-world").getAttribute("data-tiles"))!) as {position:{x:number;y:number};x:number;y:number}[],target=tiles.find(t=>t.position.x===0&&t.position.y===0)!;
@@ -53,25 +53,25 @@ try{
  }
  if(!baseline){
   const failuresContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),failed=await failuresContext.newPage();
-  await failed.route("**/assets/Game-*.js",route=>route.abort());await failed.goto(origin+"/outing/");
+  await failed.route("**/assets/Game-*.js",route=>route.abort());await failed.goto(origin+"/outing/?play");
   await expect(failed.locator("[data-boot-status]")).toContainText("could not download");await expect(failed.getByRole("link",{name:"Reload Familiar"})).toBeVisible();await capture(failed,"after-entry-download-failure");
   await failuresContext.close();
   const sdkContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),sdkFailure=await sdkContext.newPage();
   await sdkContext.route("**/*",route=>["GET","HEAD","OPTIONS"].includes(route.request().method())?route.continue():route.abort());
-  let blockedSdk=false;await sdkFailure.route("**/assets/PrivyProvider-*.js",route=>{blockedSdk=true;return route.abort();});await sdkFailure.goto(origin+"/outing/");
+  let blockedSdk=false;await sdkFailure.route("**/assets/PrivyProvider-*.js",route=>{blockedSdk=true;return route.abort();});await sdkFailure.goto(origin+"/outing/?play");
   await expect.poll(async()=>blockedSdk||await sdkFailure.getByTestId("expedition-game").count()>0).toBe(true);
   // A configured release mounts this lazy module after entry() has already returned.
   if(blockedSdk){await expect(sdkFailure.getByRole("alert")).toContainText("original requests are unchanged");await expect(sdkFailure.getByRole("link",{name:"Reload Familiar"})).toBeVisible();await capture(sdkFailure,"after-lazy-account-download-failure");}
   await sdkContext.close();
   const loadingContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),loading=await loadingContext.newPage();let release!:()=>void;const held=new Promise<void>(r=>{release=r;});
-  await loading.route("**/assets/expedition/runtime/lens.webp",async route=>{await held;await route.continue();});await loading.goto(origin+"/outing/");
+  await loading.route("**/assets/expedition/runtime/lens.webp",async route=>{await held;await route.continue();});await loading.goto(origin+"/outing/?play");
   await expect(loading.getByRole("heading",{name:"Unpacking the harbor."})).toBeVisible();assert.equal(await loading.locator('[data-action="depart"]').count(),0,"No departure before the scene is ready");assert.equal(await loading.evaluate(k=>localStorage.getItem(k),key),null);await capture(loading,"after-art-loading-gate");release();await ready(loading);await expect(loading.locator('[data-action="depart"]')).toBeEnabled();await loadingContext.close();
  }
  if(engine===chromium){
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"}),page=await context.newPage(),cdp=await context.newCDPSession(page);
  await context.route("**/*",route=>["GET","HEAD","OPTIONS"].includes(route.request().method())?route.continue():route.abort());
  await cdp.send("Network.enable");await cdp.send("Network.setCacheDisabled",{cacheDisabled:true});await cdp.send("Network.emulateNetworkConditions",{offline:false,latency:400,downloadThroughput:50000,uploadThroughput:50000,connectionType:"cellular3g"});await cdp.send("Emulation.setCPUThrottlingRate",{rate:4});
- const start=Date.now(),navigation=page.goto(origin+"/outing/",{waitUntil:"domcontentloaded",timeout:120000});
+ const start=Date.now(),navigation=page.goto(origin+"/outing/?play",{waitUntil:"domcontentloaded",timeout:120000});
  await page.waitForTimeout(2000);await capture(page,`${baseline?"before":"after"}-3g-2s`);const early=await page.locator("body").innerText();if(!baseline)assert(early.includes("Familiar")||early.includes("familiar"),"A cold slow3G load has visible content before module download");
  await navigation;const domMs=Date.now()-start;await ready(page);const readyMs=Date.now()-start;await capture(page,`${baseline?"before":"after"}-3g-ready`);
  await page.locator('[data-action="depart"]').tap();await page.getByRole("button",{name:"Move north",exact:true}).tap();await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-busy","false");

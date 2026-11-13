@@ -1,0 +1,7 @@
+html:has(.familiar-opening:not(.framed)),body:has(.familiar-opening:not(.framed)){margin:0;width:100%;height:100%;overflow:hidden;background:#304e40}
+.familiar-opening{position:fixed;inset:0;height:100dvh;z-index:60}
+.familiar-opening.framed{position:absolute;height:auto;z-index:auto}
+.familiar-opening button{font-family:inherit}
+.familiar-opening button:focus-visible{outline:3px solid #fff5ce;outline-offset:3px}
+.familiar-opening .fo-bell:focus-visible{border-radius:8px}
+.familiar-opening .fo-row:hover{background:#fff1ca}

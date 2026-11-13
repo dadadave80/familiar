@@ -16,4 +16,4 @@ Local previews, confirmed NEAR testnet ownership and uncertain operations retain
 
 ## Introduction and current entry
 
-The homepage remains the introduction with its Play Familiar action to `/outing/`. Keep the warm coastal imagery and self-hosted Fraunces/Figtree typography. The retired town, motion lab and recovery demo have no navigation links or build entries. Shared Mochi poses and the lantern/origin artwork remain part of Familiar, with essential meaning available through DOM controls and text.
+The homepage remains the introduction with its Play Familiar action to `/outing/`. `/outing/` opens on a title screen inside the game: the living harbor, the wordmark, one prompt, and a signpost menu. Choosing Continue or New Harbor carries the camera to the dock and a tide wipe hands off to play. `?play` skips the title. Keep the warm coastal imagery and self-hosted Fraunces/Figtree typography. The retired town, motion lab and recovery demo have no navigation links or build entries. Shared Mochi poses and the lantern/origin artwork remain part of Familiar, with essential meaning available through DOM controls and text.
