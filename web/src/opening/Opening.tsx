@@ -286,10 +286,6 @@ export default class Opening extends Component<Props, State> {
 
   // ---- drawing
   $(n: string) { let e = this.els[n]; if (!e || !e.isConnected) { e = this.root?.querySelector<HTMLElement>(`[data-el="${n}"]`) ?? null; this.els[n] = e; } return e; }
-  view(n: "title" | "dock", port: boolean) {
-    if (n === "title") return port ? { zoom: 1, fx: 1110.5, fy: 905, vx: .5, vy: 1 } : { zoom: 1.03, fx: 768, fy: 905, vx: .5, vy: 1 };
-    return port ? { zoom: 1.03, fx: 1110.5, fy: 715, vx: .5, vy: .6 } : { zoom: 1.3, fx: 770, fy: 705, vx: .5, vy: .57 };
-  }
   idlePose(t: number): MochiPoseName {
     const att = (this.mode === "menu" || (this.mode === "title" && !this.soundOn)) ? "look-right" : "curious", c = t % 9200;
     if (c >= 1700 && c < 3000) return att; if (c >= 4900 && c < 5650) return "curious"; if (c >= 5650 && c < 6500) return att === "look-right" ? att : "neutral"; return "neutral";
@@ -298,18 +294,40 @@ export default class Opening extends Component<Props, State> {
   draw() {
     const r = this.root; if (!r || this.s.camT === undefined) return; const W = r.clientWidth, H = r.clientHeight; if (!W || !H) return;
     r.dataset.mode = this.mode;
-    const s = this.s, t = this.t, live = !this.frozen && !this.rm, port = W <= 900 && H > W, st = Math.floor(t * 12 / 1000) / 12 * 1000, $ = (n: string) => this.$(n);
+    const s = this.s, t = this.t, live = !this.frozen && !this.rm, fz = this.frozen, st = Math.floor(t * 12 / 1000) / 12 * 1000, $ = (n: string) => this.$(n);
     if (this.handedOff) { r.style.background = "transparent"; r.style.pointerEvents = "none"; for (const child of r.children) if ((child as HTMLElement).dataset.el !== "tide") (child as HTMLElement).style.visibility = "hidden"; }
-    const a = this.view("title", port), b = this.view("dock", port), L = (x: number, y: number) => x + (y - x) * s.camT!;
-    const S = Math.max(W / 1536, H / 1024) * (L(a.zoom, b.zoom) + s.zoomAdd!);
-    let tx = L(a.vx, b.vx) * W - (L(a.fx, b.fx) + (live ? Math.sin(t / 7000) * 6 : 0)) * S, ty = L(a.vy, b.vy) * H - L(a.fy, b.fy) * S;
-    tx = Math.min(0, Math.max(W - 1536 * S, tx)); ty = Math.min(0, Math.max(H - 1024 * S, ty));
+    // Layout derives from how much of the painting this frame can show, not from device names.
+    // k scales the signpost up so plank targets stay at least 44px; frozen frames keep the design scale.
+    const s0 = Math.max(W / 1536, H / 1024), port = W / s0 < 824, u = fz ? W / (port ? 390 : 1440) : 1, short = H / u < 500 && !port, zt = port ? 1 : 1.03, visW = W / (s0 * zt), m = 14;
+    const k = fz ? 1 : Math.max(1, Math.min(44 / (56 * s0 * zt), (H - 47 * s0 * zt - 8) / (412 * s0 * zt)));
+    let PW = 236, postX = 890 + Math.min(260, (k - 1) * 600), mx = 620, cxT = 830;
+    if (port) { PW = Math.max(170, Math.min(236, (visW - 2 * m - 198 - 8 * k) / k - 10)); const G = 198 + 8 * k + (10 + PW) * k, left = 1110.5 - G / 2; mx = left + 95; postX = left + 198 + 8 * k; cxT = 1110.5; }
+    const gx = (x: number) => postX + (x - 890) * k, gy = (y: number) => 858 + (y - 858) * k;
+    const clampT = (Sx: number, x: number, y: number) => [Math.min(0, Math.max(W - 1536 * Sx, x)), Math.min(0, Math.max(H - 1024 * Sx, y))] as const;
+    const Sa = s0 * (zt + s.zoomAdd!), [txa, tya] = clampT(Sa, W / 2 - (cxT + (live ? Math.sin(t / 7000) * 6 : 0)) * Sa, H - 905 * Sa);
+    const rightLimit = Math.min(1536, (W - txa) / Sa) - m;
+    // Title size and centre that fit between the bakery roof (x 470) and R, in world units.
+    const fit = (R: number) => { const F = Math.min(.105 * W, .21 * H, (R - 470) * Sa / 4.3), c = (470 + R) / 2 * Sa + txa; return { F, c, bot: (short ? .06 : .08) * H + F + (fz ? .2 * F : Math.max(.2 * F, 17)) * 1.7, right: c + F * 2.15 }; };
+    let T = fit(1185), BW = PW, tucked = false;
+    if (!port) {
+      const clash = () => T.bot + 10 * u > gy(404) * Sa + tya - 22 * u && T.right > gx(788) * Sa + txa - 12 * u;
+      if (clash()) postX = Math.max(postX, Math.min(1080, rightLimit - 246 * k));
+      postX = Math.max(737, Math.min(postX, rightLimit - 246 * k));
+      if (clash()) { T = fit(gx(788) - 12); tucked = true; }
+      PW = Math.max(170, Math.min(236, (rightLimit - postX) / k - 10)); BW = Math.max(PW, Math.min(250, (rightLimit - postX) / k - 10));
+    }
+    const dx = postX - 890, mdx = mx - 620, tight = port || PW < 236;
+    const f1 = fz ? (port ? .054 * W : .025 * W) : Math.max(21, Math.min(34, .025 * W)), f2 = fz ? (port ? .036 * W : .014 * W) : Math.max(14, Math.min(18, .013 * W));
+    const capB = port ? .025 : short ? .04 : .09, capH = port ? f1 * 2.24 + f2 * 4.5 : f1 * 1.12 + f2 * 1.8;
+    // Travel ends framing Mochi and the signpost, above the caption.
+    const l0 = mx - 95, r0 = gx(900 + BW), Sb = s0 * Math.max(zt, Math.min(1.3, W / (s0 * (r0 - l0 + 56))));
+    const [txb, tyb] = clampT(Sb, W / 2 - (l0 + r0) / 2 * Sb, Math.min(H * .57 - 705 * Sb, H * (1 - capB) - capH - 16 - 836 * Sb));
+    const S = Sa + (Sb - Sa) * s.camT!, tx = txa + (txb - txa) * s.camT!, ty = tya + (tyb - tya) * s.camT!;
     let e = $("world"); if (e) e.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + S + ")";
-    const dx = port ? 210 : 0, mdx = port ? 366 : 0, fz = this.frozen, PW = port ? 220 : 236;
 
     // title, boot tide
     const title = $("title"), br = $("bright");
-    if (title) { title.style.left = port ? "50%" : "53.5%"; title.style.top = port ? "4%" : "8%"; title.style.fontSize = port ? "21cqw" : "min(10.5cqw,21cqh)"; title.style.opacity = String(s.titleA); title.style.transform = "translate(-50%," + (-s.lift! * H * .42) + "px) scale(" + (1 + s.lift! * .05) + ")"; }
+    if (title) { title.style.left = port ? "50%" : T.c + "px"; title.style.top = port ? "4%" : short ? "6%" : "8%"; title.style.fontSize = port ? "min(21cqw,14cqh)" : T.F + "px"; title.style.opacity = String(s.titleA); title.style.transform = "translate(-50%," + (-s.lift! * H * .42) + "px) scale(" + (1 + s.lift! * .05) + ")"; }
     if (br) {
       if (s.boot) {
         const rc = br.getBoundingClientRect(), rr = r.getBoundingClientRect(), top = rc.top - rr.top;
@@ -328,11 +346,13 @@ export default class Opening extends Component<Props, State> {
     e = $("dim"); if (e) e.style.opacity = String(s.veil);
     e = $("veil"); if (e) { e.style.opacity = String(s.veil); e.style.display = s.veil! > 0 ? "block" : "none"; }
     e = $("tide"); if (e) { e.style.display = s.tide! > 0 ? "block" : "none"; e.style.height = (s.tide! * H) + "px"; e.style.opacity = String(s.tideA); }
-    e = $("chap"); if (e) { e.style.opacity = String(s.chapA); const rl = e.lastElementChild; if (rl && rl.children.length === 3) (rl.children[0] as HTMLElement).style.width = (rl.children[2] as HTMLElement).style.width = port ? "1em" : "2.4em"; }
+    e = $("chap"); if (e) { e.style.opacity = String(s.chapA); const rl = e.lastElementChild; if (rl && rl.children.length === 3) { (rl.children[0] as HTMLElement).style.width = (rl.children[2] as HTMLElement).style.width = port || tucked ? "1em" : "2.4em"; (rl as HTMLElement).style.fontSize = fz ? ".2em" : "max(.2em,17px)"; } }
     e = $("prompt"); if (e) { e.style.fontSize = fz ? (port ? "3.1cqw" : "1.25cqw") : "clamp(12px,1.25cqw,18px)"; e.style.opacity = String((s.courtA! > 0 ? 0 : 1) * s.promptA! * (live ? .62 + .38 * (.5 + .5 * Math.sin(t / 1100)) : 1)); }
     e = $("cap");
     if (e) {
-      e.style.opacity = String(s.capA); e.style.bottom = s.courtA! > 0 ? (port ? "8%" : "3.5%") : (port ? "2.5%" : "9%");
+      e.style.opacity = String(s.capA);
+      if (s.courtA! > 0 && short) { const fr = W * .36 + 380 * Math.min(W * .52 / 760, H * .94 / 900); e.style.left = (fr + (W - fr) / 2) + "px"; e.style.width = Math.max(120, W - fr - 28) + "px"; e.style.top = "34%"; e.style.bottom = "auto"; }
+      else { e.style.left = "50%"; e.style.width = "min(88cqw,720px)"; e.style.top = "auto"; e.style.bottom = "calc(env(safe-area-inset-bottom,0px) + " + (s.courtA! > 0 ? (port ? 8 : 3.5) : capB * 100) + "%)"; }
       const [c1, c2] = e.children as unknown as HTMLElement[];
       if (c1 && c2) { c1.style.fontSize = fz ? (port ? "5.4cqw" : "2.5cqw") : "clamp(21px,2.5cqw,34px)"; c2.style.fontSize = fz ? (port ? "3.6cqw" : "1.4cqw") : "clamp(14px,1.3cqw,18px)"; }
     }
@@ -353,7 +373,7 @@ export default class Opening extends Component<Props, State> {
     e = $("bram"); if (e) { const bt = t - this.bramAt; e.style.transform = "rotate(" + (bt < 900 && live ? -3 * Math.exp(-bt / 300) : 0) + "deg) scaleY(" + (live ? 1 + .006 * (1 - Math.cos(st / 1000 * Math.PI * 2 / 4.1)) / 2 : 1) + ")"; }
 
     // signpost: bell, planks, scroll
-    e = $("post"); if (e) e.style.transform = "translateX(" + dx + "px)";
+    e = $("post"); if (e) { e.style.transformOrigin = "890px 858px"; e.style.transform = "translateX(" + dx + "px) scale(" + k + ")"; }
     const bt = t - this.bellAt; let ang = this.bellFix ?? 0;
     if (live) { if (bt < 5000) ang = this.bellAmp * 16 * Math.exp(-bt / 900) * Math.sin(bt / 130); if (this.mode === "title" && !this.soundOn && bt > 5000) { const n = t % 7000; if (n < 1400) ang += 3 * Math.exp(-n / 420) * Math.sin(n / 110); } }
     e = $("bell"); if (e) e.style.transform = "rotate(" + ang + "deg)";
@@ -363,15 +383,22 @@ export default class Opening extends Component<Props, State> {
       const el = r.querySelector<HTMLElement>(`[data-plank="${id}"]`); if (!el) return;
       const p = this.mp[id]!, seld = inMenu && this.sel === id, dt2 = t - (this.dip[id] ?? -1e9), dip = dt2 < 900 && live ? 3.2 * Math.exp(-dt2 / 260) * Math.cos(dt2 / 90) : 0, sway = live ? Math.sin(st / 1000 * 1.3 + i * 1.7) * .7 : 0;
       el.style.transform = "rotate(" + ((1 - p) * -22 + p * ([-1.6, 1.2, -.8, 1.5, -1.1][i % 5]! + sway) + (seld ? 1.6 : 0) + dip) + "deg) scaleX(" + Math.max(.001, p) + ")";
-      el.style.width = PW + "px"; el.style.fontSize = port ? "20px" : "23px"; el.style.paddingRight = port ? "8px" : "12px"; el.style.opacity = String(Math.min(1, p * 1.6)); el.style.pointerEvents = p > .9 && inMenu && !this.frozen ? "auto" : "none";
+      el.style.width = PW + "px"; el.style.fontSize = tight ? Math.max(17, Math.min(21, PW / 10.6)) + "px" : "23px"; el.style.paddingRight = port ? "8px" : "12px"; el.style.opacity = String(Math.min(1, p * 1.6)); el.style.pointerEvents = p > .9 && inMenu && !this.frozen ? "auto" : "none";
       el.style.background = seld ? "#6a4d31" : "#5d432c"; el.style.borderColor = seld ? "#ffe1a1" : "#d6b374"; el.style.color = seld ? "#fff5d8" : "#fff0ce"; el.style.zIndex = seld ? "2" : "1";
     });
-    e = $("scroll"); if (e) { e.style.width = port ? "236px" : "250px"; e.style.transform = (port ? "translateX(-16px) " : "") + "scaleY(" + Math.max(.001, s.scrollP!) + ")"; e.style.opacity = String(Math.min(1, s.scrollP! * 2)); e.style.pointerEvents = s.scrollP! > .9 ? "auto" : "none"; }
+    e = $("scroll");
+    if (e) {
+      e.style.width = port ? Math.max(220, PW + 16) + "px" : BW + "px";
+      // Keep the scroll's buttons at least 44px on screen, and lift it above the bottom edge.
+      if (s.scrollP! > 0 && !fz) { const hh = Math.max(44, 44 / (S * k)), ww = Math.min(hh, (e.offsetWidth - 38) / 5); for (const bn of e.querySelectorAll("button")) { if (bn.dataset.bus) { bn.style.width = ww + "px"; bn.style.height = hh + "px"; } else bn.style.minHeight = hh + "px"; } }
+      const ob = Math.max(0, gy(520) + e.offsetHeight * k - ((H - ty) / S - 10)) / k;
+      e.style.transform = "translate(" + (port ? -16 : 0) + "px," + (-ob) + "px) scaleY(" + Math.max(.001, s.scrollP!) + ")"; e.style.opacity = String(Math.min(1, s.scrollP! * 2)); e.style.pointerEvents = s.scrollP! > .9 ? "auto" : "none"; }
 
     // wind-moth
-    let tg = { x: 852 + dx, y: 444 };
-    if (inMenu && this.sel && !this.state.scroll) tg = { x: 900 + dx + (port ? 188 : 236), y: 520 + ids.indexOf(this.sel) * 63 + 40 };
-    else if (this.mothTo === "board" && this.mode !== "menu") tg = { x: 900 + dx + (port ? 186 : 226), y: 602 };
+    let tg = { x: gx(852), y: gy(444) };
+    if (inMenu && this.sel && !this.state.scroll) tg = { x: gx(900 + PW - (tight ? 32 : 0)), y: gy(520 + ids.indexOf(this.sel) * 63 + 40) };
+    else if (this.mothTo === "board" && this.mode !== "menu") tg = { x: gx(900 + BW - (BW < 250 ? 34 : 24)), y: gy(602) };
+    tg.x = Math.max(-tx / S + 38, Math.min((W - tx) / S - 38, tg.x)); tg.y = Math.max(-ty / S + 48, tg.y);
     const mo = this.moth, ddx = tg.x - mo.x, ddy = tg.y - mo.y;
     if (live) { const kk = 1 - Math.exp(-this.dt * .0055); mo.x += ddx * kk; mo.y += ddy * kk; } else { mo.x = tg.x; mo.y = tg.y; }
     const dist = Math.hypot(tg.x - mo.x, tg.y - mo.y), fly = Math.min(1, dist / 70);
@@ -381,8 +408,9 @@ export default class Opening extends Component<Props, State> {
     // court
     const ct = $("court"); if (ct) { ct.style.display = s.courtA! > 0 ? "block" : "none"; ct.style.opacity = String(s.courtA); }
     if (s.courtA! > 0) {
-      const v = this.cv, fs = Math.min((port ? W * .9 : W * .52) / 760, H * .76 / 900);
-      e = $("field"); if (e) e.style.transform = "translate(" + ((port ? W * .5 : W * .47) - 380 * fs) + "px," + Math.max(0, (H * .8 - 900 * fs) / 2) + "px) scale(" + fs + ")";
+      const v = this.cv, fs = Math.min((port ? W * .9 : W * .52) / 760, H * (short ? .94 : .76) / 900), lf = (fz ? 14 : Math.max(14, 11 / fs)) + "px";
+      e = $("field"); if (e) e.style.transform = "translate(" + ((port ? W * .5 : short ? W * .36 : W * .47) - 380 * fs) + "px," + Math.max(0, (H * (short ? 1 : .8) - 900 * fs) / 2) + "px) scale(" + fs + ")";
+      e = $("docklabel"); if (e) e.style.fontSize = lf;
       let f: number = MOCHI_POSES[v.pose].frame;
       if (v.walk && v.wf && v.wt) { const d = Math.hypot(v.wt.x - v.wf.x, v.wt.y - v.wf.y) || 1, pr = Math.min(1, Math.hypot(v.mx - v.wf.x, v.my - v.wf.y) / d); f = 4 + Math.floor(pr * 4 * v.walk) % 4; }
       e = $("cmochi"); if (e) { this.frame(e, f); e.style.transform = "translate(" + (v.mx - 56) + "px," + (v.my - 98) + "px) scaleX(" + (v.flip ? -1 : 1) + ") scaleY(" + v.sq + ")"; }
@@ -392,7 +420,7 @@ export default class Opening extends Component<Props, State> {
       e = $("keeper"); if (e) { e.style.transform = "rotate(" + v.krot + "deg) scale(" + (2 - v.ks) + "," + v.ks + ")"; e.style.filter = v.laneA > .5 ? "sepia(.18) brightness(.95)" : "none"; }
       e = $("lane"); if (e) { e.style.opacity = String(v.laneA); e.style.transform = "translateX(" + (v.laneX - 77) + "px)"; }
       e = $("mark"); if (e) { e.style.opacity = String(Math.min(1, v.markA)); e.style.transform = "translateX(" + (v.laneX - 8) + "px) scale(" + Math.max(.01, v.markA) + ")"; }
-      e = $("lanelabel"); if (e) { e.style.opacity = String(v.laneA); e.style.transform = "translateX(" + v.laneX + "px) translateX(-50%)"; }
+      e = $("lanelabel"); if (e) { e.style.fontSize = lf; e.style.opacity = String(v.laneA); e.style.transform = "translateX(" + v.laneX + "px) translateX(-50%)"; }
       e = $("wave"); if (e) { e.style.opacity = String(v.wa); e.style.transform = "translate(" + (v.wx - 126.5) + "px," + (v.wy - 45) + "px)"; }
       e = $("sh0"); if (e) { e.style.opacity = String(v.sh0 >= 1 ? 0 : 1 - .65 * v.sh0); e.style.transform = "translateY(" + (v.sh0 * 15) + "px) scale(" + (1 + .25 * v.sh0) + "," + (1 - .45 * v.sh0) + ")"; }
       e = $("lens"); if (e) { e.style.opacity = String(Math.min(1, v.lens * 2)); e.style.transform = "scale(" + Math.max(.01, v.lens) + ")"; }
@@ -455,8 +483,8 @@ export default class Opening extends Component<Props, State> {
                   </>}
                   {st.scroll === "options" && <>
                     <button className="fo-row" onClick={this.onSoundRow} aria-pressed={st.sound} style={sx("min-height:44px;border:1px solid #ae9062;border-radius:9px;padding:9px 14px;background:#eddbad;color:#2d4637;box-shadow:inset 0 2px 0 #fff0cf,inset 0 -2px 0 #b9945a40,0 3px 8px #33271120;font:750 15px/1.2 'Figtree Variable',sans-serif;cursor:pointer")}>{st.sound ? "Sound on" : "Sound off"}</button>
-                    <div style={sx("display:flex;align-items:center;justify-content:space-between")}><span style={{ fontWeight: 800 }}>Music</span><div style={{ display: "flex" }}>{pegs("music")}</div></div>
-                    <div style={sx("display:flex;align-items:center;justify-content:space-between")}><span style={{ fontWeight: 800 }}>Effects</span><div style={{ display: "flex" }}>{pegs("effects")}</div></div>
+                    <div style={sx("display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between")}><span style={{ fontWeight: 800 }}>Music</span><div style={{ display: "flex" }}>{pegs("music")}</div></div>
+                    <div style={sx("display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between")}><span style={{ fontWeight: 800 }}>Effects</span><div style={{ display: "flex" }}>{pegs("effects")}</div></div>
                   </>}
                   {st.scroll === "credits" && <>
                     <div><div style={{ fontWeight: 800 }}>Type</div><div>Fraunces · Figtree</div></div>
@@ -484,7 +512,7 @@ export default class Opening extends Component<Props, State> {
               <img data-el="lens" src={ART + "lens.webp"} alt="" style={sx("position:absolute;left:103px;top:201px;width:48px;height:48px;opacity:0")} />
               <img data-el="sh0" src={ART + "shell.webp"} alt="" style={sx("position:absolute;left:56px;top:154px;width:141px;height:141px")} />
               <img src={ART + "shell.webp"} alt="" style={sx("position:absolute;left:563px;top:154px;width:141px;height:141px")} />
-              <div style={sx("position:absolute;left:380px;top:846px;transform:translateX(-50%);padding:4px 7px;background:#314d42;color:#fff5d8;font:700 14px/1.2 'Figtree Variable',sans-serif")}>DOCK</div>
+              <div data-el="docklabel" style={sx("position:absolute;left:380px;top:846px;transform:translateX(-50%);padding:4px 7px;background:#314d42;color:#fff5d8;font:700 14px/1.2 'Figtree Variable',sans-serif")}>DOCK</div>
               <div data-el="ghost" style={{ ...sx("position:absolute;left:0;top:0;width:112px;height:112px;opacity:0"), background: `url('${ART}mochi-poses.webp') 0% 0%/400% 400% no-repeat` }} />
               <div data-el="cshadow" style={sx("position:absolute;left:0;top:0;width:62px;height:11px;border-radius:50%;background:#34271940")} />
               <div data-el="cmochi" style={{ ...sx("position:absolute;left:0;top:0;width:112px;height:112px;transform-origin:50% 87.5%"), background: `url('${ART}mochi-poses.webp') 0% 100%/400% 400% no-repeat` }} />
@@ -510,7 +538,7 @@ export default class Opening extends Component<Props, State> {
             <div style={sx("font:620 clamp(21px,2.5cqw,34px)/1.12 'Fraunces Variable',serif;letter-spacing:-.025em;text-wrap:balance")}>{st.cap1}</div>
             <div style={sx("margin-top:.45em;font:560 clamp(14px,1.3cqw,18px)/1.35 'Figtree Variable',sans-serif;text-wrap:pretty")}>{st.cap2}</div>
           </div>
-          <div data-el="prompt" style={sx("position:absolute;left:50%;bottom:3.5%;transform:translateX(-50%);font:700 clamp(12px,1.25cqw,18px)/1 'Figtree Variable',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#fff1d1;text-shadow:0 1px 0 #5d4228,0 2px 12px #2a1d10,0 0 18px #2a1d10;opacity:0;white-space:nowrap;pointer-events:none")}>{st.prompt}</div>
+          <div data-el="prompt" style={sx("position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 3.5%);transform:translateX(-50%);font:700 clamp(12px,1.25cqw,18px)/1 'Figtree Variable',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#fff1d1;text-shadow:0 1px 0 #5d4228,0 2px 12px #2a1d10,0 0 18px #2a1d10;opacity:0;white-space:nowrap;pointer-events:none")}>{st.prompt}</div>
         </div>
       </div>
     );
