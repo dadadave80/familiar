@@ -62,15 +62,16 @@ function Icon({kind}:{kind:"menu"|"close"|"bag"|"sound"|"silent"|"north"|"south"
   return <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={paths[kind]}/></svg>;
 }
 
-export interface ExpeditionGameProps {session?:HarborSession;accountPanel?:ReactNode}
-export default function ExpeditionGame({session,accountPanel}:ExpeditionGameProps={}){
+/** `audio`, `initialSound` and `initialMix` carry the title screen's sound choice into play. */
+export interface ExpeditionGameProps {session?:HarborSession;accountPanel?:ReactNode;audio?:HarborAudio;initialSound?:boolean;initialMix?:readonly [number,number]}
+export default function ExpeditionGame({session,accountPanel,audio:titleAudio,initialSound=false,initialMix=[0.8,1]}:ExpeditionGameProps={}){
   const [initial]=useState(readLocal),[save,setSave]=useState(initial.save),[surface,setSurface]=useState<HomePlace|"menu"|"guide"|"lantern"|"inspect"|"crossings"|"chart"|null>(null);
   const [problem,setProblem]=useState(initial.problem),[corrupt,setCorrupt]=useState(!!initial.problem),[notice,setNotice]=useState(""),[transition,setTransition]=useState<CourtTransition|null>(null),[presentationId,setPresentationId]=useState(0),[busy,setBusy]=useState(false),[finishing,setFinishing]=useState(false),[focused,setFocused]=useState<Command|null>(null);
   const [lease,setLease]=useState<"waiting"|"held"|"blocked"|"unavailable">("waiting"),[leaseAttempt,setLeaseAttempt]=useState(0);
-  const [tool,setTool]=useState<Tool>("rope"),[area,setArea]=useState<Area>(()=>initial.save.home.lit&&!initial.save.home.banked.includes("vane")?"wind":"beacon"),[reduced,setReduced]=useState(()=>matchMedia("(prefers-reduced-motion: reduce)").matches),[hidden,setHidden]=useState(document.hidden),[unfocused,setUnfocused]=useState(false),[fault,setFault]=useState(""),[sceneKey,setSceneKey]=useState(0),[sound,setSound]=useState(false),[motif,setMotif]=useState<"crest"|"moth">("crest"),[recipient,setRecipient]=useState(""),[lastBeat,setLastBeat]=useState("");
-  const saveRef=useRef(save),keyRef=useRef(EXPEDITION_SAVE_KEY),busyRef=useRef(false),buffer=useRef<Command|null>(null),presentation=useRef(0),sessionRef=useRef(session),audio=useRef<HarborAudio|null>(null),panelRef=useRef<HTMLDivElement>(null),trigger=useRef<HTMLElement|null>(null),corruptRef=useRef(corrupt),finishBusy=useRef(false),finishEpoch=useRef(0),alive=useRef(true);
+  const [tool,setTool]=useState<Tool>("rope"),[area,setArea]=useState<Area>(()=>initial.save.home.lit&&!initial.save.home.banked.includes("vane")?"wind":"beacon"),[reduced,setReduced]=useState(()=>matchMedia("(prefers-reduced-motion: reduce)").matches),[hidden,setHidden]=useState(document.hidden),[unfocused,setUnfocused]=useState(false),[fault,setFault]=useState(""),[sceneKey,setSceneKey]=useState(0),[sound,setSound]=useState(initialSound),[motif,setMotif]=useState<"crest"|"moth">("crest"),[recipient,setRecipient]=useState(""),[lastBeat,setLastBeat]=useState("");
+  const saveRef=useRef(save),keyRef=useRef(EXPEDITION_SAVE_KEY),busyRef=useRef(false),buffer=useRef<Command|null>(null),presentation=useRef(0),sessionRef=useRef(session),audio=useRef<HarborAudio|null>(titleAudio??null),panelRef=useRef<HTMLDivElement>(null),trigger=useRef<HTMLElement|null>(null),corruptRef=useRef(corrupt),finishBusy=useRef(false),finishEpoch=useRef(0),alive=useRef(true);
   const [resting,setResting]=useState(false),[greeting,setGreeting]=useState(0);
-  const [musicLevel,setMusicLevel]=useState(0.8),[effectsLevel,setEffectsLevel]=useState(1);
+  const [musicLevel,setMusicLevel]=useState(initialMix[0]),[effectsLevel,setEffectsLevel]=useState(initialMix[1]);
   const [passage,setPassage]=useState(emptyPassageHome);
   const [passageScope,setPassageScope]=useState("");
   const [passageError,setPassageError]=useState("");

@@ -23,7 +23,7 @@ try {
       await page.addInitScript(key=>{
         if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify({version:2,active:null,last:null,home:{banked:["lens","vane"],lit:true,signaled:true,lantern:null}}));
       },key);
-      await page.goto(new URL("/outing/",origin).href);
+      await page.goto(new URL("/outing/?play",origin).href);
       const original=await page.evaluate(key=>localStorage.getItem(key),key);
       await page.getByRole("button",{name:"Harbor chart",exact:true}).click();
       await expect(page.getByRole("heading",{name:"Wind Gate",exact:true})).toBeVisible();

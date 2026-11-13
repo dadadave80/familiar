@@ -77,6 +77,17 @@ const passageSounds = {
     {kind:"tone",frequency:1209,gain:.024,duration:.17,attack:.003},
   ],
 } satisfies Record<string, SoundLayer[]>;
+// Title-screen moments reuse the court and passage recipes.
+const titleSounds = {
+  bell: passageSounds.bell,
+  step: [{kind:"noise",frequency:720,gain:.038,duration:.085,filter:"bandpass"},{kind:"noise",frequency:805,gain:.038,duration:.085,delay:.13,filter:"bandpass"}],
+  pick: [{kind:"tone",frequency:880,gain:.035,duration:.36},{kind:"tone",frequency:1174.66,gain:.025,duration:.3,delay:.1}],
+  mark: [{kind:"tone",frequency:110,to:90,gain:.025,duration:.2,waveform:"sine"}],
+  wave: [{kind:"noise",frequency:1000,gain:.085,duration:.65,filter:"lowpass"},{kind:"noise",frequency:2300,gain:.02,duration:.45,delay:.1,filter:"highpass"}],
+  bridge: [{kind:"noise",frequency:320,gain:.025,duration:.19,filter:"bandpass"},{kind:"tone",frequency:155,to:120,gain:.012,duration:.12,waveform:"triangle"}],
+  open: [{kind:"tone",frequency:659.25,gain:.035,duration:.3},{kind:"tone",frequency:880,gain:.025,duration:.27,delay:.07}],
+} satisfies Record<string, SoundLayer[]>;
+export type TitleSound = keyof typeof titleSounds;
 
 // Wind Gate's rising reed call finds its lower answering phrase at the repaired post.
 function score(cue:MusicCue):SoundLayer[] {
@@ -173,6 +184,9 @@ export class HarborAudio {
   }
   playPassage(moment:keyof typeof passageSounds):void {
     this.schedule("effects",passageSounds[moment]);
+  }
+  playTitle(moment:TitleSound):void {
+    this.schedule("effects",titleSounds[moment]);
   }
   playMusic(cue:MusicCue):void {
     this.stopSources("music",true);

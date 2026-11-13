@@ -81,7 +81,7 @@ try{
     const context=await browser.newContext({viewport:{width,height},reducedMotion:"reduce"}),page=await context.newPage(),errors:string[]=[];
     page.on("pageerror",error=>errors.push(error.message));
     await page.route("**/api/**",route=>route.abort());
-    await page.goto(`${origin}/outing/`);await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
+    await page.goto(`${origin}/outing/?play`);await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
     await record(page,`${width}-harbor`);
     if(width===390) {
       await page.getByRole("button",{name:"Enable game audio"}).click();
