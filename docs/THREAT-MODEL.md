@@ -49,7 +49,7 @@ Historical Pet/building/market operations still have their original serializatio
 
 An unforeseen historical callback execution failure can still strand a pending operation, lock, trade or payment. There is no general timeout unlock or operator rescue key for immutable Pets. Keeping those limits explicit is essential; the narrower H1 reconciliation does not solve every historical operation.
 
-The dynamic NPC quote worker and optional AI reasoning have been retired from current source. Existing NPC account/key variables required by isolated contract deployment are not permission to run a quote worker. The local Bun relayer's older protocol support is distinct from the current exact-path H1 HTTP entry. CORS is a browser boundary, not bot protection. Process caches/quotas reset on restart and need durable accounting before multi-instance operation can be treated as a global limit.
+The dynamic NPC quote worker and optional AI reasoning have been retired from current source. The local Season 2 contract prices Bram on chain from its own shelf state only; it has no quote worker, oracle or operator key, and is not deployed. Existing NPC account/key variables required by isolated contract deployment are not permission to run a quote worker. The local Bun relayer's older protocol support is distinct from the current exact-path H1 HTTP entry. CORS is a browser boundary, not bot protection. Process caches/quotas reset on restart and need durable accounting before multi-instance operation can be treated as a global limit.
 
 ## Delivery and verification limits
 

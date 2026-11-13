@@ -42,7 +42,7 @@ flowchart TD
 
 Root owns the registry, authorization and accepted journey state. Items owns lantern mint/finish evidence and balances. Predecessor and current-holder checks remain authoritative; callbacks are private and preserve uncertain reservations. `contracts/common/src/court.rs` supplies spatial replay; `historical_returns.rs` preserves old content semantics. Fixture tests compare TypeScript/Rust transitions.
 
-Bakery, Market and configured pool IDs remain part of the existing Pet/Items initialization and historical contract system. Their sources are also used by actual-Wasm upgrade sandboxes. They are not extra current outing activities. The dynamic NPC quote worker has been retired; Bram's current commission runs in Root. The mock pool is local-test infrastructure only. Root/Items administrative keys still exist on testnet; the whole stack is not immutable, even though adopted Pets use pinned global code and no access keys.
+Bakery, Market and configured pool IDs remain part of the existing Pet/Items initialization and historical contract system. Their sources are also used by actual-Wasm upgrade sandboxes. They are not extra current outing activities. The dynamic NPC quote worker has been retired; Bram's current commission runs in Root. Season 2 (`contracts/season`, local source only, not deployed) revives Bram's dynamic prices as an on-chain integer formula with no off-chain quote worker; it keeps its own Shell, goods and pet-purse ledgers and reads pet ownership from Root's `nft_token`. The mock pool is local-test infrastructure only. Root/Items administrative keys still exist on testnet; the whole stack is not immutable, even though adopted Pets use pinned global code and no access keys.
 
 ## Build and release
 
