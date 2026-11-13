@@ -3,7 +3,28 @@
 //! Self-contained ledgers: goods (glass, reed) and Season 2 Shells per account, Bram's till
 //! and shelf, and one purse per pet. Shells are bound: there is no cash redemption and no
 //! NEAR deposit buys them. The only Shell source is Bram's daily till refill; the only goods
-//! source is the daily court mint (plus the opening shelf). See `README.md` in this crate.
+//! source is the daily court mint (plus the opening shelf).
+//!
+//! Rules (all integer, see `pricing`):
+//! - Day = floor(block_timestamp / 24 h). Even days replay `first_light_v1`, odd days
+//!   `first_light_v2`, as a fresh beacon outing (no banked items) with the player's tool.
+//!   The first accepted return of an account's day mints its docked cargo via `CARGO_GOODS`;
+//!   a return that maps to no goods is refused so it does not use up the day.
+//! - Score = haul value / best haul value, both at the shelf prices at docking. The best haul
+//!   per court is the larger of the two tools' entries in `BEST_HAUL`.
+//! - Trades are priced unit by unit (each unit moves stock and heat before the next).
+//!   `max_price` / `min_price` bound every unit; 20 units per good per account per day
+//!   count buys and sells together. Wish fills do not count against the funder's limit.
+//! - The opening shelf holds 40 of each good (stock = target, so prices start at base).
+//!   Buys may lift the till above 300; the daily refill only tops it up to 300.
+//! - Commission is exposed as a quoted number in `get_shelf`; nothing pays it yet.
+//!
+//! Storage: an account registers once with `storage_deposit` (at least `storage_minimum`,
+//! 1,250 bytes at the current byte cost: one account record plus one pet record). The
+//! account record is charged `ACCOUNT_BYTES`; each pet record (wish, queue slot, postcard)
+//! is charged `PET_BYTES` once, to whoever creates it. Charged bytes are never refunded,
+//! because records persist. Any deposit above the charged bytes can be taken back with
+//! `storage_withdraw` (1 yoctoNEAR); a failed transfer restores it.
 pub mod pricing;
 #[cfg(test)]
 mod tests;
@@ -941,8 +962,9 @@ impl Season {
         if new_record && account.storage_available() < bytes_cost(PET_BYTES) {
             return Err("ERR_STORAGE");
         }
-        let queued =
-            self.queues[g].len() - usize::from(existing.as_ref().is_some_and(|w| w.good == good));
+        let queued = self.queues[g].len().saturating_sub(usize::from(
+            existing.as_ref().is_some_and(|w| w.good == good),
+        ));
         if queued >= WISH_QUEUE_CAP {
             return Err("ERR_WISH_QUEUE_FULL");
         }
