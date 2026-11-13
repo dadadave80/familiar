@@ -1,0 +1,229 @@
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import "@fontsource-variable/fraunces";
+import "@fontsource-variable/figtree";
+import World from "./World";
+import { applyCommand, findPosition, legalCommands, packSlots, phaseOf, replayCourt, startCourt, waveExit } from "./engine";
+import { commandAt } from "./input";
+import { HarborAudio } from "./audio";
+import { COURTS } from "./rooms";
+import { CONTENT_VERSION, TURN_LIMIT, type Area, type BankedItem, type Command, type CourtEvent, type CourtState, type CourtTransition, type Position, type Tool } from "./types";
+import { ReturnRecords, validateRunContext } from "./return-record";
+import type { HarborSession, HomeCheckpoint, RunContext, WorldIntent } from "./harbor-port";
+import type { HarborView, HomePlace } from "./scene";
+import { LanternArt, OriginDiorama } from "../tidebound/Storycraft";
+import "./game.css";
+
+export const EXPEDITION_SAVE_KEY="familiar.expedition.local.v2";
+interface LocalHome extends HomeCheckpoint {lantern:null|{motif:"crest"|"moth";socket:"porch"|"dock"}}
+interface ActiveSave {context:RunContext;state:CourtState}
+interface LocalSave {version:2;home:LocalHome;active:ActiveSave|null;last:CourtState|null}
+const fresh=():LocalSave=>({version:2,home:{banked:[],lit:false,signaled:false,lantern:null},active:null,last:null});
+const names={lens:"Beacon Lens",moth:"wind-moth",vane:"Signal Vane"};
+const columns=["Left","Center","Right"] as const;
+const title=(word:string)=>word[0]!.toUpperCase()+word.slice(1);
+const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
+
+function readLocal(key=EXPEDITION_SAVE_KEY):{save:LocalSave;problem:string}{
+  try{
+    const raw=localStorage.getItem(key);if(!raw)return{save:fresh(),problem:""};
+    const value=JSON.parse(raw) as LocalSave,h=value.home;
+    if(value.version!==2||!h||!Array.isArray(h.banked)||new Set(h.banked).size!==h.banked.length||h.banked.some(i=>!["lens","moth","vane","chart","salvage"].includes(i))||typeof h.lit!=="boolean"||typeof h.signaled!=="boolean"||(h.lit&&!h.banked.includes("lens"))||(h.signaled&&(!h.lit||!h.banked.includes("vane"))))throw Error();
+    if(h.lantern&&(!h.banked.includes("lens")||!["crest","moth"].includes(h.lantern.motif)||!["porch","dock"].includes(h.lantern.socket)||(h.lantern.motif==="moth"&&!h.banked.includes("moth"))))throw Error();
+    const restore=(run:CourtState)=>{const replay=replayCourt({area:run.area,tool:run.tool,banked:run.banked},run.commands);if(!replay||!same(replay,run))throw Error();return replay;};
+    if(value.active){validateRunContext(value.active.context);value.active.state=restore(value.active.state);if(!same(value.active.context.banked,value.active.state.banked))throw Error();const context=value.active.context;if(key===EXPEDITION_SAVE_KEY?context.authority!=="local-preview":context.authority!=="near-testnet"||key!==`familiar.expedition.game.v2:testnet:${context.accountId}`)throw Error();}
+    if(value.last)value.last=restore(value.last);
+    return{save:value,problem:""};
+  }catch{return{save:fresh(),problem:"The saved expedition could not be read. Its original data has been preserved. Open the earlier game or restore the browser’s saved data before continuing."};}
+}
+function writeLocal(next:LocalSave,key:string){const text=JSON.stringify(next);localStorage.setItem(key,text);if(localStorage.getItem(key)!==text)throw Error("The move could not be saved. No new action was taken. Try again when this browser can save data.");}
+
+export function eventDescription(event:CourtEvent):string{
+  switch(event.kind){
+    case"move":return Math.abs(event.to.y-event.from.y)>1?"Mochi crosses the bridge.":"Mochi finds his footing.";
+    case"telegraph":return `${columns[event.column]} is marked. The next surge follows that source.`;
+    case"redirect":return `The lantern draws the source to ${columns[event.to]}.`;
+    case"rotate":return "The wind-wheel turns. The wave has a new route.";
+    case"wave":return `The wave travels from ${columns[event.source]} to ${columns[event.exit]}.`;
+    case"bridge":return `The ${columns[event.to]} bridge opens; ${columns[event.from]} closes.`;
+    case"open":return `${columns[event.column]} opens to the tide.`;
+    case"hit":return `The surge washes Mochi down to safe ground. Resolve ${event.resolve} of 3.`;
+    case"pickup":return `Mochi ${event.rope?"reels in":"carefully carries"} the ${names[event.item]}.`;
+    case"return":return event.cargo.length?`Home with ${event.cargo.map(i=>names[i]).join(" and ")}.`:"Mochi returns safely to the harbor.";
+    case"rescue":return event.reason==="resolve"?"The last splash used Mochi’s Resolve. Bram brings him home; the unbanked cargo stays behind.":"The tide closed after 24 decisions. Bram brings Mochi home; the unbanked cargo stays behind.";
+  }
+}
+function commandName(command:Command){
+  if(command.startsWith("step:"))return title(command.slice(5));
+  if(command.startsWith("take:"))return `Carry ${names[command.slice(5) as keyof typeof names]}`;
+  if(command.startsWith("reel:"))return `Reel ${names[command.slice(5) as keyof typeof names]}`;
+  if(command.startsWith("lure:"))return `Lure ${title(command.slice(5))}`;
+  return command==="turn:vane"?"Turn wind-wheel":command==="return"?"Return to harbor":"Wait for the tide";
+}
+function forecast(state:CourtState,selected:Command|null){
+  const transition=selected?applyCommand(state,selected):null;
+  if(transition){
+    const impact=transition.events.find(e=>e.kind==="hit"),wave=transition.events.find(e=>e.kind==="wave");
+    if(wave)return `${columns[wave.exit]} surges; bridge opens ${columns[wave.exit]}.${impact?" Mochi will be splashed.":" Mochi stays dry."}`;
+    const mark=transition.events.find(e=>e.kind==="telegraph");if(mark)return `After ${commandName(selected!).toLowerCase()}, ${columns[mark.column]} is marked.`;
+  }
+  const exit=waveExit(state);
+  return exit!==null?`${columns[state.locked!]} source → ${columns[exit]} wave. Bridge will open ${columns[exit]}.`:phaseOf(state)==="rising"?"Your next position becomes the marked source.":"The water is quiet. Choose a neighboring foothold.";
+}
+function Icon({kind}:{kind:"menu"|"close"|"bag"|"north"|"south"|"west"|"east"}){
+  const paths={menu:"M4 6h16M4 12h16M4 18h16",close:"m6 6 12 12M18 6 6 18",bag:"M6 8h12l2 12H4L6 8Zm3 0V5a3 3 0 0 1 6 0v3",north:"m5 15 7-7 7 7",south:"m5 9 7 7 7-7",west:"m15 5-7 7 7 7",east:"m9 5 7 7-7 7"};
+  return <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={paths[kind]}/></svg>;
+}
+
+export interface ExpeditionGameProps {session?:HarborSession;accountPanel?:ReactNode}
+export default function ExpeditionGame({session,accountPanel}:ExpeditionGameProps={}){
+  const [initial]=useState(readLocal),[save,setSave]=useState(initial.save),[surface,setSurface]=useState<HomePlace|"menu"|"guide"|"lantern"|null>(null);
+  const [problem,setProblem]=useState(initial.problem),[corrupt,setCorrupt]=useState(!!initial.problem),[notice,setNotice]=useState(""),[transition,setTransition]=useState<CourtTransition|null>(null),[presentationId,setPresentationId]=useState(0),[busy,setBusy]=useState(false),[finishing,setFinishing]=useState(false),[focused,setFocused]=useState<Command|null>(null);
+  const [lease,setLease]=useState<"waiting"|"held"|"blocked"|"unavailable">("waiting"),[leaseAttempt,setLeaseAttempt]=useState(0);
+  const [tool,setTool]=useState<Tool>("rope"),[area,setArea]=useState<Area>(()=>initial.save.home.lit&&!initial.save.home.banked.includes("vane")?"wind":"beacon"),[reduced,setReduced]=useState(()=>matchMedia("(prefers-reduced-motion: reduce)").matches),[hidden,setHidden]=useState(document.hidden),[unfocused,setUnfocused]=useState(false),[fault,setFault]=useState(""),[sceneKey,setSceneKey]=useState(0),[sound,setSound]=useState(false),[motif,setMotif]=useState<"crest"|"moth">("crest"),[recipient,setRecipient]=useState(""),[lastBeat,setLastBeat]=useState("");
+  const saveRef=useRef(save),keyRef=useRef(EXPEDITION_SAVE_KEY),busyRef=useRef(false),buffer=useRef<Command|null>(null),presentation=useRef(0),sessionRef=useRef(session),audio=useRef<HarborAudio|null>(null),panelRef=useRef<HTMLDivElement>(null),trigger=useRef<HTMLElement|null>(null),corruptRef=useRef(corrupt),finishBusy=useRef(false),finishEpoch=useRef(0),alive=useRef(true);
+  const leaseRef=useRef(lease);leaseRef.current=lease;
+  saveRef.current=save;sessionRef.current=session;
+  corruptRef.current=corrupt;
+  const run=save.active?.state??null,legal=run?legalCommands(run):[],savedMode=session?.state.mode==="saved"&&!!session.state.snapshot;
+  const visibleRun=busy&&transition?transition.before:run;
+  const canonical=savedMode?session!.state.snapshot!.journey:null;
+  const desiredKey=savedMode?`familiar.expedition.game.v2:testnet:${session!.state.snapshot!.binding.nearAccountId}`:EXPEDITION_SAVE_KEY;
+  const home:LocalHome=canonical?{banked:canonical.banked as BankedItem[],lit:canonical.lit,signaled:canonical.signaled,lantern:null}:save.home;
+  const placement=session?.state.workshop.placement,placedItem=savedMode&&placement?session!.state.workshop.items.find(item=>item.mint.token_id===placement.item_id):null;
+  const harbor:HarborView={lit:home.lit,signaled:home.signaled,moth:home.banked.includes("moth"),lantern:!!(savedMode?placedItem:home.lantern),socket:savedMode&&placedItem?placement!.socket:home.lantern?.socket??"porch",motif:savedMode?placedItem?.mint.motif??"crest":home.lantern?.motif??"crest",polished:savedMode&&placedItem?.finish==="harbor_polish",relic:home.banked.includes("lens")&&!home.lit?"lens":home.banked.includes("vane")&&!home.signaled?"vane":null};
+  const paused=!!surface||hidden||unfocused||!!fault||!!session?.state.review;
+  const pausedRef=useRef(paused);pausedRef.current=paused;
+  const snapshot=useMemo(()=>({court:run,home:harbor,reducedMotion:reduced,previewCommand:focused}),[run,harbor.lit,harbor.signaled,harbor.moth,harbor.lantern,harbor.socket,harbor.motif,harbor.polished,harbor.relic,reduced,focused]);
+  const previousLit=useRef(home.lit);useEffect(()=>{if(!previousLit.current&&home.lit)setArea("wind");previousLit.current=home.lit;},[home.lit]);
+  const previewReturns=useMemo(()=>{try{return new ReturnRecords(localStorage).read({authority:"local-preview",banked:save.home.banked,lit:save.home.lit,signaled:save.home.signaled});}catch{return[];}},[save.last,save.home.banked]);
+  const previewOrigin=previewReturns.find(record=>record.outcome==="returned"&&record.cargo.includes(home.lantern?.motif==="moth"?"moth":"lens"));
+
+  useEffect(()=>{const media=matchMedia("(prefers-reduced-motion: reduce)"),change=()=>setReduced(media.matches),visibility=()=>{setHidden(document.hidden);buffer.current=null;},blur=()=>{setUnfocused(true);buffer.current=null;},focus=()=>setUnfocused(false);media.addEventListener("change",change);document.addEventListener("visibilitychange",visibility);window.addEventListener("blur",blur);window.addEventListener("focus",focus);return()=>{media.removeEventListener("change",change);document.removeEventListener("visibilitychange",visibility);window.removeEventListener("blur",blur);window.removeEventListener("focus",focus);void audio.current?.close().catch(()=>{});};},[]);
+  useEffect(()=>{document.title=run?`${COURTS[run.area].title} · Familiar`:"Pocket Harbor · Familiar";},[run?.area]);
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;finishEpoch.current++;finishBusy.current=false;};},[]);
+  useEffect(()=>{
+    if(keyRef.current===desiredKey)return;
+    const branch=readLocal(desiredKey);keyRef.current=desiredKey;saveRef.current=branch.save;setSave(branch.save);setProblem(branch.problem);setCorrupt(!!branch.problem);corruptRef.current=!!branch.problem;
+    buffer.current=null;busyRef.current=false;setBusy(false);finishEpoch.current++;finishBusy.current=false;setFinishing(false);setTransition(null);presentation.current++;setPresentationId(presentation.current);setSceneKey(k=>k+1);setNotice("");setFocused(null);
+    sessionRef.current?.setActiveRun(branch.save.active?.context??null);
+  },[desiredKey]);
+  useEffect(()=>{session?.setActiveRun?.(save.active?.context??null);},[session,save.active?.context]);
+  useEffect(()=>{
+    let current=true,release:(()=>void)|undefined;setLease("waiting");leaseRef.current="waiting";
+    const frame=requestAnimationFrame(()=>{
+      if(!navigator.locks){setLease("unavailable");leaseRef.current="unavailable";return;}
+      void navigator.locks.request(`familiar-expedition-play:${desiredKey}`,{ifAvailable:true},async lock=>{
+        if(!current)return;if(!lock){setLease("blocked");leaseRef.current="blocked";return;}
+        const latest=readLocal(desiredKey);saveRef.current=latest.save;setSave(latest.save);setProblem(latest.problem);setCorrupt(!!latest.problem);corruptRef.current=!!latest.problem;setSceneKey(k=>k+1);sessionRef.current?.setActiveRun(latest.save.active?.context??null);
+        setLease("held");leaseRef.current="held";
+        await new Promise<void>(resolve=>{release=resolve;});
+      }).catch(()=>{if(current){setLease("unavailable");leaseRef.current="unavailable";}});
+    });
+    return()=>{current=false;cancelAnimationFrame(frame);release?.();};
+  },[desiredKey,leaseAttempt]);
+  useEffect(()=>{if(surface||session?.state.review){trigger.current=document.activeElement as HTMLElement;requestAnimationFrame(()=>panelRef.current?.focus({preventScroll:true}));}else trigger.current?.focus({preventScroll:true});},[surface,session?.state.review?.id]);
+  useEffect(()=>{if(!surface&&!session?.state.review)return;const trap=(event:KeyboardEvent)=>{if(event.key!=="Tab")return;const panel=panelRef.current;if(!panel)return;const targets=[...panel.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),[tabindex="0"]')].filter(n=>n.getClientRects().length);if(!targets.length){event.preventDefault();panel.focus();return;}const first=targets[0]!,last=targets.at(-1)!;if(event.shiftKey&&(document.activeElement===first||document.activeElement===panel)){event.preventDefault();last.focus();}else if(!event.shiftKey&&(document.activeElement===last||document.activeElement===panel)){event.preventDefault();first.focus();}};window.addEventListener("keydown",trap);return()=>window.removeEventListener("keydown",trap);},[surface,session?.state.review?.id]);
+
+  function persist(next:LocalSave){if(leaseRef.current!=="held"){setNotice("This expedition is open in another tab. Finish there, or close that tab and check again.");return false;}try{writeLocal(next,keyRef.current);saveRef.current=next;setSave(next);setProblem("");return true;}catch(error){setProblem(error instanceof Error?error.message:"This browser could not save the move. No new action was taken.");return false;}}
+  function begin(){
+    if(saveRef.current.active||corruptRef.current||leaseRef.current!=="held")return;
+    try{const context=sessionRef.current?.runContext(saveRef.current.home)??{authority:"local-preview" as const,banked:[...saveRef.current.home.banked],lit:saveRef.current.home.lit,signaled:saveRef.current.home.signaled};
+      if(area==="wind"&&!context.lit){setNotice("Restore the beacon before sailing to Wind Gate.");return;}
+      const state=startCourt({area,tool,banked:context.banked});if(!persist({...saveRef.current,active:{context,state},last:null})){sessionRef.current?.setActiveRun(null);return;}
+      sessionRef.current?.setActiveRun?.(context);setSurface(null);setNotice("Tap a glowing neighbor to move. Water advances only when you decide.");setTransition(null);buffer.current=null;
+    }catch(error){setProblem(error instanceof Error?error.message:"The outing could not start. Your saved harbor is unchanged.");}
+  }
+  async function complete(){
+    const current=saveRef.current,active=current.active;if(!active||active.state.outcome==="active"||leaseRef.current!=="held")return;
+    if(finishBusy.current)return;finishBusy.current=true;setFinishing(true);
+    const epoch=++finishEpoch.current,branch=keyRef.current,generation=presentation.current,owner=sessionRef.current;
+    try{
+      if(owner)await owner.captureReturn(active.state,active.context);else await new ReturnRecords(localStorage).capture(active.state,active.context);
+      if(!alive.current||epoch!==finishEpoch.current||branch!==keyRef.current||generation!==presentation.current||saveRef.current.active!==active||sessionRef.current!==owner)return;
+      const banked=active.context.authority==="local-preview"?[...new Set([...current.home.banked,...(active.state.outcome==="returned"?active.state.cargo:[])])]:current.home.banked;
+      const next={...current,home:{...current.home,banked},active:null,last:active.state};
+      if(!persist(next))return;sessionRef.current?.setActiveRun?.(null);setTransition(null);setNotice(active.state.outcome==="returned"?(active.state.cargo.length?`Home with ${active.state.cargo.map(i=>names[i]).join(" and ")}. Bring the satchel to Bram.`:"Mochi is home, safe and empty-pawed."):eventDescription({kind:"rescue",reason:active.state.resolve<=0?"resolve":"flood"}));
+    }catch(error){if(alive.current&&epoch===finishEpoch.current&&branch===keyRef.current)setProblem(error instanceof Error?error.message:"The returned outing could not be recorded. Keep it open and retry saving.");}
+    finally{if(alive.current&&epoch===finishEpoch.current){finishBusy.current=false;setFinishing(false);}}
+  }
+  const command=useCallback((input:Command)=>{
+    if(pausedRef.current||corruptRef.current||leaseRef.current!=="held")return;const current=saveRef.current,active=current.active;if(!active||active.state.outcome!=="active")return;
+    if(busyRef.current){if(!buffer.current){buffer.current=input;setNotice(`${commandName(input)} queued. Mochi will finish this moment first.`);}return;}
+    const accepted=applyCommand(active.state,input);if(!accepted){setNotice("That action is not available here. Choose a glowing neighbor or inspect the tide.");return;}
+    if(!persist({...current,active:{...active,state:accepted.after}}))return;
+    busyRef.current=true;setBusy(true);setFocused(null);setTransition(accepted);const id=++presentation.current;setPresentationId(id);
+    if(!accepted.events.length)setNotice("Mochi waits. The tide advances.");
+  },[]);
+  function settled(id:number){if(id!==presentation.current)return;busyRef.current=false;setBusy(false);setTransition(null);const queued=buffer.current;buffer.current=null;if(saveRef.current.active?.state.outcome!=="active"){complete();return;}if(queued&&!pausedRef.current)requestAnimationFrame(()=>command(queued));}
+  function beat(event:CourtEvent,index:number){setLastBeat(`${presentation.current}:${index}:${event.kind}`);setNotice(eventDescription(event));if(sound)audio.current?.play(event);}
+  useEffect(()=>{const keys=(event:KeyboardEvent)=>{
+    if(event.key==="Escape"){closePanel();return;}
+    if(event.repeat||event.isComposing||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    if(pausedRef.current)return;
+    const target=event.target instanceof Element?event.target:null;
+    if(target?.closest("input,textarea,select,[contenteditable]:not([contenteditable=false]),dialog,[role=dialog],[role=slider],[role=tablist]"))return;
+    if((event.key===" "||event.key==="Enter")&&target?.closest("button,a"))return;
+    const map:Record<string,Command>={ArrowUp:"step:north",ArrowDown:"step:south",ArrowLeft:"step:west",ArrowRight:"step:east",w:"step:north",s:"step:south",a:"step:west",d:"step:east"," ":"wait",r:"return"};
+    let selected:Command|undefined=map[event.key];if(event.key==="e"){const state=saveRef.current.active?.state;selected=state?legalCommands(state).find(c=>/^(take:|reel:|turn:)/.test(c)):undefined;}
+    if(selected){event.preventDefault();command(selected);}
+  };window.addEventListener("keydown",keys);return()=>window.removeEventListener("keydown",keys);},[command]);
+  function inspect(position:Position){const state=saveRef.current.active?.state;if(!state)return;setNotice(position.y===2?`${columns[position.x]} crossing: ${state.bridge===position.x?"bridge open. Approach from the platform beside it to cross.":"water. Route a surge here to open this bridge."}`:position.y===4?state.area==="wind"?"The cradle needs Left and Center charged, with the wind-wheel aligned to its starting mark.":position.x===0?"The Beacon Lens waits inside the left shell. A surge opens it.":position.x===2?"The wind-moth needs two satchel slots. A surge opens its shell.":"The upper walkway connects both discoveries.":"A stone foothold. Tap a glowing neighbor to walk there.");}
+  function target(position:Position){const state=saveRef.current.active?.state;if(!state)return;const input=commandAt(state,position);if(input)command(input);else inspect(position);}
+  function hover(position:Position|null){if(busyRef.current)return;const state=saveRef.current.active?.state;setFocused(position&&state?commandAt(state,position):null);}
+  function open(place:HomePlace|"menu"|"guide"|"lantern"){buffer.current=null;setSurface(place);}
+  function closePanel(){const controller=sessionRef.current;if(controller?.state.review){if(controller.state.busy)return;controller.cancelReview();}setSurface(null);}
+  function request(intent:WorldIntent){void sessionRef.current?.review(intent).catch(()=>{/* The controller keeps the actual failure and original operation visible. */});}
+  function restore(restoration:"beacon"|"signal"){
+    if(savedMode){request({kind:"restore",restoration});return;}
+    if(restoration==="beacon"&&home.banked.includes("lens")){if(persist({...saveRef.current,home:{...saveRef.current.home,lit:true}})){setNotice("Mochi lifts the lens into place. The beacon finds the bay again.");setSurface(null);}}
+    else if(restoration==="signal"&&home.lit&&home.banked.includes("vane")){if(persist({...saveRef.current,home:{...saveRef.current.home,signaled:true}})){setNotice("The Signal Vane turns toward the next stretch of coast.");setSurface(null);}}
+  }
+  const button=(input:Command,label=commandName(input))=><button key={input} data-command={input} disabled={!legal.includes(input)||!!problem} onFocus={()=>setFocused(input)} onBlur={()=>setFocused(null)} onMouseEnter={()=>setFocused(input)} onMouseLeave={()=>setFocused(null)} onClick={()=>{const state=saveRef.current.active?.state,item=/^(take:|reel:)/.test(input)?input.slice(5) as "lens"|"moth"|"vane":null,position=state&&item?findPosition(state,item):null;if(position)target(position);else command(input);}} aria-label={label}>{label}</button>;
+  const interactionLegal=busy?[]:legal;
+  const pickups=interactionLegal.filter(c=>/^(take:|reel:|turn:)/.test(c));
+  const activeReturn=save.active?.state.outcome!=="active"&&!!save.active;
+  const authority=savedMode?"NEAR testnet":"Local preview";
+  const stagedReturns=session?.state.returns.filter(r=>r.disposition==="staged"&&r.outcome==="returned"&&r.cargo.length>0)??[];
+  const recordReturns=stagedReturns.filter(record=>{
+    const c=record.context,snapshot=session?.state.snapshot;if(!savedMode||!snapshot||c.authority!=="near-testnet")return false;
+    const samePlayer=c.accountId===snapshot.binding.nearAccountId&&c.publicKey===snapshot.binding.signerPublicKey&&snapshot.pets.some(pet=>pet.token_id===c.companionId);
+    const knownOriginal=(snapshot.journey as typeof snapshot.journey&{claims?:{operation_id:string}[]}).claims?.some(claim=>claim.operation_id===record.operationId);
+    return samePlayer&&(knownOriginal||c.revision===snapshot.journey.revision&&c.checkpointHash===snapshot.checkpointHash&&same(c.banked,snapshot.journey.banked));
+  });
+  const earlierReturns=stagedReturns.filter(record=>!recordReturns.includes(record));
+  const waitingCraft=["reserved","recovery-required"].includes(canonical?.craft?.state??""),waitingPolish=["reserved","recovery-required"].includes(canonical?.polish?.state??"");
+  const objective=visibleRun?.area==="wind"?visibleRun.cargo.includes("vane")?"Vane secured · reach the center dock.":visibleRun.banked.includes("vane")?"Practice the channels · your vane stays home.":"Charge Left + Center; align the wheel; recover the vane.":visibleRun?.cargo.includes("lens")?"Lens secured · reach the center dock.":visibleRun?.banked.includes("lens")?visibleRun.banked.includes("moth")?"Practice the tides · discoveries stay home.":"Rescue the wind-moth from the Right oyster.":"Open the Left oyster; bring its lens home.";
+
+  const needLens=home.banked.includes("lens")&&!home.lit,needVane=home.lit&&home.banked.includes("vane")&&!home.signaled;
+  const canPreviewCrest=previewReturns.some(record=>record.outcome==="returned"&&record.cargo.includes("lens"));
+  const canPreviewMoth=previewReturns.some(record=>record.outcome==="returned"&&record.cargo.includes("moth"));
+  const needsLantern=savedMode?!!session?.state.workshop.creditAvailable:home.lit&&!home.lantern&&canPreviewCrest;
+  const nextPlace:HomePlace|null=recordReturns.length?"satchel":needLens||needVane?"beacon":needsLantern?"workbench":null;
+  const homeTitle=recordReturns.length?"A full satchel. A safe harbor.":needLens?"The lens is home.":needVane?"A way through the wind.":needsLantern?"A little light of your own.":home.signaled?"The harbor finds its bearings.":home.lit?"A light worth coming home to.":"A little help for the harbor.";
+  const homeIntent=recordReturns.length?"Bring the original returned satchel to Bram. Review what can be saved before unpacking.":needLens?"Mochi kept it safe. Carry the lens up to the beacon.":needVane?"The Signal Vane belongs on the harbor’s empty post.":needsLantern?"Your returned adventure can become one light for home.":home.lit?`Wind Gate has a different tide to understand.${home.banked.includes("moth")?"":" You can also return for the wind-moth."}`:"The beacon’s lens is across the tide. Mochi is ready to help.";
+  const primaryLabel=recordReturns.length?"Unpack the satchel":needLens?"Bring the lens to the beacon":needVane?"Fit the Signal Vane":needsLantern?"Make a little light":area==="wind"?"Sail to Wind Gate":"Set out with Mochi";
+  const beatParts=lastBeat.split(":"),currentBeat=busy&&transition&&Number(beatParts[0])===presentationId?transition.events[Number(beatParts[1])]:null;
+  const shownForecast=busy?currentBeat?`Resolving: ${eventDescription(currentBeat)}`:"Mochi is acting. The tide will follow.":run?forecast(run,focused):"";
+
+  return <main className="exp-game" data-testid="expedition-game" data-mode={run?"court":"harbor"} data-busy={busy} data-lease={lease} data-content={CONTENT_VERSION} data-beat={lastBeat}>
+    <World key={sceneKey} snapshot={snapshot} transition={transition} presentationId={presentationId} paused={paused} onCommand={command} onTarget={target} onInspect={inspect} onHover={hover} onHome={open} onSettled={settled} onBeat={beat} onFault={message=>{setFault(message);buffer.current=null;}}/>
+    <header className="exp-mast"><a className="exp-brand" href="/" aria-label="Familiar home">familiar.<small>{authority}</small></a><div className="exp-place">{run?COURTS[run.area].title:"Pocket Harbor"}</div><button className="exp-menu-button" onClick={()=>open("menu")} aria-label="Game menu"><Icon kind="menu"/></button></header>
+    {visibleRun&&<section className="exp-hud" aria-label="Expedition status"><strong>{title(phaseOf(visibleRun))} tide <span>{visibleRun.turn+1>TURN_LIMIT?TURN_LIMIT:visibleRun.turn+1}/{TURN_LIMIT}</span></strong><span>Resolve {visibleRun.resolve}/3</span><span>Pack {packSlots(visibleRun.cargo)}/3</span><span>{title(visibleRun.tool)} {visibleRun.uses}</span></section>}
+    {visibleRun&&<p id="exp-position" className="exp-sr-only">Mochi is at {columns[visibleRun.position.x]}, {visibleRun.position.y>=3?"upper":"lower"} bank, row {visibleRun.position.y+1} of 5. The {columns[visibleRun.bridge]} bridge is open. Carried: {visibleRun.cargo.length?visibleRun.cargo.map(i=>names[i]).join(", "):"nothing"}.</p>}
+    {visibleRun?.area==="wind"&&<aside className="exp-channel-map" aria-label="Wind channel routing">L→{columns[(visibleRun.orientation)%3]} · C→{columns[(1+visibleRun.orientation)%3]} · R→{columns[(2+visibleRun.orientation)%3]}<small>Cradle: {visibleRun.orientation===0?"wheel aligned":"align wheel at upper center"} · {visibleRun.opened.includes(0)?"Left charged":"Left unlit"} · {visibleRun.opened.includes(1)?"Center charged":"Center unlit"}</small></aside>}
+    {!run&&!surface&&<>
+      <nav className="exp-home-places" aria-label="Places in the harbor"><button className="exp-place-beacon" onClick={()=>open("beacon")}>Beacon<small>{home.lit?"Light restored":home.banked.includes("lens")?"Lens ready":"Missing lens"}</small></button><button className="exp-place-bram" onClick={()=>open("bram")}>Bram</button><button className="exp-place-workbench" onClick={()=>open("workbench")}>Workbench</button><button className="exp-place-satchel" onClick={()=>open("satchel")}><Icon kind="bag"/> Satchel{recordReturns.length?` · ${recordReturns.length}`:""}</button></nav>
+      <section className="exp-departure"><h1>{homeTitle}</h1><p>{homeIntent}</p><button className="exp-primary" data-action={nextPlace?"home-next":"depart"} disabled={!!problem||lease!=="held"} onClick={()=>nextPlace?open(nextPlace):begin()}>{primaryLabel}</button><button className="exp-text-button" onClick={()=>open("sail")}>{COURTS[area].title} · {title(tool)} · Change preparation</button></section>
+    </>}
+    {run&&!surface&&!fault&&!session?.state.review&&<section className="exp-command-tray" aria-label="Guide Mochi" aria-describedby="exp-position"><p className="exp-objective" data-testid="expedition-objective">{objective}</p><p className="exp-forecast" data-testid="expedition-forecast">{shownForecast}</p><div className="exp-current-controls" aria-label={busy?"Queue one next decision":"Choose a decision"}><div className="exp-directions" aria-label="Move to a neighboring platform">{(["north","west","east","south"] as const).map(direction=><button key={direction} className={`exp-${direction}`} data-command={`step:${direction}`} aria-label={`Move ${direction}`} disabled={!legal.includes(`step:${direction}`)||!!problem} onFocus={()=>setFocused(`step:${direction}`)} onBlur={()=>setFocused(null)} onMouseEnter={()=>setFocused(`step:${direction}`)} onMouseLeave={()=>setFocused(null)} onClick={()=>command(`step:${direction}`)}><Icon kind={direction}/></button>)}<button className="exp-wait" data-command="wait" aria-label="Wait for the tide" disabled={!legal.includes("wait")||!!problem} onFocus={()=>setFocused("wait")} onClick={()=>command("wait")}>Wait</button></div><div className="exp-context-actions">{pickups.map(input=>button(input))}{run.tool==="lantern"&&interactionLegal.some(c=>c.startsWith("lure:"))&&<button onClick={()=>open("lantern")}>Lure the wave</button>}{interactionLegal.includes("return")&&button("return")}{!pickups.length&&!interactionLegal.includes("return")&&!interactionLegal.some(c=>c.startsWith("lure:"))&&<p>{busy?"Mochi finishes this moment first. One next direction can wait.":run.cargo.length?`${run.cargo.map(i=>names[i]).join(" + ")} secured. Reach the center dock to return.`:"Route a surge to open a shell and move the bridge."}</p>}</div></div></section>}
+    <div className="exp-feedback" role="status" aria-live="polite" data-testid="expedition-feedback">{notice}</div>
+    {(problem||activeReturn&&!busy)&&<section className="exp-save-problem" role="alert"><p>{problem||(finishing?"Keeping the original return safe…":"Mochi’s return is ready to save.")}</p>{activeReturn&&<button disabled={finishing} onClick={()=>void complete()}>{finishing?"Recording return…":"Retry recording this return"}</button>}{!corrupt&&!activeReturn&&<button onClick={()=>persist(saveRef.current)}>Check device saving again</button>}{corrupt&&<a href="/outing/?classic=1">Open the earlier game</a>}</section>}
+    {(lease==="blocked"||lease==="unavailable")&&<section className="exp-lease" role="status"><p>{lease==="blocked"?"This expedition is open in another tab. Finish there, or close that tab before continuing here.":"This browser cannot safely coordinate saved expeditions. Web Locks support is required; no move has been taken."}</p>{lease==="blocked"&&<button onClick={()=>setLeaseAttempt(n=>n+1)}>Check this tab again</button>}</section>}
+    {(surface||session?.state.review)&&<div className="exp-panel-shade"><section ref={panelRef} className="exp-panel" role="dialog" aria-modal="true" aria-label={session?.state.review?.title??(surface==="account"?"Account and recovery":surface?title(surface):"Harbor")} tabIndex={-1}><button className="exp-close" aria-label="Close panel" disabled={!!session?.state.review&&session.state.busy} onClick={closePanel}><Icon kind="close"/></button>
+      {session?.state.review?<><h2>{session.state.review.title}</h2><p>{session.state.review.description}</p>{session.state.review.costs.length>0&&<ul>{session.state.review.costs.map(cost=><li key={cost}>{cost}</li>)}</ul>}<button className="exp-primary" disabled={session.state.busy} onClick={()=>void session.confirm(session.state.review!.id).catch(()=>{})}>{session.state.review.confirmLabel}</button><button disabled={session.state.busy} onClick={()=>{if(!session.state.busy)session.cancelReview();}}>Back</button></>:surface==="account"?<><h2>Keep your harbor</h2>{accountPanel??<p>Recoverable account controls are not connected to this local preview. This visit does not prove ownership or device recovery.</p>}</>:surface==="menu"?<><h2>A moment at the water’s edge.</h2><p>Play at your own pace. Only accepted decisions advance the tide.</p><button onClick={()=>open("guide")}>How to guide Mochi</button><button onClick={()=>open("account")}>Account & recovery</button><button aria-pressed={sound} onClick={()=>{if(!audio.current)audio.current=new HarborAudio();const enabled=!sound;void audio.current.setEnabled(enabled).then(()=>{if(alive.current)setSound(enabled);}).catch(()=>{if(alive.current){setSound(false);setNotice("Sound is unavailable. Mochi can keep going quietly.");}});}}>Sound {sound?"on":"off"}</button><a href="/outing/?classic=1">Earlier First Light game</a><button className="exp-primary" onClick={()=>setSurface(null)}>Back to Mochi</button></>:surface==="lantern"?<><h2>A light on the water.</h2><p>Choose a source. The wind-wheel, when present, determines its exit.</p>{(["left","center","right"] as const).map(lane=><button key={lane} disabled={!legal.includes(`lure:${lane}`)} onClick={()=>{setSurface(null);requestAnimationFrame(()=>command(`lure:${lane}`));}}>Lure {title(lane)}</button>)}</>:surface==="guide"?<><h2>Read the water.</h2><p>Tap a glowing neighboring platform, use the arrow keys or W A S D, or use the direction buttons. Crossing the open bridge is one decision.</p><p>Low: choose your footing. Rising: your resulting column becomes the source. Surge: act first, then the wave opens that column’s bridge and shell. Standing in the wave washes Mochi down one platform.</p><p>Rope retrieves an exposed lens or vane from two steps away. Lantern redirects a marked surge. A living moth needs two pack slots. Reach the center dock to return before 24 decisions.</p>{run?.area==="wind"&&<p>Current channels: Left → {columns[run.orientation]}, Center → {columns[(1+run.orientation)%3]}, Right → {columns[(2+run.orientation)%3]}. The cradle needs Left and Center charged and wheel alignment zero.</p>}<p>E uses a nearby object; Space waits; R returns at the dock. Right-click or hold a world target to inspect for free. Inspection and menus spend no turns.</p><button className="exp-primary" onClick={()=>setSurface(null)}>Back to Mochi</button></>:surface==="sail"?<><h2>What shall we bring?</h2><fieldset><legend>Outing</legend>{(["beacon","wind"] as const).map(choice=><label key={choice}><input type="radio" name="exp-area" value={choice} checked={area===choice} disabled={choice==="wind"&&!home.lit} onChange={()=>setArea(choice)}/><span>{COURTS[choice].title}{choice==="wind"&&!home.lit?" · restore the beacon first":""}</span></label>)}</fieldset><fieldset><legend>One tool</legend>{(["rope","lantern"] as const).map(choice=><label key={choice}><input type="radio" name="exp-tool" checked={tool===choice} onChange={()=>setTool(choice)}/><span>{title(choice)} · {choice==="rope"?"pull a find across two steps":"redirect two marked surges"}</span></label>)}</fieldset><button className="exp-primary" disabled={!!problem||lease!=="held"} onClick={begin}>Sail to {COURTS[area].title}</button></>:surface==="beacon"?<><h2>{home.lit?"The beacon knows the way.":"A light for everyone."}</h2><p>{home.lit?"The lens is safe in its lantern. Its light belongs to the whole harbor.":home.banked.includes("lens")?"The recovered lens fits the empty lantern. Mochi is ready to lift it into place.":"The missing lens waits in Beacon Court’s left shell. The Tidekeeper can open it."}</p>{!home.lit&&home.banked.includes("lens")&&<button className="exp-primary" onClick={()=>restore("beacon")}>Restore the beacon</button>}{home.lit&&!home.signaled&&home.banked.includes("vane")&&<button className="exp-primary" onClick={()=>restore("signal")}>Repair the signal post</button>}</>:surface==="satchel"?<><h2>What came home.</h2><p>{home.banked.length?home.banked.map(i=>i in names?names[i as keyof typeof names]:title(i)).join(" · "):"An empty satchel. There’s room for a small adventure."}</p>{recordReturns.map(record=><button key={record.id} disabled={session?.state.busy} onClick={()=>request({kind:"unpack",returnId:record.id})}>Unpack {COURTS[record.area].title} return</button>)}{earlierReturns.map(record=><details key={record.id}><summary>Earlier {COURTS[record.area].title} memory</summary><p>This return began at another saved checkpoint. Its original memory is preserved; it cannot be merged into the current harbor.</p><p className="exp-origin-metadata">{record.id}</p></details>)}{save.last&&<p>{save.last.outcome==="returned"?`Mochi came home after ${save.last.turn} decisions with ${save.last.resolve}/3 Resolve.`:"Bram brought Mochi home. Only the unbanked cargo was lost."}</p>}<p>{authority}. {savedMode?"Only accepted returns change the saved harbor.":"Device saves are not backed up or transferable. Signing in does not replace this preview."}</p><button onClick={()=>open("account")}>Keep this harbor on my devices</button></>:surface==="bram"?<><h2>“You’re back.”</h2><p>{home.banked.includes("moth")?"The little wings sound rather like a kettle beginning to sing. Bram makes room beside the hearth.":home.lit?"Bram puts the kettle on. A harbor looks different when everyone can find it.":"Bram looks across the bay. “A lighthouse shouldn’t have to guess where it’s pointing.”"}</p>{session?.state.workshop.commissionAvailable&&<button className="exp-primary" onClick={()=>request({kind:"commission"})}>Help Bram with the workshop salvage</button>}{recordReturns.length>0&&<button onClick={()=>open("satchel")}>Unpack the returned satchel</button>}{(waitingCraft||waitingPolish)&&<details><summary>Original job details</summary><p>Bram keeps the original job. An uncertain result never authorizes another lantern, payment or refund.</p>{session?.state.pending?<button onClick={()=>open("account")}>Open the original request</button>:<><button disabled={session?.state.busy} onClick={()=>request({kind:"check-item"})}>Ask about the original job</button><button disabled={session?.state.busy} onClick={()=>request({kind:"retry-original-item"})}>Retry the original job</button>{waitingPolish&&<button disabled={session?.state.busy} onClick={()=>request({kind:"resolve-original-polish"})}>Resolve the original polish</button>}</>}</details>}{!savedMode&&<p>The personal Shell commission belongs to an accepted saved return. This preview does not issue currency.</p>}</>:surface==="workbench"?<><h2>A little light of your own.</h2>{savedMode?<>{session?.state.workshop.creditAvailable?<><p>Choose an earned motif for one First Light lantern.</p>{session.state.workshop.motifs.map(m=><button className="exp-recipe-preview" key={m} onClick={()=>request({kind:"craft",motif:m})}><LanternArt motif={m}/><span>Make the {title(m)} lantern</span></button>)}</>:<p>{session?.state.workshop.items.length?"Your owned lantern keeps the maker’s actual accepted story.":"Bring an accepted Beacon Lens return home to earn the first craft."}</p>}{!!session?.state.workshop.items.length&&<details className="exp-gift-details"><summary>Give a lantern</summary><label>Recipient’s NEAR testnet account<input value={recipient} onChange={event=>setRecipient(event.target.value)} autoCapitalize="none" autoComplete="off" spellCheck={false}/></label><p>Gifting moves the owned item. The maker’s achievement stays with its maker. Storage, if needed, is a separate reviewed action.</p></details>}{session?.state.workshop.items.map(item=><div className="exp-owned-item" key={item.mint.token_id}><div className="exp-lantern-preview"><LanternArt motif={item.mint.motif} polished={item.finish==="harbor_polish"}/></div><p>{title(item.mint.motif)} lantern · {item.finish==="harbor_polish"?"Harbor polish":"Original finish"}</p><details className="exp-origin"><summary>Origin and maker</summary><OriginDiorama motif={item.mint.motif}/><p>Illustrated {item.mint.motif==="moth"?"wind-moth rescue":"Beacon Lens return"}, from the maker’s actual accepted event. This is not a recorded screenshot.</p><p className="exp-origin-metadata">Maker: {item.mint.maker}<br/>Accepted claim: {item.mint.origin_claim_id}<br/>Content: {item.mint.content_version}<br/>Rules: {item.mint.rules_version}</p></details><button onClick={()=>request({kind:"place",itemId:item.mint.token_id,socket:"porch"})}>Place on the porch</button><button onClick={()=>request({kind:"place",itemId:item.mint.token_id,socket:"dock"})}>Place at the dock</button>{!item.finish_used&&<button onClick={()=>request({kind:"polish",itemId:item.mint.token_id})}>Review the optional finish</button>}<button disabled={!recipient||session.state.busy} onClick={()=>request({kind:"gift",itemId:item.mint.token_id,recipient})}>Review a gift to this account</button></div>)}</>:home.lantern?<><div className="exp-lantern-preview"><LanternArt motif={home.lantern.motif}/></div><p>One {title(home.lantern.motif)} lantern. Local preview only; not backed up or transferable.</p><details className="exp-origin"><summary>Light’s origin</summary>{previewOrigin?<><OriginDiorama motif={home.lantern.motif}/><p>Mochi returned with the {home.lantern.motif==="moth"?"wind-moth":"Beacon Lens"}. {previewOrigin.commands.length} choices with the {title(previewOrigin.tool)}.</p><p>Static illustration of this device’s validated return, not a recorded screenshot or an accepted NEAR claim.</p><p className="exp-origin-metadata">Content: {previewOrigin.contentVersion} · memory {previewOrigin.id}</p></>:<p>The original return is unavailable. This device preview is not proof of an earned event.</p>}</details>{(["porch","dock"] as const).map(socket=><button key={socket} onClick={()=>{if(persist({...saveRef.current,home:{...saveRef.current.home,lantern:{...home.lantern!,socket}}})){setNotice(`The lantern lights the ${socket}.`);setSurface(null);}}}>Place at the {socket}</button>)}</>:canPreviewCrest?<><div className="exp-lantern-preview"><LanternArt motif={motif}/><span>{title(motif)} motif</span></div><p>The lens return earned a Crest. A rescued wind-moth earns its own motif.</p><fieldset><legend>Motif</legend>{(["crest","moth"] as const).map(m=><label key={m}><input type="radio" name="exp-motif" checked={motif===m} disabled={m==="moth"&&!canPreviewMoth} onChange={()=>setMotif(m)}/>{title(m)}</label>)}</fieldset><button className="exp-primary" onClick={()=>{if(persist({...saveRef.current,home:{...saveRef.current.home,lantern:{motif,socket:"porch"}}})){setNotice("A first light for the porch. Local preview only.");setSurface(null);}}}>Preview one lantern</button></>:<p>Bring the Beacon Lens home first. A lantern should remember something you actually did.</p>}</>:null}
+      {session?.state.message&&<p role="status">{session.state.message}</p>}
+    </section></div>}
+    {fault&&<section className="exp-fault" role="alert"><h2>The world needs a moment.</h2><p>{fault}</p><button onClick={()=>{busyRef.current=false;setBusy(false);buffer.current=null;setTransition(null);setFault("");setSceneKey(k=>k+1);if(saveRef.current.active?.state.outcome!=="active")complete();}}>Reload the scene</button></section>}
+    {(hidden||unfocused)&&!surface&&!fault&&<div className="exp-paused" role="status">Mochi is waiting. Return to the game to continue.</div>}
+  </main>;
+}

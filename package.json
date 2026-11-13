@@ -20,6 +20,8 @@
     "test:browser": "bun scripts/test-browser.ts",
     "test:motion-browser": "bun scripts/test-motion-browser.ts",
     "test:outing-browser": "bun scripts/test-outing-browser.ts",
+    "test:expedition-browser": "bun scripts/test-expedition-browser.ts",
+    "test:expedition-harbor-browser": "bun scripts/test-expedition-harbor-browser.ts",
     "test:auth-browser": "bun run build && bun scripts/test-auth-browser.ts",
     "build:contracts": "bash scripts/build-contracts.sh",
     "setup:testnet": "bash scripts/setup-testnet.sh",

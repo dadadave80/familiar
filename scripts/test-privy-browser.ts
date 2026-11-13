@@ -12,7 +12,7 @@ try {
   page.on("pageerror",error=>errors.push(error.message));
   const providers:string[]=[];
   page.on("request",request=>{if(/privy\.io|PrivyProvider/.test(request.url()))providers.push(request.url());});
-  await page.goto("http://localhost:3000/outing/");
+  await page.goto("http://localhost:3000/outing/?classic=1");
   await page.getByRole("tab",{name:"Account",exact:true}).click();
   await expect(page.getByRole("heading",{name:"Keep your harbor on all your devices",exact:true})).toBeVisible();
   await expect(page.getByRole("button",{name:"Continue with email",exact:true})).toHaveCount(0);

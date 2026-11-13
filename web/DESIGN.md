@@ -6,7 +6,11 @@ The harbor and expedition artwork form the full browser viewport. Navigation and
 
 The desktop playfield has no exterior page frame, permanent cream sidebar or letterbox. Keep the center clear and expose the current decision first. Preparation, memory, discoveries, Workshop, Account and longer explanations use bounded menu states. The whole game page stays fixed; contained detail/account panels may scroll where useful, with reachable Back/Close controls.
 
-Portrait keeps all three registered lanes visible in a width-aligned playfield while reused coastal artwork continues behind the HUD. Resizing changes presentation only. DOM buttons and labels preserve keyboard access, 44px targets, visible focus, contrast and reduced-motion outcomes. Browser viewport filling does not require forcing OS fullscreen.
+Portrait keeps all three columns and both banks visible. Organic sandstone platforms and a single moving wooden bridge sit directly in the coastal world. Mochi walks to adjacent platforms, crosses an open bridge in one decision, reaches for discoveries, and carries them back to the dock. The Tidekeeper, source markers and ordered wave/bridge animation explain cause and effect. Hover and keyboard focus preview the exact accepted outcome; touch controls retain the same labels and risk symbols.
+
+Resizing changes presentation only. DOM buttons and labels preserve keyboard access, 44px targets, visible focus, contrast and reduced-motion outcomes. Browser viewport filling does not require forcing OS fullscreen. The engine saves an accepted decision before animation; one next direction may queue while Mochi completes it. Hidden tabs clear that queue. A single browser tab owns the active preview branch, preventing competing tabs from replacing moves.
+
+At home, Beacon, Bram, Workbench and Satchel are places in the scene. The primary action follows the returned cargo, then restoration, then an earned light, then Wind Gate. Account lives in the menu. The origin diorama distinguishes a validated device memory from an actual maker's accepted NEAR event. The earlier three-lane First Light remains available through `/outing/?classic=1`; old challenge invitations keep their original rules and saves.
 
 Local previews, confirmed NEAR testnet ownership and uncertain operations retain explicit truthful labels. An immersive visual treatment cannot replace recovery, canonical state or receipt verification. Device and human playtest evidence belongs in `../PROGRESS.md` and `../JUDGES.md`.
 

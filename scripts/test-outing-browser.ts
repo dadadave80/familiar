@@ -20,11 +20,15 @@ const action = (page: Page, value: string) => page.locator(`[data-action="${valu
 const scene = (page: Page) => page.getByTestId("outing-scene");
 
 async function openGame(page: Page, origin: string, path: string) {
-  const response = await page.goto(origin + path);
+  const target = new URL(path, origin);
+  if (path !== "/") target.searchParams.set("classic", "1");
+  const response = await page.goto(target.href);
   assert.equal(response?.status(), 200, "Familiar opens publicly");
   if (path === "/") {
     await page.getByRole("link", {name:"Play Familiar", exact:true}).first().click();
     await expect(page).toHaveURL(new RegExp("/outing/?$"));
+    await expect(page.getByTestId("expedition-game")).toBeVisible();
+    await page.goto(origin + "/outing/?classic=1");
   }
   assert.match(new URL(page.url()).pathname, /^\/outing\/?$/, "Game opens at its dedicated route");
 }

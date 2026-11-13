@@ -1,7 +1,7 @@
 import { expect,test } from "bun:test";
-import { lstat,mkdir,mkdtemp,readFile,readlink,realpath,rm,symlink,writeFile } from "node:fs/promises";
+import { lstat,mkdir,mkdtemp,readFile,readlink,realpath,rename,rm,symlink,writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname,join } from "node:path";
 import { GAME_HTML,HTTP_PATHS,RUNTIME_METADATA,RUNTIME_WEBPS,baselineFunctionScope,copyRuntimeAssets,installFunctionAliases,overlayGameStatic,staticFiles,validateProject,validateRouting } from "./package-tidebound-review";
 
 async function fixture() {
@@ -91,21 +91,33 @@ test("an H1 patch retains both prior generations of hashed chunks for already-op
 });
 async function runtimeFixture() {
   const f=await fixture(),source=join(f.root,"public");await mkdir(join(source,"assets/first-light-motion"),{recursive:true});
-  for(const path of [...RUNTIME_WEBPS,...RUNTIME_METADATA])await writeFile(join(source,path),path.endsWith(".json")?'{}':`committed bytes for ${path}`);
+  for(const path of [...RUNTIME_WEBPS,...RUNTIME_METADATA]){await mkdir(dirname(join(source,path)),{recursive:true});await writeFile(join(source,path),path.endsWith(".json")?'{}':`committed bytes for ${path}`);}
   return {...f,source};
 }
+test("the redesigned court ships its actual environment sprites and generation provenance",()=>{
+  for(const name of ["tide-court-v2","stone-island-v2","wooden-bridge-v2"])
+    expect(RUNTIME_WEBPS).toContain(`assets/expedition-v2/${name}.webp`);
+  expect(RUNTIME_METADATA).toContain("assets/expedition-v2/provenance.json");
+});
 test("missing runtime WebPs and the specific Wind Gate receipt are added with hashes, while old provenance stays intact",async()=>{
   const f=await runtimeFixture(),harbor=RUNTIME_WEBPS[0]!;
   await mkdir(join(f.baseline,"assets/first-light-motion"),{recursive:true});await writeFile(join(f.baseline,harbor),await readFile(join(f.source,harbor)));
   const provenance="assets/first-light-motion/provenance.json";await writeFile(join(f.baseline,provenance),'old public provenance');await writeFile(join(f.source,provenance),'different source provenance');
   await writeFile(join(f.source,"assets/first-light-motion/unapproved.png"),'unused source art');
   const report=await copyRuntimeAssets(f.source,f.baseline);
-  expect(report.reused.map(file=>file.path)).toEqual([harbor]);expect(report.added).toHaveLength(11);
+  expect(report.reused.map(file=>file.path)).toEqual([harbor]);expect(report.added).toHaveLength(RUNTIME_WEBPS.length+RUNTIME_METADATA.length-1);
   expect(report.added.some(file=>file.path==="assets/first-light-motion/wind-gate-v1.webp" && /^[a-f0-9]{64}$/.test(file.sha256))).toBe(true);
   expect(report.added.some(file=>file.path===RUNTIME_METADATA[0])).toBe(true);
   for(const file of report.added)expect(await readFile(join(f.baseline,file.path))).toEqual(await readFile(join(f.source,file.path)));
   expect(await readFile(join(f.baseline,provenance),"utf8")).toBe('old public provenance');
   expect((await staticFiles(f.baseline)).some(path=>path.endsWith("unapproved.png"))).toBe(false);
+});
+test("a symlinked new-art directory cannot turn the publication allowlist into an arbitrary file read",async()=>{
+  const f=await runtimeFixture(),directory=join(f.source,"assets/expedition-v2"),outside=join(f.root,"outside-art");
+  await rename(directory,outside);await symlink(outside,directory,"dir");
+  const before=await staticFiles(f.baseline);
+  await expect(copyRuntimeAssets(f.source,f.baseline)).rejects.toThrow("physical directories");
+  expect(await staticFiles(f.baseline)).toEqual(before);
 });
 test("a conflicting existing runtime image or receipt rejects all additions before writing",async()=>{
   for(const path of [RUNTIME_WEBPS[2]!,RUNTIME_METADATA[0]]) {

@@ -7,8 +7,11 @@ import react from "@vitejs/plugin-react";
 
 export const GAME_HTML=["index.html","outing/index.html"] as const;
 export const HTTP_PATHS=["/api/health","/api/v1/privy/wallet","/api/v1/privy/player"] as const;
-export const RUNTIME_WEBPS=["harbor","arena","wind-gate-v1","bram","mochi","mochi-poses-v1","tidekeeper","wave","shell","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`);
-export const RUNTIME_METADATA=["assets/first-light-motion/wind-gate-v1.webp.json"] as const;
+export const RUNTIME_WEBPS=[
+  ...["harbor","arena","wind-gate-v1","bram","mochi","mochi-poses-v1","tidekeeper","wave","shell","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`),
+  ...["tide-court-v2","stone-island-v2","wooden-bridge-v2"].map(name=>`assets/expedition-v2/${name}.webp`),
+];
+export const RUNTIME_METADATA=["assets/first-light-motion/wind-gate-v1.webp.json","assets/expedition-v2/provenance.json"] as const;
 const primaryFunction="api/v1/privy/wallet.func";
 const aliases=["api/health.func","api/v1/privy/player.func"] as const;
 const endpoints=[{path:HTTP_PATHS[0],methods:["GET","OPTIONS"]},...HTTP_PATHS.slice(1).map(path=>({path,methods:["POST","OPTIONS"]}))];
@@ -41,7 +44,8 @@ function publicBytes(bytes:Uint8Array,path:string) {
 export interface StaticChange {path:string;beforeSha256:string;afterSha256:string}
 /** Add only committed runtime art that the older baseline lacks; never replace its art or provenance. */
 export async function copyRuntimeAssets(sourcePublic:string,destination:string) {
-  await physicalDirectory(sourcePublic);await physicalDirectory(join(sourcePublic,"assets"));await physicalDirectory(join(sourcePublic,"assets/first-light-motion"));
+  await physicalDirectory(sourcePublic);await physicalDirectory(join(sourcePublic,"assets"));
+  for(const directory of ["first-light-motion","expedition-v2"])await physicalDirectory(join(sourcePublic,"assets",directory));
   await staticFiles(destination);
   const added:{path:string;sha256:string}[]=[],reused:{path:string;sha256:string}[]=[],writes:{path:string;bytes:Uint8Array}[]=[];
   for(const path of [...RUNTIME_WEBPS,...RUNTIME_METADATA]) {

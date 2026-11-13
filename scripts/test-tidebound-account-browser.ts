@@ -151,7 +151,7 @@ try {
     const page = await context.newPage(); const errors: string[] = [], external: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     page.on("request", request => { if (!request.url().startsWith(origin) && !request.url().startsWith("data:") && !request.url().startsWith("blob:")) external.push(request.url()); });
-    await page.goto(origin + "/outing/");
+    await page.goto(origin + "/outing/?classic=1");
     await page.getByRole("tab", { name: "Account", exact: true }).click();
     const account = page.locator(".tb-account-harbor");
     await expect(account.getByRole("button", { name: "Continue with Google", exact: true })).toBeEnabled();
@@ -277,7 +277,7 @@ try {
     await context.close();
   }
   const choices = await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"});
-  const choicePage=await choices.newPage();await choicePage.goto(origin+"/outing/");
+  const choicePage=await choices.newPage();await choicePage.goto(origin+"/outing/?classic=1");
   // Mount account controls first, then change the local preview through real game controls.
   await choicePage.getByRole("tab",{name:"Account",exact:true}).click();
   await expect(choicePage.getByRole("button",{name:"Continue with Google",exact:true})).toBeEnabled();
@@ -314,7 +314,7 @@ try {
   await reachableAccount(choicePage,"390-transferred-preview-conflict");
   await choices.close();
   const fresh = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const first = await fresh.newPage(); await first.goto(origin + "/outing/");
+  const first = await fresh.newPage(); await first.goto(origin + "/outing/?classic=1");
   await first.getByRole("tab", { name: "Account", exact: true }).click();
   const firstAccount = first.locator(".tb-account-harbor");
   await expect(firstAccount.getByRole("button", { name: "Continue with Google", exact: true })).toBeEnabled();
@@ -377,7 +377,7 @@ try {
   for(const scenario of ["new-unclaimed-companion","existing-pet-arrived","occupied-internal-name","original-pending-adoption"]) {
     const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),page=await context.newPage(),errors:string[]=[],external:string[]=[];
     page.on("pageerror",error=>errors.push(error.message));page.on("request",request=>{if(!request.url().startsWith(origin)&&!request.url().startsWith("data:")&&!request.url().startsWith("blob:"))external.push(request.url());});
-    await page.goto(origin+"/outing/");await page.getByRole("tab",{name:"Account",exact:true}).click();await expect(page.getByRole("button",{name:"Continue with Google",exact:true})).toBeEnabled();
+    await page.goto(origin+"/outing/?classic=1");await page.getByRole("tab",{name:"Account",exact:true}).click();await expect(page.getByRole("button",{name:"Continue with Google",exact:true})).toBeEnabled();
     await fixture(page,f=>{f.pets=[];});
     if(scenario==="new-unclaimed-companion")await fixture(page,f=>{Object.assign(f.journey,{revision:0,banked:[],lit:false,lens_claim:null,moth_claim:null,credit:'unclaimed',workshop_salvage:0,bram_budget:0,shells:0,burned_shells:0,commission_fulfilled:false});});
     const original=scenario==="original-pending-adoption"?await fixture(page,f=>f.seedPendingAdoption("old-mochi")):null;
@@ -414,7 +414,7 @@ try {
   }
   const disabled = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await disabled.addInitScript(() => { (window as unknown as { __tbFixtureDisabled: boolean }).__tbFixtureDisabled = true; });
-  const off = await disabled.newPage(); await off.goto(origin + "/outing/");
+  const off = await disabled.newPage(); await off.goto(origin + "/outing/?classic=1");
   await off.getByRole("tab", { name: "Account", exact: true }).click();
   await expect(off.locator(".tb-account-harbor").getByText(/Cross-device saving is not connected at this address/)).toBeVisible();
   await expect(off.getByRole("button", { name: "Continue with Google", exact: true })).toHaveCount(0);

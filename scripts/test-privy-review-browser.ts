@@ -3,6 +3,8 @@ import { lstat, mkdtemp, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { chromium, expect, type BrowserContext, type Page } from "@playwright/test";
+import { replayCourt } from "../web/src/expedition/engine";
+import type { Command } from "../web/src/expedition/types";
 
 // Usage: bun scripts/test-privy-review-browser.ts RELEASE_DIR_OR_STATIC_DIR [--h1]
 // This serves compiled static bytes only. It does not load or proxy the release function.
@@ -65,6 +67,9 @@ async function emptyEmailForm(page:Page,width:number) {
   // The provider animates its sheet even under reduced motion; visibility can precede its final position.
   await expect.poll(async()=>{const bounds=await email.boundingBox(),height=page.viewportSize()!.height;return !!bounds && bounds.x>=0 && bounds.y>=0 && bounds.x+bounds.width<=width+1 && bounds.y+bounds.height<=height+1;},{message:`${width}: settled SDK email field fits the viewport`,timeout:5000}).toBe(true);
 }
+const dryBeaconCommands=["step:north","step:north","step:west","wait","wait","step:east","step:west","take:lens","step:east","step:west","step:south","step:east","step:south","return"] as const satisfies readonly Command[];
+const dryBeacon=replayCourt({area:"beacon",tool:"rope",banked:[]},dryBeaconCommands);
+assert(dryBeacon?.outcome==="returned" && dryBeacon.resolve===3 && dryBeacon.turn===14 && JSON.stringify(dryBeacon.cargo)===JSON.stringify(["lens"]),"The compiled integration route must remain a legal dry lens return.");
 try {
   for(const path of ["/.env.privy.local","/src/account/PrivyProvider.tsx","/.vercel/output/functions/api.func/index.mjs","/api/v1/privy/wallet"])
     assert.equal((await fetch(origin+path)).status,404,`Static preview must not expose ${path}`);
@@ -96,30 +101,46 @@ try {
     await guardMutations(context);
     const response=await page.goto(origin+"/outing/",{waitUntil:"domcontentloaded"});assert.equal(response?.status(),200);
     const depart=page.getByRole("button",{name:"Set out with Mochi",exact:true});await expect(depart).toBeEnabled({timeout:15000});await expect(depart).toBeInViewport();
-    const world=await page.getByTestId("outing-scene").boundingBox();assert(world && world.x===0 && world.y===0 && world.width===viewport.width && world.height===viewport.height,"The compiled game uses an edge-to-edge world");
+    const game=page.getByTestId("expedition-game"),scene=page.getByTestId("expedition-world");
+    await expect(game).toHaveAttribute("data-lease","held");await expect(scene).toHaveAttribute("data-ready","true");await expect(game).toHaveAttribute("data-content","first_light_v2");
+    const world=await scene.boundingBox();assert(world && world.x===0 && world.y===0 && world.width===viewport.width && world.height===viewport.height,"The compiled game uses an edge-to-edge world");
     const button=await depart.boundingBox();assert(button && button.height>=44,"The primary game action keeps its touch target");
     await noPageOverflow(page,`${viewport.width}-h1-home`);await page.screenshot({path:join(captures,`${viewport.width}-h1-home.png`)});
+    await page.getByRole("button",{name:"Game menu",exact:true}).click();await expect(page.getByRole("link",{name:"Earlier First Light game",exact:true})).toHaveAttribute("href","/outing/?classic=1");await page.getByRole("button",{name:"Back to Mochi",exact:true}).click();
     await depart.click();
-    for(const command of ["move:left","wait"])await page.locator(`[data-action="${command}"]`).click();
-    await expect(page.getByTestId("outing-scene")).toHaveAttribute("data-turn","3");
-    await noPageOverflow(page,`${viewport.width}-h1-active`);await page.screenshot({path:join(captures,`${viewport.width}-h1-active.png`)});
-    for(const command of ["move:center","reel:lens","return"])await page.locator(`[data-action="${command}"]`).click();
-    await page.locator('[data-action="install"]').click();await page.getByRole("tab",{name:"Workshop",exact:true}).click();
-    const workshop=page.getByTestId("storycraft");await expect(workshop.getByRole("button",{name:"Preview lantern",exact:true})).toBeEnabled();
-    await workshop.getByRole("button",{name:"Preview lantern",exact:true}).click();await expect(page.getByTestId("lantern-storycard")).toBeVisible();
-    await expect(page.getByTestId("placed-lantern")).toHaveCount(1);await expect(workshop.getByText("Local preview · not backed up · not transferable",{exact:true})).toBeVisible();
+    for(const [index,command] of dryBeaconCommands.entries()){
+      await page.locator(`[data-command="${command}"]`).click();await expect(game).toHaveAttribute("data-busy","false");
+      if(command!=="return")await expect(scene).toHaveAttribute("data-turn",String(index+1));
+      if(index===4){await noPageOverflow(page,`${viewport.width}-h1-active`);await page.screenshot({path:join(captures,`${viewport.width}-h1-active.png`)});}
+    }
+    await expect(game).toHaveAttribute("data-mode","harbor");
+    const returned=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!));
+    assert.deepEqual(returned.last,dryBeacon,"The actual compiled controls produce the exact accepted dry return");assert.deepEqual(returned.home.banked,["lens"]);
+    const memories=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.returns.v2:preview")!));assert.equal(memories.length,1);assert.equal(memories[0].disposition,"private-memory");assert.deepEqual(memories[0].commands,dryBeaconCommands,"The durable original return is captured before the active expedition clears");
+    await expect(page.locator('[data-action="home-next"]')).toHaveText("Bring the lens to the beacon");await page.locator('[data-action="home-next"]').click();await page.getByRole("button",{name:"Restore the beacon",exact:true}).click();
+    await expect(page.locator('[data-action="home-next"]')).toHaveText("Make a little light");await page.locator('[data-action="home-next"]').click();
+    const workshop=page.getByRole("dialog",{name:"Workbench",exact:true});await expect(workshop.getByRole("button",{name:"Preview one lantern",exact:true})).toBeEnabled();
+    await workshop.getByRole("button",{name:"Preview one lantern",exact:true}).click();await expect(game).toHaveAttribute("data-mode","harbor");
+    const light=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!));assert.equal(light.home.lit,true);assert.deepEqual(light.home.lantern,{motif:"crest",socket:"porch"});
     await noPageOverflow(page,`${viewport.width}-h1-workshop`);await page.screenshot({path:join(captures,`${viewport.width}-h1-workshop.png`)});
-    await workshop.getByRole("button",{name:"View origin",exact:true}).click();await expect(workshop.getByText(/Mochi brought the Beacon Lens home. 5 actions with the Rope; a dry crossing/)).toBeVisible();
+    await page.getByRole("button",{name:"Workbench",exact:true}).click();await page.getByText("Light’s origin",{exact:true}).click();await expect(page.getByText("Mochi returned with the Beacon Lens. 14 choices with the Rope.",{exact:true})).toBeVisible();await expect(page.getByText(/Static illustration of this device’s validated return, not a recorded screenshot or an accepted NEAR claim/)).toBeVisible();
     await noPageOverflow(page,`${viewport.width}-h1-origin`);
-    await page.getByRole("tab",{name:"Account",exact:true}).click();
-    const account=page.locator(".tb-account-harbor"),login=account.getByRole("button",{name:"Continue with email",exact:true});
+    await page.getByRole("button",{name:"Close panel",exact:true}).click();await page.getByRole("button",{name:"Game menu",exact:true}).click();await page.getByRole("button",{name:"Account & recovery",exact:true}).click();
+    const account=page.getByRole("region",{name:"Account and recovery",exact:true}),login=account.getByRole("button",{name:"Continue with email",exact:true});
     await expect(login).toBeEnabled({timeout:30000});await login.scrollIntoViewIfNeeded();await expect(login).toBeInViewport();
     await expect(account.getByRole("button",{name:"Create my testnet player",exact:true})).toHaveCount(0);
     await noPageOverflow(page,`${viewport.width}-h1-account`);await page.screenshot({path:join(captures,`${viewport.width}-h1-account.png`)});
     await login.click();await emptyEmailForm(page,viewport.width);await noPageOverflow(page,`${viewport.width}-h1-account-form`);
     await page.screenshot({path:join(captures,`${viewport.width}-h1-account-email-form.png`)});
     assert.deepEqual(apiMutations,[],"Opening the compiled game's real login form must not call wallet/player APIs");assert.deepEqual(errors,[]);
-    h1Results.push({...viewport,world:"edge-to-edge",localBeaconReturn:"five legal actions",workshopPreview:"accepted local origin",accountProvider:"real Privy empty email form",pageScroll:"none",staticApiMutations:0});await context.close();
+    h1Results.push({...viewport,world:"edge-to-edge Phaser spatial court",content:"first_light_v2",localBeaconReturn:"14 legal spatial decisions; Resolve3/3; one durable private memory",workshopPreview:"validated local origin; not an accepted NEAR claim",accountProvider:"real Privy empty email form",pageScroll:"none",staticApiMutations:0});await context.close();
+  }
+  if(h1){
+    const context=await browser.newContext({viewport:{width:1280,height:800},reducedMotion:"reduce"}),page=await context.newPage(),errors:string[]=[];
+    page.on("pageerror",error=>errors.push(error.message));await guardMutations(context);
+    for(const query of ["classic=1","challenge=two-shells-v1"]){await page.goto(origin+"/outing/?"+query);await expect(page.getByTestId("outing-scene")).toBeVisible();await expect(page.getByTestId("expedition-game")).toHaveCount(0);await noPageOverflow(page,query);}
+    assert.deepEqual(errors,[],"Explicit classic access and existing v1 invitations must still open the preserved game");await context.close();
+    h1Results.push({classicRouting:"explicit classic=1 and challenge=two-shells-v1 preserve the prior game"});
   }
 
   // Check carried-forward pages plus the selected review home. Byte preservation is a separate manifest check.

@@ -61,7 +61,7 @@ try {
     page.on("pageerror",e=>errors.push(e.message));
     page.on("request",r=>{if(/rpc|\/api\/|fast-auth/.test(r.url()))network.push(r.url());});
     const start = Date.now();
-    await page.goto(origin+"/outing/"+(width===390 ? "?VITE_TIDEBOUND_ENABLED=true&network=mainnet" : ""));
+    await page.goto(origin+"/outing/?classic=1"+(width===390 ? "&VITE_TIDEBOUND_ENABLED=true&network=mainnet" : ""));
     await page.locator('[data-action="depart"]').waitFor();
     const startupMs = Date.now()-start;
     await page.getByRole("tab",{name:"Account",exact:true}).click();
@@ -174,7 +174,7 @@ try {
   }
   const context = await browser.newContext({viewport:{width:390,height:844}});
   const page = await context.newPage();
-  await page.goto(origin+"/outing/");
+  await page.goto(origin+"/outing/?classic=1");
   await page.locator('[data-action="depart"]').click();
   await play(page,rescue);
   await page.locator('[data-action="install"]').click();
@@ -191,7 +191,7 @@ try {
 
   const legacy = await browser.newContext({viewport:{width:390,height:844}});
   const old = await legacy.newPage();
-  await old.goto(origin+"/outing/");
+  await old.goto(origin+"/outing/?classic=1");
   await old.evaluate(k=>localStorage.setItem(k,JSON.stringify({version:2,bank:["lens","moth","salvage"],lit:true,signaled:false,active:null})),key);
   await old.reload();
   await expect(old.getByTestId("placed-lantern")).toHaveCount(0);
