@@ -21,8 +21,20 @@ No account is needed for the device preview. Use neighboring-platform taps, WASD
 | `make check` | Tests and build |
 | `make browser` | Chromium/WebKit route and save checks |
 | `make evidence` | Offline recorded signature/receipt checks |
+| `make judge` | Live, read-only testnet checks of the claims below; public RPC, no keys |
+| `make break` | Contract and signer refusals: doctored court, Shells twice, out-of-scope signing |
 
 Make is a shortcut layer; the underlying `bun run` commands still work. Browser checks require `bunx playwright install chromium webkit`. Full outing checks use `bun scripts/test-expedition-browser.ts --only=390` and `bun scripts/test-passage-browser.ts`. Real-Wasm sandbox checks require `bun run build:contracts`, then `bun run test:tidebound-sandbox` or `bun run test:sandbox`; default Rust tests leave these integrations ignored.
+
+## NEAR in Familiar
+
+Live stack: root `familiar-game.testnet`, items `items.familiar-game.testnet`. `make judge` reads current chain state over public RPC with no keys; `make break` runs the source rules. The deployed root code differs from the HEAD build recorded in `docs/FAMILIAR-GAMEPLAY.json`, so source tests describe HEAD, not necessarily the deployed bytes.
+
+| Claim | What is true on testnet | Check | Limit |
+| --- | --- | --- | --- |
+| Mochi is a real account | Every pet the root lists (`nft_tokens`) is a sub-account with no access keys, running global code pinned by hash (`get_config.pet_code_hash`); its NFT papers on the root name the owner | `make judge` | Root and Items still have admin keys, so the whole stack is not immutable |
+| The court is refereed | In source, `tidebound_claim` replays the submitted steps and accepts only a court that brings Mochi home, and 12 Shells are granted once per account; on chain, the test player's accepted claims and Shells match that | `make break` (rule), `make judge` (state) | Replay proves the steps are legal, not that a person played them; one pet passed between accounts can earn each its own Shells |
+| Your key | Your account key is held by your Privy wallet; Familiar's signer prepares only named harbor actions | `make judge` lists the key's permission; custody and the method limit come from source (`privy-adapter.ts`, `sign.ts`), checked by `make break` | The key is full-access; the method limit is enforced by the signer, not by the chain |
 
 ## Source
 
