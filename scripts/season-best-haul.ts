@@ -4,7 +4,7 @@ import { courtStateKey } from "./court-solver";
 import type { CourtState } from "../web/src/expedition/types";
 
 /** Season 2 cargo-to-goods table; must match CARGO_GOODS in contracts/season/src/lib.rs. */
-export const CARGO_GOODS: Record<string, "glass" | "reed" | null> = { lens: "glass", moth: null, chart: "reed", salvage: "reed", vane: null };
+export const CARGO_GOODS: Record<string, "glass" | "reed" | null> = { lens: "glass", moth: "reed", chart: "reed", salvage: "reed", vane: null };
 export const SEASON_COURTS = ["first_light_v1", "first_light_v2"] as const;
 
 function goods(cargo: readonly string[]): [number, number] {

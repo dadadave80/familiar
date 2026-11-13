@@ -1,1 +1,1 @@
-[{"content_version":"first_light_v1","area":"beacon","tools":[{"tool":"rope","hauls":[[1,1]]},{"tool":"lantern","hauls":[[1,2]]}]},{"content_version":"first_light_v2","area":"beacon","tools":[{"tool":"rope","hauls":[[1,0]]},{"tool":"lantern","hauls":[[1,0]]}]}]
+[{"content_version":"first_light_v1","area":"beacon","tools":[{"tool":"rope","hauls":[[1,1],[0,2]]},{"tool":"lantern","hauls":[[1,2]]}]},{"content_version":"first_light_v2","area":"beacon","tools":[{"tool":"rope","hauls":[[1,1]]},{"tool":"lantern","hauls":[[1,1]]}]}]

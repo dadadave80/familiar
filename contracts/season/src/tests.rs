@@ -180,6 +180,31 @@ fn v2_days_replay_the_spatial_court() {
     );
     let m = claim(&mut c, "alice.testnet", day, "rope", commands);
     assert_eq!(m.goods, [1, 0]);
+    // The best v2 haul is lens + moth: 8 / (8 + 4) at opening prices.
+    assert_eq!(m.score_bp, 6_666);
+    // The rope rescue route docks lens and moth: glass + reed, the full score.
+    register(&mut c, "bob.testnet", day);
+    let rescue = strings(&[
+        "step:north",
+        "step:north",
+        "step:west",
+        "wait",
+        "wait",
+        "step:east",
+        "reel:lens",
+        "step:east",
+        "step:west",
+        "step:east",
+        "take:moth",
+        "step:west",
+        "step:east",
+        "step:south",
+        "step:west",
+        "step:south",
+        "return",
+    ]);
+    let m = claim(&mut c, "bob.testnet", day, "rope", rescue);
+    assert_eq!(m.goods, [1, 1]);
     assert_eq!(m.score_bp, 10_000);
 }
 
@@ -220,8 +245,12 @@ fn minted_cargo_never_exceeds_the_best_haul() {
                 };
                 if let Some(cargo) = cargo {
                     let g = cargo_goods(&cargo);
-                    let best = BEST_HAUL[court_index][t];
-                    assert!(g[0] <= best.0 && g[1] <= best.1, "{tool} {commands:?}");
+                    assert!(
+                        BEST_HAUL[court_index][t]
+                            .iter()
+                            .any(|b| g[0] <= b.0 && g[1] <= b.1),
+                        "{tool} {commands:?}"
+                    );
                     if g[0] + g[1] > 0 {
                         let mut c = setup();
                         register(&mut c, "p.testnet", day);
@@ -241,16 +270,19 @@ fn best_haul_constants_match_the_generated_fixture_and_the_authoritative_replay(
         assert_eq!(court_entry["content_version"], COURTS[ci]);
         for (ti, tool) in court_entry["tools"].as_array().unwrap().iter().enumerate() {
             assert_eq!(tool["tool"], TOOLS[ti]);
-            let hauls = tool["hauls"].as_array().unwrap();
-            assert_eq!(hauls.len(), 1, "single Pareto point per tool");
-            let h = (hauls[0][0].as_u64().unwrap(), hauls[0][1].as_u64().unwrap());
-            assert_eq!(h, BEST_HAUL[ci][ti]);
+            let hauls: Vec<(u64, u64)> = tool["hauls"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|h| (h[0].as_u64().unwrap(), h[1].as_u64().unwrap()))
+                .collect();
+            assert_eq!(hauls, BEST_HAUL[ci][ti]);
         }
     }
     // Exhaustive search over the contract's own replay, independent of the TypeScript solver.
     for ci in 0..2 {
         for (ti, tool) in TOOLS.iter().enumerate() {
-            let mut best = (0u64, 0u64);
+            let mut found = std::collections::HashSet::new();
             let mut seen = std::collections::HashSet::new();
             let mut queue: Vec<Vec<String>> = vec![vec![]];
             let mut i = 0;
@@ -261,7 +293,7 @@ fn best_haul_constants_match_the_generated_fixture_and_the_authoritative_replay(
                     let r = historical_returns::replay(tool, &[], &commands, "beacon").unwrap();
                     if r.outcome == "returned" {
                         let g = cargo_goods(&r.cargo);
-                        best = (best.0.max(g[0]), best.1.max(g[1]));
+                        found.insert((g[0], g[1]));
                     }
                     if r.outcome != "active" {
                         continue;
@@ -286,7 +318,7 @@ fn best_haul_constants_match_the_generated_fixture_and_the_authoritative_replay(
                     let r = court::replay(tool, &[], &commands, "beacon").unwrap();
                     if r.outcome == "returned" {
                         let g = cargo_goods(&r.cargo);
-                        best = (best.0.max(g[0]), best.1.max(g[1]));
+                        found.insert((g[0], g[1]));
                     }
                     if r.outcome != "active" {
                         continue;
@@ -318,7 +350,17 @@ fn best_haul_constants_match_the_generated_fixture_and_the_authoritative_replay(
                     queue.push(next);
                 }
             }
-            assert_eq!(best, BEST_HAUL[ci][ti], "court {ci} tool {tool}");
+            let mut pareto: Vec<(u64, u64)> = found
+                .iter()
+                .copied()
+                .filter(|&(g, r)| {
+                    !found
+                        .iter()
+                        .any(|&(g2, r2)| g2 >= g && r2 >= r && (g2, r2) != (g, r))
+                })
+                .collect();
+            pareto.sort_by(|a, b| b.cmp(a));
+            assert_eq!(pareto, BEST_HAUL[ci][ti], "court {ci} tool {tool}");
         }
     }
 }
