@@ -11,8 +11,11 @@
 .sn-seal circle:last-of-type{fill:none;stroke:#e9b9a0;stroke-width:1.4}
 .sn-seal path{fill:none;stroke:#fff1e4;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .sn-sealed .sn-mark{color:#6e2b21}
-.sn-plain{background:#fbf6ea}
-.sn-plain .sn-mark{color:#5a4a2f}
+.sn-plain,.sn-unrecorded{background:#fbf6ea}
+.sn-plain .sn-mark,.sn-unrecorded .sn-mark{color:#5a4a2f}
+.sn-unrecorded button{width:100%;margin-top:12px}
+.sn-paper:focus:not(:focus-visible){outline:none}
+.sn-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .sn-broken{background:#efe4cc;transform:none}
 .sn-broken h3{font-family:"Fraunces Variable",serif;font-size:20px;margin:0 0 8px}
 .sn-broken button{width:100%}
