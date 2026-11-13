@@ -42,7 +42,7 @@ export async function writeSealedNote(options:{
     check(keys.size===1&&verified.every(v=>v.signer.signingAlgo==="ed25519"&&v.signer.signingAddress.toLowerCase()===v.signingPublicKey?.toLowerCase()),"The attested instances do not share one Ed25519 model key.");
     key=[...keys][0]!;check(/^[0-9a-f]{64}$/.test(key),"The attested model key is malformed.");
     Object.assign(back,{modelKey:key,instances:verified.length,tcbStatus:verified[0]!.tcbStatus});
-    const body=JSON.stringify({model:NOTE_MODEL,messages:noteMessages(options.returns),stream:false,max_tokens:NOTE_MAX_TOKENS,chat_template_kwargs:{enable_thinking:false}});
+    const body=JSON.stringify({model:NOTE_MODEL,messages:noteMessages(options.returns),stream:false,max_tokens:NOTE_MAX_TOKENS,thinking_token_budget:0});
     // The URL is never contacted; the SDK only encrypts this request and keeps the matching reply key.
     prepared=await sdk.prepareE2eeChatRequest({request:new Request("https://note.invalid/v1/chat/completions",{method:"POST",headers:{"content-type":"application/json"},body}),modelKey:{signingAlgo:"ed25519",publicKey:key}});
     requestBytes=new Uint8Array(await prepared.request.clone().arrayBuffer());

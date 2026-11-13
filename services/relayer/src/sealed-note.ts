@@ -10,7 +10,7 @@ const upstream="https://cloud-api.near.ai/v1";
 const hexKey=/^[0-9a-f]{64}$/;
 const ciphertext=/^(?:[0-9a-f]{2}){72,4000}$/;
 const chatId=/^[A-Za-z0-9_-]{1,128}$/;
-const topLevel=new Set(["model","messages","stream","max_tokens","chat_template_kwargs"]);
+const topLevel=new Set(["model","messages","stream","max_tokens","thinking_token_budget"]);
 
 export interface NoteChain {
   /** Root `get_player` for the server-verified wallet key. */
@@ -40,7 +40,8 @@ export function checkNoteBody(bytes:Uint8Array):NoteRefusal|null {
   if(value.model!==NOTE_MODEL)return {status:400,code:"NOTE_MODEL"};
   if(value.stream!==false)return {status:400,code:"NOTE_STREAM"};
   if(!Number.isSafeInteger(value.max_tokens)||(value.max_tokens as number)<1||(value.max_tokens as number)>NOTE_MAX_TOKENS)return {status:400,code:"NOTE_MAX_TOKENS"};
-  if("chat_template_kwargs" in value&&JSON.stringify(value.chat_template_kwargs)!=='{"enable_thinking":false}')return {status:400,code:"NOTE_FIELDS"};
+  // GLM-5.3 Flash spends max_tokens on reasoning unless its documented reasoning budget is zero.
+  if("thinking_token_budget" in value&&value.thinking_token_budget!==0)return {status:400,code:"NOTE_FIELDS"};
   const messages=value.messages;
   if(!Array.isArray(messages)||messages.length!==2)return {status:400,code:"NOTE_MESSAGES"};
   const roles=["system","user"];

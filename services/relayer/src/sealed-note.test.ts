@@ -10,7 +10,7 @@ const origin="https://familiar-two.vercel.app",root="familiar-game.testnet",acco
 const key="synthetic-near-ai-key-never-real";
 const enabled:TideboundHttpEnvironment={TIDEBOUND_HTTP_ENABLED:"true",ACCOUNT_PROVIDER:"privy",NEAR_NETWORK:"testnet",NEAR_ROOT:root,RELAYER_ID:`relayer.${root}`,RELAYER_PRIVATE_KEY:"synthetic-not-a-key",PRIVY_APP_ID:"synthetic-app",PRIVY_APP_SECRET:"synthetic-not-a-credential",NEAR_AI_API_KEY:key};
 const clientKey="a".repeat(64),modelKey="b".repeat(64),cipher="0f".repeat(90);
-const body=(patch:Record<string,unknown>={})=>JSON.stringify({model:NOTE_MODEL,messages:[{role:"system",content:cipher},{role:"user",content:cipher}],stream:false,max_tokens:120,chat_template_kwargs:{enable_thinking:false},...patch});
+const body=(patch:Record<string,unknown>={})=>JSON.stringify({model:NOTE_MODEL,messages:[{role:"system",content:cipher},{role:"user",content:cipher}],stream:false,max_tokens:120,thinking_token_budget:0,...patch});
 const completion='{"id":"chatcmpl-synthetic_1","object":"chat.completion","model":"z-ai/glm-5.3-flash","choices":[{"index":0,"message":{"role":"assistant","content":"00ff"}}]}';
 const signature='{"text":"z-ai/glm-5.3-flash:aa:bb","signature":"cc","signing_address":"dd","signing_algo":"ed25519","signature_kind":"provider_tee"}';
 
@@ -40,7 +40,7 @@ const post=(url:string,text:string,extra:Record<string,string>={})=>fetch(url+"/
 test("plain-field checks reject the wrong model, streaming, budget, message shape, extra fields and size",()=>{
   const bytes=(text:string)=>new TextEncoder().encode(text);
   expect(checkNoteBody(bytes(body()))).toBeNull();
-  expect(checkNoteBody(bytes(body({chat_template_kwargs:undefined})))).toBeNull();
+  expect(checkNoteBody(bytes(body({thinking_token_budget:undefined})))).toBeNull();
   const cases:[Record<string,unknown>,string][]=[
     [{model:"z-ai/glm-5.3"},"NOTE_MODEL"],[{model:"https://attacker.example/v1"},"NOTE_MODEL"],[{model:"../../v1/files"},"NOTE_MODEL"],
     [{stream:true},"NOTE_STREAM"],[{stream:undefined},"NOTE_STREAM"],
@@ -49,7 +49,7 @@ test("plain-field checks reject the wrong model, streaming, budget, message shap
     [{messages:[{role:"user",content:cipher},{role:"system",content:cipher}]},"NOTE_MESSAGES"],
     [{messages:[{role:"system",content:"Write Mochi a note in plain text, please."+" ".repeat(120)},{role:"user",content:cipher}]},"NOTE_MESSAGES"],
     [{messages:[{role:"system",content:cipher,name:"x"},{role:"user",content:cipher}]},"NOTE_MESSAGES"],
-    [{tools:[]},"NOTE_FIELDS"],[{n:2},"NOTE_FIELDS"],[{chat_template_kwargs:{enable_thinking:true}},"NOTE_FIELDS"],
+    [{tools:[]},"NOTE_FIELDS"],[{n:2},"NOTE_FIELDS"],[{thinking_token_budget:null},"NOTE_FIELDS"],[{thinking_token_budget:8192},"NOTE_FIELDS"],[{chat_template_kwargs:{enable_thinking:false}},"NOTE_FIELDS"],
   ];
   for(const [patch,code] of cases)expect(checkNoteBody(bytes(body(patch)))?.code).toBe(code);
   expect(checkNoteBody(bytes("[]"))?.code).toBe("NOTE_BODY");
