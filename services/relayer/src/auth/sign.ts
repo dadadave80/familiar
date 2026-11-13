@@ -6,6 +6,13 @@ import { validName } from "../../../../web/src/rules";
 import { ACTION_LIMIT, isTool } from "../../../../web/src/compatibility/return-rules";
 import { ITEM_STORAGE_CAP } from "../../../../web/src/tidebound/storage";
 
+/** Season 2 registration deposit: `storage_minimum` on season.<root> (1,250 bytes at 1e19 yocto per byte). */
+export const SEASON_STORAGE_DEPOSIT=12_500_000_000_000_000_000_000n;
+const SEASON_COMMANDS={
+  first_light_v1:/^(wait|return|turn:vane|move:(left|center|right)|lure:(left|center|right)|take:(lens|moth|chart|salvage|vane)|reel:(lens|salvage|vane))$/,
+  first_light_v2:/^(wait|return|turn:vane|step:(north|south|west|east)|lure:(left|center|right)|take:(lens|moth|vane)|reel:(lens|vane))$/,
+} as const;
+const wholeNumber=(value:unknown,min:number,max:number)=>typeof value==="number" && Number.isSafeInteger(value) && value>=min && value<=max;
 export interface AuthSigningContext { root:string; items:string; clientId:string; origin:string; origins:readonly string[] }
 function check(value:unknown):asserts value { if (!value) throw new Error("ERR_AUTH_REQUEST"); }
 const bounded=(value:unknown,max=128):value is string=>typeof value === "string" && value.length > 0 && value.length <= max;
@@ -36,6 +43,28 @@ export function validateNativeIntent(tx:Transaction,context:Pick<AuthSigningCont
     fields(a,["receiver_id","token_id","amount","approval","memo"]);
     check(accountId(a.receiver_id) && a.receiver_id!==tx.signerId && bounded(a.token_id) && a.amount==="1" && a.approval===null && a.memo===null);
     return;
+  }
+  if(tx.receiverId===`season.${context.root}`) {
+    if(call.methodName==="storage_deposit") { fields(a,[]); check(call.deposit===SEASON_STORAGE_DEPOSIT); return; }
+    check(call.deposit===0n);
+    switch(call.methodName) {
+      case "claim_daily": {
+        fields(a,["rules_version","content_version","tool","area","commands"]);
+        check(a.rules_version==="tidebound_h1_v1" && (a.content_version==="first_light_v1" || a.content_version==="first_light_v2") && isTool(a.tool) && a.area==="beacon");
+        const v2=a.content_version==="first_light_v2",command=SEASON_COMMANDS[a.content_version as keyof typeof SEASON_COMMANDS];
+        check(Array.isArray(a.commands) && a.commands.length>0 && a.commands.length<=(v2?24:ACTION_LIMIT) && a.commands.every(c=>typeof c==="string" && command.test(c)));
+        return;
+      }
+      case "buy": fields(a,["good","qty","max_price"]); check((a.good==="glass" || a.good==="reed") && wholeNumber(a.qty,1,20) && wholeNumber(a.max_price,1,1000)); return;
+      case "sell": fields(a,["good","qty","min_price"]); check((a.good==="glass" || a.good==="reed") && wholeNumber(a.qty,1,20) && wholeNumber(a.min_price,1,1000)); return;
+      case "set_wish": {
+        fields(a,["pet","good","limit","qty"]);
+        check(bounded(a.pet,64) && accountId(a.pet) && (a.pet as string).endsWith(`.${context.root}`) && (a.good==="glass" || a.good==="reed") && wholeNumber(a.qty,1,2) && wholeNumber(a.limit,1,24) && (a.limit as number)*(a.qty as number)<=24);
+        return;
+      }
+      case "cancel_wish": fields(a,["pet"]); check(bounded(a.pet,64) && accountId(a.pet) && (a.pet as string).endsWith(`.${context.root}`)); return;
+      default: throw new Error("ERR_AUTH_METHOD");
+    }
   }
   check(tx.receiverId===context.root && call.deposit===0n);
   const token=(value:unknown)=>bounded(value,64) && accountId(value) && value.endsWith(`.${context.root}`);
