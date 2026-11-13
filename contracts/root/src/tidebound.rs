@@ -1213,6 +1213,49 @@ mod tests {
         );
     }
     #[test]
+    #[should_panic(expected = "ERR_RETURN_REQUIRED")]
+    fn break_a_court_that_never_brings_mochi_home_is_refused() {
+        let mut c = contract();
+        let mut doctored = dry();
+        doctored.pop();
+        claim(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "first",
+            doctored,
+        );
+    }
+    #[test]
+    #[should_panic(expected = "ERR_REPLAY")]
+    fn break_an_illegal_step_is_refused_by_replay() {
+        let mut c = contract();
+        let mut doctored = dry();
+        doctored.insert(0, "move:teleport".into());
+        claim(
+            &mut c,
+            "alice.testnet",
+            "mochi.root.testnet",
+            "first",
+            doctored,
+        );
+    }
+    #[test]
+    #[should_panic(expected = "ERR_COMMISSION_UNAVAILABLE")]
+    fn break_shells_without_an_accepted_court_are_refused() {
+        let mut c = contract();
+        ctx("alice.testnet");
+        c.tidebound_commission();
+    }
+    #[test]
+    fn break_shells_are_granted_once_however_often_asked() {
+        let mut c = ready();
+        ctx("alice.testnet");
+        assert_eq!(c.tidebound_commission().shells, 12);
+        let again = c.tidebound_commission();
+        assert_eq!((again.shells, again.commission_fulfilled), (12, true));
+    }
+    #[test]
     #[should_panic(expected = "ERR_NOT_OWNER")]
     fn relay_signer_cannot_claim_for_current_pet_holder() {
         let mut c = contract();
