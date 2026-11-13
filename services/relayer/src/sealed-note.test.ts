@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { createTideboundHttpHandler, type TideboundHttpEnvironment } from "./tidebound-http";
 import type { Backend } from "./app";
 import type { PrivyService } from "./auth/privy";
-import { checkNoteBody, NOTE_MODEL, type NoteChain, type NoteFetch } from "./sealed-note";
+import { checkNoteBody, createNoteRelay, NOTE_MODEL, type NoteChain, type NoteFetch } from "./sealed-note";
 
 const origin="https://familiar-two.vercel.app",root="familiar-game.testnet",account=`mochi.${root}`;
 const key="synthetic-near-ai-key-never-real";
@@ -91,8 +91,8 @@ test("requires a confirmed journey event for the server-derived account",async()
   }
 });
 
-test("forwards the exact browser bytes with fixed headers, returns raw bytes and the retried signature, then writes once",async()=>{
-  const f=fixture({signatureMisses:2});
+test("forwards the exact browser bytes with fixed headers, returns raw bytes and the retried signature, and allows a retry",async()=>{
+  const f=fixture({signatureMisses:1});
   // Unusual key order proves the relay forwards bytes rather than a rebuilt body.
   const sent=`{"max_tokens":96,"stream":false,"messages":[{"content":"${cipher}","role":"system"},{"content":"${cipher}","role":"user"}],"model":"${NOTE_MODEL}"}`;
   await serve(enabled,f,async url=>{
@@ -101,13 +101,15 @@ test("forwards the exact browser bytes with fixed headers, returns raw bytes and
     expect(Buffer.from(envelope.completion,"base64").toString()).toBe(completion);
     expect(Buffer.from(envelope.signature,"base64").toString()).toBe(signature);
     expect(JSON.stringify(envelope)).not.toContain(key);
-    const again=await post(url,body());expect(again.status).toBe(409);expect((await again.json()).code).toBe("NOTE_WRITTEN");
+    expect((await post(url,body())).status).toBe(200);
   });
-  const [chat,...signatures]=f.forwarded;
+  const [chat,...rest]=f.forwarded;
+  const signatures=rest.slice(0,2);
+  expect(rest.length).toBe(4);
   expect(chat!.url).toBe("https://cloud-api.near.ai/v1/chat/completions");
   expect(new TextDecoder().decode(chat!.body!)).toBe(sent);
   expect(chat!.headers).toEqual({authorization:`Bearer ${key}`,"content-type":"application/json","accept-encoding":"identity","x-signing-algo":"ed25519","x-encryption-version":"3","x-encrypt-all-fields":"true","x-no-aliasing":"true","x-client-pub-key":clientKey,"x-model-pub-key":modelKey});
-  expect(signatures.map(s=>s.url)).toEqual(Array(3).fill("https://cloud-api.near.ai/v1/signature/chatcmpl-synthetic_1?signing_algo=ed25519"));
+  expect(signatures.map(s=>s.url)).toEqual(Array(2).fill("https://cloud-api.near.ai/v1/signature/chatcmpl-synthetic_1?signing_algo=ed25519"));
   expect(signatures.every(s=>s.method==="GET"&&s.headers.authorization===`Bearer ${key}`&&!("x-client-pub-key" in s.headers))).toBe(true);
   expect(f.views).toEqual([`player:ed25519:synthetic`,`journey:${account}`,`player:ed25519:synthetic`,`journey:${account}`]);
 });
@@ -119,4 +121,37 @@ test("a failed upstream call releases the note; repeated attempts hit the per-ac
     const limited=await post(url,body());expect(limited.status).toBe(429);
   });
   expect(f.forwarded.filter(r=>r.url.endsWith("/chat/completions")).length).toBe(3);
+});
+
+const direct=(fetch:NoteFetch,options:{now?:()=>number;completionTimeoutMs?:number;signatureWindowMs?:number;signatureDelayMs?:number}={})=>
+  createNoteRelay({apiKey:key,chain:{player:async()=>account,confirmedClaims:async()=>1},fetch,...options});
+const input={walletPublicKey:"ed25519:synthetic",bytes:new TextEncoder().encode(body()) as Uint8Array<ArrayBuffer>,clientPublicKey:clientKey,modelPublicKey:modelKey};
+const answers:NoteFetch=async url=>new Response(url.endsWith("/chat/completions")?completion:signature);
+
+test("allows three notes per account per UTC day across hourly windows, then resets the next day",async()=>{
+  let clock=Date.parse("2026-11-14T00:30:00Z");
+  const relay=direct(answers,{now:()=>clock});
+  for(let i=0;i<3;i++)expect((await relay.write(input)).status).toBe(200);
+  expect((await relay.write(input)).status).toBe(429);
+  clock=Date.parse("2026-11-14T22:00:00Z");
+  const daily=await relay.write(input);expect(daily.status).toBe(429);expect(daily.body).toMatchObject({code:"QUOTA"});
+  clock=Date.parse("2026-11-15T00:01:00Z");
+  expect((await relay.write(input)).status).toBe(200);
+});
+
+test("a hung completion times out as a retryable upstream failure",async()=>{
+  const hang:NoteFetch=(_url,init)=>new Promise((_,reject)=>init.signal!.addEventListener("abort",()=>reject(init.signal!.reason)));
+  const started=Date.now();
+  const result=await direct(hang,{completionTimeoutMs:50}).write(input);
+  expect(result).toMatchObject({status:502,body:{code:"NOTE_UPSTREAM"}});
+  expect(Date.now()-started).toBeLessThan(1_000);
+});
+
+test("signature polling stops at its window and returns the completion without a signature",async()=>{
+  let polls=0;
+  const missing:NoteFetch=async url=>{if(url.endsWith("/chat/completions"))return new Response(completion);polls++;return new Response("{}",{status:404});};
+  const started=Date.now();
+  const result=await direct(missing,{signatureWindowMs:120,signatureDelayMs:20}).write(input);
+  expect(result.status).toBe(200);expect((result.body as {signature:unknown}).signature).toBeNull();
+  expect(polls).toBeGreaterThan(2);expect(Date.now()-started).toBeLessThan(1_000);
 });

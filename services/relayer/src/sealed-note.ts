@@ -60,17 +60,23 @@ export function checkNoteBody(bytes:Uint8Array):NoteRefusal|null {
 const wait=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const base64=(bytes:Uint8Array)=>Buffer.from(bytes).toString("base64");
 
-export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:NoteFetch;signatureAttempts?:number;signatureDelayMs?:number}) {
+export const NOTES_PER_ACCOUNT_DAY=3;
+/** Worst case stays inside the 60 s function limit: views, a 35 s completion, then at most 10 s of signature polling. */
+export const COMPLETION_TIMEOUT_MS=35_000,SIGNATURE_WINDOW_MS=10_000;
+
+export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:NoteFetch;signatureWindowMs?:number;signatureDelayMs?:number;completionTimeoutMs?:number;now?:()=>number}) {
   const send=options.fetch??((url,init)=>fetch(url,init));
-  const attempts=options.signatureAttempts??6,delay=options.signatureDelayMs??500;
-  const perAccount=new Quota(3,3_600_000),all=new Quota(120,3_600_000,1);
-  // Process-local, like the existing account quotas. A restart or another instance allows another note.
-  const written=new Set<string>();
+  const window=options.signatureWindowMs??SIGNATURE_WINDOW_MS,delay=options.signatureDelayMs??1_000,now=options.now??Date.now;
+  // Process-local, like the existing account quotas. A broken note can be retried within the allowance;
+  // showing one note per accepted claim is the client's job.
+  const daily=new Quota(NOTES_PER_ACCOUNT_DAY,86_400_000),perAccount=new Quota(3,3_600_000),all=new Quota(120,3_600_000,1);
   async function signature(id:string):Promise<Uint8Array|null> {
-    for(let attempt=0;attempt<attempts;attempt++){
-      if(attempt)await wait(delay);
+    const deadline=now()+window;
+    for(let attempt=0;now()<deadline;attempt++){
+      if(attempt)await wait(Math.min(delay,Math.max(0,deadline-now())));
+      const remaining=deadline-now();if(remaining<=0)break;
       const response=await send(`${upstream}/signature/${encodeURIComponent(id)}?signing_algo=ed25519`,{
-        method:"GET",headers:{authorization:`Bearer ${options.apiKey}`,"accept-encoding":"identity"},redirect:"error",
+        method:"GET",headers:{authorization:`Bearer ${options.apiKey}`,"accept-encoding":"identity"},redirect:"error",signal:AbortSignal.timeout(Math.min(4_000,remaining)),
       }).catch(()=>null);
       if(!response)continue;
       const bytes=new Uint8Array(await response.arrayBuffer().catch(()=>new ArrayBuffer(0)));
@@ -88,12 +94,11 @@ export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:No
         return {status:400,body:{code:"NOTE_KEYS",error:"Mochi's note needs both sealing keys."}};
       const account=await options.chain.player(input.walletPublicKey);
       if(!account||await options.chain.confirmedClaims(account)<1)return {status:409,body:{code:"NOTE_NO_EVENT",error:"Mochi writes after an accepted return."}};
-      if(written.has(account))return {status:409,body:{code:"NOTE_WRITTEN",error:"Mochi has already written this harbor's note."}};
-      if(!perAccount.take(account)||!all.take("all"))return {status:429,body:{code:"QUOTA",error:"Mochi is resting the pen. Try again later."}};
-      written.add(account);
+      const day=new Date(now()).toISOString().slice(0,10);
+      if(!daily.take(`${account}:${day}`,now())||!perAccount.take(account,now())||!all.take("all",now()))return {status:429,body:{code:"QUOTA",error:"Mochi is resting the pen. Try again tomorrow."}};
       let completion:Uint8Array;
       try{
-        const response=await send(`${upstream}/chat/completions`,{method:"POST",redirect:"error",body:input.bytes,headers:{
+        const response=await send(`${upstream}/chat/completions`,{method:"POST",redirect:"error",body:input.bytes,signal:AbortSignal.timeout(options.completionTimeoutMs??COMPLETION_TIMEOUT_MS),headers:{
           authorization:`Bearer ${options.apiKey}`,"content-type":"application/json","accept-encoding":"identity",
           "x-signing-algo":"ed25519","x-encryption-version":"3","x-encrypt-all-fields":"true","x-no-aliasing":"true",
           "x-client-pub-key":input.clientPublicKey,"x-model-pub-key":input.modelPublicKey,
@@ -101,8 +106,7 @@ export function createNoteRelay(options:{apiKey:string;chain:NoteChain;fetch?:No
         completion=new Uint8Array(await response.arrayBuffer());
         if(!response.ok||completion.byteLength>65_536)throw Error("upstream");
       }catch{
-        written.delete(account);
-        return {status:502,body:{code:"NOTE_UPSTREAM",error:"The note could not reach Mochi. Nothing was written."}};
+        return {status:502,body:{code:"NOTE_UPSTREAM",error:"The note could not reach Mochi. Try again."}};
       }
       let id:unknown;
       try{id=JSON.parse(new TextDecoder().decode(completion)).id;}catch{id=null;}

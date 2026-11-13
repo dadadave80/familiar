@@ -44,7 +44,7 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
       {note.state==="broken"?<>
         <h3>The note got wet on the way.</h3>
         <p>{facts.reason??"It could not be opened."} Nothing unreadable is shown as Mochi's.</p>
-        {facts.code!=="NOTE_WRITTEN"&&facts.code!=="NOTE_NO_EVENT"&&<button disabled={busy} onClick={()=>void ask()}>{busy?"Trying again…":"Ask again"}</button>}
+        {facts.code!=="QUOTA"&&facts.code!=="NOTE_NO_EVENT"&&<button disabled={busy} onClick={()=>void ask()}>{busy?"Trying again…":"Ask again"}</button>}
       </>:<>
         <p className="sn-text">{note.text}</p>
         <footer className="sn-mark">
