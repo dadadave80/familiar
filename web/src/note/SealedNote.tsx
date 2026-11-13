@@ -14,13 +14,15 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
   returns:readonly ReturnRecord[];token:()=>Promise<string|null>;relayUrl?:string;
   write?:typeof writeSealedNote;store?:Store|null;
 }) {
-  const latest=[...returns].reverse().find(r=>r.disposition==="accepted"&&r.acceptedClaimId);
-  const key=latest&&latest.context.authority==="near-testnet"?noteKey(latest.context.root,latest.context.accountId,latest.acceptedClaimId!):null;
-  const [note,setNote]=useState<Note|null>(()=>key&&store?readNote(store,key):null);
+  // Newest first. The one note stays attached to the return it was written for, even after later returns.
+  const keys=[...returns].reverse().flatMap(r=>r.disposition==="accepted"&&r.acceptedClaimId&&r.context.authority==="near-testnet"?[noteKey(r.context.root,r.context.accountId,r.acceptedClaimId)]:[]);
+  const key=keys[0]??null,keyList=keys.join("|");
+  const stored=()=>{for(const k of keys){const found=store?readNote(store,k):null;if(found)return found;}return null;};
+  const [note,setNote]=useState<Note|null>(stored);
   const [busy,setBusy]=useState(false);
   const alive=useRef(true);useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
-  useEffect(()=>{setNote(key&&store?readNote(store,key):null);},[key,store]);
-  if(!latest||!key)return null;
+  useEffect(()=>{setNote(stored());},[keyList,store]);
+  if(!key)return null;
   async function ask(){
     setBusy(true);
     let result:Note;
@@ -42,21 +44,21 @@ export function SealedNote({returns,token,relayUrl=import.meta.env.VITE_RELAYER_
       {note.state==="broken"?<>
         <h3>The note got wet on the way.</h3>
         <p>{facts.reason??"It could not be opened."} Nothing unreadable is shown as Mochi's.</p>
-        <button disabled={busy} onClick={()=>void ask()}>{busy?"Trying again…":"Ask again"}</button>
+        {facts.code!=="NOTE_WRITTEN"&&facts.code!=="NOTE_NO_EVENT"&&<button disabled={busy} onClick={()=>void ask()}>{busy?"Trying again…":"Ask again"}</button>}
       </>:<>
         <p className="sn-text">{note.text}</p>
         <footer className="sn-mark">
           {note.state==="sealed"?<>
             <svg className="sn-seal" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17"/><circle cx="20" cy="20" r="11.5"/><path d="M14 21.5l4 4 8-9"/></svg>
             <span><strong>Sealed.</strong> {SEALED_LINE}</span>
-          </>:<span><strong>Not sealed.</strong> Mochi wrote this, but the seal could not be checked: {facts.reason}</span>}
+          </>:<span><strong>Not sealed.</strong> Where this note came from could not be confirmed. {facts.reason}</span>}
         </footer>
       </>}
     </article>
     {facts.model&&<details className="sn-back">
       <summary>Turn the note over</summary>
       <dl>
-        <dt>Written by</dt><dd>{facts.model}, inside NEAR AI's confidential computing</dd>
+        {note.state==="sealed"?<><dt>Written by</dt><dd>{facts.model}, inside NEAR AI's confidential computing</dd></>:<><dt>Requested from</dt><dd>{facts.model}</dd></>}
         <dt>Attestation</dt><dd>{facts.attestation}{facts.instances?` ${facts.instances} serving ${facts.instances===1?"instance":"instances"} checked; Intel status ${facts.tcbStatus}.`:""}</dd>
         <dt>Checked</dt><dd>{facts.verifiedIn} The message and reply were encrypted to the model key with a one-use key from this browser. Familiar's harbor only passed the sealed bytes along and added the service key.</dd>
         {facts.modelKey&&<><dt>Model key</dt><dd className="sn-code">{facts.modelKey}</dd></>}

@@ -9,7 +9,7 @@ export const NOTE_MAX_TOKENS=120;
 /** What the back of the note can truthfully say about how it was made. */
 export interface NoteBack {
   model:string;modelKey?:string;instances?:number;tcbStatus?:string;
-  attestation:string;verifiedIn:string;chatId?:string;reason?:string;
+  attestation:string;verifiedIn:string;chatId?:string;reason?:string;code?:string;
 }
 export type SealedNote=
   |{state:"sealed";text:string;back:NoteBack}
@@ -58,7 +58,8 @@ export async function writeSealedNote(options:{
     const envelope:unknown=await response.json().catch(()=>null);
     if(!response.ok){
       const error=envelope&&typeof envelope==="object"&&"error" in envelope&&typeof envelope.error==="string"?envelope.error:"The harbor could not deliver the note.";
-      return {state:"broken",back:{...back,reason:error}};
+      const code=envelope&&typeof envelope==="object"&&"code" in envelope&&typeof envelope.code==="string"?envelope.code:undefined;
+      return {state:"broken",back:{...back,reason:error,...code?{code}:{}}};
     }
     check(envelope&&typeof envelope==="object"&&"completion" in envelope&&typeof envelope.completion==="string","The harbor's reply was malformed.");
     completion=fromBase64(envelope.completion);

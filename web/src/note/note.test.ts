@@ -129,7 +129,7 @@ test("the browser flow returns sealed, plain and broken notes",async()=>{
   expect((await unsigned.run()).state).toBe("plain");
 
   const refused=flow({model,relay:async()=>Response.json({code:"NOTE_WRITTEN",error:"Mochi has already written this harbor's note."},{status:409})});
-  expect(await refused.run()).toMatchObject({state:"broken",back:{reason:"Mochi has already written this harbor's note."}});
+  expect(await refused.run()).toMatchObject({state:"broken",back:{reason:"Mochi has already written this harbor's note.",code:"NOTE_WRITTEN"}});
   const wrongKey=flow({model,relay:async(bytes,headers)=>{const other=teeKeys(),tee=await mockTee(model,bytes,headers.get("x-client-pub-key")!);void other;const forged=utf8(new TextDecoder().decode(tee.completion).replace(/"content":"[0-9a-f]+"/,`"content":"${sealTo("forged",other.publicKey)}"`));return envelope(forged,tee.signature);}});
   expect((await wrongKey.run()).state).toBe("broken");
   const split=flow({model,keys:[model.hex,teeKeys().hex],relay:async()=>{throw Error("unreachable");}});
