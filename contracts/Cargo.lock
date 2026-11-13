@@ -978,6 +978,8 @@ version = "0.1.0"
 dependencies = [
  "familiar-common",
  "near-sdk",
+ "near-workspaces",
+ "tokio",
 ]
 
 [[package]]

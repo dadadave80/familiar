@@ -29,6 +29,7 @@
     "rules:export": "cargo run --manifest-path contracts/Cargo.toml -p rules-export > web/src/rules.json",
     "relayer": "bun services/relayer/src/index.ts",
     "test:tidebound-sandbox": "cargo test --manifest-path contracts/Cargo.toml -p familiar-root --test tidebound -- --ignored --nocapture",
+    "test:season-sandbox": "cargo test --manifest-path contracts/Cargo.toml -p familiar-season --test sandbox -- --ignored --nocapture",
     "preflight:tidebound": "bun scripts/tidebound-preflight.ts",
     "test:privy-lifecycle-browser": "bun scripts/test-privy-lifecycle-browser.ts",
     "package:tidebound-review": "bun --env-file=.env.privy.local scripts/package-tidebound-review.ts",
