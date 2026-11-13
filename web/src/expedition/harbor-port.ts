@@ -35,4 +35,6 @@ export interface HarborSession {
   selectSaved():Promise<void>;selectPreview():void;
   review(intent:WorldIntent):Promise<void>;confirm(reviewId:string):Promise<void>;cancelReview():void;
   refresh():Promise<void>;resumeOriginal():Promise<void>;checkOriginal():Promise<void>;resolveExpired():Promise<void>;
+  /** Short-lived session proof for the sealed-note relay; absent when the account provider cannot supply one. */
+  noteToken?():Promise<string|null>;
 }

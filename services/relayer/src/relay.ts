@@ -191,6 +191,12 @@ export class Quota {
     private windowMs: number,
     private maxKeys = 10_000,
   ) {}
+  /** True when `take` would succeed; charges nothing. */
+  allows(key: string, now = Date.now()): boolean {
+    const current = this.counts.get(key);
+    if (current && current.until > now) return current.count < this.limit;
+    return this.counts.size < this.maxKeys || this.counts.has(key);
+  }
   take(key: string, now = Date.now()): boolean {
     for (const [id, entry] of this.counts)
       if (entry.until <= now) this.counts.delete(id);

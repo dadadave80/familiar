@@ -13,6 +13,8 @@ Current Familiar has one playable Phaser edition. The introduction stays first; 
 | TypeScript/Rust spatial transitions agree | `make test` | Shared fixture, solver and replay tests |
 | Every listed pet keyless on pinned global code; replayed-court state and one-time Shells for the test player; player and admin keys disclosed | `make judge` | Live public-RPC state of `familiar-game.testnet`, not proof of deployed code (root code differs from the HEAD build); reports key permissions, cannot see custody |
 | Doctored courts (historical and current rules), repeat Shell grants and out-of-scope signing are refused | `make break` | HEAD source in the contract unit runtime plus signer unit tests; full Wasm sandbox stays `bun run test:tidebound-sandbox` |
+| Mochi's sealed note: relay checks, E2EE v3 round trip (including NEAR AI's published Ed25519 vector) and the sealed/plain/broken decision | `bun test services/relayer/src/sealed-note.test.ts web/src/note` | Local key pairs and mocked NEAR AI responses; no network |
+| A live note seals: attested model key, E2EE v3, provider_tee signature over `model:sha256(request):sha256(response)` | `NEAR_AI_API_KEY=<your key> bun scripts/sealed-note-live.ts` | Spends one NEAR AI completion; player identity and journey eligibility are local stand-ins. The claim is only "signed by the attested model key": NEAR AI instances share that signing key, so no single machine is identified |
 | Actual contract compatibility and original-operation invariants | `bun run build:contracts`, then `bun run test:tidebound-sandbox` | Separate same-layout local-chain test; deployed-byte upgrade mode additionally requires all five frozen original Wasm artifacts |
 
 Only two report JSON files remain:

@@ -6,10 +6,12 @@ import { releaseSettings } from "./build-release";
 import { buildAccountFunction,currentRouting,HTTP_PATHS } from "./package-tidebound-review";
 
 test("only production builds receive explicitly allowlisted public account settings",()=>{
-  expect(releaseSettings({})).toEqual({appId:"",clientId:""});
-  expect(releaseSettings({VERCEL_ENV:"preview",PRIVY_APP_ID:"prod-app",VITE_PRIVY_CLIENT_ID:"prod-client"})).toEqual({appId:"",clientId:""});
-  expect(releaseSettings({VERCEL_ENV:"production",PRIVY_APP_ID:"existing-app"})).toEqual({appId:"existing-app",clientId:""});
-  expect(releaseSettings({VERCEL_ENV:"production",VITE_PRIVY_APP_ID:"public-app",PRIVY_APP_ID:"fallback",VITE_PRIVY_CLIENT_ID:"public-client"})).toEqual({appId:"public-app",clientId:"public-client"});
+  expect(releaseSettings({})).toEqual({appId:"",clientId:"",sealedNote:false});
+  expect(releaseSettings({VERCEL_ENV:"preview",PRIVY_APP_ID:"prod-app",VITE_PRIVY_CLIENT_ID:"prod-client",VITE_SEALED_NOTE_ENABLED:"true"})).toEqual({appId:"",clientId:"",sealedNote:false});
+  expect(releaseSettings({VERCEL_ENV:"production",PRIVY_APP_ID:"existing-app"})).toEqual({appId:"existing-app",clientId:"",sealedNote:false});
+  expect(releaseSettings({VERCEL_ENV:"production",PRIVY_APP_ID:"existing-app",VITE_SEALED_NOTE_ENABLED:"1"}).sealedNote).toBe(false);
+  expect(releaseSettings({VERCEL_ENV:"production",PRIVY_APP_ID:"existing-app",VITE_SEALED_NOTE_ENABLED:"true"}).sealedNote).toBe(true);
+  expect(releaseSettings({VERCEL_ENV:"production",VITE_PRIVY_APP_ID:"public-app",PRIVY_APP_ID:"fallback",VITE_PRIVY_CLIENT_ID:"public-client"})).toEqual({appId:"public-app",clientId:"public-client",sealedNote:false});
   for(const id of ["","invalid id", "a".repeat(129)])
     expect(()=>releaseSettings({VERCEL_ENV:"production",PRIVY_APP_ID:id})).toThrow();
   expect(()=>releaseSettings({VERCEL_ENV:"production",PRIVY_APP_SECRET:"never-an-app-id"})).toThrow();

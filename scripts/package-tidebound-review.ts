@@ -6,7 +6,9 @@ import { build } from "vite";
 import react from "@vitejs/plugin-react";
 
 export const GAME_HTML=["index.html","outing/index.html"] as const;
-export const HTTP_PATHS=["/api/health","/api/v1/privy/wallet","/api/v1/privy/player"] as const;
+export const HTTP_PATHS=["/api/health","/api/v1/privy/wallet","/api/v1/privy/player","/api/v1/privy/note"] as const;
+// A reviewed baseline predates the sealed-note path; its declared scope is checked against these originals.
+const BASELINE_HTTP_PATHS=HTTP_PATHS.slice(0,3);
 export const RUNTIME_WEBPS=[
   ...["harbor","arena","wind-gate","mochi","mochi-poses","tidekeeper","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`),
   ...["harbor","mochi-poses","tidekeeper","shell","lens","moth","wave","bram","tide-court","stone-island","wooden-bridge"].map(name=>`assets/expedition/runtime/${name}.webp`),
@@ -14,8 +16,10 @@ export const RUNTIME_WEBPS=[
 export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate.webp.json","assets/expedition/provenance.json","assets/expedition/runtime/manifest.json"] as const;
 export const BRAND_ASSETS=["icons/mochi.ico",...[32,180,192,512].map(size=>`icons/mochi-${size}.png`),"social/familiar-harbor.jpg","familiar.webmanifest"];
 const primaryFunction="api/v1/privy/wallet.func";
-const aliases=["api/health.func","api/v1/privy/player.func"] as const;
-const endpoints=[{path:HTTP_PATHS[0],methods:["GET","OPTIONS"]},...HTTP_PATHS.slice(1).map(path=>({path,methods:["POST","OPTIONS"]}))];
+const aliases=["api/health.func","api/v1/privy/player.func","api/v1/privy/note.func"] as const;
+const baselineAliases=aliases.slice(0,2);
+const endpointsFor=(paths:readonly string[])=>[{path:paths[0],methods:["GET","OPTIONS"]},...paths.slice(1).map(path=>({path,methods:["POST","OPTIONS"]}))];
+const endpoints=endpointsFor(HTTP_PATHS),baselineEndpoints=endpointsFor(BASELINE_HTTP_PATHS);
 const gameRoot="familiar-game.testnet",origin="https://familiar-two.vercel.app";
 const digest=(bytes:Uint8Array)=>createHash("sha256").update(bytes).digest("hex");
 const hash=async(path:string)=>digest(await readFile(path));
@@ -40,7 +44,7 @@ export function validateRouting(config:unknown) {
     check(!HTTP_PATHS.some(path=>new RegExp(route.src).test(path)),"A baseline rewrite would change an H1 function's original request URL.");
 }
 function publicBytes(bytes:Uint8Array,path:string) {
-  check(!/PRIVY_APP_SECRET|VITE_PRIVY_APP_SECRET|RELAYER_PRIVATE_KEY|ROOT_PRIVATE_KEY|NPC_ADMIN_PRIVATE_KEY|NPC_PRIVATE_KEY|NEAR_PRIVATE_KEY|-----BEGIN (?:EC |RSA |OPENSSH )?PRIVATE KEY-----[\r\n]+[A-Za-z0-9+/=\r\n]{64,}-----END/.test(new TextDecoder().decode(bytes)),`Server configuration or private key material appears in the static overlay: ${path}`);
+  check(!/NEAR_AI_API_KEY|PRIVY_APP_SECRET|VITE_PRIVY_APP_SECRET|RELAYER_PRIVATE_KEY|ROOT_PRIVATE_KEY|NPC_ADMIN_PRIVATE_KEY|NPC_PRIVATE_KEY|NEAR_PRIVATE_KEY|-----BEGIN (?:EC |RSA |OPENSSH )?PRIVATE KEY-----[\r\n]+[A-Za-z0-9+/=\r\n]{64,}-----END/.test(new TextDecoder().decode(bytes)),`Server configuration or private key material appears in the static overlay: ${path}`);
 }
 /** Add only approved art and branding that the baseline lacks; never replace its assets. */
 export async function copyRuntimeAssets(sourcePublic:string,destination:string) {
@@ -127,7 +131,7 @@ export async function buildAccountFunction(source:string,output:string){
   return installFunctionAliases(output);
 }
 
-export async function buildGameSite(source:string,site:string,appId:string,clientId:string){
+export async function buildGameSite(source:string,site:string,appId:string,clientId:string,sealedNote=false){
   const overlay=await mkdtemp(join(tmpdir(),"familiar-game-static-"));
   try{
     await build({configFile:false,plugins:[react()],root:join(source,"web"),envDir:false,envPrefix:[],publicDir:false,define:{
@@ -135,6 +139,7 @@ export async function buildGameSite(source:string,site:string,appId:string,clien
       "import.meta.env.VITE_ACCOUNT_PROVIDER":JSON.stringify("privy"),"import.meta.env.VITE_NEAR_ROOT":JSON.stringify(gameRoot),
       "import.meta.env.VITE_NEAR_RPC_URL":JSON.stringify("https://test.rpc.fastnear.com"),"import.meta.env.VITE_RELAYER_URL":JSON.stringify("/api"),
       "import.meta.env.VITE_TIDEBOUND_ENABLED":JSON.stringify(appId?"true":"false"),
+      "import.meta.env.VITE_SEALED_NOTE_ENABLED":JSON.stringify(appId&&sealedNote?"true":"false"),
     },build:{outDir:overlay,rollupOptions:{input:{home:join(source,"web/index.html"),outing:join(source,"web/outing/index.html")},output:{manualChunks:id=>id.includes("/phaser/")?"phaser":undefined}}}});
     const staticReport=await copyGameStatic(overlay,site);
     const runtimeAssets=await copyRuntimeAssets(join(source,"web/public"),site);
@@ -152,9 +157,9 @@ export function baselineFunctionScope(manifest:unknown,actualHash:string,actualA
   const fn=manifest.privateFunction;
   check("sha256" in fn && /^[a-f0-9]{64}$/.test(actualHash) && fn.sha256===actualHash,"The baseline manifest does not match the actual private handler hash.");
   if("mode" in manifest && manifest.mode==="LOCAL_H1_REVIEW_ONLY") {
-    const expected=[{path:aliases[0],target:"v1/privy/wallet.func"},{path:aliases[1],target:"wallet.func"}];
+    const expected=[{path:baselineAliases[0],target:"v1/privy/wallet.func"},{path:baselineAliases[1],target:"wallet.func"}];
     const declaredAliases="aliases" in fn?fn.aliases:null;
-    check("path" in fn && fn.path===primaryFunction && "endpoints" in fn && JSON.stringify(fn.endpoints)===JSON.stringify(endpoints) &&
+    check("path" in fn && fn.path===primaryFunction && "endpoints" in fn && JSON.stringify(fn.endpoints)===JSON.stringify(baselineEndpoints) &&
       Array.isArray(declaredAliases) && declaredAliases.length===expected.length && expected.every(alias=>declaredAliases.some((item:unknown)=>!!item&&typeof item==="object"&&"path" in item&&"target" in item&&item.path===alias.path&&item.target===alias.target)) &&
       JSON.stringify(actualAliases)===JSON.stringify(expected),"The baseline H1 function scope or aliases are unverified.");
     return "h1";
@@ -190,7 +195,7 @@ async function main() {
     routing:{baselineConfigSha256:digest(configBytes),currentConfigSha256:await hash(join(output,"config.json")),changed:true,retiredPagesRedirected:true,originalFunctionRequestUrlPreserved:true},
     publicBuild:{provider:"privy",tideboundUiEnabled:true,root:gameRoot,relayerUrl:"/api",appIdSha256:digest(new TextEncoder().encode(appId)),environmentFilesLoaded:false},
     privateFunction:{path:primaryFunction,scopeBefore,scopeAfter:"h1",scopeChangedFromRecoveryOnly:scopeBefore==="recovery-only",beforeSha256:oldFunctionSha256,sha256:await hash(join(fn,"index.mjs")),bytes:await Bun.file(join(fn,"index.mjs")).size,runtime:"nodejs24.x",shouldAddHelpers:false,aliases:functionAliases,endpoints,enabledByDefault:false},
-    requiredRuntimeEnvironmentNames:["TIDEBOUND_HTTP_ENABLED","ACCOUNT_PROVIDER","NEAR_NETWORK","NEAR_ROOT","RELAYER_ID","RELAYER_PRIVATE_KEY","PRIVY_APP_ID","PRIVY_APP_SECRET"],
+    requiredRuntimeEnvironmentNames:["TIDEBOUND_HTTP_ENABLED","ACCOUNT_PROVIDER","NEAR_NETWORK","NEAR_ROOT","RELAYER_ID","RELAYER_PRIVATE_KEY","PRIVY_APP_ID","PRIVY_APP_SECRET"],optionalRuntimeEnvironmentNames:["NEAR_AI_API_KEY"],
     requiredNonSecretRuntimeValues:{TIDEBOUND_HTTP_ENABLED:"true",ACCOUNT_PROVIDER:"privy",NEAR_NETWORK:"testnet",NEAR_ROOT:gameRoot,RELAYER_ID:`relayer.${gameRoot}`},
     limits:{compatibleContractsVerified:false,liveGameActionsTested:false,hostingAliasUrlBehaviorVerified:false,privateRuntimeConfigured:false},uploaded:false,deployed:false};
   await writeFile(join(release,"review-manifest.json"),JSON.stringify(manifest,null,2)+"\n");console.info(JSON.stringify(manifest,null,2));

@@ -73,6 +73,7 @@ export class HarborController implements HarborSession {
   async authenticate(){check(this.connection,"Recoverable sign-in is not configured at this address.");return this.enter(()=>this.connection!.adapter.authenticate());}
   async checkUsername(username:string){this.guard(this.epoch);check(this.connection&&!this.value.busy,"Recoverable sign-in is unavailable or busy.");const epoch=this.epoch,result=await this.connection.adapter.checkUsername(username);this.guard(epoch);return result;}
   async provisionPlayer(username:string){check(this.connection,"Recoverable sign-in is unavailable.");return this.enter(()=>this.connection!.adapter.provisionAccount(username));}
+  async noteToken(){const adapter=this.connection?.adapter as {accessToken?():Promise<string|null>}|undefined;return this.value.mode==="saved"&&this.value.binding&&adapter?.accessToken?adapter.accessToken():null;}
   async signOut(){this.guard(this.epoch);const epoch=++this.epoch;this.prepared=null;this.update({binding:null,snapshot:null,mode:"preview",review:null,busy:true,message:"Your device previews and original requests are preserved."});try{await this.connection?.adapter.endSession();}finally{if(this.live&&epoch===this.epoch)this.update({busy:false});}}
   async refresh(){const binding=this.value.binding;check(binding&&this.connection,"Sign in to check the saved harbor.");return this.work(()=>this.load(binding,this.epoch));}
   private async work(task:()=>Promise<unknown>) {
