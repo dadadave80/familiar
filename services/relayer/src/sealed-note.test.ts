@@ -74,7 +74,7 @@ test("note endpoint keeps exact path, method, origin, session and size guards be
     for(const authorization of ["","Bearer nope","Basic x"])expect((await post(url,body(),{authorization})).status).toBe(401);
     expect((await post(url,JSON.stringify({padding:"x".repeat(16_384)}))).status).toBe(413);
     expect((await post(url,body({stream:true}))).status).toBe(400);
-    for(const bad of [{"x-client-pub-key":"A".repeat(64)},{"x-model-pub-key":"b".repeat(63)},{"x-client-pub-key":""}])expect((await post(url,body(),bad)).status).toBe(400);
+    for(const bad of [{"x-client-pub-key":"A".repeat(64)},{"x-model-pub-key":"b".repeat(63)},{"x-client-pub-key":""}] as Record<string,string>[])expect((await post(url,body(),bad)).status).toBe(400);
     const preflight=await fetch(url+"/api/v1/privy/note",{method:"OPTIONS",headers:{origin,"access-control-request-method":"POST","access-control-request-headers":"authorization,content-type,x-client-pub-key,x-model-pub-key"}});
     expect(preflight.status).toBe(204);expect(preflight.headers.get("access-control-allow-origin")).toBe(origin);
     expect(preflight.headers.get("access-control-allow-headers")?.toLowerCase()).toContain("x-model-pub-key");
