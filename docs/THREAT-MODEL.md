@@ -1,6 +1,6 @@
 # Familiar threat model
 
-Current source scope, November 13, 2026: browser game and supporting NEAR testnet identity, ownership and finite H1 progression. This is an implementation threat model, not a mainnet audit, load test or guarantee of service availability. Dated live evidence remains in [JUDGES.md](../JUDGES.md); superseded reports are indexed in [ARCHIVED-REPORTS.md](ARCHIVED-REPORTS.md).
+Current source scope, November 13, 2026: browser game and supporting NEAR testnet identity, ownership and finite H1 progression. This is an implementation threat model, not a mainnet audit, load test or guarantee of service availability. Current reproducible checks are in [JUDGES.md](../JUDGES.md); dated live evidence is preserved in [archived reports](ARCHIVED-REPORTS.md).
 
 | Boundary | Authority and protection | Remaining trust or limitation |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Familiar architecture
 
-Current source, November 13, 2026. The introduction at `/` leads to the single Phaser game at `/outing/`. Public deployment status and dated acceptance are in [JUDGES.md](../JUDGES.md); local changes are not automatically published. Superseded implementation reports are indexed in [ARCHIVED-REPORTS.md](ARCHIVED-REPORTS.md).
+Current source, November 13, 2026. The introduction at `/` leads to the single Phaser game at `/outing/`. Current checks are in [JUDGES.md](../JUDGES.md), deployment status is in [PROGRESS.md](../PROGRESS.md), and dated acceptance is preserved in [archived reports](ARCHIVED-REPORTS.md). Local changes are not automatically published.
 
 ```mermaid
 flowchart TD

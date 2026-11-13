@@ -1,66 +1,43 @@
 # Familiar
 
-A cozy turn-based puzzle adventure with Mochi and a coastal harbor to restore. The introduction stays at `/`; **Play Familiar** opens the current Phaser game at `/outing/`.
+A cozy turn-based Phaser puzzle adventure with Mochi and a coastal harbor to restore. The introduction at `/` leads to `/outing/`. Recover the Beacon Lens, route the tide through Wind Gate, help at Bell/Reed Steps, and follow Mochi's later shore-bell discovery.
 
-Guide Mochi across tidal platforms, recover the Beacon Lens, restore the lighthouse, and explore Wind Gate for the Signal Vane. Bell Steps and Reed Steps offer supply and skiff crossings. Once the signal and both services are restored, follow Mochi to the old Bell arch, listen at low tide, and bring the discovery home to open a new routing choice.
-
-The old town, classic three-lane game, motion lab and recovery demo are retired. Their URLs lead to Familiar. Pure historical replay and signing rules remain to verify old earned returns and preserve original pending operations. Existing browser data is never cleared or automatically merged into the current game.
-
-## Play and develop
+## Run
 
 ```sh
 bun install --frozen-lockfile
-bun run dev
+make dev
 ```
 
-Open the printed local address. No account is needed for the device preview. Arrow keys/WASD, touch on neighboring platforms and accessible direction buttons guide Mochi. Inspect is free; accepted decisions advance the tide and save before animation. Sound is opt-in. Reduced motion keeps the same outcomes.
+No account is needed for the device preview. Use neighboring-platform taps, WASD/arrows or accessible buttons. Inspect is free. Sound is opt-in; reduced motion keeps the same outcomes. Device saves stay on that browser and never silently merge into a signed-in harbor.
 
-The page fills the viewport on desktop and mobile portrait/landscape; only contained panels scroll. A connection is needed to load. Device previews and Bell/Reed discoveries remain on that browser. Signing in does not merge or replace them.
+## Commands
 
-## Current implementation
-
-| Area | Source |
+| Command | Purpose |
 | --- | --- |
-| Introduction | `web/src/landing/` |
-| Spatial game, companions, audio and harbor | `web/src/expedition/` |
-| Shared Mochi poses and static origin actor | `web/src/motion/` |
-| Recovery and current account boundary | `web/src/account/`, `web/src/expedition/harbor-session.tsx` |
-| Historical return proofs and canonical item clients | `web/src/compatibility/`, `web/src/tidebound/` |
-| NEAR testnet contracts and HTTP service | `contracts/`, `services/relayer/` |
-| Original art masters | `web/assets/source/` |
-| Optimized runtime art and provenance | `web/public/assets/` |
+| `make test` | Bun and Rust unit tests |
+| `make typecheck` | TypeScript check |
+| `make build` | TypeScript check and Vite build |
+| `make check` | Tests and build |
+| `make browser` | Chromium/WebKit route and save checks |
+| `make evidence` | Offline recorded signature/receipt checks |
 
-The stack is React/Vite/Phaser with pure TypeScript rules, Bun tooling and Rust contracts. The older dynamic NPC pricing worker is retired; Bram’s finite commission remains part of the Root contract. Original PNGs and generator-only WebPs stay outside the public delivery directory; runtime artwork uses committed optimized WebPs. The [source-art guide](web/assets/source/README.md) documents regeneration. Earlier prototype screenshots are archived outside Git and future captures are ignored.
+Make is a shortcut layer; the underlying `bun run` commands still work. Browser checks require `bunx playwright install chromium webkit`. Full outing checks use `bun scripts/test-expedition-browser.ts --only=390` and `bun scripts/test-passage-browser.ts`. Real-Wasm sandbox checks require `bun run build:contracts`, then `bun run test:tidebound-sandbox` or `bun run test:sandbox`; default Rust tests leave these integrations ignored.
 
-## Verification
+## Source
 
-```sh
-bun run test
-cargo test --manifest-path contracts/Cargo.toml --workspace
-bun run build
-bun run test:routing-browser
-bun run test:expedition-browser -- --quick
-bun scripts/test-passage-browser.ts
-```
+- `web/src/expedition/`: rules, Phaser presentation, Mochi, sound and harbor.
+- `web/src/account/`, `web/src/tidebound/`: recoverable identity, original transactions and item provenance.
+- `web/src/compatibility/`: frozen historical return validation.
+- `contracts/`, `services/relayer/`: Rust testnet contracts and account HTTP service.
+- `web/assets/source/`: art masters and generator inputs; [regeneration guide](web/assets/source/README.md).
 
-Install the browser engines once with `bunx playwright install chromium webkit`. The routing check confirms introduction → Play → Familiar, retired URL handling, saved-run reload and preservation of old browser namespaces. Expedition and passage checks use browser emulation. They do not establish physical-phone audio, performance or human enjoyment.
+The stack remains React/Vite/Phaser, Bun/TypeScript and Rust. The finite H1 economy preserves one protected craft credit, one salvage, one personal 12-Shell commission and one optional 12-Shell finish per token. Bound Shells have no cash redemption. Transfer does not transfer maker achievement; unknown outcomes preserve the original request.
 
-The separate actual-Wasm sandbox commands are `bun run test:tidebound-sandbox` and `bun run test:sandbox`, after `bun run build:contracts`. They use disposable local accounts and a mock pool. Default Rust tests leave those integrations ignored. Completed live drivers and their journals must never be rerun to infer recovery.
+## Status and evidence
 
-## Ownership and evidence
+[JUDGES.md](JUDGES.md) lists current reproducible claims. [PROGRESS.md](PROGRESS.md) records the latest verified changes. [Architecture](docs/ARCHITECTURE.md), [threat model](docs/THREAT-MODEL.md) and [archived reports](docs/ARCHIVED-REPORTS.md) explain the boundaries. Only two report JSONs remain: recorded gameplay evidence for regressions and original deployment evidence for isolation guards.
 
-Canonical progress uses recoverable named NEAR testnet accounts and current-holder checks. The finite H1 economy retains one protected craft credit, one workshop salvage, one personal 12-Shell commission and one optional 12-Shell finish per token. Bound Shells have no cash redemption. Transfer moves ownership without moving the maker's achievement or provenance. Unknown transaction outcomes keep the original operation; they never authorize another mint, payment, refund or unlock.
+Cleanup is local; it has not updated the public deployment. GitHub deployment automation is not configured. `bun run package:tidebound-review <existing-reviewed-release>` prepares a local artifact without publishing. Credentials and recovery journals stay in ignored private configuration; ordinary exploration requires no blockchain transaction.
 
-Recorded historical and current-content acceptance, contract upgrades and deployment evidence remain in `docs/`. The read-only `bun --no-env-file scripts/verify-game-evidence.ts` checks the captured signatures, exact calls and full receipt graphs without keys or a connection. Completed live mutation drivers are archived outside the repository; private recovery journals remain untouched. They are dated evidence, not instructions to repeat transactions. Superseded hosting/setup reports are recorded in the [archive index](docs/ARCHIVED-REPORTS.md). [JUDGES.md](JUDGES.md) distinguishes reproducible current checks from historical runs. [PROGRESS.md](PROGRESS.md) records the latest verified work. Full same-earned-state recovery across two physical devices and the planned human study remain unpassed.
-
-The current source cleanup is local. The existing public site may still serve the prior deployment until a separately authorized release. Repository creation, source pushes, public visibility, mainnet actions and submissions remain separate actions.
-
-## Release preparation
-
-`bun run package:tidebound-review <existing-reviewed-release>` prepares a local current Familiar artifact for the existing Familiar Vercel project. It builds fresh introduction/game pages and bundles, copies current runtime art, provenance and licenses, preserves the validated H1 function boundary, and replaces retired page routes with redirects. It does not publish. Unlike the retired overlay process, it does not carry earlier game/demo pages or old hashed bundles forward.
-
-Secrets stay in ignored local configuration or the existing encrypted hosting environment. Root/admin keys stay local. Ordinary movement and conversation need no blockchain transaction. The GitHub-to-production workflow is not configured yet.
-
-## Credits and limits
-
-Code is MIT licensed. Generated and reused artwork has its recorded provenance; the code license does not establish separate reference-art rights. Open-source library and font licenses are in `web/public/licenses/`. No mainnet, cash-redemption, retention or valuation result is claimed. The large Phaser bundle warning and physical-device/human validation gaps remain documented.
+Code is MIT licensed; artwork provenance and dependency/font licenses remain with their assets. The existing large Phaser bundle warning persists. Physical-phone audio/performance, full earned-state recovery across two physical devices and independent human enjoyment remain unverified.
