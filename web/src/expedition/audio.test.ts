@@ -25,6 +25,7 @@ test("no audio context is created before opt-in and a late resume cannot outlive
     close:async()=>{closed++;context.state="closed";},createOscillator:()=>{oscillators++;throw Error("Must remain silent");},
   };
   const audio=new HarborAudio(()=>{created++;return context as unknown as AudioContext;});
+  audio.playPassage("watch");audio.playPassage("ride");
   audio.play({kind:"telegraph",column:0});expect(created).toBe(0);
   const enabling=audio.setEnabled(true);expect(created).toBe(1);
   await audio.close();resume();await enabling;

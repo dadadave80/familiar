@@ -151,6 +151,16 @@ export class HarborAudio {
   play(event:CourtEvent,area:Area="beacon"):void {
     this.schedule("effects",soundRecipe(event,area));
   }
+  playPassage(moment:"ride"|"watch"):void {
+    this.schedule("effects",moment==="ride"?[
+      {kind:"noise",frequency:1120,gain:.056,duration:.26,filter:"bandpass",attack:.065},
+      {kind:"tone",frequency:182,to:238,gain:.06,duration:.31,waveform:"triangle",attack:.055},
+      {kind:"tone",frequency:195,to:143,gain:.043,duration:.19,delay:.37,waveform:"triangle",attack:.006},
+    ]:[
+      {kind:"noise",frequency:1640,gain:.043,duration:.27,filter:"bandpass",attack:.08},
+      {kind:"noise",frequency:1930,gain:.036,duration:.18,delay:.26,filter:"bandpass",attack:.05},
+    ]);
+  }
   playMusic(cue:MusicCue):void {
     this.stopSources("music",true);
     this.schedule("music",score(cue));

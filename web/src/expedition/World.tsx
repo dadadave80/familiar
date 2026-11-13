@@ -32,12 +32,22 @@ export default function World(props:ExpeditionWorldProps){
         ready:()=>{if(!alive)return;setReady(true);current.current.onReady();next.setGated(current.current.paused);},fault:message=>{if(alive)current.current.onFault(message);},
         beat:(event,index)=>{if(alive)current.current.onBeat(event,index);},settled:id=>{if(alive)current.current.onSettled(id);},geometry:geometry=>{if(alive)setTiles([...geometry]);},
       });scene.current=next;
-      game=new Phaser.Game({type:Phaser.AUTO,parent:mount.current,width:mount.current.clientWidth,height:mount.current.clientHeight,transparent:true,antialias:true,banner:false,audio:{noAudio:true},scene:next,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},input:{keyboard:false}});
+      game=new Phaser.Game({type:Phaser.AUTO,parent:mount.current,width:mount.current.clientWidth,height:mount.current.clientHeight,transparent:true,antialias:true,banner:false,audio:{noAudio:true},loader:{imageLoadType:"HTMLImageElement"},scene:next,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},input:{keyboard:false}});
       game.canvas.setAttribute("aria-hidden","true");game.canvas.addEventListener("webglcontextlost",lost);
     }).catch(()=>{if(alive)current.current.onFault("The playfield could not open. Your saved harbor is safe. Retry the scene.");});
     return()=>{alive=false;scene.current=null;if(game){game.canvas.removeEventListener("webglcontextlost",lost);game.destroy(true);}};
   },[]);
   useEffect(()=>{if(ready)scene.current?.setSnapshot(props.snapshot,props.transition,props.presentationId);},[ready,props.snapshot,props.transition,props.presentationId]);
   useEffect(()=>{scene.current?.setGated(props.paused);},[props.paused]);
-  return <div ref={mount} className="exp-world" data-testid="expedition-world" data-ready={ready} data-tiles={JSON.stringify(tiles)} data-position={props.snapshot.court?`${props.snapshot.court.position.x},${props.snapshot.court.position.y}`:"home"} data-turn={props.snapshot.court?.turn??0} data-lantern-motif={!props.snapshot.court&&props.snapshot.home.lantern?props.snapshot.home.motif:undefined} data-lantern-finish={!props.snapshot.court&&props.snapshot.home.lantern?props.snapshot.home.polished?"harbor_polish":"original":undefined} role="img" aria-label={props.snapshot.court?"Spatial tide court. Equivalent movement and interaction controls follow.":"Mochi and Bram at Pocket Harbor. Choose a place using the harbor controls."}/>;
+  const {passage,court,home}=props.snapshot;
+  let description=court?"Spatial tide court. Equivalent movement and interaction controls follow.":"Mochi and Bram at Pocket Harbor. Choose a place using the harbor controls.";
+  if(passage&&court){
+    const delivered=passage.stage==="delivered",bell=passage.job==="bell";
+    const location=bell?(delivered?"far left work steps":"near left Bell Steps"):(delivered?"near right quay":"far right Reed Steps");
+    description=`${bell?"Bram’s supplies":"The empty skiff"} at the ${location}. ${passage.watched?"Mochi and you watched the reeds. ":""}Movement and service controls follow.`;
+  }else if(!court&&home.services?.length){
+    if(home.services.includes("bell"))description+=" Bram’s supplies have reached the Bell work steps.";
+    if(home.services.includes("reed"))description+=" The Reed skiff is moored on the harbor side.";
+  }
+  return <div ref={mount} className="exp-world" data-testid="expedition-world" data-ready={ready} data-tiles={JSON.stringify(tiles)} data-position={court?`${court.position.x},${court.position.y}`:"home"} data-turn={court?.turn??0} data-passage={passage?.job} data-service-stage={passage?.stage} data-home-services={home.services?.join(" ")} data-lantern-motif={!court&&home.lantern?home.motif:undefined} data-lantern-finish={!court&&home.lantern?home.polished?"harbor_polish":"original":undefined} role="img" aria-label={description}/>;
 }

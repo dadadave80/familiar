@@ -2,14 +2,16 @@ import Phaser from "phaser";
 import { applyCommand, waveExit, walkable, findPosition } from "./engine";
 import { COURTS } from "./rooms";
 import { commandAt } from "./input";
+import { PASSAGE_LANDINGS, type PassageJob, type PassageState } from "./passage";
 import { MOCHI_GROUND, MOCHI_POSES, walkingPose, type MochiPoseName } from "../motion/mochi";
 import type { Column, Command, CourtEvent, CourtState, CourtTransition, Find, Position } from "./types";
 
 const ART = "/assets/expedition-v2/runtime/";
 const ASSETS = { harbor:"harbor", mochi:"mochi-poses-v1", keeper:"tidekeeper", shell:"shell", lens:"lens", moth:"moth", wave:"wave", bram:"bram" } as const;
 export type HomePlace = "sail" | "beacon" | "bram" | "workbench" | "satchel" | "account";
-export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null }
-export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null }
+export type PassageView=Pick<PassageState,"job"|"stage"|"watched"|"mothHome">&{rode?:boolean};
+export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;services?:readonly PassageJob[];watchedReeds?:boolean }
+export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;passage?:PassageView|null }
 export interface WorldHooks {
   command:(command:Command)=>void;
   target:(position:Position)=>void;
@@ -27,10 +29,12 @@ export class ExpeditionScene extends Phaser.Scene {
   private hooks:WorldHooks;
   private snapshot:WorldSnapshot;
   private visual:CourtState|null=null;
+  private shownPassage:PassageView|null=null;
   private ground!:Phaser.GameObjects.Graphics;
   private shoreMarks!:Phaser.GameObjects.Graphics;
   private bridgeArt!:Phaser.GameObjects.Image;
   private wheel!:Phaser.GameObjects.Graphics;
+  private skiff!:Phaser.GameObjects.Graphics;
   private forecast!:Phaser.GameObjects.Graphics;
   private forecastLabel!:Phaser.GameObjects.Text;
   private neighbors!:Phaser.GameObjects.Graphics;
@@ -70,6 +74,12 @@ export class ExpeditionScene extends Phaser.Scene {
   }
   create(){
     if(this.stopped)return;
+    const missing=[...Object.keys(ASSETS),"court","island","bridge"].find(key=>!this.textures.exists(`exp-${key}`));
+    if(missing){
+      this.stopped=true;
+      this.hooks.fault(`The ${missing} artwork could not be decoded. Your saved moves are safe. Retry the scene.`);
+      return;
+    }
     const atlas=this.textures.get("exp-mochi"),source=atlas.getSourceImage() as HTMLImageElement;
     for(let i=0;i<16;i++)atlas.add(i,0,(i%4)*source.width/4,Math.floor(i/4)*source.height/4,source.width/4,source.height/4);
     const vane=this.add.graphics();
@@ -90,6 +100,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.shoreMarks=this.add.graphics().setDepth(4);
     this.bridgeArt=this.add.image(0,0,"exp-bridge").setDepth(.5);
     this.wheel=this.add.graphics().setDepth(6);
+    this.skiff=this.add.graphics().setDepth(8);
     this.forecast=this.add.graphics().setDepth(2);
     this.forecastLabel=this.add.text(0,0,"",{fontFamily:"Figtree Variable, sans-serif",fontStyle:"bold",color:"#fff5d8",backgroundColor:"#314d42",padding:{x:7,y:4},align:"center"}).setOrigin(.5).setDepth(12);
     this.neighbors=this.add.graphics().setDepth(2.1);
@@ -104,7 +115,7 @@ export class ExpeditionScene extends Phaser.Scene {
       else{this.cameras.main.setZoom(1).setScroll(0,0);this.layout();}
     });
     this.events.once("shutdown",()=>{this.stopped=true;this.epoch++;});
-    this.visual=this.snapshot.court;
+    this.visual=this.snapshot.court;this.shownPassage=this.snapshot.passage??null;
     this.input.mouse?.disableContextMenu();
     this.input.on("pointermove",(pointer:Phaser.Input.Pointer)=>{const press=this.presses.get(pointer.id);if(press&&Math.hypot(pointer.x-press.x,pointer.y-press.y)>12)press.dragged=true;});
     const release=(pointer:Phaser.Input.Pointer)=>this.presses.delete(pointer.id);
@@ -134,7 +145,8 @@ export class ExpeditionScene extends Phaser.Scene {
     if(transition&&id!==this.lastPresentation){this.lastPresentation=id;void this.present(transition,id);}
     else if(!this.playing){
       this.visual=snapshot.court;
-      if(previous.court===snapshot.court&&snapshot.court&&previous.reducedMotion===snapshot.reducedMotion)this.paintHints(snapshot.court);
+      this.shownPassage=snapshot.passage??null;
+      if(previous.court===snapshot.court&&snapshot.court&&previous.passage===snapshot.passage&&previous.reducedMotion===snapshot.reducedMotion)this.paintHints(snapshot.court);
       else this.layout();
       if(!previous.court&&!snapshot.court&&!previous.home.lit&&snapshot.home.lit&&!snapshot.reducedMotion){
         this.beam.setAlpha(.1);
@@ -160,6 +172,7 @@ export class ExpeditionScene extends Phaser.Scene {
   private layout(){
     if(!this.actor||this.stopped)return;
     this.presses.clear();
+    this.skiff.clear().setVisible(false);
     this.clearParts();this.ground.clear();this.shoreMarks.clear();this.homeProps.clear();this.bridgeArt.setAlpha(1);this.wheel.clear();this.forecast.clear();this.forecastLabel.setVisible(false);this.neighbors.clear();this.beam.clear().setAlpha(1);
     const court=this.visual;
     this.backdrop.setTexture(court?"exp-court":"exp-harbor","__BASE");
@@ -217,16 +230,77 @@ export class ExpeditionScene extends Phaser.Scene {
       }
     }
     if(court.area==="wind")this.windGate(court);
+    if(this.shownPassage)this.passageCourt(court,this.shownPassage);
     const p=this.point(court.position);
     this.actor.setPosition(p.x,p.y).setDisplaySize(this.actorSize(),this.actorSize()).setFlipX(false);
     this.actorShadow.setPosition(p.x,p.y+2).setSize(this.actorSize()*.55,Math.max(4,this.actorSize()*.10));
-    const mothNearby=court.position.y>=3&&findPosition(court,"moth")!==null;
-    this.pose(court.locked!==null?"brace":mothNearby?"look-right":"curious");
+    const mothNearby=court.position.y>=3&&findPosition(court,"moth")!==null&&!this.shownPassage?.mothHome;
+    const watching=this.shownPassage?.watched&&mothNearby&&court.position.x===1&&court.position.y===4;
+    this.pose(watching?"relieved":court.locked!==null?"brace":mothNearby?"look-right":"curious");
     this.drawCargo(court);this.paintHints(court);
   }
   private drawBridge(x:number,y:number,w:number,h:number){
     // Native3:1 bridge stays undistorted; transparent ends overlap the two landing stones.
     const length=h*1.36;this.bridgeArt.setPosition(x,y).setDisplaySize(length/3,length);
+  }
+  private supplyCrate(g:Phaser.GameObjects.Graphics,x:number,y:number,w:number){
+    const h=w*.73;
+    g.fillStyle(0x68462e).fillRect(x,y,w,h);
+    g.fillStyle(0xb77b45).fillRect(x+1,y+1,w-2,h-2);
+    g.lineStyle(Math.max(1,w*.09),0xe4bd82).lineBetween(x+2,y+h-2,x+w-2,y+2);
+    for(const side of [.18,.80])g.lineStyle(Math.max(1,w*.09),0x6a5b43).lineBetween(x+w*side,y,x+w*side,y+h);
+  }
+  private drawSkiff(x:number,y:number,width:number,loaded:boolean){
+    const hull=this.skiff;
+    hull.clear().setVisible(true).setDepth(8).setPosition(x,y).setScale(width/80);
+    hull.fillStyle(0x243d3e,.35).fillEllipse(1,7,77,11);
+    hull.fillStyle(0x573d2c).beginPath().moveTo(-39,-8).lineTo(-25,4).lineTo(-16,9)
+      .lineTo(22,9).lineTo(34,0).lineTo(40,-11).lineTo(23,-6).lineTo(-22,-5).closePath().fillPath();
+    hull.fillStyle(0x547970).beginPath().moveTo(-35,-5).lineTo(-16,6).lineTo(22,6)
+      .lineTo(35,-6).lineTo(20,-2).lineTo(-18,-1).closePath().fillPath();
+    hull.lineStyle(2.2,0xe0b879).lineBetween(-38,-8,-20,-3).lineBetween(-20,-3,23,-4).lineBetween(23,-4,39,-11);
+    hull.lineStyle(1.2,0x395b56).lineBetween(-19,4,21,3);
+    hull.lineStyle(3,0xbc9366).lineBetween(12,-7,17,-3).lineBetween(-15,-7,-10,-3);
+    if(loaded)this.supplyCrate(hull,-23,-18,16);
+  }
+  private passageCourt(court:CourtState,passage:PassageView){
+    const bell=passage.job==="bell",side=bell?-1:1;
+    const {departure,arrival}=PASSAGE_LANDINGS[passage.job],column=departure.x;
+    const tile=this.tileSize(),f=this.field();
+    const slipWidth=Math.min(90,tile.width*.74);
+    const offset=side*tile.width*.17;
+    const near=this.point({x:column,y:1}),far=this.point({x:column,y:3});
+    const delivered=passage.stage==="delivered",boatAtNear=(delivered?arrival:departure).y===1;
+    const slip=(boatAtNear?near:far);
+    this.drawSkiff(slip.x+offset,slip.y+(boatAtNear?-1:1)*f.dy*.27,slipWidth,bell&&!delivered);
+    const g=this.shoreMarks;
+    const postX=near.x+side*tile.width*.35,nearY=near.y-f.dy*.12,farY=far.y+f.dy*.12;
+    const taut=waveExit(court)===column&&!delivered;
+    const midX=postX+(taut?0:side*Math.min(11,f.dx*.08)),midY=(nearY+farY)/2;
+    g.lineStyle(4,0x4b4637,.83).lineBetween(postX,nearY,midX,midY).lineBetween(midX,midY,postX,farY);
+    g.lineStyle(1.7,taut?0xffdf8c:0xc9ad79).lineBetween(postX,nearY,midX,midY).lineBetween(midX,midY,postX,farY);
+    for(const y of [nearY,farY]){
+      g.fillStyle(0x664a32).fillRoundedRect(postX-3,y-7,6,15,2);
+      g.lineStyle(2,0xe3c393).lineBetween(postX-4,y-2,postX+4,y-2).lineBetween(postX-4,y+1,postX+4,y+1);
+    }
+    if(bell){
+      g.lineStyle(3,0x60513b).lineBetween(postX,nearY-6,postX,nearY-22).lineBetween(postX,nearY-22,postX+10,nearY-22);
+      g.fillStyle(0xdcb775).fillTriangle(postX+10,nearY-21,postX+5,nearY-12,postX+15,nearY-12).fillCircle(postX+10,nearY-11,2);
+    }else{
+      for(const dx of [-5,1,6]){
+        g.lineStyle(2,0x52663f).lineBetween(postX+dx,farY,postX+dx-3,farY-11).lineBetween(postX+dx-3,farY-11,postX+dx+1,farY-15);
+        g.fillStyle(0xba965a).fillEllipse(postX+dx+1,farY-17,3,6);
+      }
+    }
+    if(bell&&delivered)this.supplyCrate(g,far.x-tile.width*.22,far.y-12,Math.max(12,tile.width*.15));
+    const crew=bell?far:near;
+    const height=Math.min(64,f.dy*.77,tile.width*.53);
+    this.bram.setVisible(true).setFlipX(!bell).setPosition(crew.x+side*tile.width*.27,crew.y+4).setDisplaySize(height*.75,height);
+    const moth=this.finds.get("moth");
+    if(moth&&passage.watched&&!passage.mothHome){
+      const perch=this.point({x:2,y:4});
+      moth.setPosition(perch.x+tile.width*.29,perch.y-15).setAngle(-12).setScale(moth.scaleX*.67,moth.scaleY*.67);
+    }
   }
   private windGate(court:CourtState){
     const {width}=this.tileSize(),f=this.field(),stone=this.point({x:1,y:3});
@@ -308,6 +382,7 @@ export class ExpeditionScene extends Phaser.Scene {
   private paintHints(court:CourtState){
     this.neighbors.clear();const tile=this.tileSize();
     for(let y=0;y<5;y++)for(const x of [0,1,2] as const){const target={x,y},command=commandAt(court,target);if(!command)continue;const accepted=applyCommand(court,command);if(!accepted)continue;const risk=accepted.events.some(e=>e.kind==="hit"),p=this.point(target);this.neighbors.lineStyle(3,risk?0x8e3527:0xffe1a1,.95);
+      if(this.shownPassage&&!command.startsWith("step:"))continue;
       if(command.startsWith("step:"))this.neighbors.strokeEllipse(p.x,p.y+tile.width*.025,tile.width*1.03,tile.width*.36);
       else if(command.startsWith("take:")||command.startsWith("reel:"))this.neighbors.strokeCircle(p.x,p.y-15,Math.min(33,tile.width*.37));
       if(risk)this.neighbors.lineBetween(p.x-7,p.y-7,p.x+7,p.y+7).lineBetween(p.x+7,p.y-7,p.x-7,p.y+7);
@@ -332,7 +407,25 @@ export class ExpeditionScene extends Phaser.Scene {
     }
     const actorSize=Math.min(180,this.w*.28,this.h*.25);
     this.actor.setPosition(this.w*.49,groundY).setDisplaySize(actorSize,actorSize);this.pose(this.snapshot.home.lit?"relieved":"curious");this.actorShadow.setPosition(this.actor.x,this.actor.y).setSize(actorSize*.5,14);
-    const b=Math.min(255,this.w*.36,this.h*.38);this.bram.setPosition(this.w*.28,portrait?groundY-4:this.h*.82).setDisplaySize(b*.75,b);
+    const b=Math.min(255,this.w*.36,this.h*.38);this.bram.setFlipX(false).setPosition(this.w*.28,portrait?groundY-4:this.h*.82).setDisplaySize(b*.75,b);
+    const services=this.snapshot.home.services;
+    if(services?.includes("bell")){
+      const landing=this.homeProps,w=Math.min(27,actorSize*.18);
+      const x=this.w*(portrait?.45:.54),y=this.backdrop.y+this.backdrop.displayHeight*(portrait?-.025:.05);
+      landing.fillStyle(0x75573a).fillRoundedRect(x-w*.34,y+w*.84,w*2.48,w*.28,2);
+      for(const edge of [-.15,1.65])landing.fillRect(x+w*edge,y+w,Math.max(2,w*.14),w*.47);
+      this.supplyCrate(landing,x,y+w*.14,w);
+      this.supplyCrate(landing,x+w*.88,y+w*.21,w*.83);
+      this.supplyCrate(landing,x+w*.29,y-w*.42,w*.85);
+    }
+    if(services?.includes("reed")){
+      const width=Math.min(130,this.w*.29);
+      const x=this.w*(portrait?.13:.61),y=groundY-b*(portrait?.86:.67);
+      this.drawSkiff(x,y,width,false);
+      this.skiff.setDepth(4);
+      this.homeProps.lineStyle(2,0xd0b17b).lineBetween(x+width*.44,y-width*.09,x+width*.57,y+width*.025);
+      this.homeProps.fillStyle(0x674933).fillRoundedRect(x+width*.56,y-width*.05,Math.max(3,width*.045),width*.21,2);
+    }
     if(this.snapshot.home.lit){
       // Register the light to the painted lantern room, including its portrait crop.
       const width=this.backdrop.displayWidth,height=this.backdrop.displayHeight;
@@ -380,6 +473,7 @@ export class ExpeditionScene extends Phaser.Scene {
       if(this.snapshot.home.motif==="moth"){g.fillStyle(0xfff3c8).fillEllipse(x-5,y-15,9,13).fillEllipse(x+5,y-15,9,13).strokeEllipse(x-5,y-15,9,13).strokeEllipse(x+5,y-15,9,13).lineBetween(x,y-21,x,y-5);}
       else for(const offset of [-18,-9])g.lineBetween(x-8,y+offset,x-3,y+offset-3).lineBetween(x-3,y+offset-3,x+3,y+offset+3).lineBetween(x+3,y+offset+3,x+8,y+offset);
     }
+    if(this.snapshot.home.watchedReeds)this.pose("relieved");
   }
   private addHomeFind(item:Find,x:number,y:number,size:number){const image=this.add.image(x,y,`exp-${item}`).setDisplaySize(size,size).setDepth(item==="vane"?11:7);this.cargo.push(image);}
   private async tween(targets:object,config:Omit<Phaser.Types.Tweens.TweenBuilderConfig,"targets">,duration:number){
@@ -391,17 +485,25 @@ export class ExpeditionScene extends Phaser.Scene {
     this.presentationSize={w:this.scale.width,h:this.scale.height};
     this.playing=true;
     this.visual=this.snapshot.reducedMotion?transition.after:transition.before;
+    if(this.snapshot.reducedMotion)this.shownPassage=this.snapshot.passage??null;
+    const beganWatching=this.snapshot.passage?.watched&&!this.shownPassage?.watched;
     this.layout();
     for(const [index,event] of transition.events.entries()){
       if(this.stopped||this.epoch!==epoch)return;
       this.hooks.beat(event,index);
       if(this.snapshot.reducedMotion||this.visual===transition.after){
-        if(this.visual!==transition.after){this.visual=transition.after;this.layout();}
+        if(this.visual!==transition.after){this.visual=transition.after;this.shownPassage=this.snapshot.passage??null;this.layout();}
         await this.hold(30);
       }else await this.presentEvent(event);
     }
     if(this.stopped||this.epoch!==epoch)return;
-    this.visual=transition.after;this.playing=false;this.presentationSize=null;this.cameras.main.setZoom(1).setScroll(0,0);this.layout();this.hooks.settled(id);
+    if(beganWatching&&!this.snapshot.reducedMotion){
+      this.pose("look-right");
+      const moth=this.finds.get("moth");
+      if(moth)await this.tween(moth,{x:moth.x+this.tileSize().width*.29,angle:-12,scaleX:moth.scaleX*.67,scaleY:moth.scaleY*.67},180);
+    }
+    if(this.stopped||this.epoch!==epoch)return;
+    this.visual=transition.after;this.shownPassage=this.snapshot.passage??null;this.playing=false;this.presentationSize=null;this.cameras.main.setZoom(1).setScroll(0,0);this.layout();this.hooks.settled(id);
   }
   private followActor(){
     this.actorShadow.setPosition(this.actor.x,this.actor.y+2);
@@ -415,6 +517,21 @@ export class ExpeditionScene extends Phaser.Scene {
         const from=this.point(event.from),to=this.point(event.to);
         const dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy);
         const crossing=Math.abs(event.to.y-event.from.y)===2;
+        if(crossing&&this.snapshot.passage?.rode&&this.skiff.visible){
+          const deck={x:this.skiff.x,y:this.skiff.y-2};
+          this.pose("reach-ready");
+          await this.tween(this.actor,{...deck,onUpdate:()=>this.followActor()},95);
+          this.pose("brace");
+          const destinationY=to.y+(event.to.y===1?-1:1)*this.field().dy*.27;
+          await this.tween(this.skiff,{y:destinationY,onUpdate:()=>{
+            this.actor.setPosition(this.skiff.x,this.skiff.y-2);this.followActor();
+          }},340);
+          this.shownPassage=this.snapshot.passage;
+          this.pose("turn-right");
+          await this.tween(this.actor,{...to,onUpdate:()=>this.followActor()},90);
+          this.visual={...this.visual!,position:event.to};this.pose("relieved");
+          break;
+        }
         this.pose(dx<0?"turn-left":dx>0?"turn-right":dy<0?"curious":"brace");
         await this.hold(crossing?45:30);
         this.actor.setFlipX(dx<0);

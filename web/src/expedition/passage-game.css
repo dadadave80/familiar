@@ -1,0 +1,21 @@
+.passage-game .exp-brand { display:flex; align-items:center; }
+.passage-game h1.exp-place { font:750 .85rem/1.15 "Figtree Variable",sans-serif; letter-spacing:.015em; margin:.45rem 0 0; }
+.passage-game .exp-hud strong { text-transform:capitalize; }
+.passage-game .passage-leave { color:#fff4db; background:#523c2a; border-color:#cda96d; }
+.passage-game .passage-leave:hover:not(:disabled) { background:#664e37; }
+.passage-tray .exp-directions button:not(.exp-wait) { font-size:1.35rem; line-height:1; }
+.passage-tray .exp-context-actions:empty { display:none; }
+.passage-game .passage-finish h2 { margin:0 0 .55rem; }
+.passage-game .passage-panel { position:fixed; inset:0; margin:auto; max-width:calc(100% - 24px); box-sizing:border-box; }
+.passage-panel::backdrop { background:#172f2a65; }
+.passage-panel .exp-inspect-actions button[aria-pressed="true"] { background:#355947; color:#fff6dd; }
+.passage-panel .exp-inspect-actions button { margin:0; }
+.passage-panel .exp-inspect-reading p { margin:0; }
+@media (max-width:900px) and (orientation:portrait) {
+  .passage-game .passage-feedback { top:112px; bottom:auto; max-width:calc(100% - 20px); width:fit-content; }
+  .passage-tray .exp-forecast { margin-bottom:.25rem!important; }
+}
+@media (orientation:landscape) and (max-height:499px) {
+  .passage-game .passage-tray { max-height:calc(100dvh - 75px); overflow-y:auto; overscroll-behavior:contain; }
+  .passage-game .passage-feedback { bottom:4px; padding:4px 8px; max-width:calc(100% - 280px); }
+}
