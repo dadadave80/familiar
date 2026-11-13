@@ -3796,8 +3796,8 @@
     "newSpatialGame": "implemented and published",
     "compatibleTestnetCodeAndPreservedOldState": "verified FINAL",
     "originalV1OperatorAcceptance": "32 FINAL graphs; docs/TIDEBOUND-GAMEPLAY.json",
-    "freshV2LiveAcceptance": "blocked by automatic approval review; process did not start; specific user approval pending",
-    "newV2QaFilesOrActorsCreated": false,
+    "freshV2LiveAcceptance": "verified:15 fresh FINAL graphs, exact signatures, canonical claims/mint/finish/gift/current-holder/v1 preservation",
+    "newV2QaFilesOrActorsCreated": true,
     "macOriginalPrivyMochiAdoption": "verified FINAL; docs/TIDEBOUND-PLAYER.json",
     "androidSameWalletSigning": "user-reported; no captured Android proof JSON",
     "sameEarnedItemAndProgressOnTwoPhysicalDevices": "unpassed",
@@ -3807,7 +3807,24 @@
     "retention": "not measured",
     "h2MainnetPushPublicRepositorySubmission": "not authorized or performed"
   },
-  "blockedV2AcceptanceProposal": {
+  "limits": [
+    "A published review game is not complete H1 acceptance.",
+    "No fixture/browser result is counted as a live mint, physical-device recovery or human enjoyment.",
+    "No source push, mainnet operation or submission occurred."
+  ],
+  "acceptanceHistory": [
+    {
+      "at": "2026-11-13T00:40:18.259311+00:00",
+      "status": "Live v2 QA was blocked before process creation at publication; no effects occurred then."
+    },
+    {
+      "at": "2026-11-13T02:05:07.357Z",
+      "status": "Specific user approval received; all15 real testnet transaction/receipt graphs independently verified.",
+      "evidence": "docs/TIDEBOUND-V2-GAMEPLAY.json",
+      "sha256": "570a14f85a9a9bcf41616749387c12eefbbd345a5b6f4b084071ccacbe734362"
+    }
+  ],
+  "v2AcceptanceAuthorization": {
     "maker": "qa-maker-v2.familiar-game.testnet",
     "recipient": "qa-holder-h1.familiar-game.testnet",
     "additionalRootAllocationCeilingTestNEAR": "1",
@@ -3816,11 +3833,10 @@
     "davidAndLegacyAssetsExcluded": true,
     "script": "scripts/tidebound-v2-live.ts",
     "policyTestsPassed": 5,
-    "policyAssertions": 44
-  },
-  "limits": [
-    "A published review game is not complete H1 acceptance.",
-    "No fixture/browser result is counted as a live mint, physical-device recovery or human enjoyment.",
-    "No source push, mainnet operation or submission occurred."
-  ]
+    "policyAssertions": 44,
+    "status": "explicitly approved and executed once",
+    "actualRootSpendableDeclineTestNEAR": "0.75742",
+    "actualRecipientStorageDepositTestNEAR": "0.00176",
+    "evidence": "docs/TIDEBOUND-V2-GAMEPLAY.json"
+  }
 }

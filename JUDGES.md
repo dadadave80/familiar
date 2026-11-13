@@ -8,7 +8,29 @@ The [compatible testnet update](docs/TIDEBOUND-V2-UPGRADE.json) **is complete**:
 
 The original prepared Items signature was preserved through an RPC429 interruption and submitted once only after unused-nonce/validity/state proof. Root was signed after Items FINAL/readback. Actual gas burn 0.0054752661798541 testNEAR plus added encumbered storage 0.07245 totals 0.0779252661798541, below the reviewed 0.157879689908833 and 0.25 cap within the original 41 funding. Storage reserve is balance held for storage, not burned NEAR. No new funding, state migration, unrelated deployment or legacy funds were used.
 
-**Fresh v2 live gameplay acceptance is blocked.** The prepared `scripts/tidebound-v2-live.ts` has not run: automatic approval review rejected its new QA allocation/mint/finish/recipient effects pending specific user approval. Its hard Root allocation cap is 1 testNEAR from existing funds; recipient credit is at most 0.002 from the new operator player. No new v2 QA account, mint, finish or transfer is claimed. The 32 real v1 transaction graphs below remain historical acceptance evidence. The v2 mixed sandbox and browser fixtures do not replace a live v2 run or two physical devices.
+**Fresh v2 live acceptance is complete.** After specific bounded approval, [TIDEBOUND-V2-GAMEPLAY.json](docs/TIDEBOUND-V2-GAMEPLAY.json) independently verifies all **15 FINAL transactions and 58 receipt outcomes**, canonical signatures/arguments, actual deployed Wasm bytes, historical starting checkpoints and final ownership at block **277446673**. Beacon returned Lens+Moth in 17 decisions and Wind returned the vane with its required wheel in 14; both retained Resolve 3/3. One protected credit, one new salvage and one personal 12-Shell commission led to one Moth lantern. Its accepted origin belongs to the actual maker, `qa-maker-v2.familiar-game.testnet`.
+
+The once-only finish records `harbor_polish`, appearance version1, `finish_used:true`, Shells0 and burned Shells12. After the real gift, token supply is1, maker balance0 and recipient balance1. The recipient can place it but receives no Moth achievement; former-holder placement changes nothing. A post-gift canonical craft retry does not remint, and an original v1 craft retry preserves that maker’s journey/item. David’s original player keys, Mochi NFT/raw Pet state and progress match before/after this run. No David or legacy action was targeted.
+
+| Live v2 event | Public receipt |
+| --- | --- |
+| Actual accepted Lens+Moth origin | [51zWJpwfPpVbENySYLJphf98fSn1fJVju6XqGKpnPzWr](https://testnet.nearblocks.io/txns/51zWJpwfPpVbENySYLJphf98fSn1fJVju6XqGKpnPzWr) |
+| Required-wheel Wind return | [HF5m6L5f3AR2bjY8JPphB1MTXSSgoC3qeDn4953Jdskk](https://testnet.nearblocks.io/txns/HF5m6L5f3AR2bjY8JPphB1MTXSSgoC3qeDn4953Jdskk) |
+| One canonical mint | [81cizj4uFu9vDC2iNkS3EubtbjjAmBwVCKnivAGfoaeG](https://testnet.nearblocks.io/txns/81cizj4uFu9vDC2iNkS3EubtbjjAmBwVCKnivAGfoaeG) |
+| One 12-Shell finish | [42oHMPDUkcaAD4eZA4yYosbmY2pQEoaQS9MxiHU4sGXs](https://testnet.nearblocks.io/txns/42oHMPDUkcaAD4eZA4yYosbmY2pQEoaQS9MxiHU4sGXs) |
+| Real transfer to the QA recipient | [45eFco9pfwd4irBS6j8g9sj5ArERBmRmEhdQ6qeZRome](https://testnet.nearblocks.io/txns/45eFco9pfwd4irBS6j8g9sj5ArERBmRmEhdQ6qeZRome) |
+
+Root’s independently measured spendable decline is **0.75742 testNEAR**: 0.65 funding/native outflows, 0.0255 additional Root storage and 0.08192 future reservation. The latter two are encumbered balances, not burned NEAR. This stays below the approved1 cap, leaving5.0857416322022802 spendable versus the protected2.25 floor. Recipient storage was0.00176 versus the0.002 cap, paid by the new QA player. Total gas burned by transaction and receipt outcomes was 0.0224048769676397 testNEAR; it is reported separately and must not be added blindly to already-counted player funding. No new external funding, top-ups, deployment, mainnet call or source push occurred.
+
+Verify the recorded transaction hashes, Ed25519 signatures, finite action policy and receipt-graph structure without keys or network calls:
+
+```sh
+bun --no-env-file scripts/verify-tidebound-v2-evidence.ts
+```
+
+This checks the captured evidence, including each public recent block hash. It does not query today’s ledger or claim physical-device recovery. The independent live re-fetch is dated in the JSON report.
+
+This closes operator v2 acceptance only. The original approval-review refusal remains historical; the user subsequently approved this exact bounded run. Private journals/keys are mode0600 and ignored; never rerun either completed live driver or delete its journal. Physical-device recovery and human gameplay results remain separate below.
 
 ### Complete and blocked gates
 
@@ -16,8 +38,8 @@ The original prepared Items signature was preserved through an RPC429 interrupti
 | --- | --- |
 | Spatial game, second goal, one expressive lantern and home sockets | Implemented and published; browser checks pass |
 | Compatible testnet code and preserved old player/Mochi/items | Complete; two FINAL receipts, exact Wasm bytes and unchanged state verified |
-| Finite H1 commission/craft/finish/real transfer | Complete for recorded v1 operator run; v2 mixed sandbox passes |
-| Fresh v2 live operator acceptance | Blocked by automatic approval review; specific approval pending; process never started |
+| Finite H1 commission/craft/finish/real transfer | Complete for recorded v1 and fresh v2 operator runs |
+| Fresh v2 live operator acceptance | Complete; 15 fresh FINAL graphs / 58 receipt outcomes; within both caps |
 | Recovery of the same earned item and progress on two physical devices | Unpassed; Mac adoption and Android wallet report are narrower evidence |
 | Human enjoyment, retention, iPad and physical audio/performance | Unmeasured / untested; 0 of 8 planned participants |
 | H2, mainnet, source push, public repository and submission | Not authorized or performed |
@@ -36,7 +58,7 @@ Short demo script:
 
 1. Show the marked source, choose a safe neighboring platform, then point to the wave opening an oyster and moving the bridge. Retrieve the lens and wind-moth and cross back to the dock.
 2. Follow **Bring the lens to the beacon**, restore it, choose the earned Moth lantern at the workbench, show the static origin and place it at the dock. Label this unconfigured device state a preview. Open Wind Gate and show how its wheel changes source-to-exit routing.
-3. Show the actual upgrade receipts above and the original accepted-maker/mint/finish/transfer evidence below. Distinguish those recorded testnet events from the current device preview. Do not create a new payment or claim recovery during this demo.
+3. Show the actual v2 accepted-maker/mint/finish/transfer receipts and compatible upgrade above. Distinguish those recorded testnet events from the current device preview. Do not create a new payment or claim recovery during this demo.
 
 | Final check | Actual result / boundary |
 | --- | --- |
@@ -48,6 +70,7 @@ Short demo script:
 | `bun --no-env-file run test:expedition-harbor-browser` | Synthetic canonical fresh-device eligibility, actual visible Crest/original vs Moth/polish pixels, stale-holder removal, no inherited achievement, busy-review dismissal, durable returns/export and identity fences pass; no identity or chain execution |
 | `bun --no-env-file scripts/test-privy-review-browser.ts <prepared-release> --h1` | Exact 691-file compiled candidate and actual published alias; 33 images; three sizes; actual SDK/empty email forms, dry return/home/origin, classic links; zero wallet/player mutations. Provider analytics/report POSTs were blocked by the test guard |
 | `bun --no-env-file scripts/tidebound-v2-live.ts` | LOCAL_POLICY_ONLY; zero RPC, keys, signatures or mutations; not a live acceptance command |
+| Recorded bounded v2 live operator acceptance | 15 FINAL transactions, 58 receipt outcomes; both caps met; never rerun the completed driver |
 | Mixed sandbox with exact five frozen v1 Wasms → Root/Items-only update | Passed in 49.47 s; unchanged state/Pet/old item, new v2 claims/craft/finish/transfer, old/current-holder rules and later v1 claims |
 | Separate legacy local sandbox | Passed in 106.36 s |
 | Developer desktop playthrough | Scripted 17-decision Lens+Moth return, restoration, Moth preview/origin/dock and Wind unlock observed; elapsed time not measured |
