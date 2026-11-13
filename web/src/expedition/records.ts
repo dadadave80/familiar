@@ -77,7 +77,7 @@ export function keyRecord(i:{player:string;signerKey:string;provider:"privy"|"ot
   if(!keys)lines.push({state:"unchecked",text:`The keys on ${i.player} couldn’t be checked just now.`});
   else {
     const mine=keys.find(k=>k.public_key===i.signerKey);
-    lines.push(mine?{state:"read",text:i.provider==="privy"?"Your harbor key lives in your Privy wallet, not with Familiar.":"The key this sign-in uses is on your account, not with Familiar."}
+    lines.push(mine?{state:"read",text:i.provider==="privy"?"Your harbor key lives in your Privy wallet.":"The key this sign-in uses is on your account."}
       :{state:"finding",text:"The key this sign-in uses isn’t on your account right now."});
     if(!keys.length)lines.push({state:"read",text:`${i.player} has no keys.`});
     for(const k of keys)lines.push({state:"read",text:`${k.public_key===i.signerKey?"This sign-in’s key":"Another key"}: ${permissionText(k)}.`,detail:shortKey(k.public_key)});

@@ -56,7 +56,7 @@ test("Mochi's papers report findings as findings",()=>{
 test("key line reports the permission exactly and never claims a function-call key",()=>{
   const r=keyRecord({player,signerKey:signer,provider:"privy",keys:ok(playerKeys)});
   expect(texts(r).slice(0,3)).toEqual([
-    "Your harbor key lives in your Privy wallet, not with Familiar.",
+    "Your harbor key lives in your Privy wallet.",
     "This sign-in’s key: FullAccess: full control of the account.",
     "Another key: FullAccess: full control of the account.",
   ]);
@@ -65,7 +65,7 @@ test("key line reports the permission exactly and never claims a function-call k
   expect(r.lines.at(-1)).toMatchObject({state:"source"});
   expect(r.lines.at(-1)!.text).toContain("the chain enforces only the key permission above");
   const fc=keyRecord({player,signerKey:signer,provider:"other",keys:ok({keys:[{public_key:signer,access_key:{nonce:1,permission:{FunctionCall:{receiver_id:root,method_names:["adopt"],allowance:null}}}}]})});
-  expect(texts(fc).slice(0,2)).toEqual(["The key this sign-in uses is on your account, not with Familiar.",`This sign-in’s key: FunctionCall: only ${root}, adopt.`]);
+  expect(texts(fc).slice(0,2)).toEqual(["The key this sign-in uses is on your account.",`This sign-in’s key: FunctionCall: only ${root}, adopt.`]);
 });
 
 test("key line without the read or without the sign-in key says so",()=>{

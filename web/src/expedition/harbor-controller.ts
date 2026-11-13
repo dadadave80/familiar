@@ -31,6 +31,7 @@ export class HarborController implements HarborSession {
   constructor(private readonly connection:HarborConnection|null,private readonly store:Pick<Storage,"getItem"|"setItem">,recordLock?:ReturnRecordLock){this.records=new ReturnRecords(store,recordLock);}
   get state(){return this.value;}
   get configured(){return !!this.connection;}
+  get root(){return this.connection?.client.root??null;}
   subscribe=(listener:()=>void)=>{this.listeners.add(listener);return()=>{this.listeners.delete(listener);};};
   private update(next:Partial<HarborState>) {
     const value={...this.value,...next};

@@ -4,6 +4,7 @@ import {validName} from "../rules";
 import type {UsernameAvailability} from "../account/names";
 import {TideboundClient} from "../tidebound/client";
 import {HarborController,type HarborConnection} from "./harbor-controller";
+import HarborRecords from "./HarborRecords";
 import type {HarborSession} from "./harbor-port";
 export type {HarborSession,HarborState,RunContext,HomeCheckpoint,WorldIntent,WorldReview,WorkshopModel} from "./harbor-port";
 export type {ReturnRecord} from "./return-record";
@@ -42,6 +43,8 @@ export function HarborAccountPanel() {
   async function act(work:()=>Promise<unknown>) {setBusy(true);setProblem("");try{await work();}catch(error){if(alive.current)setProblem(error instanceof Error?error.message:"The original harbor could not be checked.");}finally{if(alive.current)setBusy(false);}}
   function downloadMemories(){try{const url=URL.createObjectURL(new Blob([controller!.exportReturns()],{type:"application/json"})),link=document.createElement("a");link.href=url;link.download="familiar-return-memories.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch{setProblem("The return memories could not be exported. Their original browser records are preserved.");}}
   const blocked=busy||state.busy,checked=availability?.username===username&&availability.available;
+  const pet=state.binding&&state.snapshot?.binding.nearAccountId===state.binding.nearAccountId?state.snapshot.pets[0]?.token_id:undefined;
+  const recordsTarget=import.meta.env.VITE_RECORDS_ENABLED==="true"&&state.binding&&pet&&controller.root?{rpcUrl:import.meta.env.VITE_NEAR_RPC_URL??"https://test.rpc.fastnear.com",root:controller.root,player:state.binding.nearAccountId,pet,signerKey:state.binding.signerPublicKey,provider:import.meta.env.VITE_ACCOUNT_PROVIDER==="privy"?"privy" as const:"other" as const}:null;
   return <section aria-label="Account and recovery" className="ex-account">
     <h2>Your saved harbor</h2>
     {state.binding?<>
@@ -50,6 +53,7 @@ export function HarborAccountPanel() {
       <button disabled={blocked} onClick={()=>void act(()=>controller.selectSaved())}>Use saved harbor</button>
       <button disabled={blocked} onClick={()=>{try{controller.selectPreview();}catch(error){setProblem(error instanceof Error?error.message:"Finish the current outing first.");}}}>Stay in device preview</button>
       {state.snapshot?.pets.length?<p>Mochi is home · confirmed for this saved account.</p>:null}
+      {recordsTarget&&<HarborRecords key={`${recordsTarget.player}|${recordsTarget.pet}|${recordsTarget.signerKey}`} target={recordsTarget}/>}
       {state.mode==="saved"&&state.snapshot&&!state.snapshot.pets.length&&<button disabled={blocked||!!state.pending} onClick={()=>void act(()=>controller.review({kind:"adopt"}))}>Bring Mochi home</button>}
       <button onClick={()=>void act(()=>controller.signOut())}>Sign out</button>
     </>:<>
