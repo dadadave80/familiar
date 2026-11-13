@@ -3,7 +3,7 @@ import type { HarborSession, SeasonIntent } from "../expedition/harbor-port";
 import { GOODS, type Good } from "./pricing";
 import {
   GOOD_INDEX, PURSE_MAX, WISH_QTY_MAX, bestHaulLine, claimable, goodName, haulLine, postcardLines, quoteBuy, quoteLine, quoteSell, reasonLine, scoreLine,
-  refusalWords, settle, settleError, tradeArgs, tradeBlock, wishBlock, wishStatus,
+  settle, settleError, tradeArgs, tradeBlock, wishBlock, wishStatus,
   type ActionState, type Mint, type Postcard, type SeasonAccount, type ShelfView, type TodayView, type Trade, type Wish, type WishResult,
 } from "./model";
 import { PREVIEW_SAMPLE, previewTrade, previewView, readPreview, readTide, seasonView, seedPreview, writePreview, type PreviewMarket, type TideReturn } from "./data";
@@ -157,7 +157,7 @@ function Shelf({live,saved,registered,busy,preview,onPreview,onPreviewBlock,onRe
 
 function Tide({live,saved,registered,busy,tool,canSail,onSail,scope,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;tool:"rope"|"lantern";canSail:boolean;onSail:(tool:"rope"|"lantern")=>void;scope:string;act:Act}) {
   const today=live.today,[choice,setChoice]=useState(tool);
-  const [returns]=useState<TideReturn[]>(()=>readTide(scope));
+  const [returns]=useState<TideReturn[]>(()=>scope==="preview"?readTide(scope):[...readTide(scope),...readTide("preview")]);
   if(!today)return <p>Reading today’s tide…</p>;
   const sailable=today.content_version==="first_light_v2";
   const minted=saved?today.minted_today:null;
@@ -204,7 +204,7 @@ function WishTab({live,saved,registered,busy,act}:{live:Live;saved:boolean;regis
         <span className="ss-field">How many</span><div className="ss-choice" role="radiogroup" aria-label="How many">{Array.from({length:WISH_QTY_MAX},(_,i)=>i+1).map(q=><label key={q}><input type="radio" name="ss-wish-qty" checked={qty===q} onChange={()=>{setQty(q);setLimit(l=>Math.min(l,Math.floor(PURSE_MAX/q)));}}/><span>{q}</span></label>)}</div>
         <div className="ss-limit"><span id="ss-limit-label">Highest price per unit</span><Stepper value={limit} min={1} max={maxLimit} onChange={setLimit} label="Highest price per unit"/></div>
         <div className="ss-act"><button className="exp-primary" disabled={!!block} onClick={()=>void act<WishResult>({kind:"set-wish",good,limit,qty},"Bram is checking Mochi’s papers…",
-          r=>r.status==="filled"?`Filled at once: ${r.postcard?postcardLines(r.postcard)[1]:""} Recorded.`:r.status==="waiting"?`Mochi’s wish is waiting. Her purse holds ${r.wish?.purse??limit*qty} Shells. Recorded.`:`Bram could not take the wish. ${refusalWords(r.reason)}`)}>Set Mochi’s wish</button>
+          r=>r.status==="filled"?`Filled at once: ${r.postcard?postcardLines(r.postcard)[1]:""} Recorded.`:r.status==="waiting"?`Mochi’s wish is waiting. Her purse holds ${r.wish?.purse??limit*qty} Shells. Recorded.`:"Recorded.")}>Set Mochi’s wish</button>
           <span className="ss-info">{block??`Purse ${limit*qty} of ${PURSE_MAX} Shells${status.kind==="waiting"?"; the old purse comes back first":""}`}</span></div>
         {live.shelf&&<p className="ss-note">Bram sells {goodName(good,2)} at {live.shelf.goods.find(g=>g.good===good)?.buy_price} now. A wish whose limit covers every unit fills at once; otherwise a later trade that brings the price within it does.</p>}
       </fieldset>

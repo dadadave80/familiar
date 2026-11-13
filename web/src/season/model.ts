@@ -156,6 +156,9 @@ export function settle<T>(final:{failed:boolean;outcome:unknown}|null):ActionSta
   if(final.failed){const code=refusalCode(final.outcome)??"ERR_UNKNOWN";return {kind:"refused",code,words:refusalWords(code)};}
   const value=successValue<T>(final.outcome);
   if(value===null)return {kind:"uncertain",words:"The result arrived but could not be read. Your ledger is read again below."};
+  // A refused wish is a successful receipt whose value says so (the owner check runs in a callback that never panics).
+  const refused=value as {status?:unknown;reason?:unknown};
+  if(refused&&typeof refused==="object"&&refused.status==="refused"&&typeof refused.reason==="string")return {kind:"refused",code:refused.reason,words:refusalWords(refused.reason)};
   return {kind:"confirmed",value};
 }
 /** A thrown send is never a refusal: the action may still land. */

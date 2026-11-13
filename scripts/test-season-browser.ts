@@ -40,6 +40,29 @@ try{
       await expect(page.locator(".ss-court")).toBeVisible();
       await checkTargets(page,`${tag} tide`);
       await page.screenshot({path:join(shots,`preview-tide-${tag}.png`)});
+      const v2Day=(await page.locator(".ss-court").textContent())==="Beacon Court";
+      // The season sandbox's v2 rope route (lens + moth); it docks only on a Beacon Court day.
+      const route=["step:north","step:north","step:west","wait","wait","step:east","reel:lens","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"];
+      await page.evaluate(commands=>localStorage.setItem("familiar.season.tide.v1:preview",JSON.stringify([{id:"route",contentVersion:"first_light_v2",tool:"rope",commands,cargo:["lens","moth"],outcome:"returned",savedAt:"test"}])),route);
+      await page.getByRole("tab",{name:"Shelf & till"}).click();await page.getByRole("tab",{name:"Today’s tide"}).click();
+      if(v2Day){
+        await expect(page.locator(".ss-returns")).toContainText("Rope outing · 1 glass and 1 reed bundle");
+        await expect(page.getByRole("button",{name:"Dock this haul"})).toBeDisabled();
+        const home=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null);
+        await page.getByRole("button",{name:"Sail today’s tide"}).click();
+        await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","court");
+        const save=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!));
+        assert.equal(save.active.season,true);assert.deepEqual(save.active.state.banked,[]);assert.equal(save.active.state.area,"beacon");
+        if(home)assert.deepEqual(save.home,home,"First Light home unchanged by a tide outing");
+        await page.screenshot({path:join(shots,`preview-tide-sailing-${tag}.png`)});
+        await page.evaluate(()=>{localStorage.removeItem("familiar.expedition.local.v2");});
+        await page.goto(new URL("/outing/?play",origin).href);
+        await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
+        await page.locator(".exp-place-bram").click();await page.getByRole("tab",{name:"Today’s tide"}).click();
+      }else{
+        await expect(page.locator(".ss-panel")).toContainText("would not dock today");
+        await expect(page.getByRole("button",{name:"Sail today’s tide"})).toHaveCount(0);
+      }
       await page.keyboard.press("ArrowRight");
       await expect(page.getByRole("tab",{name:"Mochi’s wish"})).toHaveAttribute("aria-selected","true");
       await expect(page.locator(".ss-panel")).toContainText("Sign in from the menu");

@@ -65,6 +65,7 @@ test("state mapping: confirmed only for a final success, refusals named, unknown
   expect(settle({failed:false,outcome:{status:{SuccessValue:b64(trade)}}})).toEqual({kind:"confirmed",value:trade});
   expect(settle({failed:false,outcome:{status:{SuccessValue:"%%"}}}).kind).toBe("uncertain");
   expect(settle(null).kind).toBe("uncertain");
+  expect(settle({failed:false,outcome:{status:{SuccessValue:b64({status:"refused",reason:"ERR_NOT_OWNER",wish:null,postcard:null})}}})).toEqual({kind:"refused",code:"ERR_NOT_OWNER",words:REFUSALS.ERR_NOT_OWNER!});
   expect(settleError(new Error("This action may still be executing. Check its original receipt; no new payment or craft has been started.")).kind).toBe("uncertain");
   expect(settleError(new Error("ERR_SHELLS")).kind).toBe("refused");
 });
