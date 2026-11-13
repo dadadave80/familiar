@@ -82,7 +82,7 @@ test("seal decision: sealed only for a provider_tee signature over the exact byt
   const model=teeKeys(),requestBytes=utf8('{"model":"z-ai/glm-5.3-flash"}'),client=hex(ed25519.getPublicKey(ed25519.utils.randomPrivateKey()));
   const request=utf8(JSON.stringify({model:NOTE_MODEL,messages:[{role:"user",content:sealTo("hi",model.publicKey,requestAad(unhex(client),"messages[].content"))}]}));
   const tee=await mockTee(model,request,client);
-  const decide=(signatureBytes:Uint8Array|null,patch:Partial<Parameters<typeof decideSeal>[0]>={})=>decideSeal({modelId:NOTE_MODEL,requestBytes:request,responseBytes:tee.completion,signatureBytes,modelKey:model.hex,...patch});
+  const decide=(signatureBytes:Uint8Array|null,patch:Partial<Parameters<typeof decideSeal>[0]>={})=>decideSeal({modelId:NOTE_MODEL,requestBytes:request,responseBytes:tee.completion,signatureBytes,attestation:attestationFor(model.hex),verify:sdk.verifyModelResponse,...patch});
   expect(await decide(tee.signature)).toEqual({state:"sealed"});
   const edit=(patch:Record<string,unknown>)=>utf8(JSON.stringify({...JSON.parse(new TextDecoder().decode(tee.signature)),...patch}));
   const original=JSON.parse(new TextDecoder().decode(tee.signature)).signature as string;
@@ -93,13 +93,20 @@ test("seal decision: sealed only for a provider_tee signature over the exact byt
     ["gateway signature",await decide(edit({signature_kind:"gateway"}))],
     ["legacy unlabeled signature",await decide(edit({signature_kind:undefined}))],
     ["ecdsa signature",await decide(edit({signing_algo:"ecdsa"}))],
-    ["other signer",await decide(tee.signature,{modelKey:teeKeys().hex})],
+    ["other signer",await decide(tee.signature,{attestation:attestationFor(teeKeys().hex)})],
     ["changed request",await decide(tee.signature,{requestBytes:utf8(new TextDecoder().decode(request)+" ")})],
     ["changed response",await decide(tee.signature,{responseBytes:utf8(new TextDecoder().decode(tee.completion)+" ")})],
-    ["no signature",await decide(null)],["unreadable signature",await decide(utf8("{"))],
+    ["unreadable signature",await decide(utf8("{"))],
   ] as const)expect({label,state:decision.state}).toEqual({label,state:"plain"});
+  expect(await decide(null)).toEqual({state:"unrecorded"});
+  // The final check is the SDK's pure-JS Ed25519, so a browser without WebCrypto Ed25519 still seals.
+  const subtle=crypto.subtle,original_verify=subtle.verify;
+  Object.defineProperty(subtle,"verify",{value:()=>Promise.reject(Error("Ed25519 unsupported")),configurable:true});
+  try{expect(await decide(tee.signature)).toEqual({state:"sealed"});}finally{Object.defineProperty(subtle,"verify",{value:original_verify,configurable:true});}
   const wrongText=await decide(edit({text:"z-ai/glm-5.3:aa:bb"}));expect(wrongText.state==="plain"&&wrongText.reason).toContain("signed text");
 });
+
+function attestationFor(key:string){return {signer:{signingAlgo:"ed25519",signingAddress:key},signingPublicKey:key,tcbStatus:"UpToDate"} as unknown as Parameters<typeof sdk.verifyModelResponse>[0]["attestation"];}
 
 /** Stubs only attestation fetch/verification; encryption, decryption and the seal decision are real. */
 function flow(options:{model:ReturnType<typeof teeKeys>;relay:(bytes:Uint8Array,headers:Headers)=>Promise<Response>;keys?:string[]}) {
@@ -126,7 +133,7 @@ test("the browser flow returns sealed, plain and broken notes",async()=>{
   const gateway=flow({model,relay:async(bytes,headers)=>{const tee=await mockTee(model,bytes,headers.get("x-client-pub-key")!,undefined,"gateway");return envelope(tee.completion,tee.signature);}});
   expect((await gateway.run()).state).toBe("plain");
   const unsigned=flow({model,relay:async(bytes,headers)=>envelope((await mockTee(model,bytes,headers.get("x-client-pub-key")!)).completion,null)});
-  expect((await unsigned.run()).state).toBe("plain");
+  expect((await unsigned.run()).state).toBe("unrecorded");
 
   const refused=flow({model,relay:async()=>Response.json({code:"QUOTA",error:"Mochi is resting the pen. Try again tomorrow."},{status:429})});
   expect(await refused.run()).toMatchObject({state:"broken",back:{reason:"Mochi is resting the pen. Try again tomorrow.",code:"QUOTA"}});

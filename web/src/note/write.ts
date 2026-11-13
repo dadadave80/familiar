@@ -14,6 +14,8 @@ export interface NoteBack {
 export type SealedNote=
   |{state:"sealed";text:string;back:NoteBack}
   |{state:"plain";text:string;back:NoteBack}
+  /** Readable, but NEAR AI had not recorded the signature in time. Retryable; never stored. */
+  |{state:"unrecorded";text:string;back:NoteBack}
   |{state:"broken";back:NoteBack};
 
 const base=(model=NOTE_MODEL):NoteBack=>({model,attestation:"Fetched directly from NEAR AI, without a key, using a fresh one-time nonce.",verifiedIn:"Verified in this browser with NEAR AI's inference SDK."});
@@ -29,9 +31,9 @@ export async function writeSealedNote(options:{
   fetch?:typeof globalThis.fetch;sdk?:Sdk;verifiers?:ModelVerifiers;
 }):Promise<SealedNote> {
   const back=base(),send=options.fetch??globalThis.fetch.bind(globalThis);
-  let key:string,prepared:Awaited<ReturnType<Sdk["prepareE2eeChatRequest"]>>,requestBytes:Uint8Array<ArrayBuffer>;
+  let key:string,sdk:Sdk,attested:Awaited<ReturnType<Sdk["verifyModelAttestation"]>>,prepared:Awaited<ReturnType<Sdk["prepareE2eeChatRequest"]>>,requestBytes:Uint8Array<ArrayBuffer>;
   try{
-    const sdk=options.sdk??await import("@nearai/inference-sdk");
+    sdk=options.sdk??await import("@nearai/inference-sdk");
     const client=new sdk.AttestationClient({fetch:send});
     const metadata=await client.fetchModelMetadata(NOTE_MODEL);
     check(metadata.providerType==="vllm"&&metadata.attestationSupported,"This model does not offer NEAR model attestation.");
@@ -40,7 +42,7 @@ export async function writeSealedNote(options:{
     const verified=await Promise.all(fetched.attestations.map(attestation=>sdk.verifyModelAttestation({attestation,clientBinding:fetched.clientBinding,policy:{gpuEvidence:"required"},verifiers:options.verifiers})));
     const keys=new Set(verified.map(v=>v.signingPublicKey?.toLowerCase()));
     check(keys.size===1&&verified.every(v=>v.signer.signingAlgo==="ed25519"&&v.signer.signingAddress.toLowerCase()===v.signingPublicKey?.toLowerCase()),"The attested instances do not share one Ed25519 model key.");
-    key=[...keys][0]!;check(/^[0-9a-f]{64}$/.test(key),"The attested model key is malformed.");
+    key=[...keys][0]!;attested=verified[0]!;check(/^[0-9a-f]{64}$/.test(key),"The attested model key is malformed.");
     Object.assign(back,{modelKey:key,instances:verified.length,tcbStatus:verified[0]!.tcbStatus});
     const body=JSON.stringify({model:NOTE_MODEL,messages:noteMessages(options.returns),stream:false,max_tokens:NOTE_MAX_TOKENS,thinking_token_budget:0});
     // The URL is never contacted; the SDK only encrypts this request and keeps the matching reply key.
@@ -73,8 +75,8 @@ export async function writeSealedNote(options:{
   }catch(error){
     return {state:"broken",back:{...back,reason:error instanceof Error&&error.message?error.message:"The note could not be opened."}};
   }
-  const decision=await decideSeal({modelId:NOTE_MODEL,requestBytes,responseBytes:completion,signatureBytes:signature,modelKey:key});
-  return decision.state==="sealed"?{state:"sealed",text,back}:{state:"plain",text,back:{...back,reason:decision.reason}};
+  const decision=await decideSeal({modelId:NOTE_MODEL,requestBytes,responseBytes:completion,signatureBytes:signature,attestation:attested,verify:sdk.verifyModelResponse});
+  return decision.state==="plain"?{state:"plain",text,back:{...back,reason:decision.reason}}:{state:decision.state,text,back};
 }
 
 export function noteKey(root:string,accountId:string,claimId:string){return `familiar.sealed-note.v1:testnet:${root}:${accountId}:${claimId}`;}
