@@ -8,7 +8,7 @@ Current source scope, November 13, 2026: browser game and supporting NEAR testne
 | Account provider | App-scoped Privy identity and exact canonical user-owned NEAR wallet; separately configured NEAR Auth provider | Email/provider administration, session availability and SDK integrity remain dependencies |
 | Account HTTP | Three exact H1 endpoints, origin/JWT/body/size/method checks, bounded setup | Process-local quotas are not durable anti-Sybil or cross-instance spending controls |
 | Native transaction client | Exact canonical Borsh/signature/intent checks, durable original envelope, Web Locks, complete receipt graph | RPC outages or ambiguous consumed nonces may keep an action pending |
-| Root registry/journey | Predecessor authorization, current companion ownership, checkpoint replay, accepted original input hashes | Administrative upgrade keys remain; source tests do not freeze deployed code |
+| Root registry/journey | Predecessor authorization, current companion ownership, checkpoint replay, accepted original input hashes | Administrative upgrade keys remain; source tests do not freeze deployed code. Court replay proves legal steps, not human play, and winning inputs are public; the commission is per account, so one pet passed between accounts can earn each account its own 12 Shells |
 | Items | Current-holder checks, authenticated immutable mint evidence, one finish per token | Transferred ownership is distinct from maker achievement; stale UI alone is never ownership proof |
 | Keyless Pet | Registry-only execution, fixed buildings/pool, pinned global code and no access keys | General recovery for unforeseen historical callback failure is not available |
 

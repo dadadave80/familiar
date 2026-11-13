@@ -11,6 +11,8 @@ Current Familiar has one playable Phaser edition. The introduction stays first; 
 | Bell/Reed services, later discovery and companion interaction | `bun scripts/test-passage-browser.ts` | Prepared guest harbors; no human enjoyment claim |
 | Recorded 15 transaction signatures/hashes and 58 connected receipts | `make evidence` | Captured dated testnet evidence, verified offline; not a current ledger query |
 | TypeScript/Rust spatial transitions agree | `make test` | Shared fixture, solver and replay tests |
+| Every listed pet keyless on pinned global code; replayed-court state and one-time Shells for the test player; player and admin keys disclosed | `make judge` | Live public-RPC state of `familiar-game.testnet`, not proof of deployed code (root code differs from the HEAD build); reports key permissions, cannot see custody |
+| Doctored courts (historical and current rules), repeat Shell grants and out-of-scope signing are refused | `make break` | HEAD source in the contract unit runtime plus signer unit tests; full Wasm sandbox stays `bun run test:tidebound-sandbox` |
 | Actual contract compatibility and original-operation invariants | `bun run build:contracts`, then `bun run test:tidebound-sandbox` | Separate same-layout local-chain test; deployed-byte upgrade mode additionally requires all five frozen original Wasm artifacts |
 
 Only two report JSON files remain:
