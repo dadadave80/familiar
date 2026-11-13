@@ -5,7 +5,8 @@ import { join } from "node:path";
 // Bun entry point for registering the generated source art. Requires ImageMagick
 // and cwebp. Poses share a body pivot and a ground line; crouches retain their
 // shorter silhouette rather than being stretched to the standing pose's height.
-const art = new URL("../web/public/assets/first-light-motion/", import.meta.url).pathname;
+const art = join(import.meta.dir, "../web/assets/source/first-light-motion");
+const atlasOutput = join(import.meta.dir, "../web/public/assets/first-light-motion/mochi-poses-v1.webp");
 const poses = [
   ["pose", 0, 174], ["pose", 1, 174], ["pose", 2, 176], ["pose", 3, 176],
   ["walk", 0, 330], ["walk", 1, 316], ["contact", 0, 650], ["walk", 3, 320],
@@ -45,7 +46,7 @@ try {
   }
   const master = join(temporary, "atlas.png");
   run(["magick", "montage", ...cells, "-tile", "4x4", "-geometry", "256x256+0+0", "-background", "none", master]);
-  run(["cwebp", "-quiet", "-q", "88", "-alpha_q", "100", "-m", "6", master, "-o", join(art, "mochi-poses-v1.webp")]);
+  run(["cwebp", "-quiet", "-q", "88", "-alpha_q", "100", "-m", "6", master, "-o", atlasOutput]);
   console.info("Registered 16 Mochi poses: 1024×1024, 256px cells, body x=128, ground y=224.");
 } finally {
   await rm(temporary, { recursive: true, force: true });
