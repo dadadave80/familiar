@@ -4,10 +4,11 @@ import {RULES_VERSION,type PlayerBinding} from "../tidebound/domain";
 import type {ChainSnapshot,TideboundClient} from "../tidebound/client";
 import {quoteItemStorage,storageNear} from "../tidebound/storage";
 import {ReturnRecords,validateRunContext,type ReturnRecord,type ReturnRecordLock} from "./return-record";
-import type {HarborSession,HarborState,HomeCheckpoint,RunContext,WorldIntent,WorldReview,WorkshopModel} from "./harbor-port";
+import type {HarborSession,HarborState,HomeCheckpoint,RunContext,SeasonFinal,SeasonIntent,WorldIntent,WorldReview,WorkshopModel} from "./harbor-port";
+import {SEASON_STORAGE_DEPOSIT} from "../../../services/relayer/src/auth/sign";
 import type {CourtState,BankedItem} from "./types";
 
-export type HarborClient=Pick<TideboundClient,"root"|"itemsContract"|"snapshot"|"pending"|"verifyStack"|"send"|"resumeNative"|"reconcileNative"|"resolveExpiredNative"|"view">;
+export type HarborClient=Pick<TideboundClient,"root"|"itemsContract"|"snapshot"|"pending"|"verifyStack"|"send"|"resumeNative"|"reconcileNative"|"resolveExpiredNative"|"view">&{lastFinal?:TideboundClient["lastFinal"]};
 export interface HarborConnection {adapter:RecoverableAccountAdapter;client:HarborClient;accountExists(accountId:string):Promise<void>}
 type Prepared={review:WorldReview;epoch:number;binding:PlayerBinding;revision:number;checkpointHash:string;method:string;args:Record<string,unknown>;options?:{receiver:string;deposit:bigint};record?:ReturnRecord};
 const blankWorkshop:WorkshopModel={authority:"local-preview",motifs:[],creditAvailable:false,items:[],placement:null,shells:0,commissionAvailable:false};
@@ -167,6 +168,33 @@ export class HarborController implements HarborSession {
   private async acceptReturn(record:ReturnRecord,epoch:number,binding:PlayerBinding) {
     const hash=await claimHash(record);this.guard(epoch,binding);const claims=(this.value.snapshot?.journey as {claims?:{operation_id:string;input_hash:string;id:string}[]}|undefined)?.claims,accepted=claims?.find(c=>c.operation_id===record.operationId);
     check(accepted&&accepted.input_hash===hash,"The transaction finalized, but its accepted return still needs checking. Keep the original memory.");await this.records.mark(record.context,record.id,"accepted",accepted.id);this.guard(epoch,binding);this.update({returns:this.recordsFor(this.value.snapshot)});
+  }
+  /** Season 2: one typed call on season.<root>, sent through the same pending-action path. Returns the final outcome only. */
+  async seasonAct(intent:SeasonIntent):Promise<SeasonFinal|null> {
+    let final:SeasonFinal|null=null;
+    await this.work(async()=>{
+      const binding=this.requireSaved(),epoch=this.epoch,client=this.connection!.client,season=`season.${client.root}`;
+      let method:string,args:Record<string,unknown>,deposit=0n;
+      switch(intent.kind){
+        case "register": {
+          const minimum=await client.view<string>(season,"storage_minimum");this.guard(epoch,binding);
+          check(BigInt(minimum)===SEASON_STORAGE_DEPOSIT,"Bram’s ledger changed its page size. Nothing was sent.");
+          method="storage_deposit";args={};deposit=SEASON_STORAGE_DEPOSIT;break;
+        }
+        case "claim": method="claim_daily";args={rules_version:RULES_VERSION,content_version:intent.contentVersion,tool:intent.tool,area:"beacon",commands:[...intent.commands]};break;
+        case "buy": method="buy";args={good:intent.good,qty:intent.qty,max_price:intent.maxPrice};break;
+        case "sell": method="sell";args={good:intent.good,qty:intent.qty,min_price:intent.minPrice};break;
+        case "set-wish": case "cancel-wish": {
+          const pet=this.value.snapshot?.pets[0]?.token_id;check(pet,"Bring Mochi home before setting a wish.");
+          method=intent.kind==="set-wish"?"set_wish":"cancel_wish";args=intent.kind==="set-wish"?{pet,good:intent.good,limit:intent.limit,qty:intent.qty}:{pet};break;
+        }
+      }
+      this.guard(epoch,binding);client.lastFinal=null;
+      await client.send(binding,method,args,{receiver:season,deposit});this.guard(epoch,binding);
+      const last=client.lastFinal as TideboundClient["lastFinal"]|undefined;
+      final=last&&last.method===method&&last.receiver===season?{failed:last.failed,outcome:last.outcome}:null;
+    });
+    return final;
   }
   private async original(kind:"resume"|"check"|"expiry") {return this.work(async()=>{
     const binding=this.value.binding,epoch=this.epoch;check(binding&&this.connection,"Sign in with the original identity to check this request.");

@@ -18,6 +18,15 @@ export type WorldIntent =
   | {kind:"polish";itemId:string}
   | {kind:"gift";itemId:string;recipient:string}
   | {kind:"storage";recipient:string};
+/** Season 2 calls on season.<root>. Each maps to exactly one allowlisted method. */
+export type SeasonIntent =
+  | {kind:"register"}
+  | {kind:"claim";contentVersion:"first_light_v1"|"first_light_v2";tool:"rope"|"lantern";commands:readonly string[]}
+  | {kind:"buy";good:"glass"|"reed";qty:number;maxPrice:number}
+  | {kind:"sell";good:"glass"|"reed";qty:number;minPrice:number}
+  | {kind:"set-wish";good:"glass"|"reed";limit:number;qty:number}
+  | {kind:"cancel-wish"};
+export interface SeasonFinal {failed:boolean;outcome:unknown}
 export interface WorldReview {id:string;intent:WorldIntent;title:string;description:string;costs:readonly string[];confirmLabel:string}
 export interface WorkshopModel {
   authority:"local-preview"|"near-testnet";motifs:readonly MotifId[];creditAvailable:boolean;
@@ -34,6 +43,7 @@ export interface HarborSession {
   captureReturn(state:CourtState,context:RunContext):Promise<ReturnRecord>;
   selectSaved():Promise<void>;selectPreview():void;
   review(intent:WorldIntent):Promise<void>;confirm(reviewId:string):Promise<void>;cancelReview():void;
+  seasonAct?(intent:SeasonIntent):Promise<SeasonFinal|null>;
   refresh():Promise<void>;resumeOriginal():Promise<void>;checkOriginal():Promise<void>;resolveExpired():Promise<void>;
   /** Short-lived session proof for the sealed-note relay; absent when the account provider cannot supply one. */
   noteToken?():Promise<string|null>;

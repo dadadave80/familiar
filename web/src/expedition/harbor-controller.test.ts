@@ -149,3 +149,28 @@ test("unpacking a historical return keeps its exact checkpoint, content and orig
  await f.controller.resumeOriginal();expect(f.resumes).toBe(1);expect(f.sent).toHaveLength(1);
  expect(f.controller.state.returns[0]!.operationId).toBe(record.operationId);
 });
+test("season actions send one exact allowlisted call to season.<root> and return only that call's final outcome",async()=>{
+ const f=fixture();await expect(f.controller.seasonAct({kind:"buy",good:"glass",qty:1,maxPrice:8})).rejects.toThrow();expect(f.sent).toEqual([]);
+ await saved(f);
+ const client=(f.controller as unknown as {connection:{client:HarborClient&{lastFinal:unknown}}}).connection.client;
+ const view=client.view.bind(client);let minimum="12500000000000000000000";
+ client.view=(async(contract:string,method:string,args?:Record<string,unknown>)=>method==="storage_minimum"?(expect(contract).toBe(`season.${root}`),minimum):view(contract,method,args)) as typeof client.view;
+ f.onSend=(method)=>{client.lastFinal={hash:"h",method,receiver:`season.${root}`,failed:method==="sell",outcome:{status:{SuccessValue:btoa("{}")}}};};
+ expect(await f.controller.seasonAct({kind:"buy",good:"glass",qty:2,maxPrice:9})).toEqual({failed:false,outcome:{status:{SuccessValue:btoa("{}")}}});
+ expect((await f.controller.seasonAct({kind:"sell",good:"reed",qty:1,minPrice:3}))?.failed).toBe(true);
+ await f.controller.seasonAct({kind:"claim",contentVersion:"first_light_v2",tool:"rope",commands:["return"]});
+ await f.controller.seasonAct({kind:"set-wish",good:"reed",limit:6,qty:2});
+ await f.controller.seasonAct({kind:"cancel-wish"});
+ await f.controller.seasonAct({kind:"register"});
+ const season={receiver:`season.${root}`,deposit:0n};
+ expect(f.sent).toEqual([
+  {method:"buy",args:{good:"glass",qty:2,max_price:9},options:season},
+  {method:"sell",args:{good:"reed",qty:1,min_price:3},options:season},
+  {method:"claim_daily",args:{rules_version:"tidebound_h1_v1",content_version:"first_light_v2",tool:"rope",area:"beacon",commands:["return"]},options:season},
+  {method:"set_wish",args:{pet:`mochi.${root}`,good:"reed",limit:6,qty:2},options:season},
+  {method:"cancel_wish",args:{pet:`mochi.${root}`},options:season},
+  {method:"storage_deposit",args:{},options:{receiver:`season.${root}`,deposit:12500000000000000000000n}},
+ ]);
+ minimum="1";await expect(f.controller.seasonAct({kind:"register"})).rejects.toThrow("page size");expect(f.sent.length).toBe(6);
+ f.onSend=()=>{};expect(await f.controller.seasonAct({kind:"buy",good:"glass",qty:1,maxPrice:8})).toBeNull();
+});

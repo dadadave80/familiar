@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { REFUSALS, claimable, postcardLines, quoteBuy, quoteSell, reasonLine, refusalCode, scoreLine, settle, settleError, successValue, tradeArgs, tradeBlock, wishBlock, wishStatus, type Postcard, type TodayView, type Wish } from "./model";
-import courtFixture from "../../../contracts/common/fixtures/court.json";
 
 const b64=(value:unknown)=>btoa(JSON.stringify(value));
 
@@ -93,13 +92,12 @@ const today=(version:"first_light_v1"|"first_light_v2"):TodayView=>({day:20771,n
   best_haul:version==="first_light_v2"?[{tool:"rope",hauls:[[1,1]]},{tool:"lantern",hauls:[[1,1]]}]:[{tool:"rope",hauls:[[1,1],[0,2]]},{tool:"lantern",hauls:[[1,2]]}],best_fp:12_000_000,minted_today:null,traded_today:null});
 
 test("claimable replays a fresh beacon outing and maps docked cargo to goods", () => {
-  const routes=(courtFixture as {routes?:unknown}).routes;
-  const fixtureRuns=Array.isArray(routes)?routes as {tool:"rope"|"lantern";commands:string[];area?:string;banked?:string[]}[]:[];
-  const run=fixtureRuns.find(r=>(r.area??"beacon")==="beacon"&&!(r.banked??[]).length);
-  if(run){
-    const result=claimable(today("first_light_v2"),{tool:run.tool,commands:run.commands,contentVersion:"first_light_v2"});
-    if(result)expect(result.goods[0]+result.goods[1]).toBeGreaterThan(0);
-  }
+  // The same routes the season sandbox test mints with (contracts/season/tests/sandbox.ts).
+  const v1=["wait","wait","lure:left","take:chart","move:left","take:lens","move:center","return"];
+  const v2=["step:north","step:north","step:west","wait","wait","step:east","reel:lens","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"];
+  expect(claimable(today("first_light_v1"),{tool:"lantern",commands:v1,contentVersion:"first_light_v1"})).toEqual({goods:[1,1],cargo:["chart","lens"]});
+  expect(claimable(today("first_light_v2"),{tool:"rope",commands:v2,contentVersion:"first_light_v2"})?.goods).toEqual([1,1]);
+  expect(claimable(today("first_light_v2"),{tool:"rope",commands:v2.slice(0,-1),contentVersion:"first_light_v2"})).toBeNull();
   expect(claimable(today("first_light_v1"),{tool:"rope",commands:["step:north"],contentVersion:"first_light_v2"})).toBeNull();
   expect(claimable(today("first_light_v2"),{tool:"rope",commands:["wait"],contentVersion:"first_light_v2"})).toBeNull();
   expect(claimable(today("first_light_v2"),{tool:"rope",commands:["return"],contentVersion:"first_light_v2"})).toBeNull();
