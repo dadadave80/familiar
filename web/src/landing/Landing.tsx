@@ -36,24 +36,24 @@ export function Landing() {
         <section className="fl-tide" id="tide" aria-labelledby="fl-tide-title">
           <div className="fl-tide-heading">
             <h2 id="fl-tide-title">Sometimes the wave<br />is the way forward.</h2>
-            <p>The Tidekeeper marks a lane, then sends a wave. Step aside and it might open the shell you needed. Stay a little longer and you might bring someone home.</p>
+            <p>The Tidekeeper marks a source, then sends a wave. Cross the connected platforms and it might open the shell you needed. Stay a little longer and you might bring someone home.</p>
           </div>
           <figure className="fl-court">
             <div className="fl-court-scene">
-              <img className="fl-court-backdrop" src={`${art}arena.webp`} width="1536" height="1024" alt="Beacon Court’s three stone lanes above the water, with a lens cradle to the left and a nest to the right." loading="lazy" />
+              <img className="fl-court-backdrop" src={`${art}arena.webp`} width="1536" height="1024" alt="Beacon Court concept illustration above the water, with a lens cradle to the left and a nest to the right." loading="lazy" />
               <img className="fl-court-guardian" src={`${art}tidekeeper.webp`} alt="" loading="lazy" />
               <img className="fl-court-mochi" src={`${art}mochi.webp`} alt="" loading="lazy" />
             </div>
-            <figcaption>Beacon Court. Your first outing begins with a missing lighthouse lens.</figcaption>
+            <figcaption>Beacon Court concept art. In the game, Mochi crosses connected platforms.</figcaption>
           </figure>
           <dl className="fl-choices">
             <div>
               <dt>Bring a little ingenuity.</dt>
-              <dd>Choose Rope to reel in an exposed find, or Lantern to lure a wave toward a different source. Two uses. Your call.</dd>
+              <dd>Choose Rope to reel in an exposed find, or Lantern to redirect a marked source. Two uses. Your call.</dd>
             </div>
             <div>
               <dt>Make room for a detour.</dt>
-              <dd>A lens takes one pack slot. A wind-moth takes two. Decide what’s worth one more turn, then make it back to Center.</dd>
+              <dd>A lens takes one pack slot. A wind-moth takes two. Decide what’s worth one more turn, then carry your finds back to the dock.</dd>
             </div>
             <div>
               <dt>Come home with a story.</dt>
@@ -64,12 +64,12 @@ export function Landing() {
 
         <section className="fl-wind" aria-labelledby="fl-wind-title">
           <figure className="fl-wind-scene">
-            <img src={`${art}wind-gate-v1.webp`} width="1536" height="1024" alt="Wind Gate, where stone channels route the tide through a turning vane." loading="lazy" />
-            <figcaption>Wind Gate opens after you restore the lighthouse.</figcaption>
+            <img src={`${art}wind-gate-v1.webp`} width="1536" height="1024" alt="Wind Gate concept illustration, where stone channels route the tide through a turning wheel." loading="lazy" />
+            <figcaption>Wind Gate concept art. This outing opens after you restore the lighthouse.</figcaption>
           </figure>
           <div className="fl-wind-copy">
             <h2 id="fl-wind-title">You know the tide.<br />Now turn it.</h2>
-            <p>Beyond the beacon, the channel sends a familiar wave somewhere new. Turn the vane, trace the exit, and light two sockets to recover the harbor’s missing signal.</p>
+            <p>Beyond the beacon, the channel sends a familiar wave somewhere new. Align the wheel, trace the exit, and charge Left and Center to recover the harbor’s Signal Vane.</p>
             <p>Rope or Lantern. A different route. Something else to bring home.</p>
             <a className="fl-story-link" href="/outing/">Begin with Beacon Court</a>
           </div>

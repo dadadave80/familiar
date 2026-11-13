@@ -31,7 +31,7 @@ export function HarborSessionBoundary({children}:{children:Children}) {
     try{const root=import.meta.env.VITE_NEAR_ROOT??"";return createRecoverableAccountConnection({root,items:`items.${root}`,rpcUrl:import.meta.env.VITE_NEAR_RPC_URL??"https://test.rpc.fastnear.com",relayerUrl:import.meta.env.VITE_RELAYER_URL??"/api",clientId:import.meta.env.VITE_NEAR_AUTH_CLIENT_ID??"",approvedOrigin:import.meta.env.VITE_TIDEBOUND_AUTH_ORIGIN??""});}catch{return null;}
   });
   if(import.meta.env.VITE_TIDEBOUND_ENABLED!=="true"||import.meta.env.VITE_ACCOUNT_PROVIDER!=="privy")return <HarborSessionProvider connection={nearConnection}>{children}</HarborSessionProvider>;
-  return <Suspense fallback={<p>Opening the saved harbor…</p>}><PrivyProvider>{connection=><HarborSessionProvider connection={connection}>{children}</HarborSessionProvider>}</PrivyProvider></Suspense>;
+  return <Suspense fallback={<section className="familiar-boot" role="status"><p className="boot-brand">familiar.</p><h1>The harbor is on its way.</h1><p>Opening the account connection. Your device preview stays separate.</p><a href="">Reload Familiar</a></section>}><PrivyProvider>{connection=><HarborSessionProvider connection={connection}>{children}</HarborSessionProvider>}</PrivyProvider></Suspense>;
 }
 /** Recovery only. Satchel, beacon, Bram and workbench own their reviewed game interactions. */
 export function HarborAccountPanel() {

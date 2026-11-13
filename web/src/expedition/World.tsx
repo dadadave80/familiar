@@ -15,6 +15,7 @@ export interface ExpeditionWorldProps {
   onSettled:(id:number)=>void;
   onBeat:(event:CourtEvent,index:number)=>void;
   onFault:(message:string)=>void;
+  onReady:()=>void;
 }
 
 export default function World(props:ExpeditionWorldProps){
@@ -28,7 +29,7 @@ export default function World(props:ExpeditionWorldProps){
       if(!alive||!mount.current)return;
       const next=new ExpeditionScene(current.current.snapshot,{
         command:command=>current.current.onCommand(command),target:position=>current.current.onTarget(position),inspect:position=>current.current.onInspect(position),hover:position=>current.current.onHover(position),home:place=>current.current.onHome(place),
-        ready:()=>{if(!alive)return;setReady(true);next.setGated(current.current.paused);},fault:message=>{if(alive)current.current.onFault(message);},
+        ready:()=>{if(!alive)return;setReady(true);current.current.onReady();next.setGated(current.current.paused);},fault:message=>{if(alive)current.current.onFault(message);},
         beat:(event,index)=>{if(alive)current.current.onBeat(event,index);},settled:id=>{if(alive)current.current.onSettled(id);},geometry:geometry=>{if(alive)setTiles([...geometry]);},
       });scene.current=next;
       game=new Phaser.Game({type:Phaser.AUTO,parent:mount.current,width:mount.current.clientWidth,height:mount.current.clientHeight,transparent:true,antialias:true,banner:false,audio:{noAudio:true},scene:next,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},input:{keyboard:false}});

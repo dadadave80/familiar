@@ -113,11 +113,13 @@ test("missing runtime WebPs and the specific Wind Gate receipt are added with ha
   expect((await staticFiles(f.baseline)).some(path=>path.endsWith("unapproved.png"))).toBe(false);
 });
 test("a symlinked new-art directory cannot turn the publication allowlist into an arbitrary file read",async()=>{
-  const f=await runtimeFixture(),directory=join(f.source,"assets/expedition-v2"),outside=join(f.root,"outside-art");
+  for(const relative of ["assets/expedition-v2","assets/expedition-v2/runtime"]){
+  const f=await runtimeFixture(),directory=join(f.source,relative),outside=join(f.root,"outside-art");
   await rename(directory,outside);await symlink(outside,directory,"dir");
   const before=await staticFiles(f.baseline);
   await expect(copyRuntimeAssets(f.source,f.baseline)).rejects.toThrow("physical directories");
   expect(await staticFiles(f.baseline)).toEqual(before);
+  }
 });
 test("a conflicting existing runtime image or receipt rejects all additions before writing",async()=>{
   for(const path of [RUNTIME_WEBPS[2]!,RUNTIME_METADATA[0]]) {

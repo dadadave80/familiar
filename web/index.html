@@ -13,9 +13,12 @@
     <link rel="apple-touch-icon" href="/icons/beacon-192.png" />
     <link rel="manifest" href="/outing.webmanifest" />
     <title>Familiar · A little adventure with Mochi</title>
+    <style>
+      body:has(.familiar-boot){margin:0;background:#304e40}.familiar-boot{box-sizing:border-box;min-height:100dvh;display:grid;align-content:center;justify-items:center;gap:16px;padding:24px;text-align:center;background:#304e40;color:#fff1d4;font:16px/1.5 system-ui,sans-serif}.familiar-boot p,.familiar-boot h1{margin:0;max-width:32rem}.familiar-boot h1{font:600 clamp(26px,5vw,40px)/1.15 Georgia,serif}.familiar-boot .boot-brand{font:bold 30px Georgia,serif}.familiar-boot a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;color:inherit;text-underline-offset:4px}.familiar-boot a:focus-visible{outline:3px solid #e4be78;outline-offset:3px}
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><section class="familiar-boot" aria-label="Opening Familiar"><p class="boot-brand">familiar.</p><h1>The harbor is on its way.</h1><p data-boot-status role="status">Opening the game. A slow connection may take a moment.</p><a href="">Reload Familiar</a><noscript>Enable JavaScript to play. Your saved harbor stays on this device.</noscript></section></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

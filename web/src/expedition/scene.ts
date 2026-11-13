@@ -5,7 +5,7 @@ import { commandAt } from "./input";
 import { MOCHI_POSES, type MochiPoseName } from "../motion/mochi";
 import type { Column, Command, CourtEvent, CourtState, CourtTransition, Find, Position } from "./types";
 
-const ART = "/assets/first-light-motion/";
+const ART = "/assets/expedition-v2/runtime/";
 const ASSETS = { harbor:"harbor", mochi:"mochi-poses-v1", keeper:"tidekeeper", shell:"shell", lens:"lens", moth:"moth", wave:"wave", bram:"bram" } as const;
 export type HomePlace = "sail" | "beacon" | "bram" | "workbench" | "satchel" | "account";
 export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null }
@@ -48,6 +48,7 @@ export class ExpeditionScene extends Phaser.Scene {
   private cargo:Phaser.GameObjects.Image[]=[];
   private surfaces:Phaser.GameObjects.Image[]=[];
   private hitAreas:Phaser.GameObjects.Zone[]=[];
+  private presses=new Map<number,{target:string;x:number;y:number;dragged:boolean}>();
   private epoch=0;
   private lastPresentation=0;
   private playing=false;
@@ -60,9 +61,9 @@ export class ExpeditionScene extends Phaser.Scene {
   constructor(snapshot:WorldSnapshot,hooks:WorldHooks){super("expedition-world");this.snapshot=snapshot;this.hooks=hooks;}
   preload(){
     for(const [key,path] of Object.entries(ASSETS))this.load.image(`exp-${key}`,`${ART}${path}.webp`);
-    this.load.image("exp-court","/assets/expedition-v2/tide-court-v2.webp");
-    this.load.image("exp-island","/assets/expedition-v2/stone-island-v2.webp");
-    this.load.image("exp-bridge","/assets/expedition-v2/wooden-bridge-v2.webp");
+    this.load.image("exp-court",`${ART}tide-court-v2.webp`);
+    this.load.image("exp-island",`${ART}stone-island-v2.webp`);
+    this.load.image("exp-bridge",`${ART}wooden-bridge-v2.webp`);
     this.load.on("loaderror",(file:Phaser.Loader.File)=>{this.stopped=true;this.hooks.fault(`The ${file.key.replace("exp-","")} artwork did not load. Your saved moves are safe. Retry the scene.`);});
   }
   create(){
@@ -91,12 +92,16 @@ export class ExpeditionScene extends Phaser.Scene {
     this.events.once("shutdown",()=>{this.stopped=true;this.epoch++;});
     this.visual=this.snapshot.court;
     this.input.mouse?.disableContextMenu();
+    this.input.on("pointermove",(pointer:Phaser.Input.Pointer)=>{const press=this.presses.get(pointer.id);if(press&&Math.hypot(pointer.x-press.x,pointer.y-press.y)>12)press.dragged=true;});
+    const release=(pointer:Phaser.Input.Pointer)=>this.presses.delete(pointer.id);
+    this.input.on("pointerup",release);this.input.on("pointerupoutside",release);
     this.layout();this.hooks.ready();
   }
 
   /** Presentation coordinates are responsive. Logical cells and accepted state never resize. */
   private field(){
     const portrait=this.w<=900&&this.h>this.w;
+    if(portrait&&this.h<500){const top=144,bottom=this.h-166,width=this.w*.82;return{cx:this.w/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
     if(this.h<500){const available=this.w-260,width=Math.max(240,Math.min(available*.91,760)),top=98,bottom=this.h-34;return{cx:available/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
     const top=portrait?(this.h<650?151:Math.max(200,this.h*.29)):this.h<500?122:Math.max(190,this.h*.31);
     const bottom=portrait?this.h-240:this.h-72;
@@ -115,7 +120,7 @@ export class ExpeditionScene extends Phaser.Scene {
     if(transition&&id!==this.lastPresentation){this.lastPresentation=id;void this.present(transition,id);}
     else if(!this.playing){this.visual=snapshot.court;if(previous.court===snapshot.court&&snapshot.court&&previous.reducedMotion===snapshot.reducedMotion)this.paintHints(snapshot.court);else this.layout();if(!previous.court&&!snapshot.court&&!previous.home.lit&&snapshot.home.lit){this.beam.setAlpha(0);void this.tween(this.beam,{alpha:1},800);}}
   }
-  setGated(gated:boolean){this.gated=gated;if(!this.actor)return;this.input.enabled=!gated;this.time.paused=gated;if(gated)this.tweens.pauseAll();else this.tweens.resumeAll();}
+  setGated(gated:boolean){this.gated=gated;if(gated)this.presses.clear();if(!this.actor)return;this.input.enabled=!gated;this.time.paused=gated;if(gated)this.tweens.pauseAll();else this.tweens.resumeAll();}
   private clearParts(){
     for(const label of this.labels)label.destroy();this.labels=[];
     for(const zone of this.hitAreas)zone.destroy();this.hitAreas=[];
@@ -126,6 +131,7 @@ export class ExpeditionScene extends Phaser.Scene {
   }
   private layout(){
     if(!this.actor||this.stopped)return;
+    this.presses.clear();
     this.clearParts();this.ground.clear();this.homeProps.clear();this.bridgeArt.setAlpha(1);this.wheel.clear();this.forecast.clear();this.forecastLabel.setVisible(false);this.neighbors.clear();this.beam.clear().setAlpha(1);
     const court=this.visual;
     this.backdrop.setTexture(court?"exp-court":"exp-harbor","__BASE");
@@ -143,14 +149,21 @@ export class ExpeditionScene extends Phaser.Scene {
       else {this.ground.lineStyle(2,0xa8c8bd,.4);this.ground.strokeEllipse(p.x,p.y+6,tile.width*.6,tile.height*.45);}
       const hitHeight=Math.max(44,Math.min(tile.height+15,f.dy-2));
       const zone=this.add.zone(p.x,p.y,Math.max(44,tile.width),hitHeight).setInteractive({useHandCursor:true}).setDepth(16);
-      zone.on("pointerup",(pointer:Phaser.Input.Pointer)=>{if(this.gated)return;if(pointer.rightButtonReleased()||pointer.getDuration()>450)this.hooks.inspect(position);else this.hooks.target(position);});this.hitAreas.push(zone);
+      const target=`${x},${y}`;
+      zone.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{if(!this.gated)this.presses.set(pointer.id,{target,x:pointer.x,y:pointer.y,dragged:false});});
+      zone.on("pointerup",(pointer:Phaser.Input.Pointer)=>{
+        const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);
+        if(this.gated||pointer.wasCanceled||!press||press.target!==target||press.dragged||Math.hypot(pointer.x-press.x,pointer.y-press.y)>12)return;
+        if(pointer.rightButtonReleased()||pointer.getDuration()>450)this.hooks.inspect(position);
+        else if(pointer.wasTouch||pointer.leftButtonReleased())this.hooks.target(position);
+      });this.hitAreas.push(zone);
       zone.on("pointerover",()=>{if(!this.gated&&!this.playing)this.hooks.hover(position);});zone.on("pointerout",()=>this.hooks.hover(null));
       targets.push({position,x:p.x,y:p.y,width:Math.max(44,tile.width),height:hitHeight});
     }
     this.hooks.geometry(targets);
-    const dock=this.point({x:1,y:0});this.text(dock.x,dock.y+(this.h<500?-tile.height*.45:tile.height*.72),"DOCK",Math.min(14,this.w/28));
     const portrait=this.w<=900&&this.h>this.w;
-    const keeperHeight=Math.min(this.h<500?f.top-15:230,this.h*.26,portrait?this.w*(this.h<650?.38:.45):this.w*.52,portrait?f.top-(this.h<650?15:80):Infinity);this.keeper.setPosition(this.h<500?f.cx+Math.min(60,f.width*.18):portrait&&this.h<650?this.w*.72:f.cx,f.top-8).setDisplaySize(keeperHeight*1.32,keeperHeight);
+    const dock=this.point({x:1,y:0});if(!(portrait&&this.h<500&&court.position.x===1&&court.position.y===0))this.text(dock.x,dock.y+(this.h<500?-tile.height*.45:tile.height*.72),"DOCK",Math.min(14,this.w/28));
+    const keeperHeight=Math.min(this.h<500?f.top-(portrait?78:15):230,this.h*.26,portrait?this.w*(this.h<650?.38:.45):this.w*.52,portrait?f.top-(this.h<650?15:80):Infinity);this.keeper.setPosition(this.h<500&&!portrait?f.cx+Math.min(60,f.width*.18):portrait&&this.h<650?this.w*.72:f.cx,f.top-8).setDisplaySize(keeperHeight*1.32,keeperHeight);
     for(const item of ["lens","moth","vane"] as const){
       const position=COURTS[court.area].finds[item];if(!position||court.banked.includes(item)||court.cargo.includes(item))continue;
       const p=this.point(position);
@@ -208,7 +221,7 @@ export class ExpeditionScene extends Phaser.Scene {
   }
   private harbor(){
     const portrait=this.w<=900&&this.h>this.w;
-    const groundY=portrait?this.h-316:this.h*.81;
+    const groundY=portrait?this.h-(this.h<500?235:316):this.h*.81;
     if(portrait){
       this.backdrop.x-=this.backdrop.displayWidth*.2;
       const source=this.textures.get("exp-island").getSourceImage() as HTMLImageElement;

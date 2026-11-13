@@ -1,0 +1,131 @@
+{
+  "purpose": "Runtime encodings of existing artwork; original files preserved",
+  "encoder": "cwebp quality85 method6 alpha100",
+  "sourceBytes": 3010564,
+  "bytes": 1106852,
+  "files": [
+    {
+      "source": "assets/first-light-motion/harbor.webp",
+      "output": "assets/expedition-v2/runtime/harbor.webp",
+      "sourceSha256": "8b8152e93ae42137a9e7ea16ba04e014b0c3e3957204ae25dc703b2b7b3c59b2",
+      "sha256": "ec3b55f9acbae691ff0c21a1b2c869d67380c4d5f1345969386500b0daa15702",
+      "sourceBytes": 388314,
+      "bytes": 331368,
+      "resizedTo": null
+    },
+    {
+      "source": "assets/first-light-motion/mochi-poses-v1.webp",
+      "output": "assets/expedition-v2/runtime/mochi-poses-v1.webp",
+      "sourceSha256": "f7c772c16b58eb5adf7954bb0d68ed3070064add8a15570f52eac734fb2bec34",
+      "sha256": "55abbca857d71383c39968adc1bcdb62fa944f831fd6ff4bfa206ae1bc5ca961",
+      "sourceBytes": 222202,
+      "bytes": 211732,
+      "resizedTo": null
+    },
+    {
+      "source": "assets/first-light-motion/tidekeeper.webp",
+      "output": "assets/expedition-v2/runtime/tidekeeper.webp",
+      "sourceSha256": "8581027afe1e5a55bf5e8dc4d5eaf11c70607c7ff439cfbecc0328ef244db8c6",
+      "sha256": "f5907e44302393eb0e4579eb786919e0097fe6bdae6e42ebf433fe1dd1a91624",
+      "sourceBytes": 367548,
+      "bytes": 59976,
+      "resizedTo": {
+        "width": 576,
+        "height": 384
+      }
+    },
+    {
+      "source": "assets/first-light-motion/bram.webp",
+      "output": "assets/expedition-v2/runtime/bram.webp",
+      "sourceSha256": "d014994fbb253b4b5ed523a4bf3d43efa06ad7c086ae52dea5c2f46446d01940",
+      "sha256": "69b31c5939776d53f9889db4ea7ec0fd5193d55ce033988fa633d21d6f518f29",
+      "sourceBytes": 328270,
+      "bytes": 35330,
+      "resizedTo": {
+        "width": 384,
+        "height": 439
+      }
+    },
+    {
+      "source": "assets/first-light-motion/shell.webp",
+      "output": "assets/expedition-v2/runtime/shell.webp",
+      "sourceSha256": "58e45abc4560ab49b287c8e69672508c9246488a10f98398c615e1a76adb343e",
+      "sha256": "e87a378c96ae616d9a8a41851b38745a0c68c8705abcc0585869a101d9329c46",
+      "sourceBytes": 391958,
+      "bytes": 15870,
+      "resizedTo": {
+        "width": 256,
+        "height": 256
+      }
+    },
+    {
+      "source": "assets/first-light-motion/lens.webp",
+      "output": "assets/expedition-v2/runtime/lens.webp",
+      "sourceSha256": "6e8dc354cb0c871d4fee0982c997a6fa0fbabf23feb1a187012aad608ca7f5ca",
+      "sha256": "6f03a274425ef8f867c6dc620c61f6e8d245006de2c0668da46f494c8e8f5eea",
+      "sourceBytes": 371462,
+      "bytes": 20164,
+      "resizedTo": {
+        "width": 256,
+        "height": 256
+      }
+    },
+    {
+      "source": "assets/first-light-motion/moth.webp",
+      "output": "assets/expedition-v2/runtime/moth.webp",
+      "sourceSha256": "10ec2436f73cb20b305938032331c9796fa1c34d1bc925e5be640c7a8c6fb2c4",
+      "sha256": "7d135efd7ae1eadf10bfe33e07444c47c9cad01c0ff2fb8f8d94ca75ed388169",
+      "sourceBytes": 124938,
+      "bytes": 13074,
+      "resizedTo": {
+        "width": 384,
+        "height": 256
+      }
+    },
+    {
+      "source": "assets/first-light-motion/wave.webp",
+      "output": "assets/expedition-v2/runtime/wave.webp",
+      "sourceSha256": "95af6bb3cc82df1f4eebac429731b07fbcfc44dcfb7fc6c6276a8aeb02b870f0",
+      "sha256": "f2600fa67a1c38b12ac0f2c653537a6dae57fdb2ba2d07d989ba6b55b5027093",
+      "sourceBytes": 241032,
+      "bytes": 32712,
+      "resizedTo": {
+        "width": 768,
+        "height": 256
+      }
+    },
+    {
+      "source": "assets/expedition-v2/tide-court-v2.webp",
+      "output": "assets/expedition-v2/runtime/tide-court-v2.webp",
+      "sourceSha256": "5e72cf2bf26c47f2132a16584885cc0048230993bcd3721721f871cabec74a44",
+      "sha256": "edd7a52d43264ea7be31dceedd4a199f570cd681b2edcf23f4ea6d21226d0ebd",
+      "sourceBytes": 365400,
+      "bytes": 332960,
+      "resizedTo": null
+    },
+    {
+      "source": "assets/expedition-v2/stone-island-v2.webp",
+      "output": "assets/expedition-v2/runtime/stone-island-v2.webp",
+      "sourceSha256": "0635473ce14e79f02046762ddbd55e967be85fecf93f08270dc51f2f637f3def",
+      "sha256": "bea28bf92fb86b1375baa28e020e2f3599437840f64a1a1f80db3932fc022d21",
+      "sourceBytes": 95998,
+      "bytes": 23214,
+      "resizedTo": {
+        "width": 512,
+        "height": 171
+      }
+    },
+    {
+      "source": "assets/expedition-v2/wooden-bridge-v2.webp",
+      "output": "assets/expedition-v2/runtime/wooden-bridge-v2.webp",
+      "sourceSha256": "2f17b2c0df7a41f23a1723aa8f0cf3ce1fd87333220af6836550f378926a87d3",
+      "sha256": "db8fe73645b8d6155a3683203825c6363d3dba0cb8c1c99ea284d090eeaeb672",
+      "sourceBytes": 113442,
+      "bytes": 30452,
+      "resizedTo": {
+        "width": 192,
+        "height": 576
+      }
+    }
+  ]
+}
