@@ -44,7 +44,7 @@ function writeLocal(next:LocalSave,key:string){const text=JSON.stringify(next);l
 
 export function eventDescription(event:CourtEvent,area?:Area):string{
   switch(event.kind){
-    case"move":return Math.abs(event.to.y-event.from.y)>1?"Mochi crosses the bridge.":"Mochi finds his footing.";
+    case"move":return Math.abs(event.to.y-event.from.y)>1?"Mochi crosses the bridge.":"Mochi finds her footing.";
     case"telegraph":return area==="wind"?`${columns[event.column]} source marked. The wheel determines its exit.`:`${columns[event.column]} is marked. The next surge follows that source.`;
     case"redirect":return `The lantern draws the source to ${columns[event.to]}.`;
     case"rotate":return event.to===0?"Mochi seats the wheel in its alignment notch.":"Mochi turns the wheel one notch. The outlets shift.";
@@ -54,7 +54,7 @@ export function eventDescription(event:CourtEvent,area?:Area):string{
     case"hit":return `The surge washes Mochi down to safe ground. Resolve ${event.resolve} of 3.`;
     case"pickup":return `Mochi ${event.rope?"reels in":"carefully carries"} the ${names[event.item]}.`;
     case"return":return event.cargo.length?`Home with ${event.cargo.map(i=>names[i]).join(" and ")}.`:"Mochi returns safely to the harbor.";
-    case"rescue":return event.reason==="resolve"?"The last splash used Mochi’s Resolve. Bram brings him home; the unbanked cargo stays behind.":"The tide closed after 24 decisions. Bram brings Mochi home; the unbanked cargo stays behind.";
+    case"rescue":return event.reason==="resolve"?"The last splash used Mochi’s Resolve. Bram brings her home; the unbanked cargo stays behind.":"The tide closed after 24 decisions. Bram brings Mochi home; the unbanked cargo stays behind.";
   }
 }
 function Icon({kind}:{kind:"menu"|"close"|"bag"|"sound"|"silent"|"north"|"south"|"west"|"east"}){
@@ -331,7 +331,7 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
         onSail={choice=>{setArea(choice);open("sail");}} onCrossing={departPassage} onRepair={()=>open("beacon")}
         onRest={()=>{setSurface(null);setGreeting(0);setResting(true);if(sound)audio.current?.playMusic("harbor");}}/>:surface==="crossings"?<>
         <h2>The harbor crossing</h2>
-        <p>{harbor.heardBell?"Bram’s bell pull is rigged at the far-center landing on both crossings. Once per outing, call a marked surge left.":chapterComplete?"Mochi pricks his ears toward Bell Steps. The old far-left arch falls quiet at low water.":"One line, two landings. Choose which way to rig the boat."}</p>
+        <p>{harbor.heardBell?"Bram’s bell pull is rigged at the far-center landing on both crossings. Once per outing, call a marked surge left.":chapterComplete?"Mochi pricks her ears toward Bell Steps. The old far-left arch falls quiet at low water.":"One line, two landings. Choose which way to rig the boat."}</p>
         <div className="exp-job-list">
           <button onClick={()=>departPassage("bell")} disabled={lease!=="held"||!passageReadable.current||!!problem}><strong>Bell Steps · {chapterComplete?"Explore the old arch":services.includes("bell")?"Sail again":"Send supplies"}</strong><span>{chapterComplete?"Go beyond the worksite with Mochi. Listen under the far-left arch at low tide.":services.includes("bell")?"The supplies are across. Try guiding from shore, or riding the line.":"Bram’s crates are on the near left bank. Take the load out, then find your own way home."}</span><small>{services.includes("bell")?"Supplies delivered · Sail again":"Near bank → far bank"}</small></button>
           <button onClick={()=>departPassage("reed")} disabled={lease!=="held"||!passageReadable.current||!!problem}><strong>Reed Steps · Bring the skiff home</strong><span>Follow Mochi across the bridge to the far right bank. Bring the empty skiff back on the tide.</span><small>{services.includes("reed")?"Skiff moored · Sail again":"Far bank → near bank"}</small></button>

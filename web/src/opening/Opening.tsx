@@ -264,7 +264,7 @@ export default class Opening extends Component<Props, State> {
     this.cHints(to); v.gx = P.x; v.gy = P.y; void this.tw(n, "ghostA", .45, 200); await this.wait(820); if (!ok()) return;
     void this.tw(n, "ghostA", 0, 140); v.rings = []; v.pose = dxx < 0 ? "turn-left" : dxx > 0 ? "turn-right" : "curious"; v.sq = .93; await this.wait(130); if (!ok()) return;
     v.sq = 1; v.flip = dxx < 0; v.wf = { x: v.mx, y: v.my }; v.wt = P; v.walk = cross ? 2 : 1; this.sfx("step"); const d = cross ? 720 : 440; void this.tw(n, "mx", P.x, d, "io"); await this.tw(n, "my", P.y, d, "io"); if (!ok()) return;
-    v.walk = 0; v.flip = false; v.pose = "neutral"; v.sq = .95; c.pos = to; this.say("Mochi finds his footing."); await this.wait(110); v.sq = 1;
+    v.walk = 0; v.flip = false; v.pose = "neutral"; v.sq = .95; c.pos = to; this.say("Mochi finds her footing."); await this.wait(110); v.sq = 1;
     const ph = c.turn % 3; c.turn++;
     if (ph === 1) {
       await this.wait(350); if (!ok()) return; c.locked = to.x; v.laneX = P.x; v.pose = "brace"; this.setState({ lane: "IN + OUT · " + COLS[to.x]!.toUpperCase() });

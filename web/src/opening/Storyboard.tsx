@@ -93,7 +93,7 @@ export default function Storyboard() {
               <li>Today’s Tide is not built. Its scroll says “Coming soon” and no account or link appears.</li>
               <li>The menu offers Continue when this device has a harbor and New Harbor otherwise. Starting over needs its own beat.</li>
               <li>The court shown after 20 s is a scripted demo, not playable from the title.</li>
-              <li>The brief calls Mochi “her”; the shipped strings say “his”. Shipped strings are untouched and nothing new uses a pronoun.</li>
+              <li>Mochi is “her” throughout; Bram is “he”.</li>
             </ul>
           </div>
         </section>
