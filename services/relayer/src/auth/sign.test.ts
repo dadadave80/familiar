@@ -1,6 +1,6 @@
-import { expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { KeyPair, actions, base64Encode, createTransaction, encodeTransaction } from "near-api-js";
-import { validateNativeIntent, validateSigningRequest } from "./sign";
+import { SEASON_STORAGE_DEPOSIT, validateNativeIntent, validateSigningRequest } from "./sign";
 const key=KeyPair.fromRandom("ed25519").getPublicKey();
 const root="tidebound.testnet"; const sender=`p-1.${root}`;
 const context={root,items:`items.${root}`,clientId:"configured-client",origin:"https://harbor.example",origins:["https://harbor.example"]};
@@ -47,4 +47,41 @@ test("content versions retain their own command language and decision cap",()=>{
  expect(()=>validateSigningRequest(body(root,actions.functionCall("tidebound_claim",args,50000000000000n,0n)),context)).not.toThrow();
  for(const changed of [{commands:Array(25).fill("wait")},{commands:["move:left"]},{commands:["take:salvage"]},{content_version:"first_light_v3"},{content_version:"first_light_v1",commands:["step:north"]},{content_version:"first_light_v1",commands:Array(16).fill("wait")}])expect(()=>validateSigningRequest(body(root,actions.functionCall("tidebound_claim",{...args,...changed},50000000000000n,0n)),context)).toThrow();
  expect(()=>validateSigningRequest(body(root,actions.functionCall("tidebound_claim",{...args,content_version:"first_light_v1",commands:["move:left","wait","return"]},50000000000000n,0n)),context)).not.toThrow();
+});
+describe("season allowlist",()=>{
+ const season=`season.${root}`,pet=`mochi-1.${root}`,gas=100000000000000n;
+ const tx=(method:string,args:Record<string,unknown>,deposit=0n,receiver=season,extra=false)=>createTransaction(sender,key,receiver,21n,[actions.functionCall(method,args,gas,deposit),...(extra?[actions.functionCall(method,args,gas,deposit)]:[])],new Uint8Array(32));
+ const claim={rules_version:"tidebound_h1_v1",content_version:"first_light_v2",tool:"rope",area:"beacon",commands:["step:north","return"]};
+ const cases:[string,Record<string,unknown>,bigint][]=[
+  ["claim_daily",claim,0n],
+  ["claim_daily",{...claim,content_version:"first_light_v1",commands:["move:left","take:lens","return"]},0n],
+  ["buy",{good:"glass",qty:1,max_price:8},0n],
+  ["sell",{good:"reed",qty:2,min_price:3},0n],
+  ["set_wish",{pet,good:"glass",limit:12,qty:2},0n],
+  ["cancel_wish",{pet},0n],
+  ["storage_deposit",{},SEASON_STORAGE_DEPOSIT],
+ ];
+ for(const [method,args,deposit] of cases) test(`${method} accepts the exact call and refuses variants`,()=>{
+  expect(()=>validateNativeIntent(tx(method,args,deposit),context)).not.toThrow();
+  expect(()=>validateSigningRequest(body(season,actions.functionCall(method,args,gas,deposit)),context)).not.toThrow();
+  for(const receiver of [root,context.items,"season.elsewhere.testnet",`season.${root}.evil.testnet`,sender]) expect(()=>validateNativeIntent(tx(method,args,deposit,receiver),context)).toThrow();
+  expect(()=>validateNativeIntent(tx(method,args,deposit,season,true),context)).toThrow();
+  for(const wrong of deposit===0n?[1n,10n**24n]:[0n,1n,deposit-1n,deposit+1n]) expect(()=>validateNativeIntent(tx(method,args,wrong),context)).toThrow();
+  expect(()=>validateNativeIntent(tx(method,{...args,extra:1},deposit),context)).toThrow();
+ });
+ test("season arguments are bounded",()=>{
+  const bad:[string,Record<string,unknown>][]=[
+   ["claim_daily",{...claim,area:"wind"}],["claim_daily",{...claim,tool:"net"}],["claim_daily",{...claim,rules_version:"tidebound_h2"}],
+   ["claim_daily",{...claim,content_version:"first_light_v3"}],["claim_daily",{...claim,commands:["move:left"]}],["claim_daily",{...claim,commands:[]}],
+   ["claim_daily",{...claim,commands:Array(25).fill("wait")}],["claim_daily",{...claim,content_version:"first_light_v1",commands:Array(16).fill("wait")}],
+   ["buy",{good:"bread",qty:1,max_price:8}],["buy",{good:"glass",qty:0,max_price:8}],["buy",{good:"glass",qty:21,max_price:8}],["buy",{good:"glass",qty:1,max_price:"8"}],["buy",{good:"glass",qty:1.5,max_price:8}],["buy",{good:"glass",qty:1,min_price:8}],
+   ["sell",{good:"glass",qty:1,min_price:0}],["sell",{good:"glass",qty:1,max_price:6}],
+   ["set_wish",{pet,good:"glass",limit:13,qty:2}],["set_wish",{pet,good:"glass",limit:1,qty:3}],["set_wish",{pet,good:"glass",limit:0,qty:1}],["set_wish",{pet:"mochi.elsewhere.testnet",good:"glass",limit:1,qty:1}],
+   ["cancel_wish",{pet:"elsewhere.testnet"}],["storage_withdraw",{}],["get_shelf",{}],["new",{root}],["on_wish_owner",{owner:sender,pet,good:"glass",limit:1,qty:1}],
+  ];
+  for(const [method,args] of bad) expect(()=>validateNativeIntent(tx(method,args),context)).toThrow();
+  expect(()=>validateNativeIntent(tx("storage_deposit",{account_id:sender},SEASON_STORAGE_DEPOSIT),context)).toThrow();
+  expect(()=>validateNativeIntent(tx("claim_daily",claim,0n,context.items),context)).toThrow();
+  expect(()=>validateNativeIntent(tx("storage_deposit",{},SEASON_STORAGE_DEPOSIT,root),context)).toThrow();
+ });
 });

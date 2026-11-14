@@ -5,7 +5,7 @@ export interface HarborRecord {kind:"self"|"key"|"referee"|"admin";title:string;
 export interface RecordsTarget {rpcUrl:string;root:string;player:string;pet:string;signerKey:string;provider:"privy"|"other"}
 
 /** Mirrors validateNativeIntent in services/relayer/src/auth/sign.ts; records.test.ts keeps the two in step. */
-export const SIGNER_ACTIONS:readonly {receiver:"root"|"items"|"self";method:string;label:string}[]=[
+export const SIGNER_ACTIONS:readonly {receiver:"root"|"items"|"season"|"self";method:string;label:string}[]=[
   {receiver:"root",method:"adopt",label:"bring Mochi home"},
   {receiver:"root",method:"tidebound_claim",label:"record a return"},
   {receiver:"root",method:"tidebound_restore",label:"restore the beacon or signal"},
@@ -18,6 +18,12 @@ export const SIGNER_ACTIONS:readonly {receiver:"root"|"items"|"self";method:stri
   {receiver:"root",method:"tidebound_retry_operation",label:"retry an original request"},
   {receiver:"items",method:"mt_transfer",label:"gift a lantern"},
   {receiver:"items",method:"storage_deposit",label:"cover a lantern’s storage"},
+  {receiver:"season",method:"storage_deposit",label:"open your page in Bram’s ledger"},
+  {receiver:"season",method:"claim_daily",label:"dock today’s haul"},
+  {receiver:"season",method:"buy",label:"buy from Bram’s shelf"},
+  {receiver:"season",method:"sell",label:"sell to Bram’s till"},
+  {receiver:"season",method:"set_wish",label:"set Mochi’s wish"},
+  {receiver:"season",method:"cancel_wish",label:"take back Mochi’s wish"},
   {receiver:"self",method:"transfer",label:"a zero-value transfer to your own account"},
 ];
 

@@ -7,3 +7,5 @@ The [First Light provenance record](../../public/assets/first-light-motion/prove
 `expedition/` holds the PNG masters and full-size WebPs for the tide court, stone island and wooden bridge. The other full-size optimizer inputs for Bram, the shell and the wave live in `first-light-motion/`.
 
 Run `bun scripts/optimize-expedition-assets.ts` to regenerate the eleven WebPs in `web/public/assets/expedition/runtime/` using cwebp. In the [encoding manifest](../../public/assets/expedition/runtime/manifest.json), source paths are relative to `web/` and output paths to `web/public/`. Five inputs also appear at full size in the game or introduction.
+
+`season/` holds the five Season 2 icon masters (glass, reed, Bram's shelf and till, Mochi's purse, the wish token), generated with gpt-6-astra through the Codex CLI; prompts and original paths are in the [season provenance record](../../public/assets/season/provenance.json). Run `bun scripts/optimize-season-assets.ts` to regenerate the WebPs and manifest in `web/public/assets/season/`; it removes the cream backdrop by corner flood fill and needs ImageMagick and cwebp.

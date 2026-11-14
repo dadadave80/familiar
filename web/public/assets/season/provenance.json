@@ -1,0 +1,44 @@
+{
+  "created": "2026-11-13",
+  "purpose": "Familiar Season 2 icons: glass and reed goods, Bram's shelf and till, Mochi's purse and wish token",
+  "generator": {
+    "tool": "Codex CLI codex-cli 0.169.0 (`codex exec`, image generation tool)",
+    "model": "gpt-6-astra",
+    "session": "01a1d70e-72cf-7c02-9d2d-1e5bdb89c1e5"
+  },
+  "styleReferences": [
+    "web/assets/source/first-light-motion/bram.png",
+    "web/assets/source/first-light-motion/lens.png",
+    "web/assets/source/first-light-motion/moth.png",
+    "web/assets/source/first-light-motion/shell.png"
+  ],
+  "delivery": "WebP renditions produced by scripts/optimize-season-assets.ts (see manifest.json). Masters are 1024x1024 PNG on a cream backdrop that is not pixel-exact; the cream is removed by corner flood fill.",
+  "files": {
+    "glass.webp": {
+      "master": "web/assets/source/season/glass.png",
+      "prompt": "Create one square 1024x1024 PNG game asset for the cozy harbor game Familiar: glass.png. Subject: one small rounded translucent teal-green sea-glass pebble, a chunky irregular chunk with softly frosted edges, crafted as a handmade felt-and-wool stop-motion miniature with visible fine fibres while retaining a gentle glasslike translucency. Match the attached Bram, lens, moth, and shell references in handmade materials, soft warm studio lighting, gentle chunky shapes, and warm muted coastal colors (sea-glass teal, sand, cream, weathered wood brown, brass). Center and isolate the single object on a plain flat solid cream background, exact color #efe4cc, with only a soft contact shadow. Object fills about 70% of the frame with generous clear margins and a silhouette readable at 48px. No text, letters, numbers, logos, UI frames, scenery, extra objects, or border.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d70e-72cf-7c02-9d2d-1e5bdb89c1e5/exec-5dd310c4-d6fd-40d8-966d-d8c9a238b94c.png"
+    },
+    "reed.webp": {
+      "master": "web/assets/source/season/reed.png",
+      "prompt": "Create one square 1024x1024 PNG game asset for the cozy harbor game Familiar: reed.png. Subject: one small tied bundle of felted harbor reeds, golden-green stalks bound around the middle with a twist of natural twine; a few simple soft reed heads and narrow leaves, chunky and tidy enough to read as one trade good. Match the attached Bram, lens, moth, and shell references in handmade felt-and-wool stop-motion miniature style, visible fibre texture, soft warm studio lighting, gentle chunky shapes, and warm muted coastal colors (sea-glass teal, sand, cream, weathered wood brown, brass). Center and isolate the object on a plain flat solid cream background, exact color #efe4cc, with only a soft contact shadow. Object fills about 70% of the frame with generous clear margins and a silhouette readable at 48px. No text, letters, numbers, logos, UI frames, scenery, unrelated objects, or border.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d70e-72cf-7c02-9d2d-1e5bdb89c1e5/exec-4e043fe4-f103-4c53-b680-36117f05b181.png"
+    },
+    "shelf-till.webp": {
+      "master": "web/assets/source/season/shelf-till.png",
+      "prompt": "Create one square 1024x1024 PNG game asset for the cozy harbor game Familiar: shelf-till.png. Subject: Bram's harbor trading shelf, a small weathered wooden shelf with exactly two clearly visible cubbies, one holding teal sea-glass pebbles and the other holding golden-green reed bundles tied with twine. Include a little closed wooden till box with brass corners and a simple scallop shell on its lid, sitting at the shelf's base in front, so shelf and till form one compact readable miniature arrangement. Show the cubby contents and till lid clearly. Match the attached Bram, lens, moth, and shell references in handmade felt-and-wool stop-motion miniature style, visible fibre texture, soft warm studio lighting, gentle chunky shapes, and warm muted coastal colors (sea-glass teal, sand, cream, weathered wood brown, brass). Center and isolate the object on a plain flat solid cream background, exact color #efe4cc, with only a soft contact shadow. Object fills about 70% of the frame with generous clear margins and a silhouette readable at 48px. No text, letters, numbers, logos, UI frames, scenery, unrelated objects, or border.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d70e-72cf-7c02-9d2d-1e5bdb89c1e5/exec-c1d3def3-4050-4222-baf9-7ca9467c7ae0.png"
+    },
+    "purse.webp": {
+      "master": "web/assets/source/season/purse.png",
+      "prompt": "Create one square 1024x1024 PNG game asset for the cozy harbor game Familiar: purse.png. Subject: Mochi's tiny drawstring purse, a rounded soft felt pouch in warm rust and cream, gathered at the top with a natural cord, with a small simple scallop-shell clasp and a few small cream shells peeking out of the opening. Keep the shell clasp and pouch silhouette chunky, warm, and immediately recognizable. Match the attached Bram, lens, moth, and shell references in handmade felt-and-wool stop-motion miniature style, visible fibre texture, soft warm studio lighting, gentle chunky shapes, and warm muted coastal colors (sea-glass teal, sand, cream, weathered wood brown, brass). Center and isolate the object on a plain flat solid cream background, exact color #efe4cc, with only a soft contact shadow. Object fills about 70% of the frame with generous clear margins and a silhouette readable at 48px. No text, letters, numbers, logos, UI frames, scenery, unrelated objects, or border.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d70e-72cf-7c02-9d2d-1e5bdb89c1e5/exec-d4bbe6c8-80c7-4b3b-b7bd-4edc837b9e21.png"
+    },
+    "wish-token.webp": {
+      "master": "web/assets/source/season/wish-token.png",
+      "prompt": "Create one square 1024x1024 PNG game asset for the cozy harbor game Familiar: wish-token.png. Subject: one small round felt-and-wood wish tag tied with string, like a wish pinned to a harbor notice board, but show only the isolated tag with its attached loop of string. A thin weathered wooden edge surrounds a cream felt face embroidered with one simple star and one simple wave in chunky golden and sea-glass teal stitches. The star-and-wave motif is pictorial, never letters. Match the attached Bram, lens, moth, and shell references in handmade felt-and-wool stop-motion miniature style, visible fibre texture, soft warm studio lighting, gentle chunky shapes, and warm muted coastal colors (sea-glass teal, sand, cream, weathered wood brown, brass). Center and isolate the object on a plain flat solid cream background, exact color #efe4cc, with only a soft contact shadow. Object fills about 70% of the frame with generous clear margins and a silhouette readable at 48px. No text, letters, numbers, logos, UI frames, scenery, unrelated objects, or border.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d70e-72cf-7c02-9d2d-1e5bdb89c1e5/exec-92d8cbb0-259f-4a32-97fe-3f407121cfb2.png"
+    }
+  },
+  "masters": "Each master is the 1254x1254 generated original resized to 1024x1024 by Codex with `sips -z 1024 1024`; originals stay at the listed paths outside Git."
+}

@@ -81,11 +81,16 @@ export function nativeGas(method:string):bigint {
   if(["tidebound_craft","tidebound_retry_operation"].includes(method))return teraToGas(120);
   if(["tidebound_polish","tidebound_cancel_polish"].includes(method))return teraToGas(100);
   if(["tidebound_place","tidebound_reconcile"].includes(method))return teraToGas(80);
+  // Live day 20771 burnt under 4 Tgas each; 100 Tgas prepaid would reserve about 0.1 NEAR of a player's balance.
+  if(["claim_daily","buy","sell"].includes(method))return teraToGas(30);
+  if(method==="set_wish")return teraToGas(80);
   return teraToGas(50);
 }
 
 /** Fixed testnet tuple, native player-funded transactions, and one persisted uncertain action per account. */
 export class TideboundClient {
+  /** The last reconciled final outcome, so a caller can read a contract's return value or refusal. */
+  lastFinal:{hash:string;method:string;receiver:string;failed:boolean;outcome:unknown}|null=null;
   constructor(readonly root:string,readonly itemsContract:string,readonly provider:JsonRpcProvider,readonly adapter:RecoverableAccountAdapter,private readonly store:Pick<Storage,"getItem"|"setItem"|"removeItem">) {}
   async view<T>(contractId:string,method:string,args:Record<string,unknown>={},blockId?:string):Promise<T> {
     return await this.provider.callFunction({contractId,method,args,blockQuery:blockId?{blockId}:{finality:"final"}}) as unknown as T;
@@ -165,7 +170,7 @@ export class TideboundClient {
     check(binding.network==="testnet" && isPlayerAccount(binding.nearAccountId,this.root),"The account belongs to a different testnet harbor.");
     const tx=decodeTransaction(base64Decode(pending.transaction));
     check(base64Encode(encodeTransaction(tx))===pending.transaction && tx.signerId===binding.nearAccountId && tx.receiverId===pending.receiver &&
-      [this.root,this.itemsContract].includes(tx.receiverId) && tx.publicKey.toString()===binding.signerPublicKey &&
+      [this.root,this.itemsContract,`season.${this.root}`].includes(tx.receiverId) && tx.publicKey.toString()===binding.signerPublicKey &&
       tx.actions.length===1 && tx.actions[0]?.functionCall?.methodName===pending.method,"The original signing context changed.");
     validateNativeIntent(tx,{root:this.root,items:this.itemsContract});
     const call=tx.actions[0]?.functionCall;
@@ -244,6 +249,7 @@ export class TideboundClient {
     const current=this.pending(binding);
     check(current?.operationId===pending.operationId&&current.hash===pending.hash&&current.transaction===pending.transaction,"Another tab changed this pending action.");
     this.store.removeItem(this.pendingKey(binding));
+    this.lastFinal={hash:pending.hash,method:pending.method,receiver:pending.receiver,failed,outcome};
     return failed ? "A receipt failed. Canonical progress and item state are read separately below; reserved operations still need reconciliation." : "Transaction finalized. Progress and ownership are read separately below.";
   }
   export(snapshot:ChainSnapshot) { return JSON.stringify({version:1,authority:"near-testnet",network:"testnet",root:this.root,itemContract:this.itemsContract,accountId:snapshot.binding.nearAccountId,lastReadAt:snapshot.readAt,journey:snapshot.journey,items:snapshot.items,contentVersion:CONTENT_VERSION,rulesVersion:RULES_VERSION},null,2); }

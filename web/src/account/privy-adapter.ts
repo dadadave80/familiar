@@ -154,7 +154,7 @@ export class PrivyAccountAdapter implements RecoverableAccountAdapter {
     const identity=await this.identity(),generation=this.generation,binding=await this.resolveBinding();
     check(identity && binding,"Sign in to authorize this action.");
     const wallet=await this.canonicalWallet(false);check(wallet,"The canonical recovery wallet is unavailable.");
-    check(transaction.signerId===binding.nearAccountId && transaction.publicKey.toString()===binding.signerPublicKey && [this.options.root,this.options.items,binding.nearAccountId].includes(transaction.receiverId),"The native transaction belongs to a different account or harbor.");
+    check(transaction.signerId===binding.nearAccountId && transaction.publicKey.toString()===binding.signerPublicKey && [this.options.root,this.options.items,`season.${this.options.root}`,binding.nearAccountId].includes(transaction.receiverId),"The native transaction belongs to a different account or harbor.");
     validateNativeIntent(transaction,{root:this.options.root,items:this.options.items});
     const encoded=base64Encode(encodeTransaction(transaction)),digest=await nearSigningDigest(transaction),key=this.pendingKey(operationId,binding);
     const raw=this.options.storage.getItem(key),pending:PendingAuthorization=raw?JSON.parse(raw):{operationId,transaction:encoded,state:"prepared"};

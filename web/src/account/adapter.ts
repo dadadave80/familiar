@@ -124,7 +124,7 @@ export class NearAuthAccountAdapter implements RecoverableAccountAdapter {
     const session=this.session,generation=this.generation;check(session,"Sign in to authorize this action.");
     const binding=await this.resolveBinding();this.sameSession(session,generation);check(binding,"Sign in to authorize this action.");
     check(transaction.signerId===binding.nearAccountId && transaction.publicKey.toString()===binding.signerPublicKey);
-    check(transaction.receiverId===this.options.root || transaction.receiverId===this.options.items || transaction.receiverId===binding.nearAccountId,"The action belongs to a different harbor.");
+    check(transaction.receiverId===this.options.root || transaction.receiverId===this.options.items || transaction.receiverId===`season.${this.options.root}` || transaction.receiverId===binding.nearAccountId,"The action belongs to a different harbor.");
     const bytes=encodeTransaction(transaction),encoded=base64Encode(bytes),key=this.pendingKey(operationId,binding);
     const stored=this.options.storage.getItem(key);
     const pending:PendingAuthorization=stored?JSON.parse(stored):{operationId,transaction:encoded,state:"prepared"};

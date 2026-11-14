@@ -1,0 +1,66 @@
+{
+  "purpose": "Season 2 runtime icons; cream backdrop removed by corner flood fill (fuzz 7%)",
+  "encoder": "magick + cwebp quality85 method6 alpha100",
+  "files": [
+    {
+      "source": "assets/source/season/glass.png",
+      "output": "assets/season/glass.webp",
+      "sourceSha256": "1905c329182860e8ae3b95731110ba7cb46b08994dad17251b44fd7b2201e911",
+      "sha256": "bd0127d2d701ba993712b57005638c54d7dd1de8192454d54187bd6f283f1d50",
+      "sourceBytes": 1199881,
+      "bytes": 3536,
+      "resizedTo": {
+        "width": 192,
+        "height": 192
+      }
+    },
+    {
+      "source": "assets/source/season/reed.png",
+      "output": "assets/season/reed.webp",
+      "sourceSha256": "892e41577ba6a8287ba9fe9da52673b8a930867db9a7eeb1bcb8ff2f95ad018a",
+      "sha256": "7fc0a59b39a02e4532948244c412cc5a95a821fd5b137a2f8135e467e3aaa042",
+      "sourceBytes": 1195823,
+      "bytes": 5476,
+      "resizedTo": {
+        "width": 192,
+        "height": 192
+      }
+    },
+    {
+      "source": "assets/source/season/shelf-till.png",
+      "output": "assets/season/shelf-till.webp",
+      "sourceSha256": "16ac6c94ff5d3f2d45cb346314f02809d540755457b83a89466c8cfab7eafa87",
+      "sha256": "3c2e301220b3f6e159f7c3f4cb91800c736c8871e4ce6a34b3f74f345d7dbd5c",
+      "sourceBytes": 1464913,
+      "bytes": 14148,
+      "resizedTo": {
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "source": "assets/source/season/purse.png",
+      "output": "assets/season/purse.webp",
+      "sourceSha256": "797334a0eb5fbfd99e33a1cf23008ac8a190ef3e3ddff92dfa50c2d75f461420",
+      "sha256": "2c5ea89a71f3c9a8eb4ffae684896b546bc020ff90dc7a67820628b50e222a0e",
+      "sourceBytes": 1448233,
+      "bytes": 6150,
+      "resizedTo": {
+        "width": 192,
+        "height": 192
+      }
+    },
+    {
+      "source": "assets/source/season/wish-token.png",
+      "output": "assets/season/wish-token.webp",
+      "sourceSha256": "e33e92d420404f6fbda2a76aba386f9a921bf3ea05c236583991c5b6c00c0905",
+      "sha256": "2bd518b3eb123a833b0ec084b883eed0406c18011e3f69c452c248b672fbdea2",
+      "sourceBytes": 1320809,
+      "bytes": 5416,
+      "resizedTo": {
+        "width": 192,
+        "height": 192
+      }
+    }
+  ]
+}
