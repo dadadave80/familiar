@@ -4,12 +4,26 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, expect, type Page } from "@playwright/test";
 import { createServer } from "vite";
+import { VALUE, applyMove, startTide } from "../web/src/run/engine";
+import { cautiousMove } from "../web/src/run/bot";
+import { dayResult } from "../web/src/run/save";
+import { shelfGoods } from "../web/src/tide/run-day";
+import { haulLine } from "../web/src/season/model";
 
 // Bram's shelf panels, against the live season.<root> views (public RPC).
 // Signed out uses the real game; signed in uses the dev-only harness, whose signing is mocked.
 const shots=resolve(process.argv[2]??await mkdtemp(join(tmpdir(),"season-shots-")));await mkdir(shots,{recursive:true});
 const server=await createServer({root:resolve(import.meta.dir,"../web"),envDir:false,envPrefix:[],cacheDir:await mkdtemp(join(tmpdir(),"familiar-season-")),logLevel:"error",
   server:{host:"127.0.0.1",port:0,hmr:false,watch:null}});
+const bookKey="familiar.expedition.local.v2:tide-run.v1";
+/** Today's daily tide as the cautious bot sails it; it banks reed or glass on the days probed, and the suite fails loudly if not. */
+function dailyTide() {
+  let daily=startTide({seed:Math.floor(Date.now()/86_400_000)});
+  while(daily.outcome==="active")daily=applyMove(daily,cautiousMove(daily,VALUE))!.after;
+  const goods=shelfGoods(dayResult(daily));
+  assert.ok(goods[0]+goods[1]>0,"today's cautious tide brings reed or glass home");
+  return {daily,goods,shelveName:`Shelve ${haulLine(goods)}`};
+}
 async function checkTargets(page:Page,label:string) {
   const small=await page.locator(".ss button:visible, .ss summary:visible").evaluateAll(els=>els.filter(e=>{const r=e.getBoundingClientRect();return r.height<44||r.width<44;}).map(e=>e.textContent));
   assert.deepEqual(small,[],`${label}: controls under 44px`);
@@ -58,43 +72,44 @@ try{
       await expect(page.locator(".ss-haul")).toContainText("Today’s haul");
       await checkTargets(page,`${tag} haul`);
       await page.screenshot({path:join(shots,`preview-haul-${tag}.png`)});
-      const v2Day=await page.getByRole("button",{name:"See today’s ask",exact:true}).isVisible();
-      // Sailing is checked by test-tide-browser; this suite starts with a kept sandbox route.
-      const route=["step:north","step:north","step:west","wait","wait","step:east","reel:lens","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"];
-      await page.evaluate(commands=>localStorage.setItem("familiar.season.tide.v1:preview",JSON.stringify([{id:"route",contentVersion:"first_light_v2",tool:"rope",commands,cargo:["lens","moth"],outcome:"returned",savedAt:new Date().toISOString()}])),route);
-      const before=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview")}));
+      // A device harbor's daily is the tide run: before today's tide Bram only points at it.
+      await expect(page.locator(".ss-haul")).toContainText("Sail today’s tide and bring something home. Bram shelves reed and glass, up to three of each a day.");
+      await expect(page.locator(".ss-haul").getByRole("button",{name:"See today’s tide",exact:true})).toBeVisible();
+      await expect(page.getByRole("button",{name:/^Shelve /})).toHaveCount(0);
+      // Sailing is checked by test-tide-run-browser; this suite seeds today's finished tide run.
+      const {daily,goods,shelveName}=dailyTide();
+      await page.evaluate(({key,seed,moves})=>localStorage.setItem(key,JSON.stringify({version:1,active:null,days:[{seed,moves}]})),{key:bookKey,seed:daily.seed,moves:daily.moves});
+      const before=await page.evaluate(key=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview"),book:localStorage.getItem(key)}),bookKey);
+      const held=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.season.preview.v1")!).goods as [number,number]);
       await page.reload();
       await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
       await page.locator(".exp-place-bram").click();
-      if(v2Day){
-        await expect(page.locator(".ss-haul")).toContainText("Rope · ");
-        const shelve=page.getByRole("button",{name:"Shelve 1 glass and 1 reed bundle",exact:true});
-        await expect(shelve).toHaveAttribute("aria-disabled","false");
-        await expect(shelve).toHaveClass(/ss-primary/);
-        await expect(page.locator(".ss .ss-primary")).toHaveCount(1);
-        await expect(page.locator(".ss-haul-art img")).toHaveCount(2);
-        await shelve.click();
-        await expect(page.locator(".ss-status")).toContainText("Shelved on this device: 1 glass and 1 reed bundle. Not recorded.");
-        await expect.poll(()=>page.evaluate(()=>!!document.activeElement?.closest(".ss")),{message:"focus stays in the panel after shelving removes its button"}).toBe(true);
-        await expect(page.locator(".ss-holdings")).toContainText("Sample haul of 1 glass and 2 reed bundles for the preview");
-        assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.season.preview.v1")!).goods),[2,2]);
-        await expect(page.locator(".ss-haul")).toContainText("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");
-        await expect(shelve).toHaveCount(0);
-        await page.screenshot({path:join(shots,`preview-shelved-${tag}.png`)});
-        await page.getByRole("button",{name:"Start the preview again"}).click();
-        await expect(page.locator(".ss-haul")).toContainText("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");
-        await page.reload();
-        await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
-        await page.locator(".exp-place-bram").click();
-        await expect(page.locator(".ss-haul")).toContainText("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");
-        const after=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview"),tide:JSON.parse(localStorage.getItem("familiar.season.tide.v1:preview")??"[]")}));
-        assert.deepEqual(after.home,before.home,"First Light home unchanged by shelving");
-        assert.equal(after.returns,before.returns,"First Light return memories unchanged");
-        assert.equal(after.tide.length,1);assert.deepEqual(after.tide[0].commands,route);assert.deepEqual(after.tide[0].cargo,["lens","moth"]);
-      }else{
-        await expect(page.locator(".ss-haul")).toContainText("Keep today’s find; he can shelve it tomorrow.");
-        await expect(page.getByRole("button",{name:/^Shelve /})).toHaveCount(0);
-      }
+      await expect(page.locator(".ss-haul")).toContainText(`From today’s tide run: Banked ${daily.score} · Bram guessed `);
+      const shelve=page.getByRole("button",{name:shelveName,exact:true});
+      await expect(shelve).toHaveAttribute("aria-disabled","false");
+      await expect(shelve).toHaveClass(/ss-primary/);
+      await expect(page.locator(".ss .ss-primary")).toHaveCount(1);
+      await expect(page.locator(".ss-haul-art img")).toHaveCount(goods.filter(Boolean).length);
+      await checkTargets(page,`${tag} run haul`);
+      await shelve.click();
+      await expect(page.locator(".ss-status")).toContainText(`Shelved on this device: ${haulLine(goods)}. Not recorded.`);
+      await expect.poll(()=>page.evaluate(()=>!!document.activeElement?.closest(".ss")),{message:"focus stays in the panel after shelving removes its button"}).toBe(true);
+      assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.season.preview.v1")!).goods),[held[0]+goods[0],held[1]+goods[1]]);
+      const docked="Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.";
+      await expect(page.locator(".ss-haul")).toContainText(docked);
+      await expect(shelve).toHaveCount(0);
+      await page.screenshot({path:join(shots,`preview-shelved-${tag}.png`)});
+      await page.getByRole("button",{name:"Start the preview again"}).click();
+      await expect(page.locator(".ss-haul")).toContainText(docked);
+      await page.reload();
+      await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
+      await page.locator(".exp-place-bram").click();
+      await expect(page.locator(".ss-haul")).toContainText(docked);
+      await expect(page.getByRole("button",{name:/^Shelve /})).toHaveCount(0);
+      const after=await page.evaluate(key=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview"),book:localStorage.getItem(key)}),bookKey);
+      assert.deepEqual(after.home,before.home,"First Light home unchanged by shelving");
+      assert.equal(after.returns,before.returns,"First Light return memories unchanged");
+      assert.equal(after.book,before.book,"today's tide run unchanged by shelving");
       await page.getByRole("tab",{name:"Shelf & till"}).focus();
       await page.keyboard.press("ArrowRight");
       await expect(page.getByRole("tab",{name:"Mochi’s wish"})).toHaveAttribute("aria-selected","true");
@@ -102,15 +117,18 @@ try{
       await expect(page.locator(".ss-panel")).not.toContainText("Sign in from the menu");
       await page.screenshot({path:join(shots,`preview-wish-${tag}.png`)});
 
-      await page.evaluate(()=>localStorage.removeItem("familiar.season.tide.v1:preview"));
       await page.goto(new URL("/outing/?season-harness",origin).href);
       await expect(page.getByRole("note")).toContainText("signing are mocked");
       await expect(page.getByRole("button",{name:"Open my ledger page"})).toBeVisible({timeout:15000});
       await expect(page.getByRole("button",{name:"Open my ledger page"})).toHaveClass(/ss-primary/);
       await expect(page.locator(".ss .ss-primary")).toHaveCount(1);
+      // The signed-in harbor keeps the refereed Beacon Court haul, shelved on odd days.
+      await expect(page.locator(".ss-haul")).toContainText(/See today’s ask|today isn’t one/,{timeout:15000});
+      const v2Day=await page.getByRole("button",{name:"See today’s ask",exact:true}).isVisible();
       if(v2Day){await page.getByRole("button",{name:"See today’s ask",exact:true}).click();await expect(page.getByText("Would open today’s ask.")).toBeVisible();}
       await checkTargets(page,`${tag} harness`);
       await page.screenshot({path:join(shots,`harness-ledger-${tag}.png`)});
+      const route=["step:north","step:north","step:west","wait","wait","step:east","reel:lens","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"];
       await page.evaluate(commands=>localStorage.setItem("familiar.season.tide.v1:harness",JSON.stringify([{id:"route",contentVersion:"first_light_v2",tool:"rope",commands,cargo:["lens","moth"],outcome:"returned",savedAt:new Date().toISOString()}])),route);
       await page.getByRole("button",{name:"Open my ledger page"}).click();
       await expect(page.locator(".ss-status")).toHaveAttribute("data-state","pending");
@@ -140,7 +158,7 @@ try{
         await page.screenshot({path:join(shots,`harness-docked-${tag}.png`)});
       }
       await page.close();
-      console.info(`${tag}: preview shelf/sell/haul/wish and harness ledger/refusal/sale/wish/postcard passed`);
+      console.info(`${tag}: preview shelf/sell/run haul/shelve/wish and harness ledger/refusal/sale/wish/postcard passed`);
     }
   }finally{await browser.close();}
   console.info(`Screenshots: ${shots}`);

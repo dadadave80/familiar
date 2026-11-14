@@ -7,9 +7,11 @@ import {createServer,transformWithOxc} from "vite";
 import {KeyPair} from "near-api-js";
 import courtFixtures from "../contracts/common/fixtures/court.json";
 import {cardForDay} from "../web/src/tide/cards";
-import {cardStatus,replayRun,solve} from "../web/src/tide/asks";
+import {resultTitle,shelfGoods} from "../web/src/tide/run-day";
 import {previewDock,seedPreview} from "../web/src/season/data";
-import type {Command} from "../web/src/expedition/types";
+import {VALUE,applyMove,legalMoves,startTide,type Move,type TideState} from "../web/src/run/engine";
+import {cautiousMove} from "../web/src/run/bot";
+import {dayResult} from "../web/src/run/save";
 
 // Actual React controller/provider/panel; all account/RPC ports below are isolated synthetic fixtures.
 const id="\0expedition-harbor-fixture.tsx",dir=await mkdtemp(join(tmpdir(),"familiar-expedition-harbor-"));
@@ -57,35 +59,46 @@ async function checkHarborLayout(page:Page,width:number,height:number){
   for(const sign of geometry.signs)assert(!overlaps(toast,sign),`${tag}: return toast clears ${sign.name}`);
  }
 }
+const MOVE_KEY:Record<Move,string>={north:"ArrowUp",south:"ArrowDown",west:"ArrowLeft",east:"ArrowRight",wait:"Space",home:"r"};
+/** A device harbor's daily is the tide run: each layout sails today's last move for real, or seeds the day's state, then checks the harbor card. */
 async function checkReturnLayouts(browser:import("@playwright/test").Browser,origin:string){
- const day=20771,card=cardForDay(day),win=solve(card.tool,card.asks,card.best);assert(win?.at(-1)==="return");
- const slipped=Array.from({length:6},(_,i)=>[...win.slice(0,-1),...Array<Command>(i+1).fill("wait"),"return" as const]).find(commands=>{
-  const run=replayRun(card.tool,commands);return run?.state.outcome==="returned"&&run.state.cargo.length>0&&cardStatus(card,run).includes("slipped");
- });assert(slipped,"a legal delayed return exercises the slipped wording");
- const rescued=Array.from({length:24},(_,i)=>Array<Command>(i+1).fill("wait")).find(commands=>replayRun(card.tool,commands)?.state.outcome==="rescued");assert(rescued,"a legal wait sequence exercises Bram's rescue wording");
- const shelvedDay=day-3,shelvedCard=cardForDay(shelvedDay),shelvedRoute=solve(shelvedCard.tool,shelvedCard.asks,shelvedCard.best);assert(shelvedRoute?.at(-1)==="return");
- const scenarios=[{name:"all-three",day,commands:win,title:"All three asks kept.",shelved:false},{name:"slipped",day,commands:slipped,title:/asks? slipped\./,shelved:false},
-  {name:"empty",day,commands:["return"] as Command[],title:"All three asks slipped.",shelved:false},
-  {name:"rescued",day,commands:rescued,title:"Bram brought Mochi home.",shelved:false},{name:"shelved",day:shelvedDay,commands:shelvedRoute,title:"Tomorrow: The rope stays coiled.",shelved:true}];
+ const day=20771;
+ const sail=(seed:number,pick:(state:TideState)=>Move)=>{let state=startTide({seed});while(state.outcome==="active")state=applyMove(state,pick(state))!.after;return state;};
+ const cautious=sail(day,state=>cautiousMove(state,VALUE)),early=sail(day,()=>"home"),rescued=sail(day,state=>legalMoves(state).includes("north")?"north":"wait");
+ assert.equal(resultTitle(dayResult(cautious)),"All three kept.");assert(shelfGoods(dayResult(cautious)).some(Boolean),"the cautious tide brings reed or glass for Bram");
+ assert.equal(resultTitle(dayResult(early)),"1 of 3 kept.");assert.equal(rescued.outcome,"rescued");assert.equal(resultTitle(dayResult(rescued)),"Nothing kept this time.");
+ const shelvedDay=day-3,shelvedTide=sail(shelvedDay,state=>cautiousMove(state,VALUE));
+ const scenarios:{name:string;day:number;moves:readonly Move[]|null;title:string;buttons:number;shelved:boolean}[]=[
+  {name:"before",day,moves:null,title:`Today’s tide: ${cardForDay(day).name}.`,buttons:1,shelved:false},
+  {name:"all-three",day,moves:cautious.moves,title:"All three kept.",buttons:2,shelved:false},
+  {name:"home-early",day,moves:early.moves,title:"1 of 3 kept.",buttons:1,shelved:false},
+  {name:"rescued",day,moves:rescued.moves,title:"Nothing kept this time.",buttons:1,shelved:false},
+  {name:"shelved",day:shelvedDay,moves:shelvedTide.moves,title:`Tomorrow: ${cardForDay(shelvedDay+1).name}.`,buttons:1,shelved:true}];
  for(const scenario of scenarios){
-  const tideCard=cardForDay(scenario.day),before=replayRun(tideCard.tool,scenario.commands.slice(0,-1));assert(before?.state.outcome==="active");
   const shelf=previewDock(seedPreview(null,scenario.day),[1,0],scenario.day);assert("market" in shelf);
   const context=await browser.newContext({viewport:{width:412,height:860},reducedMotion:"reduce"}),page=await context.newPage();
   try{
    const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
    await page.route("**/*",route=>route.request().url().startsWith(origin)?route.continue():route.abort());
    await page.clock.install({time:new Date(scenario.day*86_400_000+43_200_000)});await page.clock.setFixedTime(new Date(scenario.day*86_400_000+43_200_000));
-   await page.addInitScript(({day,state,market})=>{
-    localStorage.setItem("familiar.expedition.local.v2",JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},active:{context:{authority:"local-preview",banked:[],lit:true,signaled:false},state,season:true},last:null}));
-    localStorage.setItem("familiar.tide.pending.v1:preview",JSON.stringify({day,late:false}));
+   await page.addInitScript(({day,moves,market})=>{
+    localStorage.setItem("familiar.expedition.local.v2",JSON.stringify({version:2,home:{banked:["lens","vane","moth"],lit:true,signaled:true,lantern:null},active:null,last:null}));
+    if(moves)localStorage.setItem("familiar.expedition.local.v2:tide-run.v1",JSON.stringify({version:1,active:{seed:day,moves:moves.slice(0,-1)},days:[]}));
     if(market)localStorage.setItem("familiar.season.preview.v1",JSON.stringify(market));
-   },{day:scenario.day,state:before.state,market:scenario.shelved?shelf.market:null});
-   await page.goto(origin+"/__harbor-game");await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-lease","held");
-   await page.locator(`[data-command="${scenario.commands.at(-1)}"]`).click();
-   const home=page.locator('.exp-panel[data-surface="home"]');await expect(home).toBeVisible();await home.getByRole("button",{name:"Close panel",exact:true}).click();
+   },{day:scenario.day,moves:scenario.moves,market:scenario.shelved?shelf.market:null});
+   await page.goto(origin+"/__harbor-game");
+   if(scenario.moves){
+    const run=page.getByTestId("tide-run");await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true",{timeout:20000});
+    await expect(run).toHaveAttribute("data-busy","false");await page.keyboard.press(MOVE_KEY[scenario.moves.at(-1)!]);
+    // A tide that ends on its own goes straight home; a finish card waits for a press.
+    const finish=page.getByTestId("tide-finish"),homeSheet=page.locator('.exp-panel[data-surface="home"]');
+    await expect(finish.or(homeSheet)).toBeVisible({timeout:20000});if(await finish.isVisible())await finish.click();
+   }
+   await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-lease","held");
+   if(scenario.moves){const home=page.locator('.exp-panel[data-surface="home"]');await expect(home).toBeVisible();await home.getByRole("button",{name:"Close panel",exact:true}).click();}
    await expect(page.locator(".exp-departure h1"),scenario.name).toHaveText(scenario.title);
-   await expect(page.locator(".tide-departure-stamp")).toBeVisible();await expect(page.getByTestId("expedition-feedback")).not.toHaveText("");
-   if(scenario.name==="all-three")await expect(page.locator(".exp-departure-buttons>button")).toHaveCount(2);
+   await expect(page.locator(".tide-departure-stamp")).toBeVisible();if(scenario.moves)await expect(page.getByTestId("expedition-feedback"),scenario.name).not.toHaveText("");
+   await expect(page.locator(".exp-departure-buttons>button"),scenario.name).toHaveCount(scenario.buttons);
    for(const [width,height] of [[412,860],[390,844],[844,390],[900,800],[1280,800],[1440,900]])await checkHarborLayout(page,width!,height!);
    assert.equal(await page.evaluate(()=>(window as any).__harbor.sends.length),0,"layout checks send no account action");assert.deepEqual(errors,[],scenario.name);
   }finally{await context.close();}
@@ -180,5 +193,5 @@ try{
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.displayLantern('moth',true);await f.port.refresh();});await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-motif','moth');
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.removeHeldLantern();await f.port.refresh();});await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-motif',/.+/);await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-finish',/.+/);assert.equal(await game.evaluate(()=>(window as any).__harbor.sends.length),1);
  const geometry=await game.evaluate(()=>({x:scrollX,y:scrollY,scroll:document.documentElement.scrollHeight,height:innerHeight}));assert.equal(geometry.x,0);assert.equal(geometry.y,0);assert(geometry.scroll<=geometry.height+1);
- await gameContext.close();await checkReturnLayouts(browser,origin);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,harborLayouts:"fresh, all-three return, slipped return, rescue, longest Tomorrow; six viewports",externalRequests:0,publicRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
+ await gameContext.close();await checkReturnLayouts(browser,origin);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,harborLayouts:"fresh, before today’s tide, all three kept, one kept, rescued, longest Tomorrow; six viewports",externalRequests:0,publicRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
 }finally{await browser.close();await server.close();}

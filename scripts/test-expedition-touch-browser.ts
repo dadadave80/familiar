@@ -25,7 +25,8 @@ async function open(tide=false){const context=await browser.newContext({viewport
  localStorage.setItem(key,JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},last:null,active:{context:{authority:"local-preview",banked:[],lit:true,signaled:false},state,season:true}}));
  localStorage.setItem("familiar.tide.pending.v1:preview",JSON.stringify({day,late:false}));
  },{key,day:tideFixtureDay,state:tideFixtureRun!.state});await page.goto(origin+"/outing/?play");await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-lease","held");return {context,page,cdp:await context.newCDPSession(page)};}
-async function court(page:Page){await page.locator('[data-action="depart"]').tap();await expect.poll(async()=>JSON.parse((await page.getByTestId("expedition-world").getAttribute("data-tiles"))!).length).toBe(15);await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
+/** A device harbor's daily is the tide run; the classic court is still a route on the Harbor chart. */
+async function court(page:Page){await page.locator(".exp-phone-dock").getByRole("button",{name:"Harbor chart",exact:true}).tap();await page.locator('.exp-panel[data-surface="chart"] .harbor-routes > li').first().getByRole("button").tap();await page.locator('.exp-panel[data-surface="sail"] .exp-primary').tap();await expect.poll(async()=>JSON.parse((await page.getByTestId("expedition-world").getAttribute("data-tiles"))!).length).toBe(15);await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
 async function cell(page:Page,x:number,y:number){const tiles=JSON.parse((await page.getByTestId("expedition-world").getAttribute("data-tiles"))!) as {position:{x:number;y:number};x:number;y:number}[];return tiles.find(tile=>tile.position.x===x&&tile.position.y===y)!;}
 try{
   {
@@ -105,7 +106,9 @@ try{
     await page.screenshot({path:join(captures,`F02-${phase}-touch-cancel.png`),fullPage:false});await writeFile(join(captures,`F02-${phase}-transcript.json`),JSON.stringify(result,null,2)+"\n");await context.close();
   }
   {
-    const {context,page,cdp}=await open(),depart=await page.locator('[data-action="depart"]').boundingBox();assert(depart);await touch(cdp,"touchStart",{x:depart.x+depart.width/2,y:depart.y+depart.height/2});await touch(cdp,"touchCancel");await page.waitForTimeout(200);results.push({case:"browser-canceled home button touch",active:await state(page)});await context.close();
+    const {context,page,cdp}=await open(),depart=await page.locator(".exp-departure-buttons > .exp-primary").boundingBox();assert(depart);await touch(cdp,"touchStart",{x:depart.x+depart.width/2,y:depart.y+depart.height/2});await touch(cdp,"touchCancel");await page.waitForTimeout(200);
+    await expect(page.getByTestId("tide-run")).toHaveCount(0);const tideRun=await page.evaluate(key=>JSON.parse(localStorage.getItem(key+":tide-run.v1")??"null")?.active??null,key);
+    results.push({case:"browser-canceled home button touch",active:await state(page)??tideRun});await context.close();
   }
   {
     const {context,page,cdp}=await open();await court(page);const before=await state(page),center=await cell(page,1,0),west=await cell(page,0,0);await touch(cdp,"touchStart",center);await touch(cdp,"touchMove",west);await touch(cdp,"touchEnd");await page.waitForTimeout(350);results.push({case:"drag ending over neighbor",before,after:await state(page)});await page.screenshot({path:join(captures,`${phase}-drag-to-neighbor.png`),fullPage:false});await context.close();
