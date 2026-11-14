@@ -36,7 +36,8 @@
     "test:routing-browser": "bun scripts/test-routing-browser.ts",
     "test:records-browser": "bun scripts/test-records-browser.ts",
     "test:season-browser": "bun scripts/test-season-browser.ts",
-    "test:tide-browser": "bun scripts/test-tide-browser.ts"
+    "test:tide-browser": "bun scripts/test-tide-browser.ts",
+    "test:tide-run-browser": "bun scripts/test-tide-run-browser.ts"
   },
   "dependencies": {
     "@fontsource-variable/figtree": "5.3.0",

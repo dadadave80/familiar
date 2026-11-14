@@ -31,6 +31,11 @@ import TideLog from "../tide/TideLog";
 import TideHome from "../tide/TideHome";
 import TideStamp from "../tide/TideStamp";
 import { tideSailReason } from "../tide/sailing";
+import TideRunGame from "../run/TideRunGame";
+import { startTide, type TideStart, type TideState } from "../run/engine";
+import { bramsGuess } from "../run/bot";
+import { CHAPTERS, chapterFor, storyStart } from "../run/story";
+import { closeTide, emptyBook, readBook, todayResult, writeBook, type TideBook } from "../run/save";
 
 // Bram's shelf loads when his dialog first opens.
 const SeasonBram=lazy(()=>import("../season/SeasonBram"));
@@ -95,6 +100,8 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
   const [passageScope,setPassageScope]=useState("");
   const [passageError,setPassageError]=useState("");
   const passageReadable=useRef(false);
+  const [tideBook,setTideBook]=useState(emptyBook),[tideAway,setTideAway]=useState(false),[tideRound,setTideRound]=useState(0);
+  const tideBookReadable=useRef(false);
   const audioRequest=useRef(0);
   const repairRequest=useRef<{branch:string;kind:"beacon"|"signal"}|null>(null);
   function muteSound(){
@@ -163,12 +170,16 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
   const tideRun=useMemo(()=>tideCard&&visibleRun?replayRun(visibleRun.tool,visibleRun.commands):null,[tideCard,visibleRun]);
   const passageKey=desiredKey+":shore-passages.v1";
   const showPassage=passageScope===passageKey&&!run&&!!passage.active;
+  /** Device harbors sail the tide run. Signed-in harbors keep the refereed court until the season contract referees the tide run. */
+  const tideRunKey=desiredKey+":tide-run.v1";
+  const tideResume=!savedMode&&passageScope===passageKey&&!!tideBook.active;
+  const showTideRun=tideResume&&!run&&!showPassage&&!tideAway;
   const services=passageScope===passageKey?passage.services:[];
   const lastService=services.at(-1);
   const chapterComplete=home.signaled&&services.includes("bell")&&services.includes("reed");
   const placement=session?.state.workshop.placement,placedItem=savedMode&&placement?session!.state.workshop.items.find(item=>item.mint.token_id===placement.item_id):null;
   const harbor:HarborView={resting,greeting,heardBell:passageScope===passageKey&&passage.heardBell,services,watchedReeds:passageScope===passageKey&&passage.watchedReeds,lit:home.lit,signaled:home.signaled,moth:home.banked.includes("moth"),lantern:!!(savedMode?placedItem:home.lantern),socket:savedMode&&placedItem?placement!.socket:home.lantern?.socket??"porch",motif:savedMode?placedItem?.mint.motif??"crest":home.lantern?.motif??"crest",polished:savedMode&&placedItem?.finish==="harbor_polish",relic:home.banked.includes("lens")&&!home.lit?"lens":home.banked.includes("vane")&&!home.signaled?"vane":null};
-  const paused=showPassage||!worldReady||!!surface||hidden||unfocused||!!fault||!!problem||!!session?.state.review;
+  const paused=showPassage||showTideRun||!worldReady||!!surface||hidden||unfocused||!!fault||!!problem||!!session?.state.review;
   const pausedRef=useRef(paused);pausedRef.current=paused;
   const snapshot=useMemo(()=>({court:run,home:harbor,reducedMotion:reduced,previewCommand:focused}),[run,harbor.lit,harbor.signaled,harbor.moth,harbor.lantern,harbor.socket,harbor.motif,harbor.polished,harbor.relic,resting,greeting,passage,passageScope,reduced,focused]);
   const previousHome=useRef({branch:desiredKey,lit:home.lit,signaled:home.signaled});
@@ -210,8 +221,8 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
   },[desiredKey]);
   useEffect(()=>{
     // A restored identity must not switch harbors underneath a device-only crossing.
-    session?.setActiveRun?.(save.active?.context??(showPassage?{authority:"local-preview",banked:[],lit:false,signaled:false}:null));
-  },[session,save.active?.context,showPassage]);
+    session?.setActiveRun?.(save.active?.context??(showPassage||showTideRun?{authority:"local-preview",banked:[],lit:false,signaled:false}:null));
+  },[session,save.active?.context,showPassage,showTideRun]);
   useEffect(()=>{
     let current=true,release:(()=>void)|undefined;setLease("waiting");leaseRef.current="waiting";
     const frame=requestAnimationFrame(()=>{
@@ -224,6 +235,7 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
         }catch{
           setPassage(emptyPassageHome());setPassageError("Your crossing record could not be read. The original is preserved on this device.");passageReadable.current=false;
         }
+        try{setTideBook(readBook(localStorage,tideRunKey));tideBookReadable.current=true;}catch{setTideBook(emptyBook());tideBookReadable.current=false;}
         setPassageScope(passageKey);
         const latest=readLocal(desiredKey);saveRef.current=latest.save;setSave(latest.save);setProblem(latest.problem);setCorrupt(!!latest.problem);corruptRef.current=!!latest.problem;setSceneKey(k=>k+1);sessionRef.current?.setActiveRun(latest.save.active?.context??null);
         setLease("held");leaseRef.current="held";
@@ -290,7 +302,7 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
     busyRef.current=false;setBusy(false);setTransition(null);const queued=buffer.current;buffer.current=null;if(saveRef.current.active?.state.outcome!=="active"){complete();return;}if(queued&&!pausedRef.current){const branch=keyRef.current,generation=presentation.current;const frame=requestAnimationFrame(()=>{if(queuedFrame.current===frame)queuedFrame.current=null;if(!alive.current||branch!==keyRef.current||generation!==presentation.current||leaseRef.current!=="held")return;command(queued);});queuedFrame.current=frame;}}
   function beat(event:CourtEvent,index:number){setLastBeat(`${presentation.current}:${index}:${event.kind}`);setNotice(eventDescription(event,run?.area));if(sound)audio.current?.play(event,run?.area);}
   useEffect(()=>{const keys=(event:KeyboardEvent)=>{
-    if(showPassage)return;
+    if(showPassage||showTideRun)return;
     if(event.key==="Escape"){closePanel();return;}
     if(event.repeat||event.isComposing||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
     if(pausedRef.current)return;
@@ -300,7 +312,7 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
     const map:Record<string,Command>={ArrowUp:"step:north",ArrowDown:"step:south",ArrowLeft:"step:west",ArrowRight:"step:east",w:"step:north",s:"step:south",a:"step:west",d:"step:east"," ":"wait",r:"return"};
     let selected:Command|undefined=map[event.key];if(event.key==="e"){const state=saveRef.current.active?.state,available=state?legalCommands(state):[];selected=available.find(c=>/^(take:|reel:)/.test(c))??available.find(c=>c==="turn:vane");}
     if(selected){event.preventDefault();command(selected);}
-  };window.addEventListener("keydown",keys);return()=>window.removeEventListener("keydown",keys);},[command,showPassage]);
+  };window.addEventListener("keydown",keys);return()=>window.removeEventListener("keydown",keys);},[command,showPassage,showTideRun]);
   function inspect(position:Position){
     const state=saveRef.current.active?.state;
     if(!state)return;
@@ -329,8 +341,8 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
   function request(intent:WorldIntent){void sessionRef.current?.review(intent).catch(()=>{/* The controller keeps the actual failure and original operation visible. */});}
   function restore(restoration:"beacon"|"signal"){
     if(savedMode){request({kind:"restore",restoration});return;}
-    if(restoration==="beacon"&&home.banked.includes("lens")){if(persist({...saveRef.current,home:{...saveRef.current.home,lit:true}})){repairRequest.current={branch:desiredKey,kind:"beacon"};setNotice("Mochi lifts the lens into place. The beacon finds the bay again.");setSurface(null);}}
-    else if(restoration==="signal"&&home.lit&&home.banked.includes("vane")){if(persist({...saveRef.current,home:{...saveRef.current.home,signaled:true}})){repairRequest.current={branch:desiredKey,kind:"signal"};setNotice("The vane catches the breeze. Bram reads the wind from the quay.");setSurface(null);}}
+    if(restoration==="beacon"&&home.banked.includes("lens")){if(persist({...saveRef.current,home:{...saveRef.current.home,lit:true}})){repairRequest.current={branch:desiredKey,kind:"beacon"};setNotice(`Mochi lifts the lens into place. The beacon finds the bay again. The Tidekeeper stops mid-turn and stares at the light. Bram: “${CHAPTERS.lens.after[0]}”`);setSurface(null);}}
+    else if(restoration==="signal"&&home.lit&&home.banked.includes("vane")){if(persist({...saveRef.current,home:{...saveRef.current.home,signaled:true}})){repairRequest.current={branch:desiredKey,kind:"signal"};setNotice(`The vane catches the breeze. Bram: “${CHAPTERS.vane.after.join(" ")}”`);setSurface(null);}}
   }
   function storePassage(next:PassageHome){
     if(!passageReadable.current||passageScope!==passageKey||keyRef.current!==desiredKey||leaseRef.current!=="held")return false;
@@ -353,6 +365,27 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
     const completed=passageDelivered(state);
     backFromPassage(next,next.heardBell&&!passage.heardBell?"Bram rigs a bell pull for both crossings. One pull per outing calls the next surge left from the far-center landing.":completed?(state.job==="bell"?"Bram’s supplies are stacked at Bell Steps.":"Mochi’s skiff is tied up at the quay."):state.court.outcome==="rescued"?"Bram brought Mochi home. The crossing can wait.":"Mochi is back at the dock.");
   }
+  function storeTideBook(next:TideBook){
+    if(!tideBookReadable.current||passageScope!==passageKey||keyRef.current!==desiredKey||leaseRef.current!=="held")return false;
+    try{writeBook(localStorage,tideRunKey,next);setTideBook(next);return true;}catch{return false;}
+  }
+  function departTide(start:TideStart){
+    if(savedMode||run||passage.active||corruptRef.current)return;
+    if(!storeTideBook({...tideBook,active:startTide(start)})){setNotice(tideBookReadable.current?"The tide could not be saved on this device. Nothing has changed.":"The saved tide could not be read. Its original record is still on this device.");return;}
+    setTideAway(false);setTideRound(n=>n+1);setResting(false);buffer.current=null;setSurface(null);setNotice("");
+    audio.current?.playMusic("departure");
+  }
+  function finishTideRun(state:TideState,again:boolean){
+    if(!tideBook.active||state.outcome==="active")return;
+    const prize=state.story,won=!!prize&&state.banked.includes(prize);
+    if(won&&!persist({...saveRef.current,home:{...saveRef.current.home,banked:[...new Set([...saveRef.current.home.banked,prize])]}}))return;
+    const first=!prize&&!tideBook.days.some(day=>day.seed===state.seed);
+    const closed=closeTide(tideBook,state);
+    if(!storeTideBook(again?{...closed,active:startTide(prize?storyStart(prize):{seed:state.seed})}:closed))return;
+    if(again){setTideRound(n=>n+1);return;}
+    setReadySceneKey(-1);setSceneKey(k=>k+1);
+    setNotice(prize?won?`Mochi brought the ${names[prize]} home.${prize==="moth"?` Bram: “${CHAPTERS.moth.after.join(" ")}”`:""}`:`The ${names[prize]} is back in its shell. The tide will open it again.`:first?`Banked ${state.score}. Bram guessed ${bramsGuess(state.seed)}.`:`A practice tide: banked ${state.score}. Today’s first tide is the one that counts.`);
+  }
   const button=(input:Command,label=commandName(input))=><button key={input} className={input==="return"?"exp-secondary":undefined} data-command={input} disabled={!legal.includes(input)||!!problem} onFocus={()=>setFocused(input)} onBlur={()=>setFocused(null)} onMouseEnter={()=>setFocused(input)} onMouseLeave={()=>setFocused(null)} onClick={()=>{const state=saveRef.current.active?.state,item=/^(take:|reel:)/.test(input)?input.slice(5) as "lens"|"moth"|"vane":null,position=state&&item?findPosition(state,item):null;if(position)target(position);else command(input);}} aria-label={label}>{input==="return"&&<Icon kind="home"/>}{label}</button>;
   const interactionLegal=busy?[]:legal;
   const pickups=interactionLegal.filter(c=>/^(take:|reel:|turn:)/.test(c));
@@ -370,13 +403,14 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
   const objective=tideCard&&tideRun?tideObjective(tideCard,tideRun):visibleRun?.area==="wind"?visibleRun.cargo.includes("vane")?"Vane secured · reach the center dock.":visibleRun.banked.includes("vane")?"Practice the channels · your vane stays home.":!visibleRun.opened.includes(0)||!visibleRun.opened.includes(1)?`Charge the ${!visibleRun.opened.includes(0)&&!visibleRun.opened.includes(1)?"left and center exits":!visibleRun.opened.includes(0)?"left exit":"center exit"}.`:visibleRun.orientation!==0?"Turn the wheel at far center to align the cradle.":"The cradle is open. Lift the Signal Vane.":visibleRun?.cargo.includes("lens")?"Lens secured · reach the center dock.":visibleRun?.banked.includes("lens")?visibleRun.banked.includes("moth")?"Practice the tides · discoveries stay home.":"Rescue the wind-moth from the Right oyster.":"Open the Left oyster; bring its lens home.";
 
   const needLens=home.banked.includes("lens")&&!home.lit,needVane=home.lit&&home.banked.includes("vane")&&!home.signaled;
-  const canPreviewCrest=previewReturns.some(record=>record.outcome==="returned"&&record.cargo.includes("lens"));
-  const canPreviewMoth=previewReturns.some(record=>record.outcome==="returned"&&record.cargo.includes("moth"));
+  const storyNext=savedMode?null:chapterFor(home);
+  const canPreviewCrest=!savedMode&&home.banked.includes("lens")||previewReturns.some(record=>record.outcome==="returned"&&record.cargo.includes("lens"));
+  const canPreviewMoth=!savedMode&&home.banked.includes("moth")||previewReturns.some(record=>record.outcome==="returned"&&record.cargo.includes("moth"));
   const needsLantern=savedMode?!!session?.state.workshop.creditAvailable:home.lit&&!home.lantern&&canPreviewCrest;
-  const nextPlace:HomePlace|"crossings"|"chart"|null=recordReturns.length?"satchel":needLens||needVane?"beacon":chapterComplete?"chart":home.signaled?"crossings":needsLantern?"workbench":null;
-  const homeTitle=recordReturns.length?"A full satchel. A safe harbor.":needLens?"The lens is home.":needVane?"The vane is home.":chapterComplete?"A harbor connected.":lastService==="bell"?"Supplies at Bell Steps.":lastService==="reed"?"The reed skiff is home.":home.signaled?"The harbor finds its bearings.":needsLantern?"A little light of your own.":home.lit?"A light worth coming home to.":"A little help for the harbor.";
-  const homeIntent=recordReturns.length?"Bring the original returned satchel to Bram. Review what can be saved before unpacking.":needLens?"Mochi kept it safe. Carry the lens up to the beacon.":needVane?"Bram steadies the bare post. Mochi has brought back the missing arrow.":chapterComplete?(harbor.heardBell?"The bell pull is rigged. Try a different crossing with Mochi, or sit together by the quay.":"Bram has cleared the old arch at Bell Steps. Mochi keeps turning toward it. What does she hear when the water falls?"):lastService==="bell"?"Across the water, Bram’s crates stand on the receiving steps.":lastService==="reed"?"The skiff rocks at its mooring on the near bank.":home.signaled?"Bram has a load for Bell Steps. Mochi is watching a skiff across at Reed.":needsLantern?"Your returned adventure can become one light for home.":home.lit?`Wind Gate has a different tide to understand.${home.banked.includes("moth")?"":" You can also return for the wind-moth."}`:"The beacon’s lens is across the tide. Mochi is ready to help.";
-  const primaryLabel=recordReturns.length?"Unpack the satchel":needLens?"Bring the lens to the beacon":needVane?"Fit the Signal Vane":chapterComplete?"Look over the harbor":home.signaled?"Choose a crossing":needsLantern?"Make a little light":area==="wind"?"Sail to Wind Gate":"Set out with Mochi";
+  const nextPlace:HomePlace|"crossings"|"chart"|null=tideResume||storyNext?null:recordReturns.length?"satchel":needLens||needVane?"beacon":chapterComplete?"chart":home.signaled?"crossings":needsLantern?"workbench":null;
+  const homeTitle=tideResume?"The tide is waiting.":storyNext?`${CHAPTERS[storyNext].title}.`:recordReturns.length?"A full satchel. A safe harbor.":needLens?"The lens is home.":needVane?"The vane is home.":chapterComplete?"A harbor connected.":lastService==="bell"?"Supplies at Bell Steps.":lastService==="reed"?"The reed skiff is home.":home.signaled?"The harbor finds its bearings.":needsLantern?"A little light of your own.":home.lit?"A light worth coming home to.":"A little help for the harbor.";
+  const homeIntent=tideResume?"Mochi’s tide is saved where she stopped.":storyNext?`Bram: “${CHAPTERS[storyNext].before}”`:recordReturns.length?"Bring the original returned satchel to Bram. Review what can be saved before unpacking.":needLens?"Mochi kept it safe. Carry the lens up to the beacon.":needVane?"Bram steadies the bare post. Mochi has brought back the missing arrow.":chapterComplete?(harbor.heardBell?"The bell pull is rigged. Try a different crossing with Mochi, or sit together by the quay.":"Bram has cleared the old arch at Bell Steps. Mochi keeps turning toward it. What does she hear when the water falls?"):lastService==="bell"?"Across the water, Bram’s crates stand on the receiving steps.":lastService==="reed"?"The skiff rocks at its mooring on the near bank.":home.signaled?"Bram has a load for Bell Steps. Mochi is watching a skiff across at Reed.":needsLantern?"Your returned adventure can become one light for home.":home.lit?`Wind Gate has a different tide to understand.${home.banked.includes("moth")?"":" You can also return for the wind-moth."}`:"The beacon’s lens is across the tide. Mochi is ready to help.";
+  const primaryLabel=tideResume?"Return to the tide":storyNext?"Set out with Mochi":recordReturns.length?"Unpack the satchel":needLens?"Bring the lens to the beacon":needVane?"Fit the Signal Vane":chapterComplete?"Look over the harbor":home.signaled?"Choose a crossing":needsLantern?"Make a little light":area==="wind"?"Sail to Wind Gate":"Set out with Mochi";
   const shelved=savedMode?shelvedDay?.scope===tideScope&&shelvedDay.day===today:readPreview(undefined,today)?.docked===today;
   const returnedToday=!run&&readTide(tideScope).some(record=>{
     if(deviceDay(Date.parse(record.savedAt))!==today)return false;
@@ -384,11 +418,17 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
     return outing?.state.outcome==="returned"&&outing.state.cargo.length>0;
   });
   const tideHome=resting?null:harborTide({lit:home.lit,card:cardForDay(today),next:cardForDay(today+1),entry:todayView(today,tideEntries).entry,returnedToday,shelved}),tidePanel=tideHome?.kind==="panel"?tideHome:null;
+  const todayTide=todayResult(tideBook,today),todayGuess=useMemo(()=>bramsGuess(today),[today]);
+  /** Once the beacon is lit the Tidekeeper’s ask keeps the main button; the story and the daily tide run sit beside it. */
+  const tideExtra=savedMode||!home.lit||resting?null:needVane?{label:"Fit the vane",hint:"Fit the Signal Vane",go:()=>open("beacon")}:tideResume?{label:"Resume tide",hint:"Return to the tide Mochi left",go:()=>setTideAway(false)}:storyNext?{label:`Chapter ${CHAPTERS[storyNext].number}`,hint:`Chapter ${CHAPTERS[storyNext].number}: ${CHAPTERS[storyNext].title}`,go:()=>departTide(storyStart(storyNext))}:{label:todayTide?`Tide run: ${todayTide.score}`:"Tide run",hint:todayTide?`Today’s tide run: banked ${todayTide.score}, Bram guessed ${todayGuess}. Sail it again for practice.`:`Today’s tide run: beat Bram’s guess of ${todayGuess}.`,go:()=>departTide({seed:today})};
   function tideAction(action:"tide"|"log"|"sail"|"bram"){if(action==="sail")sailTide(today);else if(action==="log")openLog(today);else open(action);}
   const feedback=<div className={`exp-feedback${surface==="home"?" exp-sr-only":""}`} role="status" aria-live="polite" data-testid="expedition-feedback">{notice}</div>;
   const beatParts=lastBeat.split(":"),currentBeat=busy&&transition&&Number(beatParts[0])===presentationId?transition.events[Number(beatParts[1])]:null;
   const shownForecast=busy?currentBeat?`Resolving: ${eventDescription(currentBeat,run?.area)}`:"Mochi is acting. The tide will follow.":run?forecast(run,focused):"";
 
+  if(showTideRun&&tideBook.active&&lease==="held"&&!problem)return <TideRunGame key={tideRunKey+tideRound} initial={tideBook.active} reduced={reduced} sound={sound} audio={audio.current} blocked={!!session?.state.busy}
+    onSave={next=>storeTideBook({...tideBook,active:next})} onFinish={finishTideRun} onToggleSound={()=>void toggleSound()}
+    onLeave={()=>{setTideAway(true);setReadySceneKey(-1);setSceneKey(k=>k+1);}}/>;
   if(showPassage&&passage.active&&lease==="held"&&!problem&&!session?.state.review)return <>
     <PassageGame key={passageKey+passage.active.job} job={passage.active.job} initial={passage.active} mothHome={passage.active.mothHome} reduced={reduced} sound={sound} audio={audio.current}
       blocked={!!session?.state.busy}
@@ -422,9 +462,9 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
         <button className="exp-place-satchel" onClick={()=>open("satchel")}><img src="/assets/ui/sign-satchel.webp" width={480} height={266} alt="" decoding="async"/><span>Satchel{recordReturns.length?` · ${recordReturns.length}`:""}</span></button>
       </nav>
       <section ref={departureRef} className="exp-departure">
-        <div className="exp-departure-heading">{tidePanel&&<span className="tide-departure-stamp"><TideStamp id={cardForDay(today).id} size={88} tilt={3} seal={todayView(today,tideEntries).entry?.kept.every(Boolean)} label=""/></span>}<div><h1>{resting?"A moment together.":tidePanel?tidePanel.title:homeTitle}</h1><p>{resting?(greeting?"Mochi rests a paw against your hand, then settles beside you.":harbor.moth?"Mochi tucks a paw under and watches the moth at its perch.":harbor.watchedReeds?"Mochi tucks a paw under, just as at the sheltered reeds.":"Mochi settles beside you. The water moves below the quay."):tidePanel?tidePanel.body:homeIntent}</p><div className="exp-preparation"><span>{COURTS[area].title} · {title(tool)}</span><button className="exp-text-button" aria-label="Change preparation" onClick={()=>open("sail")}><Icon kind="pencil"/></button></div></div></div>
+        <div className="exp-departure-heading">{tidePanel&&<span className="tide-departure-stamp"><TideStamp id={cardForDay(today).id} size={88} tilt={3} seal={todayView(today,tideEntries).entry?.kept.every(Boolean)} label=""/></span>}<div><h1>{resting?"A moment together.":tidePanel?tidePanel.title:homeTitle}</h1><p>{resting?(greeting?"Mochi rests a paw against your hand, then settles beside you.":harbor.moth?"Mochi tucks a paw under and watches the moth at its perch.":harbor.watchedReeds?"Mochi tucks a paw under, just as at the sheltered reeds.":"Mochi settles beside you. The water moves below the quay."):tidePanel?tidePanel.body:homeIntent}</p><div className="exp-preparation"><span>{COURTS[area].title} · {title(tool)}</span><button className="exp-text-button" aria-label="Change preparation" onClick={()=>open("sail")}><Icon kind="pencil"/></button>{!savedMode&&!home.lit&&<button className="exp-text-button" data-action="depart" disabled={!!problem||lease!=="held"} onClick={()=>begin()}>Sail</button>}{tideExtra&&<button className="exp-text-button exp-preparation-link" data-action="tide-run" title={tideExtra.hint} aria-label={tideExtra.hint} disabled={!!problem||lease!=="held"} onClick={tideExtra.go}>{tideExtra.label}</button>}</div></div></div>
         <div className="exp-departure-actions"><div className="exp-departure-buttons">
-          {(!tidePanel||tidePanel.primary)&&<button className="exp-primary" data-action={tidePanel?"tide":nextPlace?"home-next":"depart"} disabled={!!problem||lease!=="held"||tidePanel?.primary?.target==="sail"&&!canSailTide} onClick={()=>resting?setResting(false):tidePanel?.primary?tideAction(tidePanel.primary.target):nextPlace?open(nextPlace):begin()}><Icon kind={resting?"home":tidePanel?.primary?.target==="bram"?"bag":"sail"}/>{resting?"Back to the harbor":tidePanel?.primary?tidePanel.primary.label:primaryLabel}</button>}
+          {(!tidePanel||tidePanel.primary)&&<button className="exp-primary" data-action={tidePanel?"tide":nextPlace?"home-next":tideResume?"resume":storyNext?"story":"depart"} disabled={!!problem||lease!=="held"||tidePanel?.primary?.target==="sail"&&!canSailTide} onClick={()=>resting?setResting(false):tidePanel?.primary?tideAction(tidePanel.primary.target):nextPlace?open(nextPlace):tideResume?setTideAway(false):storyNext?departTide(storyStart(storyNext)):begin()}><Icon kind={resting?"home":tidePanel?.primary?.target==="bram"?"bag":"sail"}/>{resting?"Back to the harbor":tidePanel?.primary?tidePanel.primary.label:primaryLabel}</button>}
           {tideHome?.links.filter(link=>link.action!=="log").slice(0,1).map(link=><button key={link.label} className="exp-secondary" disabled={link.action==="sail"&&!canSailTide} onClick={()=>tideAction(link.action)}><Icon kind={link.action==="log"?"log":link.action==="bram"?"bag":"sail"}/>{link.label}</button>)}
           </div><button className="exp-text-button" onClick={()=>{if(resting)setGreeting(n=>n+1);else{setGreeting(0);setResting(true);if(sound)audio.current?.playMusic("harbor");}}}>{resting?"Offer a hand":"Sit with Mochi"}</button>
         </div>
