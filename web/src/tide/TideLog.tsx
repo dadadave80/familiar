@@ -9,7 +9,7 @@ import { pageForCard, stampSheet } from "./pages";
 import TideChart from "./TideChart";
 import TideStamp from "./TideStamp";
 import AskIcon from "./AskIcon";
-import { allKept, type DayResult } from "./run-day";
+import { allKept, keptCount, type DayResult } from "./run-day";
 import { HaulRow, StampList } from "./RunStamps";
 import "./tide.css";
 
@@ -35,8 +35,11 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
     const panel = logRef.current?.closest<HTMLElement>(".exp-panel");
     if (panel) panel.scrollTop = 0;
   }, [index]);
-  const stamps = useMemo(() => stampSheet(pages.flatMap(item => item.kind === "tide" ? [item.entry] : [])), [pages]);
-  const collected = stamps.filter(slot => slot.entry).length;
+  const stamps = useMemo(() => stampSheet(
+    pages.flatMap(item => item.kind === "tide" ? [item.entry] : []),
+    pages.flatMap(item => item.kind === "run" ? [item.result] : []),
+  ), [pages]);
+  const collected = stamps.filter(slot => slot.entry || slot.result).length;
   const sealed = stamps.filter(slot => slot.allThree).length;
   const frames = useMemo(() => page ? page.kind === "story"
     ? chartFrames({ area: page.area, tool: page.tool, banked: page.banked }, page.commands)
@@ -58,8 +61,8 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
       <h4>The Tidekeeper’s stamps</h4>
       <p className="tide-note">{collected} of 14 collected{sealed > 0 ? `, ${sealed} with the brass seal` : ""}</p>
       <div className="tide-stamp-sheet">
-        {stamps.map(({ card, entry, allThree }) => entry
-          ? <button key={card.id} type="button" aria-label={`${card.name} stamp, ${entry.kept.filter(Boolean).length} of 3 asks kept. Open its page.`} onClick={() => setSelected(pageForCard(pages, card.id))}>
+        {stamps.map(({ card, entry, result, allThree }) => entry || result
+          ? <button key={card.id} type="button" aria-label={entry ? `${card.name} stamp, ${entry.kept.filter(Boolean).length} of 3 asks kept. Open its page.` : `${card.name} stamp, ${keptCount(result!)} of 3 kept. Open its page.`} onClick={() => setSelected(pageForCard(pages, card.id))}>
             <TideStamp id={card.id} size={56} seal={allThree} />
           </button>
           : <span key={card.id} className="tide-stamp-empty"><span className="tide-sr">Not collected yet</span></span>)}

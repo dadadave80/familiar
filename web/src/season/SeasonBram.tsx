@@ -223,7 +223,7 @@ function RunHaul({run,busy,preview,shelf,primary,onOpenTide,onPreview,onPreviewB
   if(!run)return <><p>Sail today’s tide and bring something home. Bram shelves reed and glass, up to three of each a day.</p><button className="ss-link" onClick={onOpenTide}>See today’s tide</button></>;
   const goods=shelfGoods(run),pearls=haulCount(run).pearl,keep=pearls?`Mochi keeps the ${pearls===1?"pearl":`${pearls} pearls`}.`:"";
   if(!goods[0]&&!goods[1])return <p>Today’s tide brought no reed or glass.{keep&&` ${keep}`}</p>;
-  return <div className="ss-act ss-haul-offer">
+  return <div className="ss-act ss-haul-offer ss-run-haul">
     <span className="ss-haul-art" aria-hidden="true">{GOODS.filter((_,g)=>goods[g]!>0).map(good=><span key={good}><img src={`${ART}${good}.webp`} alt="" width="56" height="56"/>×{goods[GOOD_INDEX[good]]}</span>)}</span>
     <p>From today’s tide run: {resultLine(run)}.</p>
     <Press className={primary?"ss-primary":undefined} off={busy} onPress={()=>{
