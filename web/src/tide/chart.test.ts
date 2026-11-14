@@ -42,7 +42,7 @@ test("both courts tell one numbered plain sentence per decision",()=>{
     expect(lines.at(-1)).toContain("comes home with");
   }
   const lines=chartLines(chartFrames(beacon,surf)!,"beacon");
-  expect(lines[0]).toContain("steps north");expect(lines.some(line=>line.includes("It soaks her."))).toBe(true);expect(lines.some(line=>line.includes("A wave runs from the"))).toBe(true);
+  expect(lines[0]).toContain("steps north");expect(lines.some(line=>line.includes("It soaks her."))).toBe(true);expect(lines.some(line=>line.includes("A wave runs down the"))).toBe(true);
   expect(lines.find(line=>line.includes("takes the lens"))).toBeTruthy();
   const windLines=chartLines(chartFrames(wind,gate)!,"wind");expect(windLines.some(line=>line.includes("turns the wheel"))).toBe(true);expect(windLines.some(line=>line.includes("takes the vane"))).toBe(true);
   expect(chartLines(chartFrames(beacon,["return"])!,"beacon")).toEqual(["1. Mochi comes home empty-pawed."]);expect(chartLines([],"beacon")).toEqual([]);
@@ -55,4 +55,14 @@ test("route descriptions include reels, lures and rescue",()=>{
   expect(chartLines(lantern,"beacon")[2]).toContain("lures the wave to the left column");
   let run=startRun("rope");for(let i=0;i<TURN_LIMIT&&run.state.outcome==="active";i++)run=stepRun(run,"wait")!;
   const lines=chartLines(chartFrames(beacon,run.state.commands)!,"beacon");expect(lines.at(-1)).toContain("She is rescued and carried home.");
+});
+
+test("waves describe a lane or distinct source and exit through lures and the Wind Gate wheel",()=>{
+  const lantern=chartLines(chartFrames({...beacon,tool:"lantern"},["wait","wait","lure:left"])!,"beacon");
+  expect(lantern[2]).toBe("3. Mochi lures the wave to the left column. A wave runs down the left lane.");
+  const lines=chartLines(chartFrames(wind,gate)!,"wind");
+  expect(lines[2]).toContain("A wave rises on the right and runs out on the left.");
+  expect(lines[5]).toContain("A wave rises on the left and runs out on the center.");
+  expect(lines[8]).toContain("A wave rises on the center and runs out on the left.");
+  expect(lines[11]).toContain("A wave runs down the center lane.");
 });

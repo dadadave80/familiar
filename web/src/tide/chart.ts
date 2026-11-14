@@ -30,7 +30,8 @@ export function chartLines(frames:readonly ChartFrame[],area:Area):string[] {
     else if(command==="turn:vane")action=`turns the ${area==="wind"?"wheel":"vane"}`;
     else if(command==="return")action=frame.cargo.length?`comes home with ${frame.cargo.map(item=>`the ${item}`).join(" and ")}`:"comes home empty-pawed";
     let line=`${frame.index}. Mochi ${action}.`;
-    if(frame.wave)line+=` A wave runs from the ${columns[frame.wave.source]} to the ${columns[frame.wave.exit]}.`;
+    if(frame.wave)line+=frame.wave.source===frame.wave.exit?` A wave runs down the ${columns[frame.wave.source]} lane.`:
+      ` A wave rises on the ${columns[frame.wave.source]} and runs out on the ${columns[frame.wave.exit]}.`;
     if(frame.splash)line+=" It soaks her.";
     if(frame.outcome==="rescued"&&frames[i]!.outcome!=="rescued")line+=" She is rescued and carried home.";
     return line;

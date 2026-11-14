@@ -39,10 +39,10 @@ export function recordTide(scope:string,input:{day:number;tool:Tool;commands:rea
   const scored=Number.isSafeInteger(input.day)?score(input.day,input.tool,input.commands):null;
   if(!scored)throw new RangeError("This outing cannot be logged.");
   const log=readTideLog(scope,store),previous=log.find(entry=>entry.day===input.day)??null;
-  const candidate:TideEntry={day:input.day,tool:input.tool,commands:[...input.commands] as Command[],...scored,late:input.late,
+  const candidate:TideEntry={day:input.day,tool:input.tool,commands:[...input.commands] as Command[],...scored,late:input.late&&(previous?.late??true),
     attempts:(previous?.attempts??0)+1,savedAt:(input.now??new Date()).toISOString()};
   const improved=previous===null||candidate.outcome==="returned"&&(previous.outcome==="rescued"||betterTide(candidate,previous));
-  const entry=improved?candidate:{...previous!,attempts:candidate.attempts};
+  const entry=improved?candidate:{...previous!,late:candidate.late,attempts:candidate.attempts};
   const next=[...log.filter(value=>value.day!==input.day),entry].sort((a,b)=>a.day-b.day).slice(-90),text=JSON.stringify(next),key=tideLogKey(scope);
   store.setItem(key,text);if(store.getItem(key)!==text)throw Error("The tide log could not be saved on this device.");
   return {entry,improved,previous};

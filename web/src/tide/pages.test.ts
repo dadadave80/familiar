@@ -186,7 +186,7 @@ describe("outing copy", () => {
     expect(outingNotice(returned, card, { entry: best, improved: true, previous: entry(today, { decisions: 10 }) }))
       .toBe(`3 of 3 asks kept in ${commands.length} decisions. A new best for the day.`);
     expect(outingNotice(partial, card, { entry: best, improved: false, previous: best }))
-      .toBe(`1 of 3 asks kept in 1 decisions. The day’s best stays at 3 of 3 in ${commands.length}.`);
+      .toBe(`0 of 3 asks kept in 1 decisions. The day’s best stays at 3 of 3 in ${commands.length}.`);
   });
 
   test("describes this rescue even when the stored best returned", () => {
@@ -226,7 +226,7 @@ describe("outing copy", () => {
     const coiled = cardForDay(7);
     const start = startRun("lantern");
     expect(askFlips(coiled, start, stepRun(start, "return")!)).toBe(
-      "One ask slipped: Bring both finds home. Ask kept: Leave the lantern unlit. Ask kept: Be home within 16 decisions.",
+      "One ask slipped: Bring both finds home. One ask slipped: Leave the lantern unlit. One ask slipped: Be home within 16 decisions.",
     );
   });
 });

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { TURN_LIMIT } from "../expedition/types";
 import { replayRun, solve, startRun, stepRun } from "./asks";
-import { cardForDay } from "./cards";
+import { cardForDay, TIDE_POOL } from "./cards";
 import { betterTide, readTideLog, readTidePending, recordTide, tideLogKey, tideSummary, writeTidePending } from "./log";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);},removeItem:(k:string)=>{m.delete(k);}};};
@@ -28,6 +28,29 @@ test("rescues can be logged but never replace a returned outing",()=>{
   const first=recordTide("p",input(commands),store);expect(first.entry.outcome).toBe("rescued");expect(first.entry.kept).toEqual([false,false,false]);
   const home=recordTide("p",input(["return"]),store);expect(home.improved).toBe(true);
   const again=recordTide("p",input(commands),store);expect(again.improved).toBe(false);expect(again.entry).toEqual({...home.entry,attempts:3});
+});
+
+test("an empty return logs no asks kept on every card",()=>{
+  const store=memory();
+  for(let day=0;day<TIDE_POOL.length;day++){
+    const card=cardForDay(day),recorded=recordTide("p",{...input(["return"]),day,tool:card.tool},store);
+    expect(recorded.entry.kept).toEqual([false,false,false]);
+  }
+  expect(readTideLog("p",store).every(entry=>entry.kept.every(kept=>!kept))).toBe(true);
+});
+
+for(const late of [false,true])test(`${late?"a late":"an on-time"} day keeps its timing after a better late run`,()=>{
+  const store=memory();recordTide("p",{...input(["return"]),late},store);
+  const better=recordTide("p",{...input(),late:true},store);
+  expect(better.improved).toBe(true);expect(better.entry.kept).toEqual([true,true,true]);expect(better.entry.late).toBe(late);
+  expect(readTideLog("p",store)[0]!.late).toBe(late);
+});
+
+test("an on-time attempt updates the day even when its route is not better",()=>{
+  const store=memory(),best=recordTide("p",{...input(),late:true},store).entry;
+  const worse=recordTide("p",input(["return"]),store);
+  expect(worse.improved).toBe(false);expect(worse.entry).toEqual({...best,late:false,attempts:2});
+  expect(readTideLog("p",store)[0]!.late).toBe(false);
 });
 
 test("reading ignores broken data and derives scores from commands",()=>{

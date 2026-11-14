@@ -1,6 +1,7 @@
 /**
  * The Tidekeeper's ask: one card a day for a fresh Beacon Court outing.
  * Pure functions over the canonical court engine. Nothing here changes a rule; an ask only reads what a run did.
+ * An outing that comes home with an empty satchel keeps no asks.
  */
 import { applyCommand, legalCommands, phaseOf, startCourt } from "../expedition/engine";
 import { TURN_LIMIT, type Column, type Command, type CourtState, type Tool } from "../expedition/types";
@@ -63,29 +64,43 @@ export type AskStatus = "open" | "kept" | "slipped";
 const home = (state: CourtState) => state.outcome === "returned";
 const over = (state: CourtState) => state.outcome !== "active";
 
-/** `open` can still go either way; `kept` and `slipped` are final for this outing. */
-export function askStatus(ask: Ask, { state, facts }: Run): AskStatus {
-  const settle = (holds: boolean, broken = !holds): AskStatus => broken ? "slipped" : over(state) ? (home(state) && holds ? "kept" : "slipped") : "open";
-  if (state.outcome === "rescued") return "slipped";
-  if (ask.kind === "within") return settle(state.turn <= ask.decisions, state.turn > ask.decisions || (!over(state) && state.turn === ask.decisions));
+/** Is this ask's condition met as things stand? An open ask that holds would be kept if nothing changed before home. */
+export function askHolds(ask: Ask, { state, facts }: Run): boolean {
+  if (state.outcome === "rescued") return false;
+  if (ask.kind === "within") return over(state) ? state.turn <= ask.decisions : state.turn < ask.decisions;
   if (ask.kind === "haul") {
     const lens = state.cargo.includes("lens"), moth = state.cargo.includes("moth");
-    if (ask.haul === "moth") return settle(moth && !lens, lens);
-    return settle(ask.haul === "both" ? lens && moth : lens, false);
+    return ask.haul === "moth" ? moth && !lens : ask.haul === "both" ? lens && moth : lens;
   }
   switch (ask.style) {
-    case "dry": return settle(state.resolve === 3);
-    case "splash": return settle(state.resolve === 2, state.resolve < 2);
-    case "coiled": return settle(state.uses === 2);
-    case "no-wait": return settle(facts.waits === 0);
-    case "all-marks": return settle(facts.marks.length === 3, false);
-    case "one-crossing": return settle(facts.crossings === 2, facts.crossings > 2);
-    case "both-shells": return settle(state.opened.includes(0) && state.opened.includes(2), false);
-    case "bridge-left": return settle(state.bridge === 0, false);
-    case "bridge-center": return settle(state.bridge === 1, false);
-    case "bridge-right": return settle(state.bridge === 2, false);
-    case "shut-left": return settle(!state.opened.includes(0));
-    case "shut-right": return settle(!state.opened.includes(2));
+    case "dry": return state.resolve === 3;
+    case "splash": return state.resolve === 2;
+    case "coiled": return state.uses === 2;
+    case "no-wait": return facts.waits === 0;
+    case "all-marks": return facts.marks.length === 3;
+    case "one-crossing": return facts.crossings === 2;
+    case "both-shells": return state.opened.includes(0) && state.opened.includes(2);
+    case "bridge-left": return state.bridge === 0;
+    case "bridge-center": return state.bridge === 1;
+    case "bridge-right": return state.bridge === 2;
+    case "shut-left": return !state.opened.includes(0);
+    case "shut-right": return !state.opened.includes(2);
+  }
+}
+
+/** `open` can still go either way; `kept` and `slipped` are final for this outing. */
+export function askStatus(ask: Ask, run: Run): AskStatus {
+  const { state, facts } = run;
+  if (state.outcome === "rescued" || home(state) && state.cargo.length === 0) return "slipped";
+  const holds = askHolds(ask, run);
+  const settle = (broken = !holds): AskStatus => broken ? "slipped" : over(state) ? (home(state) && holds ? "kept" : "slipped") : "open";
+  if (ask.kind === "within") return settle();
+  if (ask.kind === "haul") return settle(ask.haul === "moth" && state.cargo.includes("lens"));
+  switch (ask.style) {
+    case "splash": return settle(state.resolve < 2);
+    case "one-crossing": return settle(facts.crossings > 2);
+    case "all-marks": case "both-shells": case "bridge-left": case "bridge-center": case "bridge-right": return settle(false);
+    default: return settle();
   }
 }
 export const cardStatus = (card: TideCard, run: Run) => card.asks.map(ask => askStatus(ask, run)) as [AskStatus, AskStatus, AskStatus];

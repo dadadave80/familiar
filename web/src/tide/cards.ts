@@ -84,6 +84,9 @@ export function askChip(ask: Ask, tool: Tool, run: Run): string {
     case "both-shells": return `Both shells · ${Number(state.opened.includes(0)) + Number(state.opened.includes(2))} of 2`;
     case "shut-left": return "Left shell shut";
     case "shut-right": return "Right shell shut";
-    default: return `Bridge at ${column[ask.style.slice(7) as keyof typeof column]}`;
+    default: {
+      const target = column[ask.style.slice(7) as keyof typeof column], current = Object.values(column)[state.bridge];
+      return `Bridge at ${target} · ${target === current ? "there now" : `now ${current}`}`;
+    }
   }
 }
