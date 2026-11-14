@@ -17,7 +17,7 @@ async function entry() {
   // `?play` skips the title screen (browser tests and direct links into play).
   if(new URLSearchParams(window.location.search).has("play")){
     const [{default:Game},{HarborSessionBoundary,HarborAccountPanel}]=await game;
-    return function Expedition(){return <HarborSessionBoundary>{session=><Game session={session} accountPanel={<HarborAccountPanel/>}/>}</HarborSessionBoundary>;};
+    return function Expedition(){return <HarborSessionBoundary>{(session,initialRestorationComplete)=><Game session={session} initialRestorationComplete={initialRestorationComplete} titleHandoffComplete accountPanel={<HarborAccountPanel/>}/>}</HarborSessionBoundary>;};
   }
   const [{default:Opening},{HarborAudio}]=await Promise.all([import("./opening/Opening"),import("./expedition/audio")]);
   game.catch(()=>{});
@@ -31,7 +31,7 @@ async function entry() {
     let screen:React.ReactNode=null;
     if(play){
       const [{default:Game},{HarborSessionBoundary,HarborAccountPanel}]=play.mods;
-      screen=<HarborSessionBoundary>{session=><Game session={session} accountPanel={<HarborAccountPanel/>} audio={audio} initialSound={play.start.sound} initialMix={[play.start.music,play.start.effects]}/>}</HarborSessionBoundary>;
+      screen=<HarborSessionBoundary>{(session,initialRestorationComplete)=><Game session={session} initialRestorationComplete={initialRestorationComplete} titleHandoffComplete={!title} accountPanel={<HarborAccountPanel/>} audio={audio} initialSound={play.start.sound} initialMix={[play.start.music,play.start.effects]}/>}</HarborSessionBoundary>;
     }
     return <>
       {screen}

@@ -6,6 +6,7 @@ import type { TideSnapshot } from "./scene";
 import { HEARTS, PACK_SLOTS, SLOTS, applyMove, countdown, legalMoves, stepDestination, tideShape, type Move, type Position, type StoryPrize, type TideEvent, type TideState, type TideTransition } from "./engine";
 import { bramsGuess } from "./bot";
 import { CHAPTERS, aPrize, consequence, itemName, laneNames } from "./story";
+import { DISTANT_CUE, INITIAL_CUE, LENS_SAFE_CUE, observeTransition, observedLessons, retainedCue, returnAdvice } from "./guidance";
 import { STAMPS } from "../tide/run-day";
 import type { HarborAudio } from "../expedition/audio";
 import type { CourtEvent } from "../expedition/types";
@@ -22,6 +23,10 @@ interface Props {
   /** Back to the harbor with the tide still in progress and saved. */
   onLeave: () => void;
   onToggleSound: () => void;
+  guidance?: boolean;
+  buttonsOpen?: boolean;
+  onButtonsOpenChange?: (open: boolean) => void;
+  onSkipGuidance?: () => void;
 }
 
 const STEPS = ["north", "west", "east", "south"] as const;
@@ -84,24 +89,38 @@ export function TideRunRules({ story }: { story?: StoryPrize }) {
   </>;
 }
 
-export default function TideRunGame({ initial, reduced, sound: soundOn, audio, blocked, onSave, onFinish, onLeave, onToggleSound }: Props) {
+export default function TideRunGame({ initial, reduced, sound: soundOn, audio, blocked, onSave, onFinish, onLeave, onToggleSound, guidance = false, buttonsOpen, onButtonsOpenChange, onSkipGuidance }: Props) {
   const [state, setState] = useState(initial), [result, setResult] = useState<TideTransition | null>(null);
   const current = useRef(initial), pending = useRef<TideTransition | null>(null), serial = useRef(0);
   const [ready, setReady] = useState(false), [fault, setFault] = useState(""), [sceneKey, setSceneKey] = useState(0);
   const [away, setAway] = useState(document.hidden), [guide, setGuide] = useState(false);
   const [finishError, setFinishError] = useState(false);
+  const [cue, setCue] = useState<string | null>(() => guidance && initial.outcome === "active" && !initial.moves.length ? INITIAL_CUE : null);
+  const lessons = useRef(observedLessons(initial)), acceptedLesson = useRef<ReturnType<typeof observeTransition> | null>(null);
+  const [lensDecision, setLensDecision] = useState(false), [localButtonsOpen, setLocalButtonsOpen] = useState(false);
+  const [guidanceOff, setGuidanceOff] = useState(false);
+  const teaching = guidance && !guidanceOff;
+  const openButtons = buttonsOpen ?? localButtonsOpen;
+  const decisionDialog = useRef<HTMLDialogElement>(null), decisionHeading = useRef<HTMLHeadingElement>(null);
   const finishAttempted = useRef(false), filed = useRef(false), explicitFinish = useRef(false);
   const chapter = initial.story ? CHAPTERS[initial.story] : null;
   const [notice, setNotice] = useState(() => initial.outcome !== "active" || initial.moves.length ? "" : chapter ? chapter.before : `The Tidekeeper turns to the ${laneNames(initial.next.lanes).toLowerCase()} lane.`);
   const dialog = useRef<HTMLDialogElement>(null), guideButton = useRef<HTMLButtonElement>(null), gameRef = useRef<HTMLElement>(null), guideOpener = useRef<HTMLElement | null>(null);
   const guess = useMemo(() => initial.story ? null : bramsGuess(initial.seed), [initial.seed, initial.story]);
-  const busy = !!result, paused = away || blocked || guide || !!fault;
+  const busy = !!result, paused = away || blocked || guide || lensDecision || !!fault;
   // The board catches up before the numbers do: the status shows the tide as drawn.
   const seen = result ? result.before : state, over = state.outcome !== "active" && !busy;
   const { waves } = tideShape(initial), legal = legalMoves(state);
   const used = seen.pack.reduce((sum, item) => sum + SLOTS[item], 0);
   const worldActions = useMemo(() => legalMoves(state).filter((move): move is "wait" | "home" => move === "wait" || move === "home" && state.moves.length > 0), [state]);
   const snapshot = useMemo<TideSnapshot>(() => ({ tide: state, reducedMotion: reduced, worldActions }), [state, reduced, worldActions]);
+
+  useEffect(() => { setGuidanceOff(false); if (!guidance) { setCue(null); setLensDecision(false); } }, [guidance]);
+  useEffect(() => {
+    if (!lensDecision) return;
+    decisionDialog.current?.showModal(); decisionHeading.current?.focus({ preventScroll: true });
+    return () => { decisionDialog.current?.close(); gameRef.current?.focus({ preventScroll: true }); };
+  }, [lensDecision]);
 
   useEffect(() => {
     const hide = () => setAway(true), show = () => setAway(document.hidden);
@@ -126,11 +145,13 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
     setGuide(true);
   }
 
-  function take(move: Move) {
-    if (!ready || paused || pending.current || current.current.outcome !== "active" || document.hidden) return;
+  function take(move: Move, fromDecision = false) {
+    if (!ready || away || blocked || guide || !!fault || lensDecision && !fromDecision || pending.current || current.current.outcome !== "active" || document.hidden) return;
     const next = applyMove(current.current, move);
     if (!next) return;
-    if (!onSave(next.after)) { setNotice("This move could not be saved. Try it again when this browser can save."); return; }
+    if (!onSave(next.after)) { setCue(null); setNotice("This move could not be saved. Try it again when this browser can save."); return; }
+    acceptedLesson.current = observeTransition(next, lessons.current);
+    lessons.current = acceptedLesson.current.observed;
     current.current = next.after; pending.current = next; serial.current++;
     setResult(next); setState(next.after);
   }
@@ -144,10 +165,23 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
     // The last thing that happened stays up until something else does.
     const line = consequence(accepted);
     if (line) setNotice(line);
+    const lesson = acceptedLesson.current;
+    if (teaching && lesson && accepted.after.outcome === "active") {
+      setCue(previous => lesson.cue ?? retainedCue(previous, accepted));
+      if (lesson.lensBanked) { setCue(null); setLensDecision(true); }
+    } else setCue(null);
+    acceptedLesson.current = null;
     if (accepted.after.moves.at(-1) === "home") explicitFinish.current = true;
     pending.current = null; setResult(null);
   }
-  function target(position: Position) { const move = moveToward(current.current, position); if (move) take(move); }
+  function target(position: Position) {
+    if (!ready || paused || pending.current || current.current.outcome !== "active") return;
+    if (same(position, current.current.position)) return;
+    const move = moveToward(current.current, position);
+    if (move) take(move); else { if (teaching) setCue(DISTANT_CUE); else setNotice(DISTANT_CUE); }
+  }
+  function skipGuidance() { setGuidanceOff(true); setCue(null); setLensDecision(false); onSkipGuidance?.(); }
+  function gather() { setLensDecision(false); gameRef.current?.focus({ preventScroll: true }); }
   function finish(again: boolean) {
     if (current.current.outcome === "active" || pending.current || (!ready && !current.current.story) || blocked || filed.current) return;
     finishAttempted.current = true;
@@ -164,9 +198,10 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   }, [state.story, over, ready, blocked, onFinish]);
   useEffect(() => {
     function keys(event: KeyboardEvent) {
-      if (event.isComposing || event.repeat || event.metaKey || event.ctrlKey || event.altKey || guide || current.current.outcome !== "active") return;
+      if (event.defaultPrevented || event.isComposing || event.repeat || event.metaKey || event.ctrlKey || event.altKey || guide || current.current.outcome !== "active") return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target || !gameRef.current?.contains(target) || !gameRef.current.contains(document.activeElement)) return;
+      if (event.key === "Escape" && cue) { event.preventDefault(); setCue(null); return; }
       if (target.closest("button,a,summary,input,textarea,select,[contenteditable]:not([contenteditable=false]),dialog,[role=dialog],[role=slider],[role=tablist],.exp-input-reading")) return;
       const key = event.key.toLowerCase(), move = KEYS[key];
       if (!move && key !== "i") return;
@@ -179,15 +214,15 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   const prizeHome = !!state.story && state.banked.includes(state.story);
   const prizeSafety = seen.story && (seen.banked.includes(seen.story) ? "safe" : seen.pack.includes(seen.story) ? "carried" : null);
   const prizeLabel = seen.story === "lens" ? "Lens" : seen.story === "vane" ? "Vane" : "Moth";
-  const lastWave = state.outcome === "active" && state.wave === waves - 1;
+  const advice = returnAdvice(seen);
   const title = state.outcome === "rescued" ? "Bram wades out for Mochi." : state.outcome === "turned" ? "The tide turns." : "Home for the day.";
   const lockControls = !ready || paused || busy;
-  const feedback = <div className="exp-feedback passage-feedback" data-testid="tide-feedback" role="status" aria-live="polite">{notice}</div>;
+  const feedback = <div className="exp-feedback passage-feedback" data-testid="tide-feedback" role="status" aria-live="polite">{cue ?? notice}</div>;
 
   return <main ref={gameRef} tabIndex={0} aria-describedby={!over ? "tide-input-hints" : undefined} onPointerDownCapture={event => { if (event.target instanceof HTMLCanvasElement) gameRef.current?.focus({ preventScroll: true }); }} className="exp-game passage-game tide-run" data-mode="court" data-testid="tide-run" data-story={state.story} data-seed={state.seed} data-beat={state.beat} data-wave={state.wave}
-      data-outcome={state.outcome} data-busy={busy} data-score={state.score} data-hearts={state.hearts}>
+      data-outcome={state.outcome} data-busy={busy} data-score={state.score} data-hearts={state.hearts} data-buttons-open={openButtons}>
     <TideWorld key={sceneKey} snapshot={snapshot} transition={result} presentationId={serial.current} paused={paused}
-      onReady={() => setReady(true)} onFault={message => { setFault(message); setReady(false); pending.current = null; setResult(null); }}
+      onReady={() => setReady(true)} onFault={message => { setFault(message); setReady(false); pending.current = null; acceptedLesson.current = null; setResult(null); setCue(null); setNotice(""); }}
       onBeat={beat} onSettled={settle} onTarget={target} onMove={take} onInspect={openGuide} />
     <header className="exp-mast"><div className="exp-brand">familiar.<small>Played and saved on this device</small></div>
       <h1 className="exp-place">{chapter ? chapter.title : "Today’s Tide Run"}</h1>
@@ -219,7 +254,7 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
         {state.story && !prizeHome && <button className="exp-text-button" data-testid="tide-again" disabled={blocked} onClick={() => finish(true)}>Try this tide again</button>}
       </div>
     </section>}
-    {!over && <section className="exp-command-tray passage-tray" aria-label="Guide Mochi">
+    {!over && <section className="exp-command-tray passage-tray" aria-label="Guide Mochi" tabIndex={openButtons ? 0 : undefined} onKeyDown={scrollReadingRegion}>
       {guess !== null && <ol className="tide-asks" aria-label="Today’s asks" aria-live="polite">{STAMPS.map(stamp => {
         const status = stamp.key === "home" ? (seen.score > 0 ? "kept" : undefined)
           : stamp.key === "guess" ? (seen.score >= guess ? "kept" : undefined)
@@ -236,13 +271,14 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
       <div className="tide-controls">
       <ControlHints reading={<div className="tide-tray-reading">
       {chapter && <div className="exp-objective-row"><p className="exp-objective">{chapter.goal}</p></div>}
-      {lastWave && <p className="tide-return-advice">The last wave. Get to the dock.</p>}
+      {advice && <p className="tide-return-advice">{advice}</p>}
       <p className={`exp-forecast${countdown(seen) === 1 ? " tide-forecast-soon" : ""}`} data-testid="tide-forecast" aria-live="polite">{icon(WAVE)}<span>{state.outcome === "active" ? forecast(seen.outcome === "active" ? seen : state) : ""}</span></p>
       <span className="exp-sr-only">Mochi is at {where(seen.position)}. The bridge is at the {LANES[seen.bridge]} lane.</span>
       {feedback}
+      {cue && <button className="exp-text-button tide-dismiss-cue" onClick={() => setCue(null)}>Dismiss cue</button>}
       <p className="tide-dock-instruction">Step onto the center dock to bank cargo. Banking keeps the outing open.</p>
       <p className="tide-pause-explanation" id="tide-pause-explanation">Pause returns you to the harbor with this outing still open.</p>
-      </div>} id="tide-input-hints" context={worldActions.includes("home") ? "Tap Finish to end the outing · tap Wait." : "Tap Wait · prizes collect as you step."} keyboardContext="Space waits · R finishes at the dock · I opens the guide">
+      </div>} id="tide-input-hints" buttonsOpen={openButtons} onButtonsOpenChange={open => { setLocalButtonsOpen(open); onButtonsOpenChange?.(open); }} context={worldActions.includes("home") ? "Tap Finish to end the outing · tap Wait." : "Tap Wait · prizes collect as you step."} keyboardContext="Space waits · R finishes at the dock · I opens the guide">
       <div className="exp-current-controls"><div className="exp-directions" aria-label="Movement">
         {STEPS.map(move => <button key={move} className={`exp-${move}`} data-move={move} aria-label={`Move ${move}`} disabled={lockControls || !legal.includes(move)} onClick={() => take(move)}>{icon(ARROWS[move])}</button>)}
         <button className="exp-wait" data-move="wait" aria-label="Wait one move" disabled={lockControls} onClick={() => take("wait")}>Wait</button>
@@ -256,6 +292,16 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
     {guide && <dialog ref={dialog} className="exp-panel passage-panel" aria-labelledby="tide-guide-title" onCancel={event => { event.preventDefault(); setGuide(false); }}>
       <header className="exp-panel-header"><h2 id="tide-guide-title">How Tide Run works</h2><button className="exp-close" autoFocus aria-label="Close panel" onClick={() => setGuide(false)}>{icon("m6 6 12 12M18 6 6 18")}</button></header>
       <div className="exp-panel-body" tabIndex={0} role="region" aria-label="Tide Run rules" onKeyDown={scrollReadingRegion}><TideRunRules story={initial.story}/></div>
+      {teaching && <button className="exp-text-button" onClick={skipGuidance}>Skip guidance</button>}
+    </dialog>}
+    {lensDecision && <dialog ref={decisionDialog} data-testid="tide-lens-decision" className="exp-panel passage-panel tide-lens-decision" aria-labelledby="lens-decision-title" aria-describedby="lens-decision-copy" onCancel={event => { event.preventDefault(); gather(); }}>
+      <h2 ref={decisionHeading} tabIndex={-1} id="lens-decision-title">Lens safe</h2>
+      <p id="lens-decision-copy">{LENS_SAFE_CUE}</p>
+      <div className="tide-finish-actions">
+        <button className="exp-primary" onClick={() => { setLensDecision(false); take("home", true); }}>Finish and return</button>
+        <button className="exp-secondary" onClick={gather}>Keep gathering</button>
+        <button className="exp-text-button" onClick={skipGuidance}>Skip guidance</button>
+      </div>
     </dialog>}
   </main>;
 }

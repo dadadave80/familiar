@@ -11,6 +11,7 @@ import TideStamp from "./TideStamp";
 import AskIcon from "./AskIcon";
 import { allKept, keptCount, type DayResult } from "./run-day";
 import { HaulRow, StampList } from "./RunStamps";
+import type { HarborMemory } from "../run/story";
 import "./tide.css";
 
 export type LogPage =
@@ -18,8 +19,10 @@ export type LogPage =
   | { kind: "tide"; day: number; card: TideCard; entry: TideEntry }
   | { kind: "run"; day: number; card: TideCard; result: DayResult };
 
-export default function TideLog({ pages, initialPage, reduced, sailBlockedReason, summary, onSail }: {
+export default function TideLog({ pages, memories = [], device = true, initialPage, reduced, sailBlockedReason, summary, onSail }: {
   pages: readonly LogPage[]; initialPage?: number; reduced: boolean; sailBlockedReason: string | null;
+  memories?: readonly HarborMemory[];
+  device?: boolean;
   summary: { sailed: number; kept: number; allThree: number }; onSail: (day: number) => void;
 }): JSX.Element {
   const id = useId();
@@ -68,7 +71,14 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
           : <span key={card.id} className="tide-stamp-empty"><span className="tide-sr">Not collected yet</span></span>)}
       </div>
     </section>
-    {!page ? <p>The log is empty. Bring the lens home and Bram starts the first page.</p> : <>
+    {memories.length > 0 && <section className="tide-memories" aria-label="Harbor memories">
+      <h4>Harbor memories</h4>
+      {memories.map(memory => <details key={memory.id}>
+        <summary>{memory.title}</summary>
+        {memory.lines.map((line, i) => <p key={i}>{line}</p>)}
+      </details>)}
+    </section>}
+    {!page ? <p>{device ? "Harbor memories appear as Mochi brings finds home. Daily pages appear after a finished daily outing." : "The log is empty. Bring the lens home and Bram starts the first page."}</p> : <>
     <div className="tide-pages" role="group" aria-label="Log pages" onKeyDown={event => {
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); move(event.key === "ArrowLeft" ? -1 : 1); }
     }}>

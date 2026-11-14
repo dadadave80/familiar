@@ -14,7 +14,7 @@ export type WorldAction="wait"|"return"|"turn:vane"|"lantern"|"ride"|"listen"|"r
 export interface ActionAnchor {action:WorldAction;x:number;y:number;width:number;height:number}
 export type PassageView=Pick<PassageState,"job"|"stage"|"watched"|"mothHome"|"bellRigged"|"heardBell"|"archOpen">&{rode?:boolean;listened?:boolean;rang?:boolean;pullSpent?:boolean};
 export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;resting?:boolean;services?:readonly PassageJob[];watchedReeds?:boolean;heardBell?:boolean;greeting?:number }
-export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;previewWave?:{source:Column;exit:Column};passage?:PassageView|null;worldActions?:readonly WorldAction[] }
+export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;previewWave?:{source:Column;exit:Column};passage?:PassageView|null;worldActions?:readonly WorldAction[];storyStage?:{kind:"introduction"|"replay"|"lens"|"vane"|"moth";keeper:boolean} }
 export interface WorldHooks {
   command:(command:Command)=>void;
   target:(position:Position)=>void;
@@ -190,7 +190,7 @@ export class ExpeditionScene extends Phaser.Scene {
     if(this.snapshot.reducedMotion)this.pose(companionIdle(0,this.attention(),true).pose);
   }
   update(_time:number,delta:number){
-    if(!this.actor||this.playing||this.gated||this.stopped||this.snapshot.reducedMotion||document.hidden)return;
+    if(!this.actor||this.playing||this.gated||this.stopped||this.snapshot.storyStage||this.snapshot.reducedMotion||document.hidden)return;
     this.idleElapsed+=Math.min(delta,100);
     const idle=companionIdle(this.idleElapsed,this.attention(),false);
     if(this.idleElapsed>1200)this.pose(idle.pose);
@@ -580,7 +580,10 @@ export class ExpeditionScene extends Phaser.Scene {
   private harbor(){
     const portrait=this.w<=900&&this.h>this.w;
     const landscape=!portrait&&this.h<=500;
-    const groundY=portrait?Math.max(230,this.h-522):landscape?this.h*.60:this.h*.81;
+    const stage=this.snapshot.storyStage;
+    const panel=this.game.canvas.closest(".exp-game")?.querySelector<HTMLElement>(".exp-story-panel");
+    const panelTop=panel?.getBoundingClientRect().top??this.h*.48;
+    const groundY=stage?landscape?this.h-36:Math.max(180,panelTop-30):portrait?Math.max(230,this.h-522):landscape?this.h*.60:this.h*.81;
     const source=this.textures.get("exp-island").getSourceImage() as HTMLImageElement;
     const landing=(x:number,y:number,width:number)=>{
       const pier=this.add.image(x,y,"exp-island").setOrigin(.5,.41).setDisplaySize(width,width*source.height/source.width).setDepth(1);this.surfaces.push(pier);
@@ -593,10 +596,17 @@ export class ExpeditionScene extends Phaser.Scene {
       landing(this.w*.40,groundY,this.w*.92);
       landing(this.w*.50,this.h-444,this.w*1.18);
     }
+    if(stage){
+      const lanternX=this.w*(landscape?.34:.76),lanternY=landscape?this.h*.33:Math.max(110,Math.min(180,groundY*.48));
+      this.backdrop.x=lanternX-this.backdrop.displayWidth*(.824-.5);
+      this.backdrop.y=lanternY-this.backdrop.displayHeight*(.222-.5);
+    }
     if(landscape){landing(this.w*.40,groundY,this.w*.55);landing(this.w-224,this.h-146,440);}
     const actorSize=Math.min(180,this.w*.28,this.h*.25);
-    this.actor.setPosition(this.w*(landscape?.43:.49),groundY).setDisplaySize(actorSize,actorSize);this.pose(this.snapshot.home.lit?"relieved":"curious");this.actorShadow.setPosition(this.actor.x,this.actor.y).setSize(actorSize*.5,14);
-    const b=Math.min(255,this.w*.36,this.h*.38);this.bram.setFlipX(false).setPosition(this.w*(landscape?.23:.28),portrait?groundY-4:landscape?this.h*.59:this.h*.82).setDisplaySize(b*.75,b);
+    this.actor.setPosition(this.w*(stage&&landscape?.24:landscape?.43:.49),groundY).setDisplaySize(actorSize,actorSize);this.pose(this.snapshot.home.lit?"relieved":"curious");this.actorShadow.setPosition(this.actor.x,this.actor.y).setSize(actorSize*.5,14);
+    const b=Math.min(255,this.w*.36,this.h*.38);this.bram.setFlipX(false).setPosition(this.w*(stage&&landscape?.10:landscape?.23:.28),stage?groundY-4:portrait?groundY-4:landscape?this.h*.59:this.h*.82).setDisplaySize(b*.75,b);
+    this.keeper.setVisible(!!stage?.keeper);
+    if(stage?.keeper){const height=Math.min(100,this.w*.23,this.h*.20);this.keeper.setPosition(this.w*(landscape?.40:.78),groundY-4).setDisplaySize(height*1.32,height).setAngle(0);}
     const services=this.snapshot.home.services;
     if(services?.includes("bell")){
       const landing=this.homeProps,w=Math.min(27,actorSize*.18);
@@ -681,7 +691,11 @@ export class ExpeditionScene extends Phaser.Scene {
     const root=this.game.canvas.closest<HTMLElement>(".exp-game");
     for(const [place,point] of Object.entries(signs))for(const axis of ["x","y"] as const)root?.style.setProperty(`--exp-anchor-${place}-${axis}`,`${point[axis]}px`);
     for(const axis of ["x","y"] as const)root?.style.setProperty(`--exp-anchor-mochi-${axis}`,`${landmarks.mochi[axis]}px`);
-    if(this.game.canvas.parentElement)this.game.canvas.parentElement.dataset.harborAnchors=JSON.stringify({landmarks,signs});
+    if(this.game.canvas.parentElement){
+      const bounds=(object:Phaser.GameObjects.Image|Phaser.GameObjects.Sprite)=>{const b=object.getBounds();return{x:b.x,y:b.y,width:b.width,height:b.height};};
+      const light=painted(.824,.222),width=this.backdrop.displayWidth,height=this.backdrop.displayHeight;
+      this.game.canvas.parentElement.dataset.harborAnchors=JSON.stringify({landmarks,signs,story:stage?{bram:bounds(this.bram),mochi:bounds(this.actor),lanternRoom:{x:light.x-width*.057,y:light.y-height*.055,width:width*.114,height:height*.11},...(stage.keeper?{keeper:bounds(this.keeper)}:{})}:null});
+    }
   }
   private addHomeFind(item:Find,x:number,y:number,size:number){const image=this.add.image(x,y,`exp-${item}`).setDisplaySize(size,size).setDepth(item==="vane"?11:7);this.cargo.push(image);}
   private async tween(targets:object,config:Omit<Phaser.Types.Tweens.TweenBuilderConfig,"targets">,duration:number){

@@ -51,3 +51,15 @@ export async function sailStory(page:Page){
   await page.getByRole("button",{name:/^Prepare Chapter \d+$/}).click();
   await page.getByRole("button",{name:"Sail with Mochi",exact:true}).click();
 }
+
+/** A repair stays on each earned beat until the player chooses to continue. */
+export async function continueStoryExchange(page:Page){
+  const dialog=page.getByRole("dialog").filter({has:page.getByRole("button",{name:/^Continue(?: with Mochi)?$/,exact:true})});
+  await dialog.waitFor();
+  for(let beat=0;beat<4;beat++){
+    const next=dialog.getByRole("button",{name:"Continue",exact:true});
+    if(await next.count())await next.click();
+    else{await dialog.getByRole("button",{name:"Continue with Mochi",exact:true}).click();return;}
+  }
+  throw Error("Story exchange did not reach its final confirmation");
+}

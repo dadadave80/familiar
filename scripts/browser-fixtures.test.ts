@@ -1,12 +1,14 @@
 import { expect, test } from "bun:test";
 import type { Page, Route } from "@playwright/test";
 import { runInNewContext } from "node:vm";
-import { BROWSER_DAY, prepareBrowser, seasonRpcFixture } from "./browser-fixtures";
+import { BROWSER_DAY, prepareBrowser, seasonRpcFixture, seedGameplayGuidance } from "./browser-fixtures";
+import { GUIDANCE_KEY } from "../web/src/run/guidance";
 
 const rpc=(method:string,args:unknown={},receiver="season.familiar-game.testnet")=>JSON.stringify({jsonrpc:"2.0",id:"season",method:"query",params:{request_type:"call_function",finality:"final",account_id:receiver,method_name:method,args_base64:btoa(JSON.stringify(args))}});
 test("browser RPC fixtures match endpoint, receiver, method and exact arguments",()=>{
   expect(seasonRpcFixture("https://test.rpc.fastnear.com","POST",rpc("get_shelf"),BROWSER_DAY)).toMatchObject({day:BROWSER_DAY});
   expect(seasonRpcFixture("https://test.rpc.fastnear.com","POST",rpc("get_today",{account_id:null}),BROWSER_DAY)).toMatchObject({day:BROWSER_DAY,content_version:"first_light_v2"});
+  expect(seasonRpcFixture("https://test.rpc.fastnear.com","POST",rpc("get_today",{account_id:"helper-a.familiar-game.testnet"}),BROWSER_DAY)).toMatchObject({day:BROWSER_DAY,content_version:"first_light_v2"});
   for(const [method,args] of [["get_account",{account_id:"alice.familiar-game.testnet"}],["get_wish",{pet:"mochi.familiar-game.testnet"}],["get_postcard",{pet:"mochi.familiar-game.testnet"}]] as const)
     expect(seasonRpcFixture("https://test.rpc.fastnear.com","POST",rpc(method,args),BROWSER_DAY)).toBeNull();
   for(const [url,verb,body] of [["https://test.rpc.fastnear.com.evil/","POST",rpc("get_shelf")],["https://test.rpc.fastnear.com/other","POST",rpc("get_shelf")],["https://test.rpc.fastnear.com","GET",rpc("get_shelf")],["https://test.rpc.fastnear.com","POST",rpc("get_shelf",{},"other.testnet")],["https://test.rpc.fastnear.com","POST",rpc("unknown")],["https://test.rpc.fastnear.com","POST",rpc("get_shelf",{unexpected:true})],["https://test.rpc.fastnear.com","POST",rpc("get_today",{account_id:null,extra:true})],["https://test.rpc.fastnear.com","POST",rpc("get_today",{account_id:"unknown.testnet"})]])
@@ -19,7 +21,7 @@ test(`browser preparation shifts only the running wall clock and validates every
   let dateScript!:(time:number)=>void;
   let handle!:(route:Route)=>Promise<unknown>;
   const page={clock:{install:async(value:unknown)=>{calls.push(["install",value]);}},addInitScript:async(callback:typeof dateScript,time:number)=>{dateScript=callback;calls.push(["date",time]);},evaluate:async(callback:typeof dateScript,time:number)=>{dateScript=callback;calls.push(["shift",time]);},route:async(pattern:string,callback:typeof handle)=>{calls.push(["route",pattern]);handle=callback;}} as unknown as Page;
-  const network=await prepareBrowser(page,origin,BROWSER_DAY);
+  const network=await prepareBrowser(page,origin,BROWSER_DAY,{guidance:false});
   const noon=BROWSER_DAY*86_400_000+43_200_000;
   expect(calls).toEqual([["date",noon],["route","**/*"]]);
   let elapsed=10_000;
@@ -71,13 +73,30 @@ test(`browser preparation shifts only the running wall clock and validates every
 test("only deliberate timer-control scenarios install Playwright's full clock",async()=>{
   const calls:unknown[]=[];
   const page={clock:{install:async(value:unknown)=>{calls.push(["manual",value]);}},addInitScript:async()=>{calls.push(["date"]);},route:async()=>{}} as unknown as Page;
-  const manual=await prepareBrowser(page,"http://localhost:3000",BROWSER_DAY,{clock:"manual"});
+  const manual=await prepareBrowser(page,"http://localhost:3000",BROWSER_DAY,{clock:"manual",guidance:false});
   expect(calls).toEqual([["manual",{time:new Date(BROWSER_DAY*86_400_000+43_200_000)}]]);
   calls.length=0;
-  const unclocked=await prepareBrowser(page,"http://localhost:3000",BROWSER_DAY,{clock:false});
+  const unclocked=await prepareBrowser(page,"http://localhost:3000",BROWSER_DAY,{clock:false,guidance:false});
   expect(calls).toEqual([]);
   await expect(manual.setTime(0)).rejects.toThrow("Date shifts require");
   await expect(unclocked.setTime(0)).rejects.toThrow("Date shifts require");
+});
+
+test("gameplay fixtures seed a separate guidance choice while preserving player preferences and game saves",async()=>{
+  const scripts:{callback:(key:string)=>void;key:string}[]=[];
+  const page={addInitScript:async(callback:(key:string)=>void,key:string)=>{scripts.push({callback,key});},route:async()=>{}} as unknown as Page;
+  const saves=new Map([["familiar.expedition.local.v2","ORIGINAL_GAME_SAVE"]]);
+  const localStorage={getItem:(key:string)=>saves.get(key)??null,setItem:(key:string,value:string)=>{saves.set(key,value);}};
+  await prepareBrowser(page,"http://localhost:3000",BROWSER_DAY,{clock:false});
+  expect(scripts).toHaveLength(1);expect(scripts[0]!.key).toBe(GUIDANCE_KEY);
+  const apply=()=>runInNewContext(`(${scripts[0]!.callback.toString()})(key)`,{localStorage,key:GUIDANCE_KEY});
+  apply();expect(JSON.parse(saves.get(GUIDANCE_KEY)!)).toEqual({version:1,intro:"skip",buttons:false});
+  expect(saves.get("familiar.expedition.local.v2")).toBe("ORIGINAL_GAME_SAVE");
+  saves.set(GUIDANCE_KEY,JSON.stringify({version:1,intro:null,buttons:true}));
+  apply();expect(JSON.parse(saves.get(GUIDANCE_KEY)!)).toEqual({version:1,intro:null,buttons:true});
+  scripts.length=0;await prepareBrowser(page,"http://localhost:3000",BROWSER_DAY,{clock:false,guidance:false});
+  expect(scripts).toEqual([]);
+  await seedGameplayGuidance(page);expect(scripts).toHaveLength(1);
 });
 
 test("browser fixtures reject every hosted origin except the existing QA deployment",async()=>{

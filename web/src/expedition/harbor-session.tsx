@@ -15,12 +15,18 @@ const browserStore:Storage={
   getItem:key=>globalThis.localStorage.getItem(key),setItem:(key,value)=>globalThis.localStorage.setItem(key,value),removeItem:key=>globalThis.localStorage.removeItem(key),
   clear:()=>{throw Error("Clearing game storage is unavailable.");},key:index=>globalThis.localStorage.key(index),get length(){return globalThis.localStorage.length;},
 };
-type Children=ReactNode|((session:HarborSession)=>ReactNode);
+type Children=ReactNode|((session:HarborSession,initialRestorationComplete:boolean)=>ReactNode);
 export function HarborSessionProvider({connection,children,storage=browserStore}:{connection:AccountConnection|HarborConnection|null;children:Children;storage?:Pick<Storage,"getItem"|"setItem"|"removeItem">}) {
   const controller=useMemo(()=>new HarborController(connection&&("client"in connection?connection:{adapter:connection.adapter,client:new TideboundClient(connection.adapter.accountRoot,`items.${connection.adapter.accountRoot}`,connection.provider,connection.adapter,storage),accountExists:async accountId=>{await connection.provider.viewAccount({accountId,blockQuery:{finality:"final"}});}}),storage),[connection,storage]);
+  const [restored,setRestored]=useState<HarborController|null>(null);
   useSyncExternalStore(controller.subscribe,()=>controller.state);
-  useEffect(()=>{controller.open();return()=>controller.close();},[controller]);
-  return <Context.Provider value={controller}>{typeof children==="function"?children(controller):children}</Context.Provider>;
+  useEffect(()=>{
+    let current=true;
+    setRestored(null);
+    void controller.open().then(()=>{if(current)setRestored(controller);},()=>{if(current)setRestored(controller);});
+    return()=>{current=false;controller.close();};
+  },[controller]);
+  return <Context.Provider value={controller}>{typeof children==="function"?children(controller,restored===controller):children}</Context.Provider>;
 }
 export function useHarborSession():HarborSession {
   const controller=useContext(Context);if(!controller)throw Error("The game needs one persistent HarborSessionProvider.");

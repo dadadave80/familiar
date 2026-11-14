@@ -3,8 +3,8 @@ import { scrollReadingRegion } from "./keyboard-scroll";
 
 type InputMode = "touch" | "keyboard";
 
-export default function ControlHints({id,context="Tap Wait beside Mochi · tap a find to collect it.",children,reading,initialMode,keyboardContext="Space waits · E interacts · R returns at the dock · I inspects"}:{
-  id:string; context?:string; children:ReactNode; reading?:ReactNode; initialMode?:InputMode; keyboardContext?:string;
+export default function ControlHints({id,context="Tap Wait beside Mochi · tap a find to collect it.",children,reading,initialMode,keyboardContext="Space waits · E interacts · R returns at the dock · I inspects",buttonsOpen,onButtonsOpenChange}:{
+  id:string; context?:string; children:ReactNode; reading?:ReactNode; initialMode?:InputMode; keyboardContext?:string; buttonsOpen?:boolean; onButtonsOpenChange?:(open:boolean)=>void;
 }) {
   const root=useRef<HTMLDivElement>(null);
   const readingArea=useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export default function ControlHints({id,context="Tap Wait beside Mochi · tap a
     </div>;
   return <div ref={root} className="exp-control-hints" data-input={mode}>
     {reading?<div ref={readingArea} className="exp-input-reading" tabIndex={0} role="region" aria-label="Outing guidance" onKeyDown={scrollReadingRegion}>{reading}{help}</div>:help}
-    <details className="exp-button-controls"><summary>Button controls</summary><div className="exp-button-controls-body">{children}</div></details>
+    <details className="exp-button-controls" open={buttonsOpen} onToggle={event=>{if(event.currentTarget.open!==buttonsOpen)onButtonsOpenChange?.(event.currentTarget.open);}}><summary>Button controls</summary><div className="exp-button-controls-body">{children}</div></details>
     {moreReading&&<button className="exp-input-more" aria-label="Read more outing guidance" onClick={()=>{const area=readingArea.current;if(area){area.focus({preventScroll:true});area.scrollBy({top:Math.max(44,area.clientHeight*.75),behavior:"instant"});}}}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 8 7 7 7-7"/></svg></button>}
   </div>;
 }

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { seedGameplayGuidance } from "./browser-fixtures";
 import {mkdtemp} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
@@ -22,8 +23,8 @@ const connection={adapter:{accountRoot:root,async restoreSession(){return locati
  async snapshot(binding){return structuredClone({readAt:'synthetic',binding,journey,checkpointHash:'a'.repeat(64),pets,items:[],nextItemIndex:null})},
  async verifyStack(){},pending(){return null},async send(){throw Error('no sends')},async resumeNative(){throw Error('no')},async reconcileNative(){return 'checked'},async resolveExpiredNative(){return 'not proven'},async view(){throw Error('no view')}}};
 const Game=React.lazy(()=>import('/src/expedition/Game.tsx'));
-function GameProbe(){const session=useHarborSession();return <React.Suspense fallback={<p>Opening</p>}><Game session={session} accountPanel={<HarborAccountPanel/>}/></React.Suspense>}
-createRoot(document.getElementById('root')).render(<HarborSessionProvider connection={connection}><GameProbe/></HarborSessionProvider>);
+function GameProbe({initialRestorationComplete}){const session=useHarborSession();return <React.Suspense fallback={<p>Opening</p>}><Game session={session} initialRestorationComplete={initialRestorationComplete} accountPanel={<HarborAccountPanel/>}/></React.Suspense>}
+createRoot(document.getElementById('root')).render(<HarborSessionProvider connection={connection}>{(_,complete)=><GameProbe initialRestorationComplete={complete}/>}</HarborSessionProvider>);
 `;
 const encode=(v:unknown)=>[...new TextEncoder().encode(JSON.stringify(v))];
 const full=(public_key:string,nonce:number)=>({access_key:{nonce,permission:"FullAccess"},public_key});
@@ -53,6 +54,7 @@ async function serve(records:boolean) {
   await server.listen();return {server,origin:server.resolvedUrls!.local[0]!.replace(/\/$/,"")};
 }
 async function openAccount(page:Page,url:string,rpc:{count:number;fail?:boolean}) {
+  await seedGameplayGuidance(page);
   await page.route(RPC,async route=>{rpc.count++;const body=JSON.parse(route.request().postData()!);assert.equal(body.params.finality,"final");
     await route.fulfill(rpc.fail?{status:502,body:"bad gateway"}:{contentType:"application/json",body:JSON.stringify({jsonrpc:"2.0",id:body.id,...answer(body.params) as object})});});
     await page.goto(url);await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:20000});
@@ -61,7 +63,7 @@ async function openAccount(page:Page,url:string,rpc:{count:number;fail?:boolean}
 const browser=await chromium.launch({headless:true}),on=await serve(true),off=await serve(false);
 try {
   // Let each dev server finish its first dependency optimisation before any checked page loads.
-  for(const origin of [on.origin,off.origin]){const warm=await browser.newPage();await warm.goto(origin+"/__records?signedout");await warm.getByTestId("expedition-world").waitFor({timeout:30000}).catch(()=>{});await warm.waitForTimeout(1500);await warm.close();}
+  for(const origin of [on.origin,off.origin]){const warm=await browser.newPage();await seedGameplayGuidance(warm);await warm.goto(origin+"/__records?signedout");await warm.getByTestId("expedition-world").waitFor({timeout:30000}).catch(()=>{});await warm.waitForTimeout(1500);await warm.close();}
   for(const [width,height] of [[390,844],[1440,900]] as const){
     const page=await browser.newPage({viewport:{width,height}}),errors:string[]=[],external:string[]=[],rpc={count:0};
     page.on("pageerror",e=>errors.push(e.message));page.on("request",r=>{const u=r.url();if(!u.startsWith(on.origin)&&!u.startsWith(RPC)&&!u.startsWith("blob:")&&!u.startsWith("data:"))external.push(u);});

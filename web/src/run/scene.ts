@@ -19,11 +19,12 @@ const same = (a: Position, b: Position) => a.x === b.x && a.y === b.y;
 export type TideAction="wait"|"home";
 export interface TideActionAnchor {action:TideAction;x:number;y:number;width:number;height:number}
 export interface TideTile {position:Position;x:number;y:number;width:number;height:number}
+export interface TideActorBounds {x:number;y:number;width:number;height:number}
 export interface TideSnapshot { readonly tide: TideState; readonly reducedMotion: boolean; readonly worldActions?:readonly TideAction[] }
 export interface TideHooks {
   move:(move:Move)=>void;
   inspect:()=>void;
-  geometry:(tiles:readonly TideTile[],actions:readonly TideActionAnchor[])=>void;
+  geometry:(tiles:readonly TideTile[],actions:readonly TideActionAnchor[],actor:TideActorBounds)=>void;
   target: (position: Position) => void;
   ready: () => void;
   fault: (message: string) => void;
@@ -55,10 +56,12 @@ export class TideScene extends Phaser.Scene {
   private marks: Phaser.GameObjects.GameObject[] = [];
   private shell: Phaser.GameObjects.Image | null = null;
   private pack: Phaser.GameObjects.Image[] = [];
-  private presses=new Map<number,{target:Phaser.GameObjects.GameObject|null;x:number;y:number;excursion:number;touch:boolean;edge:boolean}>();
+  private presses=new Map<number,{target:Phaser.GameObjects.GameObject|null;actor:boolean;x:number;y:number;excursion:number;touch:boolean;edge:boolean}>();
   private contacts=new Set<number>();
   private multipleContacts=false;
   private readingTop:number|null=null;
+  private hudBottom=0;
+  private bottomInset=0;
   private layoutRequested=false;
   private geometryFrame:number|null=null;
   private epoch = 0;
@@ -99,7 +102,7 @@ export class TideScene extends Phaser.Scene {
     this.hints = this.add.graphics().setDepth(2.1);
     this.keeper = this.add.image(0, 0, "tide-keeper").setOrigin(.5, 1).setDepth(3);
     this.actorShadow = this.add.ellipse(0, 0, 50, 13, 0x342719, .25).setDepth(7);
-    this.actor = this.add.sprite(0, 0, "tide-mochi", 12).setOrigin(.5, MOCHI_GROUND).setDepth(10).setInteractive({useHandCursor:true});
+    this.actor = this.add.sprite(0, 0, "tide-mochi", 12).setOrigin(.5, MOCHI_GROUND).setDepth(10);
     this.scale.on("resize", () => {
       this.presses.clear();
       if (this.playing && this.presentationSize) {
@@ -139,20 +142,28 @@ export class TideScene extends Phaser.Scene {
   /** Presentation coordinates are responsive. Logical cells and accepted state never resize. */
   private field() {
     const portrait = this.w <= 900 && this.h > this.w;
-    if (portrait && this.h < 500) { const top = 144, bottom = Math.min(this.h-150,this.readingTop===null?Infinity:this.readingTop-24), width = this.w * .72; return { cx: this.w / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 }; }
-    if (this.h <= 500) {
-      // The painted island and its rings extend below the dock anchor.
-      const available = this.w - 280, width = Math.max(240, Math.min(available * .91, 760)), top = 98, bottom = this.h - (portrait ? 34 : 56);
+    if (portrait && this.h < 760) {
+      const available = this.w - Math.min(182,this.w-168) - 20, width = Math.max(144, available * .84), top = Math.max(this.h <= 600 ? 156 : 238, this.hudBottom + 44), bottom = this.h - Math.max(72,this.bottomInset+44);
       return { cx: available / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 };
     }
-    const top = portrait ? (this.h < 650 ? 151 : Math.max(200, this.h * .29)) : Math.max(190, this.h * .31);
+    if (this.h <= 500) {
+      // The painted island and its rings extend below the dock anchor.
+      const available = this.w - 280, width = Math.max(240, Math.min(available * .91, 760)), top = 98, bottom = this.h - 56;
+      return { cx: available / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 };
+    }
+    const top = portrait ? Math.max(200, this.h * .29, this.hudBottom + 24) : Math.max(190, this.h * .31);
     const bottom = portrait ? Math.min(this.h-170,this.readingTop===null?Infinity:this.readingTop-48) : this.h - 72;
     const width = Math.min(portrait ? this.w * .72 : this.w * .50, 760);
     return { cx: portrait ? this.w * .5 : this.w * .45, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 };
   }
   private point(position: Position) { const f = this.field(); return { x: f.cx + (position.x - 1) * f.dx, y: f.bottom - position.y * f.dy }; }
   private tileSize() { const f = this.field(); return { width: Math.min(f.dx * .99, 220), height: Math.max(33, Math.min(f.dy * .65, 72)) }; }
-  private actorSize() { return Math.min(this.field().dx * .66, this.field().dy * 1.1, 112); }
+  private targetSize() { const f = this.field(), tile = this.tileSize(); return { width: Math.max(44, tile.width), height: Math.max(44, Math.min(tile.height + 15, f.dy - 2)) }; }
+  private actorSize() {
+    const f = this.field();
+    // Leave the full northern target clear of Mochi's bounds, including her idle breath.
+    return Math.min(f.dx * .66, (f.dy - this.targetSize().height / 2 - 2) / MOCHI_GROUND, 112);
+  }
   private prizeSize(kind: Item) { return Math.min(kind === "reed" ? 62 : kind === "moth" ? 58 : 50, this.tileSize().width * .55); }
   private pose(name: MochiPoseName) { this.actorPose = name; this.actor.setFrame(MOCHI_POSES[name].frame); }
   private keep<T extends Phaser.GameObjects.GameObject>(part: T) { this.parts.push(part); return part; }
@@ -209,8 +220,12 @@ export class TideScene extends Phaser.Scene {
     this.presses.clear();
     if(!this.playing){
       this.layoutRequested=false;
-      const reading=this.game.canvas.closest(".exp-game")?.querySelector<HTMLElement>(".exp-command-tray");
-      this.readingTop=reading?.getClientRects().length?reading.getBoundingClientRect().top-this.game.canvas.getBoundingClientRect().top:null;
+      const root=this.game.canvas.closest<HTMLElement>(".exp-game"),canvas=this.game.canvas.getBoundingClientRect();
+      const reading=root?.querySelector<HTMLElement>(".exp-command-tray"),hud=root?.querySelector<HTMLElement>(".exp-hud");
+      this.hudBottom=hud?.getClientRects().length?hud.getBoundingClientRect().bottom-canvas.top:0;
+      this.bottomInset=reading?Number.parseFloat(getComputedStyle(reading).bottom)||0:0;
+      root?.style.setProperty("--tide-board-top",`${this.field().top}px`);
+      this.readingTop=reading?.getClientRects().length?reading.getBoundingClientRect().top-canvas.top:null;
     }
     for(const zone of [...this.tileZones,...this.actionZones.values()])zone.disableInteractive();
     for (const part of this.parts) part.destroy();
@@ -233,7 +248,7 @@ export class TideScene extends Phaser.Scene {
         this.ground.lineStyle(1, 0xe5edce, .35).strokeEllipse(p.x, p.y + tile.width * .1, tile.width * 1.09, tile.width * .24);
         this.keep(this.add.image(p.x, p.y, "tide-island").setOrigin(.5, .41).setDisplaySize(tile.width, tile.width * island.height / island.width).setDepth(1));
       } else if (x !== tide.bridge) this.ground.lineStyle(2, 0xa8c8bd, .4).strokeEllipse(p.x, p.y + 6, tile.width * .6, tile.height * .45);
-      const width=Math.max(44,tile.width),height=Math.max(44,Math.min(tile.height+15,f.dy-2));
+      const {width,height}=this.targetSize();
       const index=y*3+x;
       let zone=this.tileZones[index];
       if(!zone){zone=this.add.zone(p.x,p.y,width,height).setInteractive({useHandCursor:true}).setDepth(16).setData("cellTarget",position);this.tileZones[index]=zone;}
@@ -260,13 +275,14 @@ export class TideScene extends Phaser.Scene {
       this.prizes.set(`${item.x},${item.y}`, this.keep(this.add.image(p.x + beside, p.y - size * .36, `tide-${item.kind}`).setDisplaySize(size, size).setDepth(6)));
     }
     const p = this.point(tide.position), size = this.actorSize();
-    this.actor.setPosition(p.x, p.y).setDisplaySize(size, size).setFlipX(false).setData("worldAction",this.snapshot.worldActions?.includes("wait")?"wait":null);
+    this.actor.setPosition(p.x, p.y).setDisplaySize(size, size).setFlipX(false);
     this.actorShadow.setPosition(p.x, p.y + 2).setSize(size * .55, Math.max(4, size * .1));
     this.pose(tide.outcome === "rescued" ? "startled" : tide.outcome !== "active" ? "relieved" : "curious");
     this.drawPack(tide.pack);
     this.forecast();
     this.resetIdle();
-    this.hooks.geometry(targets,this.actionTargets(tide,targets));
+    const actor=this.actor.getBounds();
+    this.hooks.geometry(targets,this.actionTargets(tide,targets),{x:actor.centerX,y:actor.centerY,width:actor.width,height:actor.height});
   }
 
   private clientPoint(pointer:Phaser.Input.Pointer){
@@ -285,7 +301,7 @@ export class TideScene extends Phaser.Scene {
     const touch=pointer.wasTouch||("pointerType" in event&&event.pointerType==="pen");
     if(!touch&&!pointer.leftButtonDown()&&!pointer.rightButtonDown())return;
     const target=over.find(object=>object.getData("cellTarget")||object.getData("worldAction"))??null;
-    this.presses.set(pointer.id,{target,x:point.x,y:point.y,excursion:0,touch,edge:point.x-rect.left<24||rect.right-point.x<24});
+    this.presses.set(pointer.id,{target,actor:this.actor.getBounds().contains(pointer.x,pointer.y),x:point.x,y:point.y,excursion:0,touch,edge:point.x-rect.left<24||rect.right-point.x<24});
   }
   private release(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[]){
     const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);this.contacts.delete(pointer.id);this.afterRelease();
@@ -298,7 +314,10 @@ export class TideScene extends Phaser.Scene {
       const command=swipeCommand(point.x-press.x,point.y-press.y);
       if(command){this.hooks.move(command.slice(5) as Move);return;}
     }
-    if(excursion>12||!press.target||!over.includes(press.target))return;
+    if(excursion>12)return;
+    // Tapping Mochi is free; holding her opens inspection.
+    if(press.actor){if(pointer.rightButtonReleased()||pointer.getDuration()>450)this.hooks.inspect();return;}
+    if(!press.target||!over.includes(press.target))return;
     if(pointer.rightButtonReleased()||pointer.getDuration()>450){this.hooks.inspect();return;}
     if(!press.touch&&!pointer.leftButtonReleased())return;
     const action=press.target.getData("worldAction") as TideAction|undefined;
@@ -307,9 +326,11 @@ export class TideScene extends Phaser.Scene {
   }
   private actionTargets(tide:TideState,tiles:readonly TideTile[]):TideActionAnchor[]{
     const anchors:TideActionAnchor[]=[],canvas=this.game.canvas.getBoundingClientRect(),f=this.field();
-    const blocked=Array.from(this.game.canvas.closest(".exp-game")?.querySelectorAll<HTMLElement>(".exp-command-tray,.exp-hud,.exp-mast,.exp-feedback")??[])
+    const blocked=Array.from(this.game.canvas.closest(".exp-game")?.querySelectorAll<HTMLElement>(".exp-command-tray,.exp-hud,.exp-mast,.exp-feedback,.exp-button-controls[open] .exp-button-controls-body")??[])
       .filter(element=>element.getClientRects().length&&getComputedStyle(element).visibility!=="hidden")
       .map(element=>{const r=element.getBoundingClientRect();return{x:r.left-canvas.left+r.width/2,y:r.top-canvas.top+r.height/2,width:r.width,height:r.height};});
+    const actor=this.actor.getBounds();
+    blocked.push({x:actor.centerX,y:actor.centerY,width:actor.width,height:actor.height});
     const overlaps=(a:{x:number;y:number;width:number;height:number},b:typeof a)=>Math.abs(a.x-b.x)<(a.width+b.width)/2+2&&Math.abs(a.y-b.y)<(a.height+b.height)/2+2;
     const moves=legalMoves(tide),cells=tiles.filter(cell=>moves.some(move=>{const to=stepDestination(tide,move);return to&&same(to,cell.position);}));
     for(const action of this.snapshot.worldActions??[]){

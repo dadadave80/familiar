@@ -16,7 +16,7 @@ import {dayResult} from "../web/src/run/save";
 import {BROWSER_DAY,prepareBrowser} from "./browser-fixtures";
 
 // Actual React controller/provider/panel; all account/RPC ports below are isolated synthetic fixtures.
-const id="\0expedition-harbor-fixture.tsx",dir=await mkdtemp(join(tmpdir(),"familiar-expedition-harbor-"));
+const id="\0expedition-harbor-fixture.tsx",guidanceId="\0expedition-guidance-fixture.tsx",dir=await mkdtemp(join(tmpdir(),"familiar-expedition-harbor-"));
 const fixturePublicKey=KeyPair.fromRandom("ed25519").getPublicKey().toString();
 let publicViews=0;
 const captureRoutes=courtFixtures.cases.filter(row=>["beacon-rope-objective","beacon-rope-rescue"].includes(row.id)).map(row=>({id:row.id,start:row.start,commands:row.commands}));
@@ -127,12 +127,107 @@ function Probe(){const session=useHarborSession();fixture.port=session;return <>
 <button onClick={async()=>{const c=session.runContext({banked:[],lit:false,signaled:false});const r=applyCommand(startCourt({area:'beacon',tool:'rope',banked:c.banked}),'return').after;await session.captureReturn(r,c)}}>Keep fixture memory</button>
 {session.state.review&&<section role="dialog" aria-label={session.state.review.title}><h2>{session.state.review.title}</h2><p>{session.state.review.description}</p><p>{session.state.review.costs.join(' ')}</p><button onClick={()=>session.confirm(session.state.review.id).catch(()=>{})}>Confirm reviewed action</button><button onClick={()=>session.cancelReview()}>Cancel review</button></section>}</>}
 const Game=React.lazy(()=>import('/src/expedition/Game.tsx'));
-function GameProbe(){const session=useHarborSession();fixture.port=session;return <React.Suspense fallback={<p>Opening fixture world</p>}><Game session={session} accountPanel={<HarborAccountPanel/>}/></React.Suspense>}
-function App(){const[open,setOpen]=useState(true);fixture.close=()=>setOpen(false);fixture.reopen=()=>setOpen(true);const game=location.pathname.endsWith('-game');return <div><p style={game?{position:'fixed',inset:'0 0 auto',zIndex:99999,fontSize:11,margin:0,background:'#fff4df',color:'#20291e',pointerEvents:'none'}:{}}>Synthetic controller fixture · no real identity or chain</p>{open?<HarborSessionProvider connection={connection}>{game?<GameProbe/>:<Probe/>}</HarborSessionProvider>:<p>Controller closed</p>}</div>}
+function GameProbe({initialRestorationComplete}){const session=useHarborSession();fixture.port=session;return <React.Suspense fallback={<p>Opening fixture world</p>}><Game session={session} initialRestorationComplete={initialRestorationComplete} accountPanel={<HarborAccountPanel/>}/></React.Suspense>}
+function App(){const[open,setOpen]=useState(true);fixture.close=()=>setOpen(false);fixture.reopen=()=>setOpen(true);const game=location.pathname.endsWith('-game');return <div><p style={game?{position:'fixed',inset:'0 0 auto',zIndex:99999,fontSize:11,margin:0,background:'#fff4df',color:'#20291e',pointerEvents:'none'}:{}}>Synthetic controller fixture · no real identity or chain</p>{open?<HarborSessionProvider connection={connection}>{(_,complete)=>game?<GameProbe initialRestorationComplete={complete}/>:<Probe/>}</HarborSessionProvider>:<p>Controller closed</p>}</div>}
 createRoot(document.getElementById('root')).render(<App/>);
 `;
+const guidanceEntry=`
+import '/src/browser-globals.ts';
+import React,{useState} from 'react';import{createRoot}from'react-dom/client';
+import{HarborSessionProvider}from'/src/expedition/harbor-session.tsx';
+const Game=React.lazy(()=>import('/src/expedition/Game.tsx'));
+const root='familiar-game.testnet',pub=${JSON.stringify(fixturePublicKey)};
+const fixture=window.__guidanceLifecycle={requests:[],reads:[],sends:[],port:null};
+fixture.binding=name=>({playerId:'fixture-'+name,network:'testnet',nearAccountId:'helper-'+name.toLowerCase()+'.'+root,signerPublicKey:pub,signerBindingId:'synthetic-'+name});
+function connection(name){return {name,adapter:{accountRoot:root,restoreSession(){return new Promise(resolve=>fixture.requests.push({name,finish:resolve}))},async authenticate(){return fixture.binding(name)},async endSession(){},async provisionAccount(){throw Error('must not provision')}},accountExists:async()=>{},client:{root,itemsContract:'items.'+root,
+ async snapshot(binding){fixture.reads.push(name);return {readAt:'synthetic',binding,checkpointHash:'a'.repeat(64),pets:[{token_id:'mochi.'+root}],items:[],nextItemIndex:null,journey:{revision:1,banked:['lens'],lit:true,signaled:false,lens_claim:'b'.repeat(64),moth_claim:null,credit:'available',workshop_salvage:1,bram_budget:12,shells:0,burned_shells:0,commission_fulfilled:false,craft:null,polish:null,placement:null}}},
+ async verifyStack(){},pending(){return null},async send(){fixture.sends.push(name);throw Error('unexpected synthetic signing')},async resumeNative(){throw Error('unexpected resume')},async reconcileNative(){throw Error('unexpected reconcile')},async resolveExpiredNative(){throw Error('unexpected expiry')},async view(){throw Error('unexpected view')},
+}}}
+function App(){const[current,setCurrent]=useState(()=>connection('A')),[revealed,setRevealed]=useState(false);fixture.replace=name=>setCurrent(connection(name));fixture.reveal=()=>setRevealed(true);return <HarborSessionProvider connection={current}>{(session,complete)=>{fixture.port=session;return <React.Suspense fallback={<p>Opening lifecycle fixture</p>}><output hidden data-testid="guidance-restoration" data-controller={current.name} data-complete={complete}/><Game session={session} initialRestorationComplete={complete} titleHandoffComplete={revealed}/></React.Suspense>}}</HarborSessionProvider>}
+createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);
+`;
+async function checkGuidanceLifecycle(browser:import("@playwright/test").Browser,origin:string){
+ const guidanceKey="familiar.guidance.keep-wrens-light.v1",saveKey="familiar.expedition.local.v2",bookKey=saveKey+":tide-run.v1";
+ const fixture=async(earnedLens=false)=>{
+  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),page=await context.newPage(),errors:string[]=[];
+  const network=await prepareBrowser(page,origin,BROWSER_DAY,{guidance:false});page.on("pageerror",error=>errors.push(error.message));
+  if(earnedLens)await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:2,home:{banked:["lens"],lit:false,signaled:false,lantern:null},active:null,last:null})),saveKey);
+  await page.goto(origin+"/__guidance");await page.bringToFront();
+  await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:20000});
+  await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-lease","held");
+  await expect.poll(()=>page.evaluate(()=>(window as any).__guidanceLifecycle.requests.filter((request:any)=>request.name==="A").length)).toBe(2);
+  await expect(page.getByTestId("guidance-restoration")).toHaveAttribute("data-complete","false");
+  return {page,async close(){network.assertClean();assert.deepEqual(errors,[]);assert.deepEqual(await page.evaluate(()=>(window as any).__guidanceLifecycle.sends),[],"guidance lifecycle sends no account action");publicViews+=network.rpc.length;await context.close();}};
+ };
+ const settle=async(page:Page,name:string,index=-1,bound=false)=>{
+  await expect.poll(()=>page.evaluate(({name,index})=>(window as any).__guidanceLifecycle.requests.filter((request:any)=>request.name===name).length>Math.max(0,index),{name,index})).toBe(true);
+  await page.evaluate(({name,index,bound})=>{const f=(window as any).__guidanceLifecycle,requests=f.requests.filter((request:any)=>request.name===name),request=requests.at(index);assertFixture(request);request.finish(bound?f.binding(name):null);function assertFixture(value:unknown):asserts value{if(!value)throw Error("Missing deferred restoration");}},{name,index,bound});
+ };
+ const frames=async(page:Page)=>{await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));};
+ const pristine=await fixture();
+ try{
+  const {page}=pristine,restoration=page.getByTestId("guidance-restoration"),intro=page.getByRole("dialog",{name:"Keep Wren’s Light",exact:true});
+  await settle(page,"A",0,true);await frames(page);
+  await expect(restoration).toHaveAttribute("data-complete","false");assert.deepEqual(await page.evaluate(()=>(window as any).__guidanceLifecycle.reads),[],"StrictMode cleanup fences the first restore before canonical reads");
+  await page.evaluate(()=>(window as any).__guidanceLifecycle.replace("B"));
+  await expect(restoration).toHaveAttribute("data-controller","B");await expect(restoration).toHaveAttribute("data-complete","false");
+  await settle(page,"A",1,true);await frames(page);
+  await expect(restoration).toHaveAttribute("data-complete","false");assert.equal(await page.evaluate(()=>(window as any).__guidanceLifecycle.port.state.binding),null,"old controller completion cannot restore its replacement");
+  await settle(page,"B");await expect(restoration).toHaveAttribute("data-complete","true");await frames(page);await expect(intro).toHaveCount(0);
+  await page.evaluate(()=>(window as any).__guidanceLifecycle.reveal());await expect(intro).toBeVisible();await expect(intro.getByRole("heading")).toBeFocused();
+  await page.evaluate(()=>(window as any).__guidanceLifecycle.replace("C"));
+  await expect(restoration).toHaveAttribute("data-controller","C");await expect(restoration).toHaveAttribute("data-complete","false");await expect(intro).toHaveCount(0);
+  await settle(page,"C");await expect(restoration).toHaveAttribute("data-complete","true");await frames(page);await expect(intro).toHaveCount(0);
+  assert.equal(await page.evaluate(key=>localStorage.getItem(key),guidanceKey),null,"cancelling a mismatched introduction changes no preference");
+ }finally{await pristine.close();}
+ const escaped=await fixture();
+ try{
+  const {page}=escaped;await settle(page,"A",1);await page.evaluate(()=>(window as any).__guidanceLifecycle.reveal());
+  const intro=page.getByRole("dialog",{name:"Keep Wren’s Light",exact:true});await expect(intro.getByRole("heading")).toBeFocused();
+  const untouched=await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[saveKey,bookKey]);await page.keyboard.press("Escape");await expect(intro).toHaveCount(0);
+  assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),guidanceKey),{version:1,intro:"skip",buttons:false},"Escape records the current automatic introduction choice");
+  assert.deepEqual(await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[saveKey,bookKey]),untouched,"Escape changes guidance only");
+ }finally{await escaped.close();}
+ const interacted=await fixture();
+ try{
+  const {page}=interacted;await page.getByRole("button",{name:"Game menu",exact:true}).click();await page.getByRole("button",{name:"Back to Mochi",exact:true}).click();
+  await page.evaluate(()=>(window as any).__guidanceLifecycle.replace("B"));await expect(page.getByTestId("guidance-restoration")).toHaveAttribute("data-controller","B");
+  await settle(page,"A",0,true);await settle(page,"A",1,true);await settle(page,"B");await expect(page.getByTestId("guidance-restoration")).toHaveAttribute("data-complete","true");
+  await page.evaluate(()=>(window as any).__guidanceLifecycle.reveal());await frames(page);await expect(page.getByRole("dialog",{name:"Keep Wren’s Light",exact:true})).toHaveCount(0);
+  assert.equal(await page.evaluate(key=>localStorage.getItem(key),saveKey),null,"opening and closing a menu does not create progress");assert.equal(await page.evaluate(key=>localStorage.getItem(key),guidanceKey),null,"a prior local interaction suppresses a late introduction without recording Help or Skip");
+ }finally{await interacted.close();}
+ const local=await fixture();
+ try{
+  const {page}=local;await page.evaluate(()=>(window as any).__guidanceLifecycle.reveal());
+  await page.getByRole("button",{name:"Prepare Chapter 1",exact:true}).click();await page.getByRole("button",{name:"Sail with Mochi",exact:true}).click();
+  await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true");const trace=await page.evaluate(key=>localStorage.getItem(key),bookKey);
+  await page.evaluate(()=>(window as any).__guidanceLifecycle.replace("B"));await expect(page.getByTestId("guidance-restoration")).toHaveAttribute("data-controller","B");
+  await settle(page,"A",0,true);await settle(page,"A",1,true);await settle(page,"B",-1,true);
+  await expect(page.getByTestId("guidance-restoration")).toHaveAttribute("data-complete","true");
+  await page.getByRole("button",{name:"Pause outing",exact:true}).click();await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
+  await frames(page);await expect(page.getByRole("dialog",{name:"Keep Wren’s Light",exact:true})).toHaveCount(0);await expect(page.getByRole("button",{name:"Resume outing",exact:true})).toBeVisible();
+  assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),trace,"restoration and replacement preserve a locally started outing");assert.equal(await page.evaluate(key=>localStorage.getItem(key),guidanceKey),null,"starting local play while restoration waits does not make an introduction choice");
+ }finally{await local.close();}
+ for(const replacement of ["controller","branch"] as const){
+  const repair=await fixture(true);
+  try{
+   const {page}=repair;await settle(page,"A",1,true);await page.evaluate(()=>(window as any).__guidanceLifecycle.reveal());await expect(page.getByTestId("guidance-restoration")).toHaveAttribute("data-complete","true");
+   await page.getByRole("button",{name:"Fit the Beacon Lens",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"Fit the Beacon Lens",exact:true}).click();
+   const exchange=page.getByRole("dialog",{name:"Wren’s light",exact:true});await expect(exchange).toContainText("Mochi lifts the lens into place. The beacon finds the bay again.");
+   const earned=await page.evaluate(key=>localStorage.getItem(key),saveKey);
+   if(replacement==="controller"){
+    await page.evaluate(()=>(window as any).__guidanceLifecycle.replace("B"));await expect(exchange).toHaveCount(0);await settle(page,"B");
+   }else{
+    await page.evaluate(async()=>{await (window as any).__guidanceLifecycle.port.selectSaved();});await expect(page.getByTestId("guidance-restoration")).toHaveAttribute("data-complete","true");await expect(exchange).toHaveCount(0);
+    await page.evaluate(()=>(window as any).__guidanceLifecycle.port.selectPreview());await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
+   }
+   await frames(page);await expect(exchange).toHaveCount(0);assert.equal(await page.evaluate(key=>localStorage.getItem(key),saveKey),earned,`${replacement} cancellation preserves the earned repair`);
+   await page.getByRole("button",{name:"Open the tide log",exact:true}).and(page.locator(":visible")).click();const log=page.getByRole("dialog",{name:"Bram’s tide log",exact:true});await expect(log.locator(".tide-memories summary")).toHaveCount(2);
+  }finally{await repair.close();}
+ }
+}
 const server=await createServer({configFile:false,root:resolve(import.meta.dir,"../web"),envDir:false,envPrefix:[],cacheDir:join(dir,"vite-cache"),logLevel:"error",
- plugins:[{name:"expedition-harbor-fixture",resolveId(source){if(source!=="/__harbor-fixture.tsx")return;return id;},async load(source){if(source===id)return (await transformWithOxc(entry,"harbor-fixture.tsx")).code;},configureServer(server){server.middlewares.use((req,res,next)=>{if(!["/__harbor","/__harbor-game"].includes(req.url??"")){next();return;}res.setHeader("Content-Type","text/html");res.end('<!doctype html><div id="root"></div><script type="module" src="/__harbor-fixture.tsx"></script>');});}}],server:{host:"127.0.0.1",port:0}});
+ plugins:[{name:"expedition-harbor-fixture",resolveId(source){return source==="/__harbor-fixture.tsx"?id:source==="/__guidance-fixture.tsx"?guidanceId:undefined;},async load(source){if(source===id||source===guidanceId)return (await transformWithOxc(source===id?entry:guidanceEntry,"harbor-fixture.tsx")).code;},configureServer(server){server.middlewares.use((req,res,next)=>{if(!["/__harbor","/__harbor-game","/__guidance"].includes(req.url??"")){next();return;}res.setHeader("Content-Type","text/html");res.end('<!doctype html><div id="root"></div><script type="module" src="'+(req.url==="/__guidance"?"/__guidance-fixture.tsx":"/__harbor-fixture.tsx")+'"></script>');});}}],server:{host:"127.0.0.1",port:0}});
 await server.listen();const origin=server.resolvedUrls!.local[0]!.replace(/\/$/,""),browser=await chromium.launch({headless:true});
 try{
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(),external:string[]=[],errors:string[]=[];
@@ -192,5 +287,5 @@ try{
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.displayLantern('moth',true);await f.port.refresh();});await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-motif','moth');
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.removeHeldLantern();await f.port.refresh();});await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-motif',/.+/);await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-finish',/.+/);assert.equal(await game.evaluate(()=>(window as any).__harbor.sends.length),1);
  const geometry=await game.evaluate(()=>({x:scrollX,y:scrollY,scroll:document.documentElement.scrollHeight,height:innerHeight}));assert.equal(geometry.x,0);assert.equal(geometry.y,0);assert(geometry.scroll<=geometry.height+1);
- network.assertClean();gameNetwork.assertClean();publicViews+=network.rpc.length+gameNetwork.rpc.length;await gameContext.close();await checkReturnLayouts(browser,origin);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,harborLayouts:"fresh, before today’s tide, all three kept, one kept, rescued, longest Tomorrow; six viewports",externalRequests:0,mockedRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
+ network.assertClean();gameNetwork.assertClean();publicViews+=network.rpc.length+gameNetwork.rpc.length;await gameContext.close();await checkReturnLayouts(browser,origin);await checkGuidanceLifecycle(browser,origin);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,guidanceLifecycle:"StrictMode stale restoration, replacement identities, title handoff, local play while restoration waits, no late introduction, controller/branch exchange cancellation",harborLayouts:"fresh, before today’s tide, all three kept, one kept, rescued, longest Tomorrow; six viewports",externalRequests:0,mockedRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
 }finally{await browser.close();await server.close();}

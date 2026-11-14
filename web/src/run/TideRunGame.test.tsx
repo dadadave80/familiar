@@ -4,11 +4,11 @@ import TideRunGame, { TideRunRules } from "./TideRunGame";
 import { applyMove, startTide, type TideState } from "./engine";
 import { CHAPTERS, itemName, storyStart } from "./story";
 
-function render(initial: TideState, blocked = false) {
+function render(initial: TideState, blocked = false, preferences: { guidance?: boolean; buttonsOpen?: boolean } = {}) {
   const document = Object.getOwnPropertyDescriptor(globalThis, "document"), onFinish = mock(() => true);
   Object.defineProperty(globalThis, "document", { configurable: true, value: { hidden: false } });
   try {
-    const html = renderToStaticMarkup(<TideRunGame initial={initial} reduced sound={false} audio={null} blocked={blocked}
+    const html = renderToStaticMarkup(<TideRunGame initial={initial} reduced sound={false} audio={null} blocked={blocked} {...preferences}
       onSave={() => true} onFinish={onFinish} onLeave={() => {}} onToggleSound={() => {}}/>);
     return { html, onFinish };
   } finally {
@@ -102,9 +102,33 @@ test("chapter briefings are narration without inventing Bram dialogue", () => {
 });
 
 test("the named objective remains visible beside last-wave advice", () => {
-  const { html } = render({ ...startTide(storyStart("lens")), wave: 7, beat: 21 });
+  const { html } = render({ ...startTide(storyStart("lens")), wave: 7, beat: 21, pack: ["reed"] });
   expect(html).toContain(CHAPTERS.lens.goal);
-  expect(html).toContain("The last wave. Get to the dock.");
+  expect(html).toContain("Last wave. Bank what you can at the center dock.");
+});
+
+test("guidance starts with one dismissible movement cue and never replays it for a resumed trace", () => {
+  const initial = startTide(storyStart("lens")), line = "Swipe on the board, or tap a glowing neighboring stone. Mochi moves one step at a time.";
+  const guided = render(initial, false, { guidance: true }).html;
+  expect(guided.split(line)).toHaveLength(2);
+  expect(guided).toContain("Dismiss cue");
+  expect(guided).toContain(CHAPTERS.lens.goal);
+  expect(render(initial).html).not.toContain(line);
+  const resumed = applyMove(initial, "wait")!.after;
+  expect(render(resumed, false, { guidance: true }).html).not.toContain(line);
+  const banked = render({ ...resumed, banked: ["lens"] }, false, { guidance: true }).html;
+  expect(banked).not.toContain('data-testid="tide-lens-decision"');
+  expect(banked).toContain('data-testid="tide-finish-return"');
+});
+
+test("remembered button controls open without changing the outing", () => {
+  const initial = startTide(storyStart("lens")), before = JSON.stringify(initial);
+  const { html } = render(initial, false, { buttonsOpen: true, guidance: true });
+  expect(html).toContain('<details class="exp-button-controls" open="">');
+  expect(html).toContain('data-buttons-open="true"');
+  expect(html).toContain('aria-label="Guide Mochi" tabindex="0"');
+  expect(html).toContain('aria-label="Wait one move"');
+  expect(JSON.stringify(initial)).toBe(before);
 });
 
 test("shared Tide Run rules explain timing, cargo and activity length", () => {
