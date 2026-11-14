@@ -3,10 +3,11 @@ import TideWorld from "./TideWorld";
 import { HEARTS, PACK_SLOTS, SLOTS, applyMove, countdown, legalMoves, stepDestination, tideShape, type Move, type Position, type TideEvent, type TideState, type TideTransition } from "./engine";
 import { bramsGuess } from "./bot";
 import { CHAPTERS, aPrize, consequence, itemName, laneNames } from "./story";
-import { dayResult } from "./save";
+import { STAMPS } from "../tide/run-day";
 import type { HarborAudio } from "../expedition/audio";
 import type { CourtEvent } from "../expedition/types";
 import "../expedition/passage-game.css";
+import "../tide/tide.css";
 import "./tide-run.css";
 
 interface Props {
@@ -68,6 +69,7 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   const [ready, setReady] = useState(false), [fault, setFault] = useState(""), [sceneKey, setSceneKey] = useState(0);
   const [away, setAway] = useState(document.hidden), [guide, setGuide] = useState(false);
   const [finishError, setFinishError] = useState(false);
+  const finishAttempted = useRef(false), filed = useRef(false);
   const chapter = initial.story ? CHAPTERS[initial.story] : null;
   const [notice, setNotice] = useState(() => initial.outcome !== "active" || initial.moves.length ? "" : chapter ? `Bram: “${chapter.before}”` : `The Tidekeeper turns to the ${laneNames(initial.next.lanes).toLowerCase()} lane.`);
   const dialog = useRef<HTMLDialogElement>(null), guideButton = useRef<HTMLButtonElement>(null);
@@ -112,11 +114,22 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
     pending.current = null; setResult(null);
   }
   function target(position: Position) { const move = moveToward(current.current, position); if (move) take(move); }
-  function finish(again: boolean) { setFinishError(!onFinish(current.current, again)); }
+  function finish(again: boolean) {
+    if (!current.current.story) {
+      if (!over || !ready || blocked || filed.current) return;
+      finishAttempted.current = true;
+    }
+    const saved = onFinish(current.current, again);
+    if (!current.current.story && saved) filed.current = true;
+    setFinishError(!saved);
+  }
   function leave() {
     if (blocked) return;
     if (current.current.outcome !== "active") finish(false); else onLeave();
   }
+  useEffect(() => {
+    if (!state.story && over && ready && !blocked && !finishAttempted.current) finish(false);
+  }, [state.story, over, ready, blocked, onFinish]);
   useEffect(() => {
     function keys(event: KeyboardEvent) {
       if (event.isComposing || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || guide ||
@@ -133,10 +146,8 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
 
   const prizeHome = !!state.story && state.banked.includes(state.story);
   const lastWave = state.outcome === "active" && state.wave === waves - 1;
-  const objective = lastWave ? "The last wave. Get to the dock." : chapter ? (prizeHome ? "The rest of the tide is yours. Bank what you can." : chapter.goal) : `Bram’s guess for today is ${guess}. Beat it.`;
-  const finished = over ? dayResult(state) : null;
+  const objective = lastWave ? "The last wave. Get to the dock." : chapter ? (prizeHome ? "The rest of the tide is yours. Bank what you can." : chapter.goal) : "";
   const title = state.outcome === "rescued" ? "Bram wades out for Mochi." : state.outcome === "turned" ? "The tide turns." : "Home for the day.";
-  const stamps = finished && !state.story ? [["Came home with something", finished.stamps.home], [`Matched Bram’s guess of ${finished.guess}`, finished.stamps.guess], ["Dry paws", finished.stamps.dry]] as const : [];
   const lockControls = !ready || paused || busy;
   const feedback = <div className="exp-feedback passage-feedback" data-testid="tide-feedback" role="status" aria-live="polite">{notice}</div>;
 
@@ -148,7 +159,7 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
     <header className="exp-mast"><div className="exp-brand">familiar.<small>Played and saved on this device</small></div>
       <h1 className="exp-place">{chapter ? chapter.title : "Today’s tide"}</h1>
       <div className="passage-header-actions">
-        <button aria-pressed={soundOn} aria-label={soundOn ? "Mute game audio" : "Enable game audio"} onClick={onToggleSound}>{soundOn ? "Sound on" : "Sound off"}</button>
+        <button className="tide-sound" aria-pressed={soundOn} aria-label={soundOn ? "Mute game audio" : "Enable game audio"} onClick={onToggleSound}>{icon(soundOn ? "m11 4-6 5H2v6h3l6 5V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" : "m11 4-6 5H2v6h3l6 5V4Zm5 5 6 6m0-6-6 6")}</button>
         <button className="passage-leave" data-testid="tide-leave" onClick={leave} disabled={blocked || busy}>Harbor</button>
       </div></header>
     <section className="exp-hud tide-hud" aria-label="Tide status">
@@ -158,25 +169,37 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
       </div>
       <span className="tide-tally">{icon(BAG)}<span>Pack <b>{used}/{PACK_SLOTS}</b></span></span>
       <span className="tide-tally">{icon(HOME)}<span>Banked <b data-testid="tide-score">{seen.score}</b></span></span>
+      <span className="tide-sr">Mochi: wave {Math.min(seen.wave + 1, waves)} of {waves}, {seen.hearts} of {HEARTS} hearts, pack {used} of {PACK_SLOTS} slots, banked {seen.score} points, {seen.splashes === 0 ? "dry paws" : `splashed ${seen.splashes} ${seen.splashes === 1 ? "time" : "times"}`}.</span>
     </section>
     {fault ? <section className="exp-fault" role="alert"><p>{fault}</p><button onClick={() => { setFault(""); setSceneKey(key => key + 1); }}>Reopen the tide</button></section>
       : !ready && !over ? <section className="exp-paused" role="status">Opening the tide…</section> : null}
     {blocked ? <p className="exp-paused" role="status">This tide is paused while another view holds the harbor.</p> : away && !guide ? <p className="exp-paused">Mochi is waiting. Return to this window to continue.</p> : null}
-    {over ? <section className="exp-departure passage-finish tide-finish" aria-label="The tide is over">
+    {over && (state.story || finishError) && <section className="exp-departure passage-finish tide-finish" aria-label="The tide is over">
       <div><img className="tide-finish-portrait" src={state.outcome === "rescued" ? "/assets/ui/mochi-portrait-splashed.webp" : "/assets/ui/mochi-portrait-proud.webp"} width="80" height="80" alt=""/><h2>{title}</h2>
         {state.story ? <p>{prizeHome ? `The ${itemName(state.story)} is home. Banked ${state.score} besides.` : `The ${itemName(state.story)} is still in its shell. The same tide comes again.`}</p>
-          : <p>Banked {state.score}. Bram guessed {finished?.guess}.</p>}
-        {stamps.length > 0 && <ul className="tide-stamps">{stamps.map(([label, earned], index) => <li key={label} data-earned={earned}><span className="tide-stamp-mark"><img src={`/assets/ui/${["ask-lens", "ask-all-marks", "ask-dry"][index]}.webp`} width="56" height="56" alt=""/>{icon(earned ? "m5 12 4 4L19 6" : "M20 12a8 8 0 1 1-16 0 8 8 0 1 1 16 0")}</span><span>{label}</span></li>)}</ul>}
+          : <p>Banked {state.score}. Bram guessed {guess}.</p>}
         {feedback}
         {finishError && <p role="alert">This tide could not be saved. Try it again when this browser can save.</p>}
       </div>
       <div className="tide-finish-actions">
         <button className="exp-primary" data-testid="tide-finish" disabled={blocked} onClick={() => finish(false)}>{icon(HOME)}Back to the harbor</button>
-        {!prizeHome && <button data-testid="tide-again" disabled={blocked} onClick={() => finish(true)}>{state.story ? "Try this tide again" : "Sail it again for practice"}</button>}
+        {state.story && !prizeHome && <button className="exp-text-button" data-testid="tide-again" disabled={blocked} onClick={() => finish(true)}>Try this tide again</button>}
       </div>
-    </section> : <section className="exp-command-tray passage-tray" aria-label="Guide Mochi">
+    </section>}
+    {!over && <section className="exp-command-tray passage-tray" aria-label="Guide Mochi">
+      {guess !== null && <ol className="tide-asks" aria-label="Today’s asks" aria-live="polite">{STAMPS.map(stamp => {
+        const status = stamp.key === "home" ? (seen.score > 0 ? "kept" : undefined)
+          : stamp.key === "guess" ? (seen.score >= guess ? "kept" : undefined)
+          : seen.splashes > 0 ? "slipped" : seen.outcome !== "active" ? "kept" : undefined;
+        const label = stamp.key === "home" ? "Bring one home" : stamp.key === "dry" ? "Dry paws" : `${seen.score === guess ? "Matched" : "Beat"} ${guess}`;
+        return <li key={stamp.key} data-status={status}>
+          <span className="tide-ask-icon" aria-hidden="true"><img src={stamp.icon} width="24" height="24" alt=""/></span>
+          <span className="tide-ask-label" aria-hidden="true">{label}</span>
+          <span className="tide-sr">{stamp.ask(guess)} {status === "kept" ? "Kept." : status === "slipped" ? "Slipped." : "Still open."}</span>
+        </li>;
+      })}</ol>}
       <div className="tide-tray-reading">
-      <div className="exp-objective-row"><p className="exp-objective">{objective}</p><button ref={guideButton} className="exp-inspect-button" data-testid="tide-guide" disabled={lockControls} onClick={() => setGuide(true)}>How it works</button></div>
+      {chapter && <div className="exp-objective-row"><p className="exp-objective">{objective}</p></div>}
       <p className={`exp-forecast${countdown(seen) === 1 ? " tide-forecast-soon" : ""}`} data-testid="tide-forecast" aria-live="polite">{icon(WAVE)}<span>{state.outcome === "active" ? forecast(seen.outcome === "active" ? seen : state) : ""}</span></p>
       <span className="exp-sr-only">Mochi is at {where(seen.position)}. The bridge is at the {LANES[seen.bridge]} lane.</span>
       {feedback}
@@ -185,7 +208,8 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
         {STEPS.map(move => <button key={move} className={`exp-${move}`} data-move={move} aria-label={`Move ${move}`} disabled={lockControls || !legal.includes(move)} onClick={() => take(move)}>{icon(ARROWS[move])}</button>)}
         <button className="exp-wait" data-move="wait" aria-label="Wait one move" disabled={lockControls} onClick={() => take("wait")}>Wait</button>
       </div><div className="exp-context-actions">
-        {legal.includes("home") && state.moves.length > 0 && <button data-move="home" aria-keyshortcuts="R" disabled={lockControls} onClick={() => take("home")}>Call it a day</button>}
+        <button ref={guideButton} className="exp-inspect-button" data-testid="tide-guide" disabled={lockControls} onClick={() => setGuide(true)}>How it works</button>
+        {legal.includes("home") && state.moves.length > 0 && <button className="exp-text-button" data-move="home" aria-keyshortcuts="R" disabled={lockControls} onClick={() => take("home")}>Call it a day</button>}
       </div></div>
     </section>}
     {guide && <dialog ref={dialog} className="exp-panel passage-panel" aria-labelledby="tide-guide-title" onCancel={event => { event.preventDefault(); setGuide(false); }}>

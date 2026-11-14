@@ -4,8 +4,9 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, expect, webkit } from "@playwright/test";
 import { createServer } from "vite";
-import { cardForDay } from "../web/src/tide/cards";
-import { replayRun, solve } from "../web/src/tide/asks";
+import { cautiousTide } from "../web/src/run/bot";
+import { replayTide } from "../web/src/run/engine";
+import { dayResult, shelfHaul } from "../web/src/run/save";
 
 const cacheDir = await mkdtemp(join(tmpdir(), "familiar-routing-"));
 const artifact=process.argv[2]?resolve(process.argv[2],".vercel/output"):null;
@@ -37,10 +38,11 @@ const oldRecords = {
   "familiar.tidebound.pending.v1:earlier.testnet:player.testnet": '{"original":"operation"}',
 };
 const saveKey = "familiar.expedition.local.v2";
-const returnDay=20771,returnCard=cardForDay(returnDay),returnRoute=solve(returnCard.tool,returnCard.asks,returnCard.best);
-assert(returnRoute?.at(-1)==="return","focus fixture finishes with a real dock return");
-const beforeReturn=replayRun(returnCard.tool,returnRoute.slice(0,-1));
-assert(beforeReturn&&beforeReturn.state.outcome==="active");
+const bookKey = `${saveKey}:tide-run.v1`;
+const returnDay=20771,returned=cautiousTide(returnDay),beforeReturn=replayTide({seed:returnDay},returned.moves.slice(0,-1));
+assert(beforeReturn?.outcome==="active");
+const returnHaul=shelfHaul(dayResult(returned));
+assert(returnHaul.reed+returnHaul.glass>0,"focus fixture brings a haul to Bram's shelf");
 try {
   await server?.listen();
   const origin = new URL(compiled?`http://127.0.0.1:${compiled.port}`:server!.resolvedUrls!.local[0]!);
@@ -83,7 +85,9 @@ try {
       }else{
         await expect(page.locator(".exp-harbor-tools").getByRole("button",{name:"Harbor chart",exact:true})).toBeVisible();
       }
-      await page.locator('[data-action="depart"]').click();
+      await page.getByRole("button",{name:"Harbor chart",exact:true}).and(page.locator(":visible")).click();
+      await page.locator('.exp-panel[data-surface="chart"] .harbor-routes > li').first().getByRole("button").click();
+      await page.locator('.exp-panel[data-surface="sail"] .exp-primary').click();
       await page.locator('[data-command="step:west"]').click();
       await expect(game).toHaveAttribute("data-busy", "false");
       const saved = await page.evaluate(key => localStorage.getItem(key), saveKey);
@@ -108,24 +112,29 @@ try {
       await expect(world).toHaveAttribute("data-turn", "1");
       await page.clock.install({time:new Date(returnDay*86_400_000+43_200_000)});
       await page.clock.setFixedTime(new Date(returnDay*86_400_000+43_200_000));
-      await page.evaluate(({saveKey,state,day})=>{
-        localStorage.setItem(saveKey,JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},last:null,active:{context:{authority:"local-preview",banked:[],lit:true,signaled:false},state,season:true}}));
-        localStorage.setItem("familiar.tide.pending.v1:preview",JSON.stringify({day,late:false}));
+      await page.evaluate(({saveKey,bookKey,state})=>{
+        localStorage.setItem(saveKey,JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},last:null,active:null}));
+        localStorage.setItem(bookKey,JSON.stringify({version:1,active:{seed:state.seed,moves:state.moves},days:[]}));
+        localStorage.removeItem("familiar.tide.pending.v1:preview");
         localStorage.removeItem("familiar.tide.log.v1:preview");localStorage.removeItem("familiar.season.preview.v1");
-      },{saveKey,state:beforeReturn.state,day:returnDay});
+      },{saveKey,bookKey,state:beforeReturn});
       await page.goto(new URL("/outing/?play",origin).href);
-      await expect(world).toHaveAttribute("data-ready","true");await expect(game).toHaveAttribute("data-lease","held");
-      await page.locator('button[data-command="return"]').click();
+      const tideRun=page.getByTestId("tide-run");
+      await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true");
+      await expect(tideRun).toHaveAttribute("data-busy","false");
+      await page.locator(`button[data-move="${returned.moves.at(-1)!}"]`).click();
       const home=page.locator('.exp-panel[data-surface="home"]');await expect(home).toBeVisible();
-      await expect(home.locator(".tide-home-note")).toHaveText("Home with Beacon Lens. Bram can shelve it today.");
-      await expect(page.getByTestId("expedition-feedback")).toContainText("All three asks kept in 9 decisions.");
-      await home.getByRole("button",{name:"See the tide log",exact:true}).click();
-      await expect(page.getByRole("dialog",{name:"Bram’s tide log",exact:true})).toBeVisible();
+      const filed=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),bookKey);
+      assert.equal(filed.active,null);
+      assert.deepEqual(filed.days.map((entry:{seed:number;moves:string[]})=>[entry.seed,entry.moves.length]),[[returnDay,returned.moves.length]]);
+      await home.locator(".exp-secondary").click();
+      await expect(page.locator('.exp-panel[data-surface="log"] .tide-log-run')).toBeVisible();
       await page.keyboard.press("Escape");
       const harborPrimary=page.locator(".exp-departure .exp-primary");
-      await expect(harborPrimary).toHaveText("Take it to Bram");await expect(harborPrimary).toBeFocused();
-      await harborPrimary.click();await expect(page.getByRole("dialog",{name:"Bram",exact:true})).toBeVisible();
+      await expect(harborPrimary).toHaveAttribute("data-action","tide");await expect(harborPrimary).toBeFocused();
+      await harborPrimary.click();await expect(page.locator('.exp-panel[data-surface="bram"]')).toBeVisible();
       await page.keyboard.press("Escape");await expect(harborPrimary).toBeFocused();
+      assert.deepEqual(await page.evaluate(keys=>Object.fromEntries(keys.map(key=>[key,localStorage.getItem(key)])),Object.keys(oldRecords)),oldRecords);
       console.info(`${engine.name()}: introduction, account boundary, ${paths.length} game entry URLs, saved-run resume and preserved original records passed`);
     } finally { await browser.close(); }
   }

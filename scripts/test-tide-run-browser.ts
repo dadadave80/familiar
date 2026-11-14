@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { chromium, expect, type Page } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 import { createServer } from "vite";
 import { VALUE, applyMove, startTide, type Move, type TideStart } from "../web/src/run/engine";
-import { bramsGuess, cautiousMove } from "../web/src/run/bot";
+import { cautiousMove } from "../web/src/run/bot";
 import { storyStart } from "../web/src/run/story";
 
 const KEY: Record<Move, string> = { north: "ArrowUp", south: "ArrowDown", west: "ArrowLeft", east: "ArrowRight", wait: "Space", home: "r" };
@@ -40,10 +40,11 @@ try {
 
     const run = page.getByTestId("tide-run"), link = page.locator('[data-action="tide-run"]'), title = page.locator(".exp-departure h1");
     const harbor = () => expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready", "true");
-    const passTitle = async () => {
+    const passTitle = async (tide = false) => {
       await expect(page.getByTestId("opening")).toHaveAttribute("data-mode", "title");
       await page.keyboard.press("Enter");
-      await page.locator('[data-plank="continue"],[data-plank="new"]').click();
+      await page.locator(tide ? '[data-plank="tide"]' : '[data-plank="continue"],[data-plank="new"]').click();
+      if (tide) await page.locator('[data-el="scroll"] .fo-primary').click();
       await expect(page.getByTestId("opening")).toHaveCount(0);
     };
     const press = async (keys: readonly string[]) => {
@@ -52,16 +53,21 @@ try {
       await expect(run).toHaveAttribute("data-busy", "false");
     };
     const home = () => page.evaluate(() => (JSON.parse(localStorage.getItem("familiar.expedition.local.v2") ?? "null")?.home ?? { banked: [] }) as { banked: string[] });
-    const failNextWrite = (key: string) => page.evaluate(key => {
+    const failNextWrite = (key: string, filing = false) => page.evaluate(({ key, filing }) => {
       const setItem = Storage.prototype.setItem;
       Storage.prototype.setItem = function (name, value) {
-        if (name === key) { Storage.prototype.setItem = setItem; throw new DOMException("Saving is blocked", "QuotaExceededError"); }
+        if (name === key && (!filing || JSON.parse(value).active === null)) { Storage.prototype.setItem = setItem; throw new DOMException("Saving is blocked", "QuotaExceededError"); }
         setItem.call(this, name, value);
       };
-    }, key);
+    }, { key, filing });
     async function sail(start: TideStart, from = 0) {
       const { keys, state } = route(start);
-      await press(keys.slice(from));
+      if (start.story) await press(keys.slice(from));
+      else {
+        await press(keys.slice(from, -1));
+        await failNextWrite(bookKey, true);
+        await page.keyboard.press(keys.at(-1)!);
+      }
       await expect(run).toHaveAttribute("data-outcome", state.outcome);
       await expect(run).toHaveAttribute("data-score", String(state.score));
       if (start.story === "lens") {
@@ -78,11 +84,8 @@ try {
           assert.deepEqual((await home()).banked, key === bookKey ? ["lens"] : []);
         }
       } else if (!start.story) {
-        await failNextWrite(bookKey);
-        await page.getByTestId("tide-again").click();
         await expect(run.getByRole("alert")).toHaveText("This tide could not be saved. Try it again when this browser can save.");
         await expect(page.getByTestId("tide-finish")).toBeEnabled();
-        await expect(page.getByTestId("tide-again")).toBeEnabled();
       }
       await page.getByTestId("tide-finish").click();
       await harbor();
@@ -92,7 +95,6 @@ try {
     await page.goto(new URL("/outing/", origin).href);
     await passTitle(); await harbor();
     await expect(title).toHaveText("First light.");
-    await expect(page.locator('[data-action="depart"]')).toBeVisible();
     await page.locator('[data-action="story"]').click();
     await expect(run).toHaveAttribute("data-story", "lens");
     await sail(storyStart("lens"));
@@ -101,19 +103,27 @@ try {
     await page.locator('[data-action="home-next"]').click();
     await page.getByRole("button", { name: "Restore the beacon" }).click();
 
-    // The lit harbor keeps the Tidekeeper's ask; the next chapter sits beside it.
-    await expect(title).toHaveText("The Tidekeeper has an ask.");
+    await expect(page.locator('[data-action="tide"]')).toBeVisible();
     await expect(link).toHaveAttribute("title", "Chapter 2: What the tide brings");
     await link.click();
     await press(route(storyStart("vane")).keys.slice(0, 3));
     await page.reload();
-    await passTitle();
+    await passTitle(true);
+    await expect(run).toHaveAttribute("data-beat", "3");
+    await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready", "true");
+    await page.getByTestId("tide-leave").click();
+    const waitingAsk = page.locator('.exp-panel[data-surface="tide"]');
+    await expect(waitingAsk).toBeVisible();
+    await waitingAsk.locator(".exp-primary").click();
+    await expect(run).toHaveAttribute("data-story", "vane");
     await expect(run).toHaveAttribute("data-beat", "3");
     await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready", "true");
     await page.getByTestId("tide-leave").click();
     await harbor();
     await expect(link).toHaveAttribute("title", "Return to the tide Mochi left");
-    await link.click();
+    await expect(title).toHaveText("The tide is waiting.");
+    await page.locator('[data-action="resume"]').click();
+    await expect(run).toHaveAttribute("data-story", "vane");
     await expect(run).toHaveAttribute("data-beat", "3");
     await sail(storyStart("vane"), 3);
     await expect(link).toHaveAttribute("title", "Fit the Signal Vane");
@@ -125,17 +135,44 @@ try {
     await sail(storyStart("moth"));
     assert.deepEqual((await home()).banked, ["lens", "vane", "moth"]);
 
-    await link.click();
+    await page.locator('[data-action="tide"]').click();
+    const ask = page.locator('.exp-panel[data-surface="tide"]');
+    await expect(ask).toBeVisible();
+    await ask.locator(".exp-primary").click();
     const day = Number(await run.getAttribute("data-seed"));
     assert.equal(day, await page.evaluate(() => Math.floor(Date.now() / 86_400_000)));
     const daily = await sail({ seed: day });
-    await expect(page.getByTestId("expedition-feedback").first()).toHaveText(`Banked ${daily.score}. Bram guessed ${bramsGuess(day)}.`);
-    await expect(link).toHaveText(`Tide run: ${daily.score}`);
+    const sheet = page.locator('.exp-panel[data-surface="home"]');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator(".tide-home-note")).toHaveCount(0);
     const book = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), bookKey);
     assert.equal(book.active, null);
     assert.deepEqual(book.days.map((entry: { seed: number; moves: string[] }) => [entry.seed, entry.moves.length]), [[day, daily.moves.length]]);
-    await expect(title).toHaveText("The Tidekeeper has an ask.");
+    await sheet.locator(".exp-secondary").click();
+    await expect(page.locator('.exp-panel[data-surface="log"] .tide-log-run')).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.locator(".exp-departure-buttons > .exp-secondary").click();
+    await expect(run).toHaveAttribute("data-seed", String(day));
+    await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready", "true");
+    await page.locator('[data-move="wait"]').click();
+    await expect(run).toHaveAttribute("data-busy", "false");
+    await page.reload();
+    await passTitle(true);
+    await expect(run).toHaveAttribute("data-beat", "1");
+    await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready", "true");
+    await page.getByTestId("tide-leave").click();
+    await waitingAsk.locator(".exp-primary").click();
+    await expect(run).toHaveAttribute("data-seed", String(day));
+    await expect(run).toHaveAttribute("data-beat", "1");
+    await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready", "true");
+    await page.locator('[data-move="home"]').click();
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator(".tide-home-note")).toHaveText("A practice tide: banked 0. Today’s first tide is the one that counts.");
+    const practiced = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), bookKey);
+    assert.equal(practiced.active, null);
+    assert.deepEqual(practiced.days, book.days);
+    assert.notEqual(daily.moves.length, 2);
     assert.deepEqual(errors, []);
-    console.info("tide run: three story tides, finished reload, failed-save retries, leave and resume, and today's tide passed on a device harbor");
+    console.info("tide run: three story tides, finished reload, failed-save retries, leave and resume, daily Home and log, and practice preserving the first tide passed on a device harbor");
   } finally { await browser.close(); }
 } finally { await server.close(); }

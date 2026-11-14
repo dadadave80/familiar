@@ -2,6 +2,8 @@
 import { haul, replayTide, type Move, type Prize, type StoryPrize, type TideState } from "./engine";
 import { bramsGuess } from "./bot";
 
+export type { Prize } from "./engine";
+
 export interface TideBook {
   /** The tide in progress, rebuilt from its start and moves. */
   readonly active: TideState | null;
@@ -49,23 +51,31 @@ export function closeTide(book: TideBook, finished: TideState): TideBook {
 }
 
 export interface DayResult {
-  readonly day: number;
-  readonly score: number;
-  readonly guess: number;
-  readonly haul: Readonly<Record<Prize, number>>;
+  day: number;
+  score: number;
+  guess: number;
+  banked: readonly Prize[];
   /** Came home with something; matched Bram's guess; dry paws. */
-  readonly stamps: { readonly home: boolean; readonly guess: boolean; readonly dry: boolean };
+  stamps: { home: boolean; guess: boolean; dry: boolean };
+  splashes: number;
 }
 export function dayResult(tide: TideState): DayResult {
   const guess = bramsGuess(tide.seed);
-  return { day: tide.seed, score: tide.score, guess, haul: haul(tide),
-    stamps: { home: tide.score > 0, guess: tide.score >= guess, dry: tide.splashes === 0 } };
+  return { day: tide.seed, score: tide.score, guess,
+    banked: tide.banked.filter((item): item is Prize => item === "reed" || item === "glass" || item === "pearl"),
+    stamps: { home: tide.score > 0, guess: tide.score >= guess, dry: tide.splashes === 0 }, splashes: tide.splashes };
 }
-export const todayResult = (book: TideBook, day: number) => { const tide = book.days.find(entry => entry.seed === day); return tide ? dayResult(tide) : null; };
+export function todayResult(book: TideBook, day: number): DayResult | null {
+  const tide = book.days.find(entry => entry.seed === day);
+  return tide ? dayResult(tide) : null;
+}
+export function dayResults(book: TideBook): readonly DayResult[] {
+  return [...book.days].reverse().map(dayResult);
+}
 
-/** What reaches Bram's shelf from one tide: room for three of each a day. */
+/** What reaches Bram's shelf from one tide: room for three reeds and three pieces of glass a day. */
 export const SHELF_CAP = 3;
-export const shelved = (tide: TideState): Readonly<Record<Prize, number>> => {
-  const h = haul(tide);
-  return { reed: Math.min(h.reed, SHELF_CAP), glass: Math.min(h.glass, SHELF_CAP), pearl: Math.min(h.pearl, SHELF_CAP) };
-};
+export function shelfHaul(result: DayResult): { reed: number; glass: number; pearl: number } {
+  const h = haul(result);
+  return { reed: Math.min(h.reed, SHELF_CAP), glass: Math.min(h.glass, SHELF_CAP), pearl: h.pearl };
+}

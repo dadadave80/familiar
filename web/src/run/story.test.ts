@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
-import { VALUE, applyMove, replayTide, startTide, tideShape, type StoryPrize, type TideState, type TideTransition } from "./engine";
+import { VALUE, applyMove, replayTide, startTide, tideShape, type StoryPrize, type TideTransition } from "./engine";
 import { bramsGuess, cautiousMove, cautiousTide } from "./bot";
 import { CHAPTERS, chapterFor, consequence, storyStart } from "./story";
-import { closeTide, dayResult, emptyBook, readBook, shelved, todayResult, writeBook } from "./save";
+import { closeTide, dayResult, dayResults, emptyBook, readBook, shelfHaul, todayResult, writeBook, type DayResult } from "./save";
 
 const careful = (prize: StoryPrize) => {
   let state = startTide(storyStart(prize)), homeWave = -1;
@@ -51,7 +51,7 @@ function memory() {
   return { data, getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); } };
 }
 
-test("a finished tide stays active until the player files it", () => {
+test("a finished tide stays active until it is filed", () => {
   const storage = memory(), key = "tide";
   for (const finished of [careful("lens").state, cautiousTide(20771)]) {
     expect(finished.outcome).not.toBe("active");
@@ -78,6 +78,8 @@ test("a tide book survives a reload and keeps each day's first tide", () => {
 
   const today = todayResult(book, 20771)!;
   expect(today).toEqual(dayResult(first));
+  expect(today).toEqual({ day: 20771, score: 6, guess: 6, banked: ["reed", "glass", "reed", "reed"],
+    stamps: { home: true, guess: true, dry: true }, splashes: 0 });
   expect(today.guess).toBe(bramsGuess(20771));
   expect(today.stamps).toEqual({ home: true, guess: true, dry: true });
   expect(dayResult(again).stamps).toEqual({ home: false, guess: false, dry: true });
@@ -85,9 +87,37 @@ test("a tide book survives a reload and keeps each day's first tide", () => {
 
 });
 
-test("the shelf takes three of each and a damaged book is refused", () => {
-  const full = { banked: ["reed", "reed", "reed", "reed", "glass", "pearl", "lens"] } as unknown as TideState;
-  expect(shelved(full)).toEqual({ reed: 3, glass: 1, pearl: 1 });
+test("day results put the newest day first without changing the book", () => {
+  const first = cautiousTide(20771), second = cautiousTide(20772);
+  const book = { active: null, days: [first, second] };
+  expect(dayResults(book)).toEqual([dayResult(second), dayResult(first)]);
+  expect(book.days).toEqual([first, second]);
+  expect(dayResults(emptyBook())).toEqual([]);
+});
+
+test("a daily result keeps every prize in banked order and records splashes", () => {
+  const daily = { ...cautiousTide(20771), banked: ["glass", "pearl", "reed", "glass", "reed"] as const, splashes: 2 };
+  const result = dayResult(daily);
+  expect(result.banked).toEqual(["glass", "pearl", "reed", "glass", "reed"]);
+  expect(result.splashes).toBe(2);
+  expect(result.stamps).toEqual({ home: true, guess: true, dry: false });
+});
+
+test("day results exclude story prizes while keeping the other prizes in order", () => {
+  const tide = { ...careful("lens").state, banked: ["glass", "lens", "pearl", "vane", "reed", "moth", "glass"] as const };
+  expect(dayResult(tide).banked).toEqual(["glass", "pearl", "reed", "glass"]);
+});
+
+test("the shelf caps reed and glass at three and leaves pearls uncapped", () => {
+  const result: DayResult = { day: 20771, score: 40, guess: 6,
+    banked: ["reed", "glass", "pearl", "reed", "glass", "pearl", "reed", "glass", "pearl", "reed", "glass", "pearl"],
+    stamps: { home: true, guess: true, dry: true }, splashes: 0 };
+  expect(shelfHaul(result)).toEqual({ reed: 3, glass: 3, pearl: 4 });
+  expect(shelfHaul({ ...result, banked: ["reed", "pearl"] })).toEqual({ reed: 1, glass: 0, pearl: 1 });
+  expect(shelfHaul({ ...result, banked: [] })).toEqual({ reed: 0, glass: 0, pearl: 0 });
+});
+
+test("a damaged book is refused", () => {
   for (const raw of [
     "{", JSON.stringify({ version: 2, active: null, days: [] }),
     JSON.stringify({ version: 1, active: { seed: 5, moves: ["north", "north", "north", "north", "north"] }, days: [] }),
