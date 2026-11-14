@@ -1,0 +1,43 @@
+{
+  "created": "2026-11-14",
+  "purpose": "README banner for Familiar",
+  "file": "docs/readme-banner.jpg",
+  "art": {
+    "generator": {
+      "tool": "Codex CLI (`codex exec`, image_gen.imagegen built-in tool)",
+      "model": "gpt-6-astra",
+      "reasoningEffort": "ultra",
+      "cliVersion": "0.169.0",
+      "session": "01a1d8c7-7ebb-71d3-812b-71c645b3d08e",
+      "note": "The image tool does not expose its backend model or a quality setting; model and effort above are the orchestrating Codex model."
+    },
+    "prompt": "Create one premium illustration-story key-art photograph of a handmade felt miniature set for Familiar. Highest available image quality and resolution. COMPOSITION A, wide establishing view.\n\nOUTPUT AN UNCROPPED LANDSCAPE MASTER IN 3:2 ASPECT RATIO. The final 2.5:1 banner will be cut from the CENTRAL 60% of this master afterwards. DO NOT generate an already-cropped 2.5:1 banner. Use the largest supported 3:2 landscape size. This mathematically preserves the requested crop.\n\nCRITICAL FRAMING: Imagine a thin horizontal miniature theatre set across ONLY the RIGHT 60% and MIDDLE HALF of the image. Every story element is wholly contained in the rectangle x=40–97%, y=26–74%. EVERYTHING ABOVE y=20% is ONLY open pink/violet sky or soft dark leaves; no roof, lighthouse cap, moth or animal goes there. EVERYTHING BELOW y=80% is ONLY empty turquoise water, soft stones or foreground flowers; no feet, claws or bridge goes there. The entire LEFT 36% is extremely calm, almost uniformly dark forest-green foliage with barely perceptible out-of-focus leaves; no lit edges, characters, wave or water reflections anywhere in this title area. A few muted pink hydrangeas at its very bottom edge. Transition from dark foliage to scene happens around x=38%. Do not fill the blank space with anything.\n\nFive references: 1 establishes the Familiar harbor miniature style, warm sunset, cottage and lighthouse designs; IGNORE AND OMIT ALL SOURCE LETTERING. 2 is Mochi; 3 is Bram; 4 is Tidekeeper; 5 is the wind-moth. Match their designs and physical material exactly.\n\nThe story takes place on the right, in shallow turquoise tide-court water beneath a golden-hour pink/violet sky. One round orange felt tabby kitten Mochi hops happily RIGHTWARD between two flat round spiral-carved sandstone footholds toward a small rope bridge. Mochi occupies x=53–65%, y=43–68%, including her entire raised tail and ears and all paws. She has the same round large head and short round body as reference 2, cream muzzle/chest/paws and tail tip, dark bead eyes, orange forehead stripes, a red tied bandana, small stitched brown satchel. A small brass lens peeks out of the satchel. She is visibly airborne above the gap, brave and delighted. Exactly one tiny softly glowing cream/gold wind-moth flutters just ahead at x=67%, y=43%, with fine four-wing golden spiral veins and feathery antennae matching reference 5. Keep it genuinely small compared to Mochi.\n\nBeside the stepping stones at x=76%, y=60%, ONE Tidekeeper is half out of the water, one stone claw raised a little, kindly watching Mochi. Match reference 4 exactly: broad low crab shape, grey rounded porous stone carapace, cream carved spiral relief, warm amber eyes, pink coral and olive-green kelp on its back, chunky rounded rock claws. Entire crab INCLUDING coral is within x=69–84%, y=48–73%. Friendly old guardian, no threat.\n\nExactly ONE modest curling teal sea-glass wave behind Mochi, wholly within x=42–52%, y=49–66%, with soft white wool foam. No part of wave enters x<40%. Two or three low flat sandstone circular footholds have broad raised spiral tops and warm rounded block edges. They sit wholly between y=65–74%, not tall pillars.\n\nA SMALL wooden rope bridge connects the stones to the sandstone quay on the far right, all between x=83–98%, y=59–73%. Its shape matches a real miniature plank bridge: warm wood, chunky cylindrical posts, thick cream rope rails.\nOn the quay stands exactly ONE Bram, small but readable, x=89%, y=50–64%, waving one paw: stocky grey/cream badger, pale center stripe, round brass wire glasses, rust jumper, cream flour-dusted apron, brown boots, same as reference 3.\nBehind him a small cozy sandstone cottage with terracotta roof and striped pink/cream awning, its ENTIRE roof and chimney below y=30%, footprint x=88–98%, y=32–58%.\nIn the distant harbor at x=80%, exactly ONE lighthouse on a rock, FULL tower INCLUDING red cap contained y=29–49%, miniature cream stone, red base and cap, tiny lit lantern. A restrained warm beam shines across water and into sky WITHIN the middle band. A few small distant sandstone coral arches suggest the tide court, safely within middle band.\n\nPhotograph an actual handcrafted stop-motion miniature: needle-felted wool with visible individual fine fibers on animals, hand stitching, soft chunky rounded shapes, felt leaves, real wood, gently glinting dull brass, porous sandstone, teal glass water/wave with wool foam. Reference-exact orange cat and grey badger colors and proportions. Soft warm low sunlight with long gentle shadows. Crisp characters, slightly soft foreground flowers/stones, gently hazy distant harbor. Beautiful rich turquoise, warm peach/gold and pink/violet against a deep dark green title area. No shiny plastic fur, no glossy CGI character rendering, no flat vector.\nEXACT COUNTS: one Mochi, one Bram, one Tidekeeper, one moth, one lighthouse, one wave. No extra animals, people or birds. NO text, letters, numbers, pseudo-writing, logos, signatures, watermark, UI, border or frame. Keep all important objects comfortably within the middle 60% and all action to the right of 40%.",
+    "attempts": 3,
+    "selectedAttempt": 2,
+    "original": {
+      "pixelSize": [
+        1536,
+        1024
+      ],
+      "sha256": "3b2f0dc52178fda4656af7bf379ce9734533d30edd83caacd3bc95d169673a34",
+      "bytes": 2176650
+    },
+    "styleReferences": "Existing Familiar game art (Mochi, Bram, the Tidekeeper, the harbor backdrops); at most five per generation."
+  },
+  "composition": {
+    "method": "The art has no text. The wordmark and lines are live type (Fraunces and Figtree, the game's own fonts) over a left-hand shade, rendered at 1000x400 CSS px, device scale 2, with Playwright Chromium, then saved as JPEG quality 90.",
+    "text": [
+      "familiar.",
+      "A little adventure with Mochi.",
+      "Read the tide. Bring wonder home."
+    ],
+    "output": {
+      "pixelSize": [
+        2000,
+        800
+      ],
+      "sha256": "3ab115d304ba65f912773c2fdd0a2b474b2ecef691b8d8419d5f8b90a2b602d1",
+      "bytes": 403271
+    }
+  }
+}
