@@ -1,3 +1,4 @@
+import { guide } from "./browser-controls";
 import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -88,7 +89,7 @@ try {
       await page.getByRole("button",{name:"Harbor chart",exact:true}).and(page.locator(":visible")).click();
       await page.locator('.exp-panel[data-surface="chart"] .harbor-routes > li').first().getByRole("button").click();
       await page.locator('.exp-panel[data-surface="sail"] .exp-primary').click();
-      await page.locator('[data-command="step:west"]').click();
+      await guide(page,"step:west");
       await expect(game).toHaveAttribute("data-busy", "false");
       const saved = await page.evaluate(key => localStorage.getItem(key), saveKey);
       assert(saved && JSON.parse(saved).active.state.turn === 1);
@@ -122,7 +123,7 @@ try {
       const tideRun=page.getByTestId("tide-run");
       await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true");
       await expect(tideRun).toHaveAttribute("data-busy","false");
-      await page.locator(`button[data-move="${returned.moves.at(-1)!}"]`).click();
+      await guide(page,returned.moves.at(-1)!);
       const home=page.locator('.exp-panel[data-surface="home"]');await expect(home).toBeVisible();
       const filed=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),bookKey);
       assert.equal(filed.active,null);

@@ -1,3 +1,4 @@
+import { guide, worldAction, departCourt } from "./browser-controls";
 import assert from "node:assert/strict";
 import { mkdir,mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -38,7 +39,7 @@ try{
   page.on("pageerror",e=>errors.push(e.message));await context.route("**/*",route=>{if(!["GET","HEAD","OPTIONS"].includes(route.request().method())){mutations.push(new URL(route.request().url()).pathname);return route.abort();}return route.continue();});
   try{
    await page.goto(origin+"/outing/?play");await ready(page);const geometry=await bounds(page,`${width}x${height}-home`);await capture(page,`${width}x${height}-home`);
-   const action=page.locator('[data-action="depart"]');if(touch)await action.tap();else await action.click();await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","court");
+   await departCourt(page);await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","court");
    await bounds(page,`${width}x${height}-court`);await capture(page,`${width}x${height}-court`);
    const tiles=JSON.parse((await page.getByTestId("expedition-world").getAttribute("data-tiles"))!) as {position:{x:number;y:number};x:number;y:number}[],target=tiles.find(t=>t.position.x===0&&t.position.y===0)!;
    assert(target);if(touch)await page.touchscreen.tap(target.x,target.y);else await page.mouse.click(target.x,target.y);
@@ -65,7 +66,7 @@ try{
   await sdkContext.close();
   const loadingContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),loading=await loadingContext.newPage();let release!:()=>void;const held=new Promise<void>(r=>{release=r;});
   await loading.route("**/assets/expedition/runtime/lens.webp",async route=>{await held;await route.continue();});await loading.goto(origin+"/outing/?play");
-  await expect(loading.getByRole("heading",{name:"Unpacking the harbor."})).toBeVisible();assert.equal(await loading.locator('[data-action="depart"]').count(),0,"No departure before the scene is ready");assert.equal(await loading.evaluate(k=>localStorage.getItem(k),key),null);await capture(loading,"after-art-loading-gate");release();await ready(loading);await expect(loading.locator('[data-action="depart"]')).toBeEnabled();await loadingContext.close();
+  await expect(loading.getByRole("heading",{name:"Unpacking the harbor."})).toBeVisible();assert.equal(await loading.locator('[data-action="depart"]').count(),0,"No departure before the scene is ready");assert.equal(await loading.evaluate(k=>localStorage.getItem(k),key),null);await capture(loading,"after-art-loading-gate");release();await ready(loading);await expect(loading.locator('[data-action="story"]')).toBeEnabled();await loadingContext.close();
  }
  if(engine===chromium){
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"}),page=await context.newPage(),cdp=await context.newCDPSession(page);
@@ -74,8 +75,8 @@ try{
  const start=Date.now(),navigation=page.goto(origin+"/outing/?play",{waitUntil:"domcontentloaded",timeout:120000});
  await page.waitForTimeout(2000);await capture(page,`${baseline?"before":"after"}-3g-2s`);const early=await page.locator("body").innerText();if(!baseline)assert(early.includes("Familiar")||early.includes("familiar"),"A cold slow3G load has visible content before module download");
  await navigation;const domMs=Date.now()-start;await ready(page);const readyMs=Date.now()-start;await capture(page,`${baseline?"before":"after"}-3g-ready`);
- await page.locator('[data-action="depart"]').tap();await page.getByRole("button",{name:"Move north",exact:true}).tap();await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-busy","false");
- const beforeOffline=await page.evaluate(k=>localStorage.getItem(k),key);await context.setOffline(true);await page.getByRole("button",{name:"Wait for the tide",exact:true}).tap();await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-busy","false");assert.notEqual(await page.evaluate(k=>localStorage.getItem(k),key),beforeOffline,"accepted local decisions save while offline");
+ await departCourt(page);await guide(page,"step:north");await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-busy","false");
+ const beforeOffline=await page.evaluate(k=>localStorage.getItem(k),key);await context.setOffline(true);await worldAction(page,"wait",true);await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-busy","false");assert.notEqual(await page.evaluate(k=>localStorage.getItem(k),key),beforeOffline,"accepted local decisions save while offline");
  const resources=await page.evaluate(()=>performance.getEntriesByType("resource").map(e=>{const r=e as PerformanceResourceTiming;return {name:new URL(r.name).pathname,bytes:r.encodedBodySize,duration:r.duration};}).sort((a,b)=>b.bytes-a.bytes).slice(0,12));
  results.push({profile:"cold slow3G, gzip, touch, CPU4",resources,latencyMs:400,downloadBytesPerSecond:50000,uploadBytesPerSecond:50000,cache:false,domMs,readyMs,early,offlineLocalDecision:"pass"});await context.close();
  }

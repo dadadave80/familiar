@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import TideWorld from "./TideWorld";
+import ControlHints from "../expedition/ControlHints";
+import type { TideSnapshot } from "./scene";
 import { HEARTS, PACK_SLOTS, SLOTS, applyMove, countdown, legalMoves, stepDestination, tideShape, type Move, type Position, type TideEvent, type TideState, type TideTransition } from "./engine";
 import { bramsGuess } from "./bot";
 import { CHAPTERS, aPrize, consequence, itemName, laneNames } from "./story";
@@ -72,14 +74,15 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   const finishAttempted = useRef(false), filed = useRef(false);
   const chapter = initial.story ? CHAPTERS[initial.story] : null;
   const [notice, setNotice] = useState(() => initial.outcome !== "active" || initial.moves.length ? "" : chapter ? `Bram: “${chapter.before}”` : `The Tidekeeper turns to the ${laneNames(initial.next.lanes).toLowerCase()} lane.`);
-  const dialog = useRef<HTMLDialogElement>(null), guideButton = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null), guideButton = useRef<HTMLButtonElement>(null), gameRef = useRef<HTMLElement>(null), guideOpener = useRef<HTMLElement | null>(null);
   const guess = useMemo(() => initial.story ? null : bramsGuess(initial.seed), [initial.seed, initial.story]);
   const busy = !!result, paused = away || blocked || guide || !!fault;
   // The board catches up before the numbers do: the status shows the tide as drawn.
   const seen = result ? result.before : state, over = state.outcome !== "active" && !busy;
   const { waves, roughFrom } = tideShape(initial), legal = legalMoves(state);
   const used = seen.pack.reduce((sum, item) => sum + SLOTS[item], 0);
-  const snapshot = useMemo(() => ({ tide: state, reducedMotion: reduced }), [state, reduced]);
+  const worldActions = useMemo(() => legalMoves(state).filter((move): move is "wait" | "home" => move === "wait" || move === "home" && state.moves.length > 0), [state]);
+  const snapshot = useMemo<TideSnapshot>(() => ({ tide: state, reducedMotion: reduced, worldActions }), [state, reduced, worldActions]);
 
   useEffect(() => {
     const hide = () => setAway(true), show = () => setAway(document.hidden);
@@ -87,11 +90,22 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
     return () => { document.removeEventListener("visibilitychange", show); window.removeEventListener("blur", hide); window.removeEventListener("focus", show); };
   }, []);
   useEffect(() => {
-    if (!guide) { guideButton.current?.focus({ preventScroll: true }); return; }
+    if (!guide) { if (guideOpener.current) { (guideOpener.current.isConnected ? guideOpener.current : gameRef.current)?.focus({ preventScroll: true }); guideOpener.current = null; } return; }
     const element = dialog.current;
     element?.showModal();
     return () => element?.close();
   }, [guide]);
+  useEffect(() => {
+    if (!ready || guide || current.current.outcome !== "active") return;
+    const frame = requestAnimationFrame(() => gameRef.current?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [ready]);
+
+  function openGuide(source: HTMLElement | null = gameRef.current) {
+    if (!ready || paused || pending.current || current.current.outcome !== "active") return;
+    guideOpener.current = source;
+    setGuide(true);
+  }
 
   function take(move: Move) {
     if (!ready || paused || pending.current || current.current.outcome !== "active" || document.hidden) return;
@@ -132,14 +146,14 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   }, [state.story, over, ready, blocked, onFinish]);
   useEffect(() => {
     function keys(event: KeyboardEvent) {
-      if (event.isComposing || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || guide ||
-          (event.target instanceof Element && event.target.closest("input,textarea,select,[contenteditable=true],dialog"))) return;
-      const key = event.key.toLowerCase();
-      if (key === " " && event.target instanceof Element && event.target.closest("button,a")) return;
-      const move = KEYS[key];
+      if (event.isComposing || event.repeat || event.metaKey || event.ctrlKey || event.altKey || guide || current.current.outcome !== "active") return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target || !gameRef.current?.contains(target) || !gameRef.current.contains(document.activeElement)) return;
+      if (target.closest("button,a,summary,input,textarea,select,[contenteditable]:not([contenteditable=false]),dialog,[role=dialog],[role=slider],[role=tablist]")) return;
+      const key = event.key.toLowerCase(), move = KEYS[key];
       if (!move && key !== "i") return;
       event.preventDefault();
-      if (move) take(move); else setGuide(true);
+      if (move) take(move); else openGuide();
     }
     window.addEventListener("keydown", keys); return () => window.removeEventListener("keydown", keys);
   });
@@ -151,11 +165,11 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   const lockControls = !ready || paused || busy;
   const feedback = <div className="exp-feedback passage-feedback" data-testid="tide-feedback" role="status" aria-live="polite">{notice}</div>;
 
-  return <main className="exp-game passage-game tide-run" data-mode="court" data-testid="tide-run" data-story={state.story} data-seed={state.seed} data-beat={state.beat} data-wave={state.wave}
+  return <main ref={gameRef} tabIndex={0} aria-describedby={!over ? "tide-input-hints" : undefined} onPointerDownCapture={event => { if (event.target instanceof HTMLCanvasElement) gameRef.current?.focus({ preventScroll: true }); }} className="exp-game passage-game tide-run" data-mode="court" data-testid="tide-run" data-story={state.story} data-seed={state.seed} data-beat={state.beat} data-wave={state.wave}
       data-outcome={state.outcome} data-busy={busy} data-score={state.score} data-hearts={state.hearts}>
     <TideWorld key={sceneKey} snapshot={snapshot} transition={result} presentationId={serial.current} paused={paused}
       onReady={() => setReady(true)} onFault={message => { setFault(message); setReady(false); pending.current = null; setResult(null); }}
-      onBeat={beat} onSettled={settle} onTarget={target} />
+      onBeat={beat} onSettled={settle} onTarget={target} onMove={take} onInspect={openGuide} />
     <header className="exp-mast"><div className="exp-brand">familiar.<small>Played and saved on this device</small></div>
       <h1 className="exp-place">{chapter ? chapter.title : "Today’s tide"}</h1>
       <div className="passage-header-actions">
@@ -204,13 +218,17 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
       <span className="exp-sr-only">Mochi is at {where(seen.position)}. The bridge is at the {LANES[seen.bridge]} lane.</span>
       {feedback}
       </div>
+      <div className="tide-controls">
+      <ControlHints id="tide-input-hints" context={worldActions.includes("home") ? "Tap Home to end the tide · tap Wait." : "Tap Wait · prizes collect as you step."} keyboardContext="Space waits · R ends the tide at the dock · I explains the tide">
       <div className="exp-current-controls"><div className="exp-directions" aria-label="Movement">
         {STEPS.map(move => <button key={move} className={`exp-${move}`} data-move={move} aria-label={`Move ${move}`} disabled={lockControls || !legal.includes(move)} onClick={() => take(move)}>{icon(ARROWS[move])}</button>)}
         <button className="exp-wait" data-move="wait" aria-label="Wait one move" disabled={lockControls} onClick={() => take("wait")}>Wait</button>
       </div><div className="exp-context-actions">
-        <button ref={guideButton} className="exp-inspect-button" data-testid="tide-guide" disabled={lockControls} onClick={() => setGuide(true)}>How it works</button>
         {legal.includes("home") && state.moves.length > 0 && <button className="exp-text-button" data-move="home" aria-keyshortcuts="R" disabled={lockControls} onClick={() => take("home")}>Call it a day</button>}
       </div></div>
+      </ControlHints>
+      <button ref={guideButton} className="exp-inspect-button tide-guide-control" data-testid="tide-guide" disabled={lockControls} onClick={() => openGuide(guideButton.current)}>How it works</button>
+      </div>
     </section>}
     {guide && <dialog ref={dialog} className="exp-panel passage-panel" aria-labelledby="tide-guide-title" onCancel={event => { event.preventDefault(); setGuide(false); }}>
       <button className="exp-close" autoFocus aria-label="Close panel" onClick={() => setGuide(false)}>{icon("m6 6 12 12M18 6 6 18")}</button>
@@ -223,7 +241,7 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
         <li>{icon("M3 18V6m18 12V6M3 8c4 6 14 6 18 0M3 18h18M7 12v6m5-5v5m5-6v6")}<span>The bridge moves to the wave’s lane. The channel can only be crossed there.</span></li>
         <li>{icon("M20 12a8 8 0 1 1-16 0 8 8 0 1 1 16 0M12 7v5l3 2")}<span>This tide is {waves} waves.{roughFrom < waves ? ` From wave ${roughFrom + 1}, each wave takes two lanes.` : ""} What is still in the pack when it ends is lost.</span></li>
       </ul>
-      <p className="tide-guide-keys">Arrow keys or WASD move, Space waits, R calls it a day on the dock.</p>
+      <p className="tide-guide-keys">Swipe or tap a neighboring platform to move. Prizes are collected as Mochi steps onto them; reaching the dock banks the pack. Tap Wait beside Mochi to let one move pass, or Home to call it a day. Arrow keys or WASD move, Space waits, R calls it a day on the dock, and I opens this guide. Optional Button controls offer the same decisions without gestures.</p>
     </dialog>}
   </main>;
 }

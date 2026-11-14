@@ -1,8 +1,9 @@
 /** Draws a tide run. The board is redrawn from `shown`; each accepted move plays its events, then shows the state after. */
 import Phaser from "phaser";
+import { swipeCommand } from "../expedition/input";
 import { MOCHI_GROUND, MOCHI_POSES, walkingPose, type MochiPoseName } from "../motion/mochi";
 import { companionIdle } from "../expedition/companion";
-import { DOCK, STORY_SHELL, applyMove, countdown, legalMoves, stepDestination, type Item, type Lane, type Position, type TideEvent, type TideState, type TideTransition } from "./engine";
+import { DOCK, STORY_SHELL, applyMove, countdown, legalMoves, stepDestination, type Item, type Lane, type Position, type TideEvent, type TideState, type TideTransition, type Move } from "./engine";
 
 const ART = "/assets/expedition/runtime/";
 const IMAGES: Readonly<Record<string, string>> = {
@@ -15,8 +16,14 @@ const FONT = "Figtree Variable, sans-serif";
 const LANES = [0, 1, 2] as const;
 const same = (a: Position, b: Position) => a.x === b.x && a.y === b.y;
 
-export interface TideSnapshot { readonly tide: TideState; readonly reducedMotion: boolean }
+export type TideAction="wait"|"home";
+export interface TideActionAnchor {action:TideAction;x:number;y:number;width:number;height:number}
+export interface TideTile {position:Position;x:number;y:number;width:number;height:number}
+export interface TideSnapshot { readonly tide: TideState; readonly reducedMotion: boolean; readonly worldActions?:readonly TideAction[] }
 export interface TideHooks {
+  move:(move:Move)=>void;
+  inspect:()=>void;
+  geometry:(tiles:readonly TideTile[],actions:readonly TideActionAnchor[])=>void;
   target: (position: Position) => void;
   ready: () => void;
   fault: (message: string) => void;
@@ -41,12 +48,19 @@ export class TideScene extends Phaser.Scene {
   private actorPose: MochiPoseName = "curious";
   private parts: Phaser.GameObjects.GameObject[] = [];
   private prizes = new Map<string, Phaser.GameObjects.Image>();
+  private tileZones:Phaser.GameObjects.Zone[]=[];
+  private actionZones=new Map<TideAction,Phaser.GameObjects.Zone>();
   private ghosts: Phaser.GameObjects.Image[] = [];
   /** Everything `forecast` draws, so it can be redrawn without a full layout. */
   private marks: Phaser.GameObjects.GameObject[] = [];
   private shell: Phaser.GameObjects.Image | null = null;
   private pack: Phaser.GameObjects.Image[] = [];
-  private presses = new Map<number, { target: string; x: number; y: number }>();
+  private presses=new Map<number,{target:Phaser.GameObjects.GameObject|null;x:number;y:number;excursion:number;touch:boolean;edge:boolean}>();
+  private contacts=new Set<number>();
+  private multipleContacts=false;
+  private readingTop:number|null=null;
+  private layoutRequested=false;
+  private geometryFrame:number|null=null;
   private epoch = 0;
   private lastPresentation = 0;
   private playing = false;
@@ -85,32 +99,55 @@ export class TideScene extends Phaser.Scene {
     this.hints = this.add.graphics().setDepth(2.1);
     this.keeper = this.add.image(0, 0, "tide-keeper").setOrigin(.5, 1).setDepth(3);
     this.actorShadow = this.add.ellipse(0, 0, 50, 13, 0x342719, .25).setDepth(7);
-    this.actor = this.add.sprite(0, 0, "tide-mochi", 12).setOrigin(.5, MOCHI_GROUND).setDepth(10);
+    this.actor = this.add.sprite(0, 0, "tide-mochi", 12).setOrigin(.5, MOCHI_GROUND).setDepth(10).setInteractive({useHandCursor:true});
     this.scale.on("resize", () => {
+      this.presses.clear();
       if (this.playing && this.presentationSize) {
         const zoom = Math.min(this.scale.width / this.presentationSize.w, this.scale.height / this.presentationSize.h);
         this.cameras.main.setZoom(zoom).centerOn(this.presentationSize.w / 2, this.presentationSize.h / 2);
       } else { this.cameras.main.setZoom(1).setScroll(0, 0); this.layout(); }
     });
-    this.events.once("shutdown", () => { this.stopped = true; this.epoch++; });
     this.input.mouse?.disableContextMenu();
-    const release = (pointer: Phaser.Input.Pointer) => this.presses.delete(pointer.id);
-    this.input.on("pointerup", release); this.input.on("pointerupoutside", release);
+    this.input.addPointer(1);
+    this.input.on("pointerdown",(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[])=>this.press(pointer,over));
+    this.input.on("pointerdownoutside",(pointer:Phaser.Input.Pointer)=>this.press(pointer,[]));
+    this.input.on("pointermove",(pointer:Phaser.Input.Pointer)=>{
+      const press=this.presses.get(pointer.id),point=this.clientPoint(pointer);
+      if(press)press.excursion=Math.max(press.excursion,Math.hypot(point.x-press.x,point.y-press.y));
+    });
+    this.input.on("pointerup",(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[])=>this.release(pointer,over));
+    this.input.on("pointerupoutside",(pointer:Phaser.Input.Pointer)=>{this.presses.delete(pointer.id);this.contacts.delete(pointer.id);if(!this.contacts.size)this.multipleContacts=false;this.afterRelease();});
+    const cancel=()=>{this.presses.clear();this.contacts.clear();this.multipleContacts=false;};
+    const touchContacts=(event:TouchEvent)=>{if(event.touches.length>1||event.type==="touchcancel"){cancel();this.multipleContacts=event.touches.length>0;}else if(!event.touches.length){this.multipleContacts=false;this.contacts.clear();}};
+    // Run after Phaser's touch listener; prevent its compatibility mouse click from repeating a hold or tap.
+    const preventMouse=(event:TouchEvent)=>{if(event.cancelable)event.preventDefault();};
+    this.game.canvas.addEventListener("touchstart",preventMouse,{passive:false});
+    window.addEventListener("blur",cancel);document.addEventListener("visibilitychange",cancel);this.game.canvas.addEventListener("pointercancel",cancel);
+    window.addEventListener("touchstart",touchContacts,true);window.addEventListener("touchend",touchContacts,true);window.addEventListener("touchcancel",touchContacts,true);
+    let cleaned=false;
+    const cleanup=()=>{
+      if(cleaned)return;cleaned=true;
+      this.stopped=true;this.epoch++;cancel();if(this.geometryFrame!==null)cancelAnimationFrame(this.geometryFrame);
+      this.game.canvas.removeEventListener("touchstart",preventMouse);
+      window.removeEventListener("blur",cancel);document.removeEventListener("visibilitychange",cancel);this.game.canvas.removeEventListener("pointercancel",cancel);
+      window.removeEventListener("touchstart",touchContacts,true);window.removeEventListener("touchend",touchContacts,true);window.removeEventListener("touchcancel",touchContacts,true);
+    };
+    this.events.once("shutdown",cleanup);this.events.once("destroy",cleanup);
     this.layout(); this.hooks.ready();
   }
 
   /** Presentation coordinates are responsive. Logical cells and accepted state never resize. */
   private field() {
     const portrait = this.w <= 900 && this.h > this.w;
-    if (portrait && this.h < 500) { const top = 144, bottom = this.h - 166, width = this.w * .82; return { cx: this.w / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 }; }
+    if (portrait && this.h < 500) { const top = 144, bottom = Math.min(this.h-150,this.readingTop===null?Infinity:this.readingTop-24), width = this.w * .72; return { cx: this.w / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 }; }
     if (this.h <= 500) {
       // The painted island and its rings extend below the dock anchor.
       const available = this.w - 280, width = Math.max(240, Math.min(available * .91, 760)), top = 98, bottom = this.h - (portrait ? 34 : 56);
       return { cx: available / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 };
     }
     const top = portrait ? (this.h < 650 ? 151 : Math.max(200, this.h * .29)) : Math.max(190, this.h * .31);
-    const bottom = portrait ? this.h - 276 : this.h - 72;
-    const width = Math.min(portrait ? this.w * .84 : this.w * .50, 760);
+    const bottom = portrait ? Math.min(this.h-170,this.readingTop===null?Infinity:this.readingTop-48) : this.h - 72;
+    const width = Math.min(portrait ? this.w * .72 : this.w * .50, 760);
     return { cx: portrait ? this.w * .5 : this.w * .45, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 };
   }
   private point(position: Position) { const f = this.field(); return { x: f.cx + (position.x - 1) * f.dx, y: f.bottom - position.y * f.dy }; }
@@ -150,8 +187,19 @@ export class TideScene extends Phaser.Scene {
     if (transition && id !== this.lastPresentation) { this.lastPresentation = id; void this.present(transition, id); }
     else if (!this.playing) { this.shown = snapshot.tide; this.shut = this.shellShut(snapshot.tide); this.layout(); }
   }
+  refreshLayout(){
+    const parent=this.game.canvas.parentElement;
+    if(parent&&(this.scale.width!==parent.clientWidth||this.scale.height!==parent.clientHeight)){this.scale.setParentSize(parent.clientWidth,parent.clientHeight);return;}
+    if(this.scale.getParentBounds()){this.scale.refresh();return;}
+    if(this.playing||this.presses.size){this.layoutRequested=true;return;}
+    this.layoutRequested=false;this.layout();
+  }
+  private afterRelease(){
+    if(!this.layoutRequested||this.presses.size||this.geometryFrame!==null)return;
+    this.geometryFrame=requestAnimationFrame(()=>{this.geometryFrame=null;if(!this.stopped)this.refreshLayout();});
+  }
   setGated(gated: boolean) {
-    this.gated = gated; if (gated) this.presses.clear(); if (!this.actor) return;
+    this.gated = gated; if (gated) { this.presses.clear(); this.contacts.clear(); this.multipleContacts=false; } if (!this.actor) return;
     this.input.enabled = !gated; this.time.paused = gated;
     if (gated) this.tweens.pauseAll(); else this.tweens.resumeAll();
   }
@@ -159,6 +207,12 @@ export class TideScene extends Phaser.Scene {
   private layout() {
     if (!this.actor || this.stopped) return;
     this.presses.clear();
+    if(!this.playing){
+      this.layoutRequested=false;
+      const reading=this.game.canvas.closest(".exp-game")?.querySelector<HTMLElement>(".exp-command-tray");
+      this.readingTop=reading?.getClientRects().length?reading.getBoundingClientRect().top-this.game.canvas.getBoundingClientRect().top:null;
+    }
+    for(const zone of [...this.tileZones,...this.actionZones.values()])zone.disableInteractive();
     for (const part of this.parts) part.destroy();
     this.parts = []; this.prizes.clear(); this.pack = []; this.shell = null;
     this.ground.clear();
@@ -170,6 +224,7 @@ export class TideScene extends Phaser.Scene {
       const from = this.point({ x, y }), to = this.point({ x, y: y + 1 }), length = f.dy * 1.35;
       this.keep(this.add.image(from.x, (from.y + to.y) / 2, "tide-bridge").setDisplaySize(length / 3, length).setDepth(.4));
     }
+    const targets:TideTile[]=[];
     const island = this.textures.get("tide-island").getSourceImage() as HTMLImageElement;
     for (let y = 0; y < 5; y++) for (const x of LANES) {
       const position = { x, y }, p = this.point(position);
@@ -178,14 +233,13 @@ export class TideScene extends Phaser.Scene {
         this.ground.lineStyle(1, 0xe5edce, .35).strokeEllipse(p.x, p.y + tile.width * .1, tile.width * 1.09, tile.width * .24);
         this.keep(this.add.image(p.x, p.y, "tide-island").setOrigin(.5, .41).setDisplaySize(tile.width, tile.width * island.height / island.width).setDepth(1));
       } else if (x !== tide.bridge) this.ground.lineStyle(2, 0xa8c8bd, .4).strokeEllipse(p.x, p.y + 6, tile.width * .6, tile.height * .45);
-      const zone = this.keep(this.add.zone(p.x, p.y, Math.max(44, tile.width), Math.max(44, Math.min(tile.height + 15, f.dy - 2))).setInteractive({ useHandCursor: true }).setDepth(16));
-      const target = `${x},${y}`;
-      zone.on("pointerdown", (pointer: Phaser.Input.Pointer) => { if (!this.gated && this.onCanvas(pointer)) this.presses.set(pointer.id, { target, x: pointer.x, y: pointer.y }); });
-      zone.on("pointerup", (pointer: Phaser.Input.Pointer) => {
-        const press = this.presses.get(pointer.id); this.presses.delete(pointer.id);
-        if (this.gated || this.playing || pointer.wasCanceled || press?.target !== target || Math.hypot(pointer.x - press.x, pointer.y - press.y) > 12) return;
-        if (pointer.wasTouch || pointer.leftButtonReleased()) this.hooks.target(position);
-      });
+      const width=Math.max(44,tile.width),height=Math.max(44,Math.min(tile.height+15,f.dy-2));
+      const index=y*3+x;
+      let zone=this.tileZones[index];
+      if(!zone){zone=this.add.zone(p.x,p.y,width,height).setInteractive({useHandCursor:true}).setDepth(16).setData("cellTarget",position);this.tileZones[index]=zone;}
+      zone.setPosition(p.x,p.y).setSize(width,height).setInteractive();
+      if(same(position,tide.position))zone.disableInteractive();
+      targets.push({position,...p,width,height});
     }
     const crossing = this.point({ x: tide.bridge, y: 2 }), span = f.dy * 1.65 * 1.36;
     this.bridgeArt.setPosition(crossing.x, crossing.y).setDisplaySize(span / 3, span).setAngle(0).setAlpha(1);
@@ -206,12 +260,73 @@ export class TideScene extends Phaser.Scene {
       this.prizes.set(`${item.x},${item.y}`, this.keep(this.add.image(p.x + beside, p.y - size * .36, `tide-${item.kind}`).setDisplaySize(size, size).setDepth(6)));
     }
     const p = this.point(tide.position), size = this.actorSize();
-    this.actor.setPosition(p.x, p.y).setDisplaySize(size, size).setFlipX(false);
+    this.actor.setPosition(p.x, p.y).setDisplaySize(size, size).setFlipX(false).setData("worldAction",this.snapshot.worldActions?.includes("wait")?"wait":null);
     this.actorShadow.setPosition(p.x, p.y + 2).setSize(size * .55, Math.max(4, size * .1));
     this.pose(tide.outcome === "rescued" ? "startled" : tide.outcome !== "active" ? "relieved" : "curious");
     this.drawPack(tide.pack);
     this.forecast();
     this.resetIdle();
+    this.hooks.geometry(targets,this.actionTargets(tide,targets));
+  }
+
+  private clientPoint(pointer:Phaser.Input.Pointer){
+    const event=pointer.event;
+    if("changedTouches" in event){
+      const touch=Array.from(event.changedTouches).find(t=>t.identifier===pointer.identifier);
+      if(touch)return{x:touch.clientX,y:touch.clientY};
+    }
+    return{x:(event as MouseEvent).clientX,y:(event as MouseEvent).clientY};
+  }
+  private press(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[]){
+    this.contacts.add(pointer.id);
+    if(this.contacts.size>1){this.multipleContacts=true;this.presses.clear();}
+    if(this.gated||this.playing||this.stopped||this.multipleContacts||!this.onCanvas(pointer))return;
+    const event=pointer.event,point=this.clientPoint(pointer),rect=this.game.canvas.getBoundingClientRect();
+    const touch=pointer.wasTouch||("pointerType" in event&&event.pointerType==="pen");
+    if(!touch&&!pointer.leftButtonDown()&&!pointer.rightButtonDown())return;
+    const target=over.find(object=>object.getData("cellTarget")||object.getData("worldAction"))??null;
+    this.presses.set(pointer.id,{target,x:point.x,y:point.y,excursion:0,touch,edge:point.x-rect.left<24||rect.right-point.x<24});
+  }
+  private release(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[]){
+    const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);this.contacts.delete(pointer.id);this.afterRelease();
+    const multiple=this.multipleContacts;if(!this.contacts.size)this.multipleContacts=false;
+    const point=this.clientPoint(pointer),canvas=this.game.canvas,rect=canvas.getBoundingClientRect();
+    if(!press||this.gated||this.playing||this.stopped||multiple||pointer.wasCanceled||!this.onCanvas(pointer)||document.hidden||
+      point.x<rect.left||point.x>rect.right||point.y<rect.top||point.y>rect.bottom||document.elementFromPoint(point.x,point.y)!==canvas)return;
+    const excursion=Math.max(press.excursion,Math.hypot(point.x-press.x,point.y-press.y));
+    if(press.touch&&this.shown.outcome==="active"&&!press.edge){
+      const command=swipeCommand(point.x-press.x,point.y-press.y);
+      if(command){this.hooks.move(command.slice(5) as Move);return;}
+    }
+    if(excursion>12||!press.target||!over.includes(press.target))return;
+    if(pointer.rightButtonReleased()||pointer.getDuration()>450){this.hooks.inspect();return;}
+    if(!press.touch&&!pointer.leftButtonReleased())return;
+    const action=press.target.getData("worldAction") as TideAction|undefined;
+    const target=press.target.getData("cellTarget") as Position|undefined;
+    if(action)this.hooks.move(action);else if(target)this.hooks.target(target);
+  }
+  private actionTargets(tide:TideState,tiles:readonly TideTile[]):TideActionAnchor[]{
+    const anchors:TideActionAnchor[]=[],canvas=this.game.canvas.getBoundingClientRect(),f=this.field();
+    const blocked=Array.from(this.game.canvas.closest(".exp-game")?.querySelectorAll<HTMLElement>(".exp-command-tray,.exp-hud,.exp-mast,.exp-feedback")??[])
+      .filter(element=>element.getClientRects().length&&getComputedStyle(element).visibility!=="hidden")
+      .map(element=>{const r=element.getBoundingClientRect();return{x:r.left-canvas.left+r.width/2,y:r.top-canvas.top+r.height/2,width:r.width,height:r.height};});
+    const overlaps=(a:{x:number;y:number;width:number;height:number},b:typeof a)=>Math.abs(a.x-b.x)<(a.width+b.width)/2+2&&Math.abs(a.y-b.y)<(a.height+b.height)/2+2;
+    const moves=legalMoves(tide),cells=tiles.filter(cell=>moves.some(move=>{const to=stepDestination(tide,move);return to&&same(to,cell.position);}));
+    for(const action of this.snapshot.worldActions??[]){
+      const origin=this.point(action==="home"?DOCK:tide.position),preferred=action==="wait"?{x:origin.x,y:origin.y+20}:origin;
+      const candidates=[preferred];
+      for(let y=Math.max(88,f.top-20);y<this.h-24;y+=22)for(let x=24;x<this.w-24;x+=22)candidates.push({x,y});
+      candidates.sort((a,b)=>Math.hypot(a.x-preferred.x,a.y-preferred.y)-Math.hypot(b.x-preferred.x,b.y-preferred.y));
+      const point=candidates.find(point=>{const box={...point,width:44,height:44};return point.x>=24&&point.x<=this.w-24&&point.y>=24&&point.y<=this.h-24&&!cells.some(cell=>overlaps(box,cell))&&!anchors.some(anchor=>overlaps(box,anchor))&&!blocked.some(region=>overlaps(box,region));});
+      if(!point)continue;
+      anchors.push({...point,action,width:44,height:44});
+      this.ground.lineStyle(1.5,0xf5db9c,.85).lineBetween(origin.x,origin.y,point.x,point.y);
+      this.keep(this.label(point.x,point.y,action==="wait"?"Wait":"Home",12).setDepth(23));
+      let zone=this.actionZones.get(action);
+      if(!zone){zone=this.add.zone(point.x,point.y,44,44).setInteractive({useHandCursor:true}).setDepth(24).setData("worldAction",action);this.actionZones.set(action,zone);}
+      zone.setPosition(point.x,point.y).setInteractive();
+    }
+    return anchors;
   }
 
   /** The lanes the next wave takes, its countdown, the prize it will leave, and which steps are safe. */

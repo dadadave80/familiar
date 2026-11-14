@@ -1,3 +1,4 @@
+import { guide } from "./browser-controls";
 import assert from "node:assert/strict";
 import {mkdtemp} from "node:fs/promises";
 import {tmpdir} from "node:os";
@@ -59,7 +60,6 @@ async function checkHarborLayout(page:Page,width:number,height:number){
   for(const sign of geometry.signs)assert(!overlaps(toast,sign),`${tag}: return toast clears ${sign.name}`);
  }
 }
-const MOVE_KEY:Record<Move,string>={north:"ArrowUp",south:"ArrowDown",west:"ArrowLeft",east:"ArrowRight",wait:"Space",home:"r"};
 /** A device harbor's daily is the tide run: each layout sails today's last move for real, or seeds the day's state, then checks the harbor card. */
 async function checkReturnLayouts(browser:import("@playwright/test").Browser,origin:string){
  const day=20771;
@@ -89,7 +89,7 @@ async function checkReturnLayouts(browser:import("@playwright/test").Browser,ori
    await page.goto(origin+"/__harbor-game");
    if(scenario.moves){
     const run=page.getByTestId("tide-run");await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true",{timeout:20000});
-    await expect(run).toHaveAttribute("data-busy","false");await page.keyboard.press(MOVE_KEY[scenario.moves.at(-1)!]);
+    await expect(run).toHaveAttribute("data-busy","false");await guide(page,scenario.moves.at(-1)!);
     // A tide that ends on its own goes straight home; a finish card waits for a press.
     const finish=page.getByTestId("tide-finish"),homeSheet=page.locator('.exp-panel[data-surface="home"]');
     await expect(finish.or(homeSheet)).toBeVisible({timeout:20000});if(await finish.isVisible())await finish.click();

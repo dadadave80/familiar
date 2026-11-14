@@ -24,3 +24,12 @@
 .passage-game .passage-header-actions button{font-size:12px;padding:7px;min-height:44px}
 .passage-game .exp-brand small{display:block;font:10px/1.3 "Figtree Variable",sans-serif;margin-top:3px}
 @media(max-width:420px){.passage-game h1.exp-place{max-width:61px;font-size:11px}.passage-game .exp-mast{gap:5px}.passage-game .exp-brand{font-size:22px!important;padding:6px 8px}.passage-game .passage-header-actions button{font-size:11px;padding:6px}}
+
+.passage-game .passage-tray{overflow:visible}
+.passage-tray .exp-objective-row{margin-bottom:0}
+.passage-tray .exp-forecast{font-size:12px;line-height:1.3;margin-bottom:4px!important}
+.passage-tray .exp-button-controls-body .exp-context-actions{flex-direction:column;align-items:stretch}
+@media(max-width:899px) and (orientation:portrait){
+  .passage-game .passage-tray{max-height:156px}
+  .passage-tray .exp-objective{font-size:12px}
+}

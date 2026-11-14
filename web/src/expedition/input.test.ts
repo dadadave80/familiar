@@ -1,7 +1,33 @@
 import { expect,test } from "bun:test";
 import { applyCommand,startCourt } from "./engine";
-import { commandAt } from "./input";
+import { commandAt, movementKey, swipeCommand } from "./input";
 import type { CourtState } from "./types";
+
+test("swipes resolve one dominant screen-axis step and reject noise or diagonals",()=>{
+  expect(swipeCommand(0,-32)).toBe("step:north");
+  expect(swipeCommand(0,32)).toBe("step:south");
+  expect(swipeCommand(-32,0)).toBe("step:west");
+  expect(swipeCommand(32,0)).toBe("step:east");
+  expect(swipeCommand(31,0)).toBeNull();
+  expect(swipeCommand(40,40)).toBeNull();
+  expect(swipeCommand(48,32)).toBe("step:east");
+  expect(swipeCommand(1000,0)).toBe("step:east");
+  expect(swipeCommand(NaN,0)).toBeNull();
+  expect(swipeCommand(0,Infinity)).toBeNull();
+});
+test("movement keys normalize letter case without taking native or interaction keys",()=>{
+  for(const key of ["w","W","ArrowUp"])expect(movementKey(key)).toBe("step:north");
+  for(const key of ["a","A","ArrowLeft"])expect(movementKey(key)).toBe("step:west");
+  for(const key of ["s","S","ArrowDown"])expect(movementKey(key)).toBe("step:south");
+  for(const key of ["d","D","ArrowRight"])expect(movementKey(key)).toBe("step:east");
+  for(const key of ["Enter","Tab","Escape","e"," "])expect(movementKey(key)).toBeNull();
+});
+test("dock taps return only when already at the dock",()=>{
+  const state=startCourt({area:"beacon",tool:"rope",banked:[]});
+  expect(commandAt(state,{x:1,y:0})).toBe("return");
+  expect(commandAt({...state,position:{x:1,y:1}},{x:1,y:0})).toBe("step:south");
+  expect(commandAt({...state,outcome:"returned"},{x:1,y:0})).toBeNull();
+});
 
 test("clicking the open bridge or its far landing crosses in one canonical decision",()=>{
   const state:CourtState={...startCourt({area:"beacon",tool:"rope",banked:[]}),position:{x:1,y:1}};
