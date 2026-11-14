@@ -75,6 +75,12 @@
 .ss-haul-art{display:flex;align-items:center;gap:0;flex:0 0 auto}
 .ss-haul-art img+img{margin-left:-18px}
 .ss-haul-offer>.ss-info{flex-basis:100%}
+.ss-run-haul{gap:8px 16px;min-width:0}
+.ss-run-haul>.ss-haul-art{gap:16px;font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}
+.ss-run-haul>.ss-haul-art>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.ss-run-haul>.ss-haul-art img{width:32px;height:32px;object-fit:contain}
+.ss-run-haul>p{flex-basis:100%;margin:0;color:var(--ss-soft);font-size:13px}
+.ss-run-haul>button{white-space:nowrap;overflow-wrap:normal}
 .ss-docked{font-weight:650;margin:0}
 .ss-docked[data-docked=true]{color:var(--ss-sea)}
 .ss-wish-head{display:flex;gap:12px;align-items:center}
@@ -105,5 +111,6 @@
   .ss-prices dd{font-size:18px}
   .ss-haul-offer>.ss-primary{flex-basis:100%;order:1}
   .ss-haul-offer>.ss-info{order:2}
+  .ss .ss-run-haul>button{flex-basis:100%;padding-inline:12px;gap:8px;font-size:17px}
 }
 @media(prefers-reduced-motion:reduce){.ss button:active:not(:disabled):not([aria-disabled=true]){transform:none}}

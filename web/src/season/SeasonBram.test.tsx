@@ -4,6 +4,7 @@ import SeasonBram, { Shelf, Status, TodayHaul, WishTab } from "./SeasonBram";
 import SeasonBoundary from "./SeasonBoundary";
 import { deviceDay, keepTide, seedPreview, type TideReturn } from "./data";
 import type { ShelfView, TodayView } from "./model";
+import type { DayResult } from "../tide/run-day";
 
 const today:TodayView={day:20771,next_day_ns:0,rules_version:"tidebound_h1_v1",content_version:"first_light_v2",area:"beacon",command_limit:24,
   mapping:[["lens","glass"],["moth","reed"]],best_haul:[{tool:"rope",hauls:[[1,1]]},{tool:"lantern",hauls:[[1,1]]}],best_fp:12_000_000,minted_today:null,traded_today:null};
@@ -116,4 +117,76 @@ test("wishes explain the saved harbor requirement and retain the saved wish cont
 test("a device docking removes the shelving offers for that day",()=>withReturns([entry("full",full)],()=>{
   const html=renderToStaticMarkup(<TodayHaul {...props} preview={{...props.preview,docked:deviceDay()}}/>);
   expect(html).toContain("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");expect(html).not.toContain("Shelve ");
+}));
+
+const run:DayResult={day:20771,score:6,guess:6,banked:["reed","reed","reed","glass","pearl"],stamps:{home:true,guess:true,dry:true},splashes:0};
+const unread={...props.live,shelf:null,today:null,error:"Bram’s shelf could not be read just now."};
+
+test("a run harbor offers today's tide without waiting for the season ledger or the court's day",()=>{
+  for(const live of [unread,{...props.live,today:{...today,content_version:"first_light_v1" as const}}]){
+    const html=renderToStaticMarkup(<TodayHaul {...props} live={live} run={null}/>);
+    expect(html).toContain("Sail today’s tide and bring something home. Bram shelves reed and glass, up to three of each a day.");
+    expect(html).toContain('class="ss-link">See today’s tide</button>');
+    expect(html).not.toContain("Reading Bram’s ledger");expect(html).not.toContain("every other day");
+    expect(html).not.toContain("Shelve ");
+  }
+  expect(renderToStaticMarkup(<SeasonBram tideScope="preview" onOpenTide={()=>{}} run={null}/>)).toContain("See today’s tide");
+});
+
+test("a run harbor's docking takes priority even before a run or ledger is available",()=>{
+  for(const result of [null,run]){
+    const html=renderToStaticMarkup(<TodayHaul {...props} live={unread} preview={{...props.preview,docked:deviceDay()}} run={result}/>);
+    expect(html).toContain('class="ss-docked" data-docked="true"');
+    expect(html).toContain("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");
+    expect(html).not.toContain("Shelve ");expect(html).not.toContain("See today’s tide");
+  }
+  expect(renderToStaticMarkup(<TodayHaul {...props} preview={{...props.preview,docked:deviceDay()-1}} run={run}/>)).toContain("Shelve 1 glass and 3 reed bundles");
+});
+
+test("an empty run haul has nothing to press and pearls stay with Mochi",()=>{
+  for(const [banked,keep] of [
+    [[],""],[["pearl"]," Mochi keeps the pearl."],[["pearl","pearl"]," Mochi keeps the 2 pearls."],
+  ] as const){
+    const html=renderToStaticMarkup(<TodayHaul {...props} live={unread} run={{...run,banked}}/>);
+    expect(html).toBe(`<p>Today’s tide brought no reed or glass.${keep}</p>`);
+    expect(html).not.toContain("<button");expect(html).not.toContain("ss-haul-art");
+  }
+});
+
+test("a run shelving offer shows counted goods, its banked line and the pearl reminder",()=>{
+  const html=renderToStaticMarkup(<TodayHaul {...props} live={unread} run={run}/>);
+  expect(html).toContain('class="ss-act ss-haul-offer ss-run-haul"');
+  expect(html).toContain('/assets/season/glass.webp');expect(html).toContain('/assets/season/reed.webp');
+  expect(html).toContain('width="56" height="56"/>×1</span>');
+  expect(html).toContain('width="56" height="56"/>×3</span>');
+  expect(html).not.toContain('/assets/run/pearl.webp');
+  expect(html).toContain("From today’s tide run: Banked 6 · Bram guessed 6.");
+  expect(html).toContain("Shelve 1 glass and 3 reed bundles");
+  expect(html).toContain('class="ss-info">Mochi keeps the pearl.</span>');
+  expect(html).toContain('class="ss-primary" aria-disabled="false"');
+  expect(renderToStaticMarkup(<TodayHaul {...props} run={run} primary={false}/>)).not.toContain('class="ss-primary"');
+  expect(renderToStaticMarkup(<TodayHaul {...props} run={run} busy/>)).toContain('aria-disabled="true"');
+  expect(renderToStaticMarkup(<TodayHaul {...props} run={{...run,banked:["glass","pearl","pearl"]}}/>)).toContain("Mochi keeps the 2 pearls.");
+  expect(renderToStaticMarkup(<TodayHaul {...props} run={{...run,banked:["glass"]}}/>)).not.toContain("Mochi keeps");
+});
+
+test("a run press caps each shelf good and seeds a device preview when the RPC is unreadable",()=>{
+  let next:ReturnType<typeof seedPreview>|undefined;
+  let texts:string[]=[];
+  const result:DayResult={...run,banked:["glass","glass","glass","glass","reed","reed","reed","reed","pearl"]};
+  const component=TodayHaul({...props,live:unread,preview:null,run:result,onPreview:(market,saved,unsaved)=>{next=market;texts=[saved,unsaved??""];},onPreviewBlock:()=>{throw Error("unexpected block");}});
+  const offer=(component.type as (props:typeof component.props)=>typeof component)(component.props);
+  offer.props.children.find((child:{props?:{onPress?:()=>void}})=>child?.props?.onPress).props.onPress();
+  expect(next?.goods).toEqual([4,5]);
+  expect(next?.docked).toBe(deviceDay());
+  expect(next?.shelf).toEqual([{stock:40,heat_fp:0},{stock:40,heat_fp:0}]);
+  expect(texts).toEqual(["Shelved on this device: 3 glass and 3 reed bundles. Not recorded.","Shelved for this visit: 3 glass and 3 reed bundles. Not recorded."]);
+});
+
+test("signed-in hauls and omitted run props keep the legacy ledger flow",()=>withReturns([entry("full",full)],()=>{
+  for(const result of [null,run]){
+    expect(renderToStaticMarkup(<TodayHaul {...props} saved registered run={result}/>)).toBe(renderToStaticMarkup(<TodayHaul {...props} saved registered/>));
+    expect(renderToStaticMarkup(<TodayHaul {...props} saved live={unread} run={result}/>)).toBe("<p>Reading Bram’s ledger…</p>");
+  }
+  expect(renderToStaticMarkup(<TodayHaul {...props} run={undefined}/>)).toBe(renderToStaticMarkup(<TodayHaul {...props}/>));
 }));
