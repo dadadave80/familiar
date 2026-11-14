@@ -1,0 +1,19 @@
+.tide-run .tide-hud { font-variant-numeric: tabular-nums; flex-wrap: wrap; row-gap: 4px; }
+.tide-run .tide-hearts { color: #b5412f; font-size: 17px; letter-spacing: 2px; line-height: 1; }
+.tide-run .tide-hearts i { font-style: normal; opacity: .22; }
+.tide-run .tide-finish > div:first-child { flex: 1; min-width: 0; }
+.tide-run .tide-finish-actions { display: flex; flex-direction: column; gap: 8px; flex: none; }
+.tide-run .tide-stamps { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 14px; }
+.tide-run .tide-stamps li::before { content: "○ "; }
+.tide-run .tide-stamps li[data-earned=true] { font-weight: 750; color: #2b5f4d; }
+.tide-run .tide-stamps li[data-earned=true]::before { content: "● "; }
+.tide-run .tide-guide { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 8px; }
+.tide-run .tide-guide-keys { font-size: 13px; color: var(--exp-secondary-ink); }
+@media (max-width: 899px) {
+  .tide-run .tide-finish-actions { margin-top: 12px; }
+  .tide-run .tide-finish-actions button { width: 100%; }
+}
+@media (min-width: 900px) and (min-height: 501px) {
+  /* Lines from the tide sit under the status, clear of the dock. */
+  .tide-run .exp-feedback { top: max(152px, calc(env(safe-area-inset-top) + 142px)); bottom: auto; max-width: min(250px, 19vw); padding: 10px 14px; line-height: 1.35; }
+}
