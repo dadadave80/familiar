@@ -40,8 +40,8 @@ function entryFor(tideDay: number, commands: Command[]): TideEntry {
     decisions: run.state.turn, outcome: run.state.outcome, late: false, attempts: 1, savedAt: "" };
 }
 
-async function capturePair(page: Page, label: string, check?: () => Promise<void>) {
-  for (const size of [viewport, { width: 1280, height: 800 }]) {
+async function captureLayouts(page: Page, label: string, check?: () => Promise<void>) {
+  for (const size of [viewport, { width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(size);
     await check?.();
     await page.screenshot({ path: join(shots, `rev-${label}-${size.width}x${size.height}.png`) });
@@ -75,28 +75,95 @@ async function checkHarborStamp(page: Page) {
   await expect(harbor.locator(".tide-stamp-paper > img")).toHaveAttribute("alt", "");
   assert.ok(await harbor.evaluate(node => {
     const stamp = node.querySelector<HTMLElement>(".tide-stamp")!, bounds = stamp.getBoundingClientRect();
-    const heading = node.querySelector("h1")!, button = node.querySelector(".exp-primary")!.getBoundingClientRect();
+    const heading = node.querySelector("h1")!, action = node.querySelector(".exp-primary,.exp-secondary")!.getBoundingClientRect();
     const text = [heading, node.querySelector("p")!].flatMap(element => {
       const range = document.createRange(); range.selectNodeContents(element); return [...range.getClientRects()];
     });
-    return getComputedStyle(stamp).getPropertyValue("--stamp") === "72px"
-      && (innerWidth !== 412 || heading.getBoundingClientRect().height <= parseFloat(getComputedStyle(heading).lineHeight) * 2 + 1)
-      && text.every(rect => rect.right <= bounds.left || rect.bottom <= bounds.top || rect.top >= bounds.bottom)
-      && bounds.bottom <= button.top;
-  }), "harbor stamp is 72px, title uses at most two lines at 412px, and stamp overlaps neither text nor primary action");
+    return getComputedStyle(stamp).getPropertyValue("--stamp") === "88px"
+      && text.every(rect => rect.right <= bounds.left || rect.left >= bounds.right || rect.bottom <= bounds.top || rect.top >= bounds.bottom)
+      && (bounds.bottom <= action.top || bounds.right <= action.left)
+      && node.getBoundingClientRect().left >= 0 && node.getBoundingClientRect().right <= innerWidth;
+  }), "harbor stamp is 88px and overlaps neither text nor an action at every viewport");
+  assert.ok(await harbor.locator(".exp-primary").count() <= 1, "one primary per harbor card");
+  assert.ok(await harbor.locator(".exp-secondary").count() <= 2, "at most two secondary actions per harbor card");
+  const size = page.viewportSize()!, dockActive = size.width < 900 && (size.height >= size.width || size.height > 500);
+  const navigation = page.locator(dockActive ? ".exp-phone-dock" : ".exp-harbor-tools");
+  await expect(navigation.getByRole("button", { name: "Harbor chart", exact: true })).toBeVisible();
+  await expect(navigation.getByRole("button", { name: "Open the tide log", exact: true })).toBeVisible();
+  if (dockActive) {
+    await expect(navigation.getByRole("button")).toHaveCount(4);
+    const card = await harbor.boundingBox(), dock = await navigation.boundingBox();
+    assert.ok(card && dock && card.y + card.height <= dock.y + 1, "phone harbor card stays above its dock");
+  }
+  await expect(harbor.getByRole("button", { name: "Change preparation", exact: true })).toBeVisible();
+}
+
+async function checkStickyPanel(page: Page, label: string) {
+  const panel = page.locator(".exp-panel");
+  await panel.evaluate(node => node.scrollTo({ top: node.scrollHeight, behavior: "instant" }));
+  const bounds = await panel.boundingBox(), close = await panel.getByRole("button", { name: "Close panel", exact: true }).boundingBox();
+  const heading = await panel.getByRole("heading").first().boundingBox();
+  assert.ok(bounds && close && heading && close.y >= bounds.y && close.y + close.height <= bounds.y + bounds.height
+    && heading.y >= bounds.y && heading.y + heading.height <= bounds.y + bounds.height, `${label}: close and heading stay in view after scrolling`);
+  await panel.evaluate(node => node.scrollTo({ top: 0, behavior: "instant" }));
+}
+
+async function checkTrayAsks(page: Page, label: string) {
+  const tray = page.locator(".exp-command-tray"), asks = tray.locator(".exp-tray-reading > .tide-outing .tide-asks");
+  await expect(asks).toBeVisible();
+  await expect(tray.locator(".exp-tray-scroll .tide-outing")).toHaveCount(0);
+  const bounds = await tray.boundingBox(), strip = await asks.boundingBox(), actions = await tray.locator(".exp-tray-actions").boundingBox();
+  assert.ok(bounds && strip && actions, `${label}: tray, asks and actions have visible bounds`);
+  assert.ok(strip.x >= bounds.x - 1 && strip.x + strip.width <= bounds.x + bounds.width + 1
+    && strip.y >= bounds.y - 1 && strip.y + strip.height <= bounds.y + bounds.height + 1,
+    `${label}: asks lie inside the move tray`);
+  assert.ok(strip.y + strip.height <= actions.y + 1 || strip.x + strip.width <= actions.x + 1 || strip.x >= actions.x + actions.width - 1,
+    `${label}: asks do not overlap movement or context actions`);
+  const chips = await asks.locator("li").evaluateAll(nodes => nodes.map(node => {
+    const bounds = node.getBoundingClientRect();
+    return { top: bounds.top, left: bounds.left, right: bounds.right, height: bounds.height,
+      font: parseFloat(getComputedStyle(node).fontSize), fits: node.scrollWidth <= node.clientWidth + 1 };
+  }));
+  assert.ok(chips.every(chip => chip.left >= strip.x - 1 && chip.right <= strip.x + strip.width + 1 && chip.fits),
+    `${label}: every chip fits without clipping its status words at ${page.viewportSize()!.width}x${page.viewportSize()!.height}: ${JSON.stringify(await asks.locator("li").allInnerTexts())}`);
+  assert.ok(chips.every(chip => chip.font >= 13), `${label}: ask text is at least 13px`);
+  const size = page.viewportSize()!;
+  if (size.width < 900) {
+    const rows = new Set(chips.map(chip => Math.round(chip.top))).size;
+    if (size.height > size.width) assert.equal(rows, 1, `${label}: portrait phone asks use one row`);
+    else assert.ok(rows <= 2, `${label}: landscape phone asks use at most two rows in the narrow tray`);
+    assert.ok(chips.every(chip => chip.height <= 36), `${label}: phone chips stay at most 36px tall`);
+  } else assert.equal(new Set(chips.map(chip => Math.round(chip.top))).size, 3, `${label}: desktop asks use three stacked rows`);
+  const reading = tray.locator(".exp-tray-scroll");
+  assert.ok(await reading.evaluate(node => {
+    node.scrollTo({ top: node.scrollHeight, behavior: "instant" });
+    return node.scrollHeight <= node.clientHeight + 1 || node.scrollTop > 0;
+  }), `${label}: overflowing reading text actually scrolls`);
+  const afterScroll = await asks.boundingBox();
+  assert.ok(afterScroll && Math.abs(afterScroll.y - strip.y) <= 1, `${label}: scrolling the reading text leaves the asks in place`);
+  await reading.evaluate(node => node.scrollTo({ top: 0, behavior: "instant" }));
 }
 
 async function checkRestartLayout(page: Page, label: string) {
   const asks = page.locator(".tide-asks"), restart = page.locator(".tide-outing > .tide-restart.exp-text-button");
   const strip = await asks.boundingBox(), button = await restart.boundingBox();
-  const hud = await page.locator('.exp-hud[aria-label="Expedition status"]').boundingBox();
-  const controls = await page.locator(".exp-command-tray").boundingBox();
-  assert.ok(strip && button && hud && controls, `${label}: asks, restart, HUD and controls have visible bounds`);
-  assert.ok(strip.y >= hud.y + hud.height, `${label}: asks stay below the status HUD`);
-  assert.ok(button.y >= strip.y + strip.height, `${label}: restart stays below the asks`);
-  assert.ok(button.x >= strip.x - 1 && button.x + button.width <= strip.x + strip.width + 1, `${label}: restart stays in the asks column`);
-  assert.ok(button.y + button.height <= controls.y, `${label}: restart stays above court controls`);
+  const tray = await page.locator(".exp-command-tray").boundingBox(), actions = await page.locator(".exp-tray-actions").boundingBox();
+  assert.ok(strip && button && tray && actions, `${label}: asks, restart, tray and actions have visible bounds`);
+  assert.ok(button.y >= strip.y + strip.height - 1 || button.y + button.height <= strip.y + 1
+    || button.x >= strip.x + strip.width - 1 || button.x + button.width <= strip.x + 1,
+    `${label}: restart and ask chips do not overlap`);
+  assert.ok(button.x >= tray.x - 1 && button.x + button.width <= tray.x + tray.width + 1
+    && button.y >= tray.y - 1 && button.y + button.height <= tray.y + tray.height + 1, `${label}: restart stays inside the tray`);
+  assert.ok(button.y + button.height <= actions.y + 1 || button.x + button.width <= actions.x + 1 || button.x >= actions.x + actions.width - 1,
+    `${label}: restart stays clear of movement and context actions`);
   assert.ok(button.height >= 44, `${label}: restart has a 44px target`);
+  await expect(restart).toBeInViewport({ ratio: 1 });
+  await checkTrayAsks(page, label);
+  await page.locator(".exp-tray-scroll").evaluate(node => node.scrollTo({ top: node.scrollHeight, behavior: "instant" }));
+  const afterScroll = await restart.boundingBox();
+  assert.ok(afterScroll && Math.abs(afterScroll.y - button.y) <= 1, `${label}: scrolling the reading text leaves restart in place`);
+  await expect(restart).toBeInViewport({ ratio: 1 });
+  await page.locator(".exp-tray-scroll").evaluate(node => node.scrollTo({ top: 0, behavior: "instant" }));
   assert.equal(await asks.evaluate(node => getComputedStyle(node).pointerEvents), "none");
   assert.equal(await restart.evaluate(node => getComputedStyle(node).pointerEvents), "auto");
   await restart.focus();
@@ -161,6 +228,8 @@ async function checkMidnight(page: Page, origin: string, mode: "harbor" | "wake"
     assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), expectedPending, "restart after midnight keeps the outing’s original marker");
     await page.locator('button[data-command="return"]').click();
     await page.clock.runFor(1_000);
+    await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible();
+    await panel.getByRole("button", { name: "See the tide log", exact: true }).click();
     await expect(panel.getByRole("heading", { name: card.name, exact: true })).toBeVisible();
     const entries = await page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "[]"), logKey);
     assert.equal(entries.length, 1);
@@ -184,6 +253,7 @@ try {
   const errors: string[] = [];
   try {
     const page = await browser.newPage({ viewport });
+    await page.clock.install({ time: new Date(day * 86_400_000 + 43_200_000) });
     page.on("pageerror", error => errors.push(error.message));
     const game = page.getByTestId("expedition-game"), world = page.getByTestId("expedition-world");
     const harbor = page.locator(".exp-departure"), panel = page.locator(".exp-panel");
@@ -206,8 +276,32 @@ try {
     await expect(harbor).toContainText(card.name);
     await expect(harbor.locator(".tide-stamp img")).toHaveAttribute("alt", "");
     await expect(harbor.locator("p").first()).toHaveText(`${card.name}. Three asks for one tide, with the ${card.tool}.`);
-    await capturePair(page, "harbor-unsailed", () => checkHarborStamp(page));
+    await captureLayouts(page, "harbor-unsailed", () => checkHarborStamp(page));
     await checkHarborStamp(page);
+    for (const size of [viewport, { width: 1280, height: 800 }]) {
+      await page.setViewportSize(size);
+      const chartOpener = page.getByRole("button", { name: "Harbor chart", exact: true }).and(page.locator(":visible")).first();
+      await chartOpener.focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("dialog", { name: "Chart", exact: true })).toBeVisible();
+      await checkStickyPanel(page, "harbor chart");
+      await page.keyboard.press("Escape");
+      await expect(chartOpener).toBeFocused();
+      await chartOpener.click();
+      await panel.getByRole("button", { name: "Close panel", exact: true }).click();
+      await expect(chartOpener).toBeFocused();
+    }
+    await page.setViewportSize(viewport);
+    for (const place of await page.locator(".exp-home-places button:visible").all()) {
+      await place.hover();
+      assert.ok(await place.evaluate(button => {
+        const style = getComputedStyle(button), text = style.color.match(/[\d.]+/g)!.map(Number), surface = style.backgroundColor.match(/[\d.]+/g)!.map(Number);
+        const luminance = (rgb: number[]) => rgb.slice(0, 3).map(channel => { const value = channel / 255; return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4; }).reduce((sum, value, i) => sum + value * [.2126, .7152, .0722][i]!, 0);
+        const alpha = surface[3] ?? 1, backdrop = surface.slice(0, 3).map(channel => channel * alpha + 255 * (1 - alpha));
+        const light = luminance(text), dark = luminance(backdrop);
+        return (Math.max(light, dark) + .05) / (Math.min(light, dark) + .05) >= 4.5;
+      }), "hover keeps every harbor place label readable, even over the lightest scene background");
+    }
     await page.screenshot({ path: join(shots, `harbor-ask-${tag}.png`) });
     await page.setViewportSize({ width: 1280, height: 800 });
     await checkHarborStamp(page);
@@ -221,6 +315,10 @@ try {
     for (const ask of card.asks) await expect(panel.getByText(askLine(ask, card.tool), { exact: true })).toBeVisible();
     await expect(panel.locator(".tide-earlier")).toHaveCount(0);
     await checkPanel(page, "ask card");
+    assert.ok(await panel.locator(".tide-card").evaluate(card => {
+      const bounds = card.getBoundingClientRect(), primary = card.querySelector(".exp-primary")!.getBoundingClientRect();
+      return Math.abs(primary.left - bounds.left) <= 1 && Math.abs(primary.right - bounds.right) <= 1;
+    }), "Today’s tide primary pill fills the phone card width");
     await page.screenshot({ path: join(shots, `ask-card-${tag}.png`) });
 
     await observePops(page);
@@ -242,6 +340,7 @@ try {
       await expect(chip.locator(".tide-sr")).toHaveText(holding ? " (holding)" : " (not yet)");
       await expect(chip.locator("svg path")).toHaveCount(holding ? 1 : 0);
     }
+    await captureLayouts(page, "court-start", () => checkTrayAsks(page, "outing start"));
     for (const [index, command] of route.entries()) {
       await page.locator(`button[data-command="${command}"]`).click();
       await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
@@ -251,30 +350,89 @@ try {
         assert.ok(strip && hud, "the asks and status HUD have visible bounds");
         assert.ok(strip.y >= hud.y + hud.height, "the asks do not overlap the status HUD");
         assert.ok(strip.x >= 0 && strip.x + strip.width <= viewport.width + 1, "the asks fit the viewport width");
+        await captureLayouts(page, "court-mid-outing", () => checkTrayAsks(page, "mid-outing"));
+        const chips = await asks.locator("li").evaluateAll(nodes => nodes.map(node => ({ top: Math.round(node.getBoundingClientRect().top), font: parseFloat(getComputedStyle(node).fontSize) })));
+        assert.ok(new Set(chips.map(chip => chip.top)).size <= 2, "phone asks use at most two rows");
+        assert.ok(chips.every(chip => chip.font >= 13), "phone ask text is at least 13px");
+        const feedback = await page.getByTestId("expedition-feedback").boundingBox(), tray = await page.locator(".exp-command-tray").boundingBox();
+        const reading = await page.locator(".exp-tray-scroll").boundingBox(), actions = await page.locator(".exp-tray-actions").boundingBox();
+        const directions = await page.locator(".exp-directions").boundingBox();
+        const dockBottom = await world.evaluate(node => {
+          const ys = (JSON.parse(node.getAttribute("data-tiles")!) as { y: number }[]).map(tile => tile.y);
+          const bottom = Math.max(...ys), step = (bottom - Math.min(...ys)) / 4;
+          return bottom + Math.max(33, Math.min(step * .65, 72)) / 2;
+        });
+        assert.ok(tray && tray.y >= dockBottom, "the phone tray clears the complete dock platform");
+        assert.ok(feedback && reading && directions && Math.max(feedback.y, reading.y) >= tray!.y
+          && Math.min(feedback.y + feedback.height, reading.y + reading.height) <= directions.y,
+          "visible phone feedback stays inside its scrolling region above the movement controls");
+        assert.ok(actions && actions.y >= tray!.y && actions.y + actions.height <= viewport.height,
+          "phone movement and context actions stay visible without scrolling the tray");
         await page.screenshot({ path: join(shots, `court-mid-outing-${tag}.png`) });
       }
     }
 
     await expect(game).toHaveAttribute("data-mode", "harbor", { timeout: 15000 });
-    await expect(panel.getByRole("heading", { name: "Bram’s tide log", exact: true })).toBeVisible();
-    await expect(panel.getByRole("heading", { name: card.name, exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible();
+    await expect(panel.getByRole("heading", { name: "All three asks kept.", exact: true })).toBeVisible();
     await expect(panel.locator('.tide-list > li[data-kept="true"]')).toHaveCount(3);
-    await expect(panel.locator(".tide-page-stamp .tide-stamp")).toHaveAttribute("data-press", "true");
+    await expect(panel.locator(".tide-home-stamp .tide-stamp")).toHaveAttribute("data-press", "true");
+    await expect(panel.locator(".tide-home-sub")).toHaveText(`${route.length} decisions · the Tidekeeper’s way`);
+    await expect(panel.getByRole("button", { name: "Take it to Bram", exact: true })).toHaveClass(/exp-primary/);
+    await expect(panel.getByRole("button", { name: "See the tide log", exact: true })).toHaveClass(/exp-secondary/);
+    await expect(page.getByTestId("expedition-feedback")).toHaveClass(/exp-sr-only/);
+    await expect(panel.locator(".tide-home-note")).toHaveText("Home with Beacon Lens. Bram can shelve it today.");
     assert.ok(await panel.evaluate(panel => {
       const viewport = panel.getBoundingClientRect();
-      return [...panel.querySelectorAll(".tide-list .tide-ask-mark, .tide-page-stamp .tide-stamp")].every(marker => {
+      return [...panel.querySelectorAll(".tide-list .tide-ask-mark, .tide-home-stamp .tide-stamp")].every(marker => {
         const bounds = marker.getBoundingClientRect();
         return bounds.top >= viewport.top && bounds.bottom <= viewport.bottom && bounds.left >= viewport.left && bounds.right <= viewport.right;
       });
-    }), "automatic return opens with every arrival marker and the page stamp in view");
+    }), "automatic return shows every arrival marker and the stamp");
+    await expect(panel.locator(".tide-list")).toHaveAttribute("data-arrival", "true");
+    assert.deepEqual(await panel.locator(".tide-list .tide-ask-mark").evaluateAll(markers => markers.map(marker => getComputedStyle(marker).animationDelay)), ["0.36s", "0.48s", "0.6s"]);
+    await checkPanel(page, "Home sheet");
+    await captureLayouts(page, "coming-home", async () => {
+      await checkPanel(page, "Home sheet");
+      if (page.viewportSize()!.height <= 500) {
+        assert.equal(await panel.evaluate(node => node.scrollHeight > node.clientHeight + 1), false, "landscape Home sheet needs no scrolling");
+        await expect(panel.getByRole("button", { name: "Take it to Bram", exact: true })).toBeInViewport({ ratio: 1 });
+        await expect(panel.getByRole("button", { name: "See the tide log", exact: true })).toBeInViewport({ ratio: 1 });
+        assert.ok(await panel.evaluate(node => {
+          const bounds = node.getBoundingClientRect();
+          return [...node.querySelectorAll(".tide-home button")].every(button => {
+            const action = button.getBoundingClientRect();
+            return action.top >= bounds.top && action.bottom <= bounds.bottom && action.left >= bounds.left && action.right <= bounds.right;
+          });
+        }), "landscape Home actions fit inside the panel without clipping");
+      }
+      await checkStickyPanel(page, "Home sheet");
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    assert.deepEqual(await panel.locator(".tide-list .tide-ask-mark, .tide-home-stamp .tide-stamp").evaluateAll(markers => markers.map(marker => getComputedStyle(marker).animationName)), ["none", "none", "none", "none"], "reduced motion shows the complete Home result without arrival animations");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await panel.getByRole("button", { name: "See the tide log", exact: true }).click();
+    await expect(panel.getByRole("heading", { name: "Bram’s tide log", exact: true })).toBeVisible();
+    await expect(panel.getByRole("heading", { name: card.name, exact: true })).toBeVisible();
+    await expect.poll(() => panel.evaluate(node => node.scrollTop)).toBe(0);
+    const disabledPages = panel.locator('.tide-pages button[aria-disabled="true"]');
+    await expect(disabledPages).not.toHaveCount(0);
+    assert.ok(await disabledPages.evaluateAll(buttons => buttons.every(button => {
+      const style = getComputedStyle(button);
+      const luminance = (color: string) => color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(channel => {
+        const value = channel / 255;
+        return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+      }).reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index]!, 0);
+      const ink = luminance(style.color), surface = luminance(style.backgroundColor);
+      return Number(style.opacity) === 1 && (Math.max(ink, surface) + .05) / (Math.min(ink, surface) + .05) >= 3;
+    })), "disabled page pills keep at least 3:1 text contrast without opacity fading");
     await expect(panel.locator(".tide-sub").first()).toHaveText("1 tide sailed · 3 asks kept · 1 with all three");
     await expect(panel.locator(".tide-facts > div").filter({ has: page.locator("dt", { hasText: /^Decisions$/ }) }).locator("dd")).toHaveText(String(route.length));
-    await expect(panel.locator(".tide-facts > div").filter({ has: page.locator("dt", { hasText: /^The Tidekeeper’s way$/ }) }).locator("dd")).toHaveText(`${card.best} decisions`);
     await expect(panel.getByText("Mochi matched the Tidekeeper’s way.", { exact: true })).toBeVisible();
-    await expect(panel.locator(".tide-list")).toHaveAttribute("data-arrival", "true");
-    assert.deepEqual(await panel.locator(".tide-list .tide-ask-mark").evaluateAll(markers => markers.map(marker => getComputedStyle(marker).animationDelay)), ["0s", "0.12s", "0.24s"]);
-    assert.equal(await panel.locator(".tide-page-stamp .tide-stamp").evaluate(stamp => getComputedStyle(stamp).animationDelay), "0.5s");
-    const entries = await page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "[]"), logKey);
+    await expect(panel.locator(".tide-list")).not.toHaveAttribute("data-arrival", "true");
+    await expect(panel.locator(".tide-page-stamp .tide-stamp")).not.toHaveAttribute("data-press", "true");
+    await checkStickyPanel(page, "tide log");
+    let entries = await page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "[]"), logKey);
     assert.equal(entries.length, 1);
     assert.equal(entries[0].day, day);
     assert.equal(entries[0].cardId, card.id);
@@ -284,28 +442,34 @@ try {
     assert.deepEqual(entries[0].commands, route);
     assert.equal(await page.evaluate(key => localStorage.getItem(key), pendingKey), null);
     await checkPanel(page, "log page");
-    await expect(panel.locator(".tide-home")).toHaveText("home", { timeout: 15000 });
     await page.screenshot({ path: join(shots, `log-page-${tag}.png`) });
-    await capturePair(page, "log-three-kept", async () => {
+    await captureLayouts(page, "log-three-kept", async () => {
       await panel.locator(".tide-list").evaluate(asks => asks.scrollIntoView({ block: "end", behavior: "instant" }));
       await checkPanel(page, "three-kept log");
     });
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    assert.deepEqual(await panel.locator(".tide-list .tide-ask-mark, .tide-page-stamp .tide-stamp").evaluateAll(markers => markers.map(marker => getComputedStyle(marker).animationName)), ["none", "none", "none", "none"], "reduced motion removes arrival animations");
-    await page.emulateMedia({ reducedMotion: "no-preference" });
 
     await panel.getByRole("button", { name: "Close panel", exact: true }).click();
     await expect(harbor.getByRole("heading", { name: "All three asks kept.", exact: true })).toBeVisible();
     await expect(harbor.locator(".tide-stamp-seal")).toHaveAttribute("alt", "");
     await checkHarborStamp(page);
     await page.screenshot({ path: join(shots, `harbor-result-${tag}.png`) });
-    await expect(harbor.locator("p").first()).toHaveText(`${route.length} decisions: the Tidekeeper’s way. Tomorrow: ${nextCard.name}.`);
-    await expect(harbor.locator(".exp-primary")).toHaveText("Open the tide log");
-    await capturePair(page, "harbor-all-three", () => checkHarborStamp(page));
+    await expect(harbor.locator("p").first()).toHaveText(`${route.length} decisions · the Tidekeeper’s way`);
+    await expect(harbor.locator(".exp-primary")).toHaveText("Take it to Bram");
+    await captureLayouts(page, "harbor-all-three", () => checkHarborStamp(page));
     await harbor.getByRole("button", { name: "Take it to Bram", exact: true }).click();
     await expect(panel.getByRole("heading", { name: "“You’re back.”", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Close panel", exact: true }).click();
     assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).home, saveKey), before, "the tide outing leaves home progress unchanged");
+    await harbor.getByRole("button", { name: "Sail today’s tide again", exact: true }).click();
+    await expect(game).toHaveAttribute("data-mode", "court");
+    await page.locator('button[data-command="return"]').click();
+    await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible();
+    await expect(panel.getByRole("heading", { name: "An empty satchel keeps no asks.", exact: true })).toBeVisible();
+    await expect(panel.locator('.tide-list > li[data-kept="true"]')).toHaveCount(0);
+    await panel.getByRole("button", { name: "See the tide log", exact: true }).click();
+    await expect(panel.locator('.tide-list > li[data-kept="true"]')).toHaveCount(3);
+    entries = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), logKey);
+    assert.equal(entries[0].attempts, 2, "a weaker replay gets its own Home result while the log retains the best");
 
     await page.goto(new URL(`/outing/?play&tide-day=${nextDay}`, origin).href);
     await expect(world).toHaveAttribute("data-ready", "true", { timeout: 30000 });
@@ -373,7 +537,7 @@ try {
     assert.equal(await page.evaluate(() => window.restartBusySeen), true, "restart was disabled during the observed busy window");
     await expect(asks.locator('[data-holding="true"]')).not.toHaveCount(0);
     await expect(asks.locator('[data-status="slipped"] .tide-sr').first()).toHaveText(" (slipped)");
-    await capturePair(page, "holding-slipped", () => checkRestartLayout(page, "holding/slipped strip"));
+    await captureLayouts(page, "holding-slipped", () => checkRestartLayout(page, "holding/slipped strip"));
     await checkRestartLayout(page, tag);
     await page.screenshot({ path: join(shots, `restart-${tag}.png`) });
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -387,8 +551,8 @@ try {
       await expect(game).toHaveAttribute("data-mode", "court");
       await expect(game).toHaveAttribute("data-busy", "false");
       await expect(asks.locator('li[data-status="open"]')).toHaveCount(3);
-      // The HUD numbers the next decision, so an untouched outing shows 1/24.
-      await expect(page.locator('.exp-hud[aria-label="Expedition status"] strong > span').last()).toHaveText(`1/${TURN_LIMIT}`);
+      // The HUD names the next decision, so an untouched outing shows 1 of 24.
+      await expect(page.locator('.exp-hud[aria-label="Expedition status"]')).toContainText(`Low tide · 1 of ${TURN_LIMIT}`);
       await expect(page.getByTestId("expedition-feedback")).toHaveText("Mochi sets out again. The asks are open.");
       await expect(restart).toHaveCount(0);
       const after = await page.evaluate(({ logKey, pendingKey, saveKey }) => ({
@@ -429,6 +593,8 @@ try {
         localStorage.setItem(saveKey, JSON.stringify({ ...save, active: null, last: null }));
         localStorage.setItem(logKey, JSON.stringify(log));
         localStorage.removeItem(pendingKey);
+        localStorage.removeItem("familiar.season.tide.v1:preview");
+        localStorage.removeItem("familiar.season.preview.v1");
       }, { saveKey, logKey, pendingKey, log });
       await page.goto(new URL(`/outing/?play&tide-day=${tideDay}`, origin).href);
       await expect(world).toHaveAttribute("data-ready", "true", { timeout: 30000 });
@@ -439,19 +605,21 @@ try {
     assert.deepEqual(partial.kept, [true, false, true]);
     assert.equal(rescued.outcome, "rescued");
     for (const [label, entry, title, body] of [
-      ["slipped", partial, "One ask slipped.", `Slipped: ${askLine(card.asks[1], card.tool)} Tomorrow: ${nextCard.name}.`],
-      ["rescued", rescued, "Bram brought Mochi home.", `The asks can wait for another try. Tomorrow: ${nextCard.name}.`],
+      ["slipped", partial, "One ask slipped.", `Slipped: ${askLine(card.asks[1], card.tool)}`],
+      ["rescued", rescued, "Bram brought Mochi home.", "The asks can wait for another try."],
     ] as const) {
       await seedHarbor(day, [entry]);
       await expect(harbor.getByRole("heading", { name: title, exact: true })).toBeVisible();
       await expect(harbor.locator("p").first()).toHaveText(body);
-      await expect(harbor.locator(".exp-primary")).toHaveText("Sail today’s tide again");
-      await expect(harbor.getByRole("button", { name: "Open the tide log", exact: true })).toBeVisible();
-      await expect(harbor.getByRole("button", { name: "Take it to Bram", exact: true })).toHaveCount(label === "slipped" ? 1 : 0);
-      await capturePair(page, `harbor-${label}`, () => checkHarborStamp(page));
-      await harbor.locator(".exp-primary").click();
+      await expect(harbor.locator(".exp-primary")).toHaveCount(0);
+      await expect(harbor.getByRole("button", { name: "Sail today’s tide again", exact: true })).toHaveClass(/exp-secondary/);
+      await expect(harbor.getByRole("button", { name: "Open the tide log", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Open the tide log", exact: true }).and(page.locator(":visible"))).toHaveCount(1);
+      await expect(harbor.getByRole("button", { name: "Take it to Bram", exact: true })).toHaveCount(0);
+      await captureLayouts(page, `harbor-${label}`, () => checkHarborStamp(page));
+      await harbor.getByRole("button", { name: "Sail today’s tide again", exact: true }).click();
       await expect(game).toHaveAttribute("data-mode", "court");
-      assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), { day, late: false }, `${label}: primary sails today's card directly`);
+      assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), { day, late: false }, `${label}: secondary sails today's card directly`);
     }
 
     const oldDay = day - 2, oldCard = cardForDay(oldDay);
@@ -486,7 +654,7 @@ try {
       await expect(bridgeChip).toHaveAttribute("data-holding", String(holding));
       await expect(bridgeChip.locator(".tide-sr")).toHaveText(holding ? " (holding)" : " (not yet)");
       await expect(bridgeChip.locator("svg path")).toHaveCount(holding ? 1 : 0);
-      await expect.poll(() => page.evaluate(() => window.tidePops)).toEqual(index < 2 ? [] : index < 8 ? [1] : [1, 1]);
+      await expect.poll(() => page.evaluate(() => window.tidePops)).toEqual([]);
     }
     await page.emulateMedia({ reducedMotion: "reduce" });
     // Another bridge cycle changes the status, with no animation under reduced motion.
@@ -505,13 +673,16 @@ try {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await expect(asks.locator("[data-motion]")).toHaveCount(0);
     await page.evaluate(() => new Promise<void>(done => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
-    assert.deepEqual(await page.evaluate(() => window.tidePops), [1, 1], "turning motion back on does not replay a holding transition made under reduced motion");
+    assert.deepEqual(await page.evaluate(() => window.tidePops), [], "ask status changes stay still; the Home sheet owns the arrival motion");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.locator('button[data-command="return"]').click();
-    await expect(panel.getByRole("heading", { name: "Bram’s tide log", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible();
     await expect(panel.locator(".tide-list")).toHaveAttribute("data-arrival", "true");
-    await expect(panel.locator(".tide-page-stamp .tide-stamp")).toHaveAttribute("data-press", "true");
-    assert.deepEqual(await panel.locator(".tide-list .tide-ask-mark, .tide-page-stamp .tide-stamp").evaluateAll(markers => markers.map(marker => getComputedStyle(marker).animationName)), ["none", "none", "none", "none"], "reduced-motion return is present without stamping animations");
+    await expect(panel.locator(".tide-home-stamp .tide-stamp")).not.toHaveAttribute("data-press", "true");
+    assert.deepEqual(await panel.locator(".tide-list .tide-ask-mark, .tide-home-stamp .tide-stamp").evaluateAll(markers => markers.map(marker => getComputedStyle(marker).animationName)), ["none", "none", "none", "none"], "reduced-motion return is present without stamping animations");
+    await panel.getByRole("button", { name: "See the tide log", exact: true }).click();
+    await expect(panel.getByRole("heading", { name: "Bram’s tide log", exact: true })).toBeVisible();
+    await expect.poll(() => panel.evaluate(node => node.scrollTop)).toBe(0);
     await panel.getByRole("button", { name: "Earlier page", exact: true }).click();
     await expect(panel.getByRole("heading", { name: card.name, exact: true })).toBeVisible();
     await expect(panel.locator(".tide-list")).not.toHaveAttribute("data-arrival", "true");
@@ -520,7 +691,7 @@ try {
     await expect(panel.locator(".tide-list")).not.toHaveAttribute("data-arrival", "true");
     await expect(panel.locator(".tide-page-stamp .tide-stamp")).not.toHaveAttribute("data-press", "true");
     await panel.getByRole("button", { name: "Close panel", exact: true }).click();
-    await harbor.getByRole("button", { name: "Open the tide log", exact: true }).click();
+    await page.getByRole("button", { name: "Open the tide log", exact: true }).and(page.locator(":visible")).click();
     await expect(panel.locator(".tide-list")).not.toHaveAttribute("data-arrival", "true");
     await expect(panel.locator(".tide-page-stamp .tide-stamp")).not.toHaveAttribute("data-press", "true");
     for (const mode of ["harbor", "wake", "outing", "unmarked-outing", "override"] as const) {
@@ -533,7 +704,7 @@ try {
     await browser.close();
     assert.deepEqual(errors, [], "uncaught browser errors");
   }
-  console.info(`${tag} / 1280x800: holding transitions, four harbor states, earlier-day range, arrival stamps, solved outing, unchanged home, title entry, both restart paths and UTC midnight rollover passed`);
+  console.info(`${tag}, 390x844, 844x390, 1280x800, 1440x900: harbor hierarchy, Home arrival, log top/sticky controls, holding states, earlier-day range, solved outing, unchanged home, title entry, both restart paths and UTC midnight rollover passed`);
 } finally {
   await server.close();
   console.info(`Screenshots: ${shots}`);

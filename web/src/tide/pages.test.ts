@@ -4,8 +4,8 @@ import { replayRun, solve, startRun, stepRun, type Run } from "./asks";
 import { cardForDay, TIDE_POOL } from "./cards";
 import type { TideEntry } from "./log";
 import {
-  askFlips, devTideDay, earlierDays, harborTide, logPages, outingNotice, pageForCard, pageForDay, restartTide,
-  stampSheet, storyPages, storyTitle, tideObjective, tidePages, tideResult, todayView, type StoryRecord,
+  askFlips, devTideDay, earlierDays, harborTide, homeResult, logPages, outingNotice, pageForCard, pageForDay, restartTide,
+  stampSheet, storyPages, storyTitle, tideObjective, tidePages, tideResult, todayView, type StoryRecord, type TideLink,
 } from "./pages";
 
 const today = 20771;
@@ -253,66 +253,87 @@ describe("outing copy", () => {
   });
 });
 
-describe("harbor tide", () => {
-  test("keeps the harbor quiet before the light", () => {
-    expect(harborTide({ lit: false, storyStep: false, card, next, entry: null })).toBeNull();
-    expect(harborTide({ lit: false, storyStep: true, card, next, entry: entry() })).toBeNull();
+describe("home result", () => {
+  test("describes the actual return independently of the saved best", () => {
+    expect(homeResult(returned, card)).toEqual({title:"All three asks kept.",body:"9 decisions · the Tidekeeper’s way"});
+    expect(homeResult(replayRun(card.tool, ["return"])!, card)).toEqual({title:"An empty satchel keeps no asks.",body:"1 decision"});
+    let rescued = startRun(card.tool);
+    while (rescued.state.outcome === "active") rescued = stepRun(rescued, "wait")!;
+    expect(homeResult(rescued, card)).toEqual({title:"Bram brought Mochi home.",body:"The asks can wait for another try."});
   });
 
-  test("offers only a link during a story step", () => {
-    expect(harborTide({ lit: true, storyStep: true, card, next, entry: entry() })).toEqual({
-      kind: "link", links: [{ label: "Today’s tide", action: "tide" }],
-    });
+  test("keeps slipped wording and only names a matched way", () => {
+    expect(homeResult(returned, {...card, best:1})).toEqual({title:"All three asks kept.",body:"9 decisions"});
+    const dry = {...card,asks:[card.asks[0],{kind:"style",style:"dry"},card.asks[2]] as const};
+    expect(homeResult(returned,dry)).toEqual({title:"One ask slipped.",body:"9 decisions"});
+  });
+});
+
+describe("harbor tide", () => {
+  const base = {lit:true,card,next,returnedToday:false,shelved:false};
+  const links: TideLink[] = [{label:"Sail today’s tide again",action:"sail"},{label:"Open the tide log",action:"log"}];
+
+  test("keeps the harbor quiet before the light", () => {
+    expect(harborTide({...base,lit:false,entry:null})).toBeNull();
+    expect(harborTide({...base,lit:false,entry:entry()})).toBeNull();
   });
 
   test("introduces an unrecorded ask", () => {
-    expect(harborTide({ lit: true, storyStep: false, card, next, entry: null })).toEqual({
-      kind: "panel", title: "The Tidekeeper has an ask.",
-      body: "Surf home. Three asks for one tide, with the rope.",
-      primary: { label: "See today’s ask", target: "tide" }, links: [],
+    expect(harborTide({...base,entry:null})).toEqual({
+      kind:"panel",title:"The Tidekeeper has an ask.",body:"Surf home. Three asks for one tide, with the rope.",
+      primary:{label:"See today’s ask",target:"tide"},links:[],
     });
   });
 
-  test("offers the log after all three, names tomorrow and keeps the Bram link last", () => {
-    expect(harborTide({ lit: true, storyStep: false, card, next, entry: entry() })).toEqual({
-      kind: "panel", title: "All three asks kept.",
-      body: `${commands.length} decisions: the Tidekeeper’s way. Tomorrow: Bram’s bridge.`,
-      primary: { label: "Open the tide log", target: "log" },
-      links: [{ label: "Sail today’s tide again", action: "sail" }, { label: "Take it to Bram", action: "bram" }],
+  test("keeps the next step honest even when the separate tide log is missing", () => {
+    expect(harborTide({...base,returnedToday:true,entry:null})).toMatchObject({
+      primary:{label:"Take it to Bram",target:"bram"},links:[],
     });
-    expect(harborTide({ lit: true, storyStep: false, card, next, entry: entry(today, { decisions: 11 }) }))
-      .toMatchObject({ body: "11 decisions; the Tidekeeper’s way takes 9. Tomorrow: Bram’s bridge." });
-    expect(harborTide({ lit: true, storyStep: false, card: { ...card, best: 1 }, next, entry: entry(today, { decisions: 1 }) }))
-      .toMatchObject({ body: "1 decision: the Tidekeeper’s way. Tomorrow: Bram’s bridge." });
-    expect(harborTide({ lit: true, storyStep: false, card: { ...card, best: 1 }, next, entry: entry(today, { decisions: 2 }) }))
-      .toMatchObject({ body: "2 decisions; the Tidekeeper’s way takes 1. Tomorrow: Bram’s bridge." });
+    expect(harborTide({...base,shelved:true,entry:null})).toMatchObject({
+      title:"Tomorrow: Bram’s bridge.",body:"Today’s haul is on Bram’s shelf.",primary:null,links,
+    });
   });
 
-  test("names one, two or all three slipped asks and makes another sail primary", () => {
-    for (const [kept, title, lines] of [
-      [[true, false, true], "One ask slipped.", "Let one surge soak Mochi. Only one."],
-      [[true, false, false], "Two asks slipped.", "Let one surge soak Mochi. Only one. Be home within 10 decisions."],
-      [[false, false, false], "All three asks slipped.", "Bring the lens home. Let one surge soak Mochi. Only one. Be home within 10 decisions."],
+  test("makes today's unshelved find the next step", () => {
+    expect(harborTide({...base,returnedToday:true,entry:entry()})).toEqual({
+      kind:"panel",title:"All three asks kept.",body:"9 decisions · the Tidekeeper’s way",
+      primary:{label:"Take it to Bram",target:"bram"},links,
+    });
+  });
+
+  test("a sailed tide offers replay and log as secondaries", () => {
+    expect(harborTide({...base,entry:entry()})).toEqual({
+      kind:"panel",title:"All three asks kept.",body:"9 decisions · the Tidekeeper’s way",primary:null,links,
+    });
+    expect(harborTide({...base,entry:entry(today,{decisions:11})})).toMatchObject({body:"11 decisions; the Tidekeeper’s way takes 9."});
+    expect(harborTide({...base,card:{...card,best:1},entry:entry(today,{decisions:1})})).toMatchObject({body:"1 decision · the Tidekeeper’s way"});
+  });
+
+  test("names tomorrow only after Bram has shelved today's haul", () => {
+    expect(harborTide({...base,returnedToday:true,shelved:true,entry:entry()})).toEqual({
+      kind:"panel",title:"Tomorrow: Bram’s bridge.",body:"All three asks kept. 9 decisions · the Tidekeeper’s way",primary:null,links,
+    });
+  });
+
+  test("names one, two or all three slipped asks honestly", () => {
+    for (const [kept,title,lines] of [
+      [[true,false,true],"One ask slipped.","Let one surge soak Mochi. Only one."],
+      [[true,false,false],"Two asks slipped.","Let one surge soak Mochi. Only one. Be home within 10 decisions."],
+      [[false,false,false],"All three asks slipped.","Bring the lens home. Let one surge soak Mochi. Only one. Be home within 10 decisions."],
     ] as const) {
-      const saved = entry(today, { kept: [...kept], decisions: 11 });
-      expect(harborTide({ lit: true, storyStep: false, card, next, entry: saved })).toEqual({
-        kind: "panel", title,
-        body: `Slipped: ${lines} Tomorrow: Bram’s bridge.`,
-        primary: { label: "Sail today’s tide again", target: "sail" },
-        links: [{ label: "Open the tide log", action: "log" }, { label: "Take it to Bram", action: "bram" }],
+      expect(harborTide({...base,entry:entry(today,{kept:[...kept],decisions:11})})).toEqual({
+        kind:"panel",title,body:`Slipped: ${lines}`,primary:null,links,
       });
     }
   });
 
-  test("offers another sail after rescue, without a find to take to Bram", () => {
-    expect(harborTide({ lit: true, storyStep: false, card, next, entry: entry(today, { outcome: "rescued" }) })).toEqual({
-      kind: "panel", title: "Bram brought Mochi home.",
-      body: "The asks can wait for another try. Tomorrow: Bram’s bridge.",
-      primary: { label: "Sail today’s tide again", target: "sail" },
-      links: [{ label: "Open the tide log", action: "log" }],
+  test("a rescue and an empty return never invent a find", () => {
+    expect(harborTide({...base,entry:entry(today,{outcome:"rescued"})})).toEqual({
+      kind:"panel",title:"Bram brought Mochi home.",body:"The asks can wait for another try.",primary:null,links,
     });
-    expect(harborTide({ lit: true, storyStep: false, card, next, entry: entry(today, { commands: ["return"], kept: [false, false, false] }) }))
-      .toMatchObject({ title: "All three asks slipped.", links: [{ label: "Open the tide log", action: "log" }] });
+    expect(harborTide({...base,entry:entry(today,{commands:["return"],kept:[false,false,false]})})).toMatchObject({
+      title:"All three asks slipped.",primary:null,links,
+    });
   });
 });
 

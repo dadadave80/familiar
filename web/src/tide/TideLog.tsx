@@ -8,14 +8,15 @@ import type { TideEntry } from "./log";
 import { pageForCard, stampSheet } from "./pages";
 import TideChart from "./TideChart";
 import TideStamp from "./TideStamp";
+import AskIcon from "./AskIcon";
 import "./tide.css";
 
 export type LogPage =
   | { kind: "story"; id: string; title: string; subtitle: string; area: Area; tool: Tool; banked: readonly BankedItem[]; commands: readonly string[] }
   | { kind: "tide"; day: number; card: TideCard; entry: TideEntry };
 
-export default function TideLog({ pages, initialPage, pressDay, reduced, sailBlockedReason, summary, onSail }: {
-  pages: readonly LogPage[]; initialPage?: number; pressDay?: number; reduced: boolean; sailBlockedReason: string | null;
+export default function TideLog({ pages, initialPage, reduced, sailBlockedReason, summary, onSail }: {
+  pages: readonly LogPage[]; initialPage?: number; reduced: boolean; sailBlockedReason: string | null;
   summary: { sailed: number; kept: number; allThree: number }; onSail: (day: number) => void;
 }): JSX.Element {
   const id = useId();
@@ -25,17 +26,12 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, sailBlo
   useEffect(() => { setSelected(Math.max(0, Math.min(last, Math.trunc(initialPage ?? 0)))); }, [initialPage, last]);
   const index = Math.max(0, Math.min(last, selected));
   const page = pages[index];
-  const [pressTarget, setPressTarget] = useState(pressDay);
-  const pressShown = useRef(false);
   const selectedDay = page?.kind === "tide" ? page.day : undefined;
-  const arrivalAsks = useRef<HTMLOListElement>(null);
+  const logRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
-    if (pressTarget !== undefined && selectedDay === pressTarget) arrivalAsks.current?.scrollIntoView({ block: "end", behavior: "instant" });
-  }, [selectedDay, pressTarget]);
-  useEffect(() => {
-    if (pressTarget !== undefined && selectedDay === pressTarget) pressShown.current = true;
-    else if (pressShown.current) setPressTarget(undefined);
-  }, [selectedDay, pressTarget]);
+    const panel = logRef.current?.closest<HTMLElement>(".exp-panel");
+    if (panel) panel.scrollTop = 0;
+  }, [index]);
   const stamps = useMemo(() => stampSheet(pages.flatMap(item => item.kind === "tide" ? [item.entry] : [])), [pages]);
   const collected = stamps.filter(slot => slot.entry).length;
   const sealed = stamps.filter(slot => slot.allThree).length;
@@ -47,7 +43,7 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, sailBlo
 
   const title = page?.kind === "story" ? page.title : page?.card.name;
   const pageKey = page?.kind === "story" ? `story:${page.id}` : `tide:${selectedDay}`;
-  return <section className="tide tide-log">
+  return <section ref={logRef} className="tide tide-log">
     <header className="tide-log-header">
       <img src={logCoverArt} width={92} height={92} alt="" decoding="async" />
       <div>
@@ -80,12 +76,13 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, sailBlo
       {frames ? <TideChart key={pageKey} frames={frames} area={page.kind === "story" ? page.area : "beacon"} reduced={reduced} label={`Chart of Mochi’s route: ${title}, ${frames.length - 1} ${frames.length === 2 ? "decision" : "decisions"}.`} />
         : <p>This page’s route could not be redrawn on this device.</p>}
       {page.kind === "tide" && <span className="tide-page-stamp">
-        <TideStamp key={pageKey} id={page.card.id} size={84} tilt={5} seal={page.entry.kept.every(Boolean)} label={CARD_PICTURE[page.card.id]} press={page.day === pressTarget} />
+        <TideStamp key={pageKey} id={page.card.id} size={84} tilt={5} seal={page.entry.kept.every(Boolean)} label={CARD_PICTURE[page.card.id]} />
       </span>}
     </div>
     {page.kind === "tide" && <>
-      <ol ref={arrivalAsks} key={pageKey} className="tide-list" data-arrival={page.day === pressTarget || undefined}>{page.card.asks.map((ask, i) => <li key={i} data-kept={String(page.entry.kept[i])}>
-        <span className="tide-ask-mark" aria-hidden="true" style={{ "--ask-delay": `${i * 120}ms` } as CSSProperties}><img src={sealArt(page.entry.kept[i] ? "kept" : "slipped")} width={24} height={24} alt="" decoding="async" /></span>
+      <ol key={pageKey} className="tide-list">{page.card.asks.map((ask, i) => <li key={i} data-kept={String(page.entry.kept[i])}>
+        <AskIcon ask={ask} tool={page.card.tool} size={28}/>
+        <span className="tide-ask-mark" aria-hidden="true"><img src={sealArt(page.entry.kept[i] ? "kept" : "slipped")} width={24} height={24} alt="" decoding="async" /></span>
         <span>{askLine(ask, page.card.tool)}<span className="tide-sr"> ({page.entry.kept[i] ? "kept" : "slipped"})</span></span>
       </li>)}</ol>
       <dl className="tide-facts">
@@ -94,7 +91,7 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, sailBlo
         <div><dt>The Tidekeeper’s way</dt><dd>{page.card.best} {page.card.best === 1 ? "decision" : "decisions"}</dd></div>
       </dl>
       {page.entry.kept.every(Boolean) && page.entry.decisions <= page.card.best && <p className="tide-note">Mochi matched the Tidekeeper’s way.</p>}
-      <button type="button" className="exp-primary" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(page.day); }}>Sail this tide again</button>
+      <button type="button" className="exp-primary" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(page.day); }}><svg viewBox="0 0 24 24" width={20} height={20} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h16l-3 6H7l-3-6Zm8-11v11M12 4l7 7h-7"/></svg>Sail this tide again</button>
       {!canSail && <p className="tide-note" id={`${id}-busy`}>{sailBlockedReason}</p>}
     </>}
     </>}

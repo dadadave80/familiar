@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, expect, webkit } from "@playwright/test";
 import { createServer } from "vite";
+import { cardForDay } from "../web/src/tide/cards";
+import { replayRun, solve } from "../web/src/tide/asks";
 
 const cacheDir = await mkdtemp(join(tmpdir(), "familiar-routing-"));
 const artifact=process.argv[2]?resolve(process.argv[2],".vercel/output"):null;
@@ -35,6 +37,10 @@ const oldRecords = {
   "familiar.tidebound.pending.v1:earlier.testnet:player.testnet": '{"original":"operation"}',
 };
 const saveKey = "familiar.expedition.local.v2";
+const returnDay=20771,returnCard=cardForDay(returnDay),returnRoute=solve(returnCard.tool,returnCard.asks,returnCard.best);
+assert(returnRoute?.at(-1)==="return","focus fixture finishes with a real dock return");
+const beforeReturn=replayRun(returnCard.tool,returnRoute.slice(0,-1));
+assert(beforeReturn&&beforeReturn.state.outcome==="active");
 try {
   await server?.listen();
   const origin = new URL(compiled?`http://127.0.0.1:${compiled.port}`:server!.resolvedUrls!.local[0]!);
@@ -65,7 +71,18 @@ try {
       await page.getByRole("button", { name: "Game menu" }).click();
       await page.getByRole("button", { name: "Account & recovery" }).click();
       await expect(page.getByRole("heading", { name: "Your saved harbor" })).toBeVisible();
+      const menuOpener=page.getByRole("button",{name:"Game menu",exact:true}).and(page.locator(":visible"));
       await page.getByRole("button", { name: "Close panel" }).click();
+      await expect(menuOpener).toBeFocused();
+      if(mobile){
+        const dock=page.locator(".exp-phone-dock");
+        await expect(dock.getByRole("button")).toHaveCount(4);
+        const logOpener=dock.getByRole("button",{name:"Open the tide log",exact:true});
+        await logOpener.click();await expect(page.getByRole("dialog",{name:"Bram’s tide log",exact:true})).toBeVisible();
+        await page.keyboard.press("Escape");await expect(logOpener).toBeFocused();
+      }else{
+        await expect(page.locator(".exp-harbor-tools").getByRole("button",{name:"Harbor chart",exact:true})).toBeVisible();
+      }
       await page.locator('[data-action="depart"]').click();
       await page.locator('[data-command="step:west"]').click();
       await expect(game).toHaveAttribute("data-busy", "false");
@@ -89,6 +106,26 @@ try {
       await page.reload();
       await passTitle("reload");
       await expect(world).toHaveAttribute("data-turn", "1");
+      await page.clock.install({time:new Date(returnDay*86_400_000+43_200_000)});
+      await page.clock.setFixedTime(new Date(returnDay*86_400_000+43_200_000));
+      await page.evaluate(({saveKey,state,day})=>{
+        localStorage.setItem(saveKey,JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},last:null,active:{context:{authority:"local-preview",banked:[],lit:true,signaled:false},state,season:true}}));
+        localStorage.setItem("familiar.tide.pending.v1:preview",JSON.stringify({day,late:false}));
+        localStorage.removeItem("familiar.tide.log.v1:preview");localStorage.removeItem("familiar.season.preview.v1");
+      },{saveKey,state:beforeReturn.state,day:returnDay});
+      await page.goto(new URL("/outing/?play",origin).href);
+      await expect(world).toHaveAttribute("data-ready","true");await expect(game).toHaveAttribute("data-lease","held");
+      await page.locator('button[data-command="return"]').click();
+      const home=page.locator('.exp-panel[data-surface="home"]');await expect(home).toBeVisible();
+      await expect(home.locator(".tide-home-note")).toHaveText("Home with Beacon Lens. Bram can shelve it today.");
+      await expect(page.getByTestId("expedition-feedback")).toContainText("All three asks kept in 9 decisions.");
+      await home.getByRole("button",{name:"See the tide log",exact:true}).click();
+      await expect(page.getByRole("dialog",{name:"Bram’s tide log",exact:true})).toBeVisible();
+      await page.keyboard.press("Escape");
+      const harborPrimary=page.locator(".exp-departure .exp-primary");
+      await expect(harborPrimary).toHaveText("Take it to Bram");await expect(harborPrimary).toBeFocused();
+      await harborPrimary.click();await expect(page.getByRole("dialog",{name:"Bram",exact:true})).toBeVisible();
+      await page.keyboard.press("Escape");await expect(harborPrimary).toBeFocused();
       console.info(`${engine.name()}: introduction, account boundary, ${paths.length} game entry URLs, saved-run resume and preserved original records passed`);
     } finally { await browser.close(); }
   }

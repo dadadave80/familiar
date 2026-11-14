@@ -116,7 +116,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.actorShadow=this.add.ellipse(0,0,50,13,0x342719,.25).setDepth(7);
     this.actor=this.add.sprite(0,0,"exp-mochi",12).setOrigin(.5,MOCHI_GROUND).setDepth(10);
     this.actor.setInteractive({useHandCursor:true}).on("pointerdown",(pointer:Phaser.Input.Pointer)=>{
-      if(!this.visual&&!this.gated)this.presses.set(pointer.id,{target:"mochi",x:pointer.x,y:pointer.y,dragged:false});
+      if(!this.visual&&!this.gated&&this.onCanvas(pointer))this.presses.set(pointer.id,{target:"mochi",x:pointer.x,y:pointer.y,dragged:false});
     }).on("pointerup",(pointer:Phaser.Input.Pointer)=>{
       const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);
       if(!this.visual&&!this.gated&&!pointer.wasCanceled&&press?.target==="mochi"&&!press.dragged&&
@@ -139,9 +139,9 @@ export class ExpeditionScene extends Phaser.Scene {
   private field(){
     const portrait=this.w<=900&&this.h>this.w;
     if(portrait&&this.h<500){const top=144,bottom=this.h-166,width=this.w*.82;return{cx:this.w/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
-    if(this.h<500){const available=this.w-260,width=Math.max(240,Math.min(available*.91,760)),top=98,bottom=this.h-34;return{cx:available/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
+    if(this.h<=500){const available=this.w-280,width=Math.max(240,Math.min(available*.91,760)),top=98,bottom=this.h-34;return{cx:available/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
     const top=portrait?(this.h<650?151:Math.max(200,this.h*.29)):this.h<500?122:Math.max(190,this.h*.31);
-    const bottom=portrait?this.h-240:this.h-72;
+    const bottom=portrait?this.h-264:this.h-72;
     const width=Math.min(portrait?this.w*.84:this.h<500?this.w*.45:this.w*.50,760);
     return {cx:portrait?this.w*.5:this.h<500?this.w*.40:this.w*.45,width,top,bottom,dy:(bottom-top)/4,dx:width/3};
   }
@@ -241,7 +241,7 @@ export class ExpeditionScene extends Phaser.Scene {
       const hitHeight=Math.max(44,Math.min(tile.height+15,f.dy-2));
       const zone=this.add.zone(p.x,p.y,Math.max(44,tile.width),hitHeight).setInteractive({useHandCursor:true}).setDepth(16);
       const target=`${x},${y}`;
-      zone.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{if(!this.gated)this.presses.set(pointer.id,{target,x:pointer.x,y:pointer.y,dragged:false});});
+      zone.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{if(!this.gated&&this.onCanvas(pointer))this.presses.set(pointer.id,{target,x:pointer.x,y:pointer.y,dragged:false});});
       zone.on("pointerup",(pointer:Phaser.Input.Pointer)=>{
         const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);
         if(this.gated||pointer.wasCanceled||!press||press.target!==target||press.dragged||Math.hypot(pointer.x-press.x,pointer.y-press.y)>12)return;
@@ -440,10 +440,12 @@ export class ExpeditionScene extends Phaser.Scene {
       this.forecast.lineStyle(2,0xffdd91).lineBetween(mark.x,sourceY,tip,sourceY);
       this.forecast.fillStyle(0xffdd91).fillTriangle(tip,sourceY,tail,sourceY-4,tail,sourceY+4);
     }
-    const lanes=["L","C","R"];
-    const label=source===exit?`IN + OUT · ${["LEFT","CENTER","RIGHT"][exit]}`:`IN ${lanes[source]} → OUT ${lanes[exit]}`;
-    this.forecastLabel.setPosition(p.x,this.h<500?f.top+35:f.top-46).setFontSize(Math.min(14,this.w/27)).setText(bellPreview?`IF BELL · ${["LEFT","CENTER","RIGHT"][exit]}`:label).setVisible(true);
+    const lanes=["left","center","right"];
+    const label=source===exit?`Next wave: ${lanes[exit]} lane`:`Next wave: ${lanes[source]} to ${lanes[exit]} lane`;
+    this.forecastLabel.setPosition(p.x,this.h<500?f.top+35:f.top-46).setFontSize(Math.min(14,this.w/27)).setText(bellPreview?`With bell: ${lanes[exit]} lane`:label).setVisible(true);
   }
+  /** Phaser hit-tests game objects even when a DOM card above the canvas took the press. */
+  private onCanvas(pointer:Phaser.Input.Pointer){return pointer.downElement===this.game.canvas;}
   private paintHints(court:CourtState){
     this.neighbors.clear();const tile=this.tileSize();
     for(let y=0;y<5;y++)for(const x of [0,1,2] as const){const target={x,y},command=commandAt(court,target);if(!command)continue;const accepted=applyCommand(court,command);if(!accepted)continue;const risk=accepted.events.some(e=>e.kind==="hit"),p=this.point(target);this.neighbors.lineStyle(3,risk?0x8e3527:0xffe1a1,.95);
@@ -462,17 +464,24 @@ export class ExpeditionScene extends Phaser.Scene {
   }
   private harbor(){
     const portrait=this.w<=900&&this.h>this.w;
-    const groundY=portrait?this.h-(this.h<500?235:316):this.h*.81;
+    const landscape=!portrait&&this.h<=500;
+    const groundY=portrait?Math.max(230,this.h-522):landscape?this.h*.60:this.h*.81;
+    const source=this.textures.get("exp-island").getSourceImage() as HTMLImageElement;
+    const landing=(x:number,y:number,width:number)=>{
+      const pier=this.add.image(x,y,"exp-island").setOrigin(.5,.41).setDisplaySize(width,width*source.height/source.width).setDepth(1);this.surfaces.push(pier);
+    };
     if(portrait){
+      this.fit(this.backdrop,this.w,this.h*1.16);this.backdrop.y=this.h-this.backdrop.displayHeight/2;
       const harborWidth=this.backdrop.displayWidth;
       const requestedX=this.w*.77-(.824-.5)*harborWidth;
       this.backdrop.x=Phaser.Math.Clamp(requestedX,this.w-harborWidth/2,harborWidth/2);
-      const source=this.textures.get("exp-island").getSourceImage() as HTMLImageElement;
-      const pier=this.add.image(this.w*.40,groundY,"exp-island").setOrigin(.5,.41).setDisplaySize(this.w*.92,this.w*.92*source.height/source.width).setDepth(1);this.surfaces.push(pier);
+      landing(this.w*.40,groundY,this.w*.92);
+      landing(this.w*.50,this.h-444,this.w*1.18);
     }
+    if(landscape){landing(this.w*.40,groundY,this.w*.55);landing(this.w-224,this.h-146,440);}
     const actorSize=Math.min(180,this.w*.28,this.h*.25);
-    this.actor.setPosition(this.w*.49,groundY).setDisplaySize(actorSize,actorSize);this.pose(this.snapshot.home.lit?"relieved":"curious");this.actorShadow.setPosition(this.actor.x,this.actor.y).setSize(actorSize*.5,14);
-    const b=Math.min(255,this.w*.36,this.h*.38);this.bram.setFlipX(false).setPosition(this.w*.28,portrait?groundY-4:this.h*.82).setDisplaySize(b*.75,b);
+    this.actor.setPosition(this.w*(landscape?.43:.49),groundY).setDisplaySize(actorSize,actorSize);this.pose(this.snapshot.home.lit?"relieved":"curious");this.actorShadow.setPosition(this.actor.x,this.actor.y).setSize(actorSize*.5,14);
+    const b=Math.min(255,this.w*.36,this.h*.38);this.bram.setFlipX(false).setPosition(this.w*(landscape?.23:.28),portrait?groundY-4:landscape?this.h*.59:this.h*.82).setDisplaySize(b*.75,b);
     const services=this.snapshot.home.services;
     if(services?.includes("bell")){
       const landing=this.homeProps,w=Math.min(27,actorSize*.18);
@@ -545,6 +554,19 @@ export class ExpeditionScene extends Phaser.Scene {
       g.fillStyle(0xe3bc79).fillTriangle(x+15,y-28,x+9,y-17,x+22,y-17).fillCircle(x+15,y-15,2);
       g.lineStyle(1.5,0xe0bf86).lineBetween(x+15,y-13,x+15,y+2).strokeCircle(x+15,y+5,3);
     }
+    const painted=(x:number,y:number)=>({x:this.backdrop.x+this.backdrop.displayWidth*(x-.5),y:this.backdrop.y+this.backdrop.displayHeight*(y-.5)});
+    const signs=portrait?{
+      workbench:{x:this.w/6,y:this.h-440},bram:{x:this.w/2,y:this.h-440},beacon:{x:this.w*5/6,y:this.h-440},satchel:{x:this.w*5/6,y:this.h-440},
+    }:landscape?{
+      workbench:{x:this.w-368,y:this.h-142},bram:{x:this.w-224,y:this.h-142},beacon:{x:this.w-80,y:this.h-142},satchel:{x:this.w-80,y:this.h-142},
+    }:{
+      bram:{x:this.w-272,y:this.h*.60},beacon:{x:this.w-88,y:this.h*.60},workbench:{x:this.w-272,y:this.h-198},satchel:{x:this.w-88,y:this.h-198},
+    };
+    const landmarks={bramFeet:{x:this.bram.x,y:this.bram.y},mochi:{x:this.actor.x,y:this.actor.y},beacon:painted(.824,.55),workbench:painted(.18,.70),lantern:{x:portrait?this.w*.72:this.w*.19,y:portrait?groundY-25:this.h*.69}};
+    const root=this.game.canvas.closest<HTMLElement>(".exp-game");
+    for(const [place,point] of Object.entries(signs))for(const axis of ["x","y"] as const)root?.style.setProperty(`--exp-anchor-${place}-${axis}`,`${point[axis]}px`);
+    for(const axis of ["x","y"] as const)root?.style.setProperty(`--exp-anchor-mochi-${axis}`,`${landmarks.mochi[axis]}px`);
+    if(this.game.canvas.parentElement)this.game.canvas.parentElement.dataset.harborAnchors=JSON.stringify({landmarks,signs});
   }
   private addHomeFind(item:Find,x:number,y:number,size:number){const image=this.add.image(x,y,`exp-${item}`).setDisplaySize(size,size).setDepth(item==="vane"?11:7);this.cargo.push(image);}
   private async tween(targets:object,config:Omit<Phaser.Types.Tweens.TweenBuilderConfig,"targets">,duration:number){

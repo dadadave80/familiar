@@ -2,10 +2,14 @@ import assert from "node:assert/strict";
 import {mkdtemp} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
-import {chromium,expect} from "@playwright/test";
+import {chromium,expect,type Page} from "@playwright/test";
 import {createServer,transformWithOxc} from "vite";
 import {KeyPair} from "near-api-js";
 import courtFixtures from "../contracts/common/fixtures/court.json";
+import {cardForDay} from "../web/src/tide/cards";
+import {cardStatus,replayRun,solve} from "../web/src/tide/asks";
+import {previewDock,seedPreview} from "../web/src/season/data";
+import type {Command} from "../web/src/expedition/types";
 
 // Actual React controller/provider/panel; all account/RPC ports below are isolated synthetic fixtures.
 const id="\0expedition-harbor-fixture.tsx",dir=await mkdtemp(join(tmpdir(),"familiar-expedition-harbor-"));
@@ -14,6 +18,79 @@ const fixturePublicKey=KeyPair.fromRandom("ed25519").getPublicKey().toString();
 const publicView=(request:import("@playwright/test").Request)=>request.url().startsWith("https://test.rpc.fastnear.com")&&request.method()==="POST"&&JSON.parse(request.postData()??"{}")?.params?.request_type==="call_function";
 let publicViews=0;
 const captureRoutes=courtFixtures.cases.filter(row=>["beacon-rope-objective","beacon-rope-rescue"].includes(row.id)).map(row=>({id:row.id,start:row.start,commands:row.commands}));
+async function checkHarborLayout(page:Page,width:number,height:number){
+ await page.setViewportSize({width,height});
+ await page.evaluate(async()=>{await document.fonts.ready;await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));});
+ const places=page.locator(".exp-home-places button:visible");
+ await expect(places).toHaveCount(width<900?3:4);
+ await expect(page.locator(".exp-place-satchel")).toBeVisible({visible:width>=900});
+ for(const place of await places.all()){
+  const art=place.locator("img");await expect(art).toHaveAttribute("src",/\/assets\/ui\/sign-(beacon|bram|workbench|satchel)\.webp$/);await expect(art).toHaveAttribute("alt","");await expect(art).toHaveAttribute("decoding","async");
+  await expect.poll(()=>art.evaluate((image:HTMLImageElement)=>image.complete&&image.naturalWidth>0)).toBe(true);
+ }
+ const geometry=await page.evaluate(()=>{
+  const visible=(node:Element)=>node.getClientRects().length>0&&getComputedStyle(node).visibility!=="hidden";
+  const bounds=(node:Element)=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+  return {signs:[...document.querySelectorAll(".exp-home-places button")].filter(visible).map(node=>({name:node.textContent!,...bounds(node)})),
+   obstacles:[...document.querySelectorAll(".exp-departure,.exp-phone-dock,.exp-brand")].filter(visible).map(node=>({name:node.className,...bounds(node)})),
+   card:bounds(document.querySelector(".exp-departure")!),heading:(()=>{const node=document.querySelector(".exp-departure h1")!;return {...bounds(node),overflow:node.scrollWidth>node.clientWidth+1};})(),
+   stamp:[...document.querySelectorAll(".tide-departure-stamp")].map(bounds),
+   actions:[...document.querySelectorAll(".exp-departure-buttons>button")].map(node=>({...bounds(node),nowrap:getComputedStyle(node).whiteSpace,overflow:node.scrollWidth>node.clientWidth+1})),
+   toast:[...document.querySelectorAll(".exp-feedback")].filter(node=>visible(node)&&!!node.textContent?.trim()).map(bounds)};
+ });
+ const tag=`${width}x${height}`,overlaps=(a:{x:number;y:number;right:number;bottom:number},b:{x:number;y:number;right:number;bottom:number})=>a.x<b.right-.5&&a.right>b.x+.5&&a.y<b.bottom-.5&&a.bottom>b.y+.5;
+ for(const [i,sign] of geometry.signs.entries()){
+  assert(sign.x>=0&&sign.y>=0&&sign.right<=width+.5&&sign.bottom<=height+.5,`${tag}: ${sign.name} stays inside the viewport`);
+  assert(sign.bottom<=geometry.card.y,`${tag}: ${sign.name}'s stake bottom stays above the harbor card`);
+  for(const other of geometry.signs.slice(i+1))assert(!overlaps(sign,other),`${tag}: ${sign.name} and ${other.name} do not overlap`);
+  for(const obstacle of geometry.obstacles)assert(!overlaps(sign,obstacle),`${tag}: ${sign.name} clears ${obstacle.name}`);
+ }
+ assert(geometry.card.x>=0&&geometry.card.right<=width+.5&&geometry.card.bottom<=height+.5,`${tag}: harbor card stays inside the viewport`);
+ assert(!geometry.heading.overflow&&geometry.heading.x>=geometry.card.x&&geometry.heading.right<=geometry.card.right&&geometry.heading.y>=geometry.card.y&&geometry.heading.bottom<=geometry.card.bottom,`${tag}: longest harbor heading stays inside the card without overflowing`);
+ for(const stamp of geometry.stamp)assert(!overlaps(stamp,geometry.heading),`${tag}: stamp stays clear of the harbor heading`);
+ await expect(page.locator(".exp-departure-heading .exp-preparation")).toHaveCount(1);
+ await expect(page.locator(".exp-departure").getByRole("button",{name:"Open the tide log",exact:true})).toHaveCount(0);
+ for(const action of geometry.actions)assert(action.nowrap==="nowrap"&&!action.overflow,`${tag}: harbor button text never wraps or overflows`);
+ if(width>=900||height<=500)for(const action of geometry.actions)assert(Math.abs(action.y-geometry.actions[0]!.y)<3,`${tag}: harbor actions share one row`);
+ for(const toast of geometry.toast){
+  assert(toast.bottom<=geometry.card.y-6,`${tag}: return toast has a gap above the harbor card`);
+  for(const sign of geometry.signs)assert(!overlaps(toast,sign),`${tag}: return toast clears ${sign.name}`);
+ }
+}
+async function checkReturnLayouts(browser:import("@playwright/test").Browser,origin:string){
+ const day=20771,card=cardForDay(day),win=solve(card.tool,card.asks,card.best);assert(win?.at(-1)==="return");
+ const slipped=Array.from({length:6},(_,i)=>[...win.slice(0,-1),...Array<Command>(i+1).fill("wait"),"return" as const]).find(commands=>{
+  const run=replayRun(card.tool,commands);return run?.state.outcome==="returned"&&run.state.cargo.length>0&&cardStatus(card,run).includes("slipped");
+ });assert(slipped,"a legal delayed return exercises the slipped wording");
+ const rescued=Array.from({length:24},(_,i)=>Array<Command>(i+1).fill("wait")).find(commands=>replayRun(card.tool,commands)?.state.outcome==="rescued");assert(rescued,"a legal wait sequence exercises Bram's rescue wording");
+ const shelvedDay=day-3,shelvedCard=cardForDay(shelvedDay),shelvedRoute=solve(shelvedCard.tool,shelvedCard.asks,shelvedCard.best);assert(shelvedRoute?.at(-1)==="return");
+ const scenarios=[{name:"all-three",day,commands:win,title:"All three asks kept.",shelved:false},{name:"slipped",day,commands:slipped,title:/asks? slipped\./,shelved:false},
+  {name:"empty",day,commands:["return"] as Command[],title:"All three asks slipped.",shelved:false},
+  {name:"rescued",day,commands:rescued,title:"Bram brought Mochi home.",shelved:false},{name:"shelved",day:shelvedDay,commands:shelvedRoute,title:"Tomorrow: The rope stays coiled.",shelved:true}];
+ for(const scenario of scenarios){
+  const tideCard=cardForDay(scenario.day),before=replayRun(tideCard.tool,scenario.commands.slice(0,-1));assert(before?.state.outcome==="active");
+  const shelf=previewDock(seedPreview(null,scenario.day),[1,0],scenario.day);assert("market" in shelf);
+  const context=await browser.newContext({viewport:{width:412,height:860},reducedMotion:"reduce"}),page=await context.newPage();
+  try{
+   const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
+   await page.route("**/*",route=>route.request().url().startsWith(origin)?route.continue():route.abort());
+   await page.clock.install({time:new Date(scenario.day*86_400_000+43_200_000)});await page.clock.setFixedTime(new Date(scenario.day*86_400_000+43_200_000));
+   await page.addInitScript(({day,state,market})=>{
+    localStorage.setItem("familiar.expedition.local.v2",JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},active:{context:{authority:"local-preview",banked:[],lit:true,signaled:false},state,season:true},last:null}));
+    localStorage.setItem("familiar.tide.pending.v1:preview",JSON.stringify({day,late:false}));
+    if(market)localStorage.setItem("familiar.season.preview.v1",JSON.stringify(market));
+   },{day:scenario.day,state:before.state,market:scenario.shelved?shelf.market:null});
+   await page.goto(origin+"/__harbor-game");await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-lease","held");
+   await page.locator(`[data-command="${scenario.commands.at(-1)}"]`).click();
+   const home=page.locator('.exp-panel[data-surface="home"]');await expect(home).toBeVisible();await home.getByRole("button",{name:"Close panel",exact:true}).click();
+   await expect(page.locator(".exp-departure h1"),scenario.name).toHaveText(scenario.title);
+   await expect(page.locator(".tide-departure-stamp")).toBeVisible();await expect(page.getByTestId("expedition-feedback")).not.toHaveText("");
+   if(scenario.name==="all-three")await expect(page.locator(".exp-departure-buttons>button")).toHaveCount(2);
+   for(const [width,height] of [[412,860],[390,844],[844,390],[900,800],[1280,800],[1440,900]])await checkHarborLayout(page,width!,height!);
+   assert.equal(await page.evaluate(()=>(window as any).__harbor.sends.length),0,"layout checks send no account action");assert.deepEqual(errors,[],scenario.name);
+  }finally{await context.close();}
+ }
+}
 const entry=`
 import '/src/browser-globals.ts';
 import React,{useEffect,useState} from 'react';import{createRoot}from'react-dom/client';
@@ -73,11 +150,23 @@ try{
  await game.goto(origin+"/__harbor-game");await game.bringToFront();await expect(game.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:20000});
  await game.getByRole("button",{name:"Game menu",exact:true}).click();await game.getByRole("button",{name:"Account & recovery",exact:true}).click();await expect(game.getByText(/alice.familiar-game.testnet · NEAR testnet/)).toBeVisible();
  await game.getByRole("button",{name:"Use saved harbor",exact:true}).click();await expect.poll(()=>game.evaluate(()=>(window as any).__harbor.port.state.mode)).toBe("saved");await game.getByRole("button",{name:"Close panel",exact:true}).click();
- await game.getByRole("button",{name:"Workbench",exact:true}).click();await expect(game.getByRole("button",{name:"Make the Crest lantern",exact:true})).toBeVisible();await expect(game.getByText("Crest lantern · Original finish",{exact:true})).toBeVisible();
+ for(const [width,height] of [[412,860],[390,844],[844,390],[900,800],[1280,800],[1440,900]])await checkHarborLayout(game,width!,height!);
+ await game.setViewportSize({width:390,height:844});
+ const workbench=game.getByRole("button",{name:"Workbench",exact:true});
+ const workbenchBounds=await workbench.boundingBox(),bramBounds=await game.getByRole("button",{name:"Bram",exact:true}).boundingBox();
+ assert(workbenchBounds&&bramBounds&&(workbenchBounds.x+workbenchBounds.width<=bramBounds.x||workbenchBounds.x>=bramBounds.x+bramBounds.width||workbenchBounds.y+workbenchBounds.height<=bramBounds.y||workbenchBounds.y>=bramBounds.y+bramBounds.height),"phone Workbench and Bram labels do not overlap");
+ await workbench.focus();await game.keyboard.press("Enter");await expect(game.getByRole("button",{name:"Make the Crest lantern",exact:true})).toBeVisible();await expect(game.getByText("Crest lantern · Original finish",{exact:true})).toBeVisible();
  assert.equal(await game.evaluate(()=>localStorage.getItem('familiar.first-light.beacon.v1')),null);assert.equal(await game.evaluate(()=>localStorage.getItem('familiar.expedition.local.v2')),null,"fresh-device canonical view does not invent or merge a local home");
  await expect(game.locator('.exp-owned-item .tb-lantern')).toHaveAttribute('data-motif','crest');await expect(game.locator('.exp-owned-item .tb-lantern')).toHaveAttribute('data-polished','false');
  await game.screenshot({path:join(dir,"fresh-device-canonical-workbench-fixture.png")});
- const porchClip={x:390*.72-20,y:844-316-25-50,width:40,height:75};
+ const workbenchPanel=game.getByRole("dialog");await workbenchPanel.evaluate(n=>n.scrollTo({top:n.scrollHeight,behavior:"instant"}));
+ const panelBounds=await workbenchPanel.boundingBox(),closeBounds=await workbenchPanel.getByRole("button",{name:"Close panel",exact:true}).boundingBox(),headingBounds=await workbenchPanel.getByRole("heading").first().boundingBox();
+ assert(panelBounds&&closeBounds&&headingBounds&&closeBounds.y>=panelBounds.y&&headingBounds.y>=panelBounds.y,"workbench keeps its heading and close control visible while scrolling");
+ await game.keyboard.press("Escape");await expect(workbench).toBeFocused();
+ await workbench.click();
+
+ const lantern=await game.getByTestId("expedition-world").evaluate(node=>JSON.parse(node.getAttribute("data-harbor-anchors")!).landmarks.lantern as {x:number;y:number});
+ const porchClip={x:lantern.x-20,y:lantern.y-50,width:40,height:75};
  await game.getByRole("button",{name:"Close panel",exact:true}).click();await game.evaluate(async()=>{const f=(window as any).__harbor;f.displayLantern('crest',false);await f.port.refresh();});await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-motif','crest');await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-finish','original');await game.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));const crestPixels=await game.screenshot({clip:porchClip});
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.displayLantern('moth',true);await f.port.refresh();});await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-motif','moth');await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-finish','harbor_polish');await game.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));const mothPixels=await game.screenshot({clip:porchClip});assert(!crestPixels.equals(mothPixels),'Actual rendered canonical motif/finish must differ at the visible porch prop; changing hidden data attributes alone is insufficient');await game.screenshot({path:join(dir,'canonical-moth-polish-placement-fixture.png')});
  assert.deepEqual(await game.evaluate(()=>(window as any).__harbor.port.state.workshop.motifs),['crest'],"Receiving or displaying another maker’s Moth lantern does not grant their achievement");assert.equal(await game.evaluate(()=>(window as any).__harbor.sends.length),0,"Canonical appearance refresh does not issue a craft, finish or placement transaction");
@@ -91,5 +180,5 @@ try{
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.displayLantern('moth',true);await f.port.refresh();});await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-motif','moth');
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.removeHeldLantern();await f.port.refresh();});await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-motif',/.+/);await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-finish',/.+/);assert.equal(await game.evaluate(()=>(window as any).__harbor.sends.length),1);
  const geometry=await game.evaluate(()=>({x:scrollX,y:scrollY,scroll:document.documentElement.scrollHeight,height:innerHeight}));assert.equal(geometry.x,0);assert.equal(geometry.y,0);assert(geometry.scroll<=geometry.height+1);
- await gameContext.close();assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,externalRequests:0,publicRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
+ await gameContext.close();await checkReturnLayouts(browser,origin);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,harborLayouts:"fresh, all-three return, slipped return, rescue, longest Tomorrow; six viewports",externalRequests:0,publicRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
 }finally{await browser.close();await server.close();}

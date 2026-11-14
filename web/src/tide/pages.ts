@@ -101,42 +101,47 @@ export function outingNotice(run: Run, card: TideCard, recorded: { entry: TideEn
     : ` The day’s best stays at ${recorded.entry.kept.filter(Boolean).length} of 3 in ${decisions(recorded.entry.decisions)}.`);
 }
 
+export function homeResult(run: Run, card: TideCard): { title: string; body: string } {
+  if (run.state.outcome === "rescued") return {
+    title: "Bram brought Mochi home.", body: "The asks can wait for another try.",
+  };
+  const kept = keptCount(card, run);
+  return {
+    title: run.state.cargo.length === 0 ? "An empty satchel keeps no asks."
+      : kept === 3 ? "All three asks kept." : `${slippedTitle(3 - kept)}.`,
+    body: `${decisions(run.state.turn)}${kept === 3 && run.state.turn <= card.best ? " · the Tidekeeper’s way" : ""}`,
+  };
+}
+
 export type TideLink = { label: string; action: "tide" | "log" | "sail" | "bram" };
 export type HarborTide =
-  | { kind: "link"; links: TideLink[] }
-  | { kind: "panel"; title: string; body: string; primary: { label: string; target: "tide" | "log" | "sail" }; links: TideLink[] };
+  { kind: "panel"; title: string; body: string; primary: { label: string; target: "tide" | "log" | "sail" | "bram" } | null; links: TideLink[] };
 
-export function harborTide(input: { lit: boolean; storyStep: boolean; card: TideCard; next: TideCard; entry: TideEntry | null }): HarborTide | null {
-  const { lit, storyStep, card, next, entry } = input;
+export function harborTide(input: { lit: boolean; card: TideCard; next: TideCard; entry: TideEntry | null; returnedToday: boolean; shelved: boolean }): HarborTide | null {
+  const { lit, card, next, entry, returnedToday, shelved } = input;
   if (!lit) return null;
-  if (storyStep) return { kind: "link", links: [{ label: "Today’s tide", action: "tide" }] };
   if (!entry) return {
-    kind: "panel", title: "The Tidekeeper has an ask.",
-    body: `${card.name}. Three asks for one tide, with the ${card.tool}.`,
-    primary: { label: "See today’s ask", target: "tide" }, links: [],
+    kind: "panel", title: shelved ? `Tomorrow: ${next.name}.` : returnedToday ? "Mochi comes home." : "The Tidekeeper has an ask.",
+    body: shelved ? "Today’s haul is on Bram’s shelf." : `${card.name}. Three asks for one tide, with the ${card.tool}.`,
+    primary: shelved ? null : returnedToday ? { label: "Take it to Bram", target: "bram" } : { label: "See today’s ask", target: "tide" },
+    links: shelved ? [{ label: "Sail today’s tide again", action: "sail" }, { label: "Open the tide log", action: "log" }] : [],
   };
   const allThree = entry.outcome === "returned" && entry.kept.every(Boolean);
-  const links: TideLink[] = allThree
-    ? [{ label: "Sail today’s tide again", action: "sail" }]
-    : [{ label: "Open the tide log", action: "log" }];
-  if (entry.outcome === "returned" && replayRun(entry.tool, entry.commands)?.state.cargo.length) {
-    links.push({ label: "Take it to Bram", action: "bram" });
-  }
-  const tomorrow = `Tomorrow: ${next.name}.`;
-  if (entry.outcome === "rescued") return {
-    kind: "panel", title: "Bram brought Mochi home.", body: `The asks can wait for another try. ${tomorrow}`,
-    primary: { label: "Sail today’s tide again", target: "sail" }, links,
-  };
-  if (allThree) return {
-    kind: "panel", title: "All three asks kept.",
-    body: `${decisions(entry.decisions)}${entry.decisions <= card.best ? ": the Tidekeeper’s way." : `; the Tidekeeper’s way takes ${card.best}.`} ${tomorrow}`,
-    primary: { label: "Open the tide log", target: "log" }, links,
-  };
   const slipped = card.asks.filter((_, index) => !entry.kept[index]);
+  const result = entry.outcome === "rescued" ? {
+    title: "Bram brought Mochi home.", body: "The asks can wait for another try.",
+  } : allThree ? {
+    title: "All three asks kept.",
+    body: `${decisions(entry.decisions)}${entry.decisions <= card.best ? " · the Tidekeeper’s way" : `; the Tidekeeper’s way takes ${card.best}.`}`,
+  } : {
+    title: `${slippedTitle(slipped.length)}.`,
+    body: `Slipped: ${slipped.map(ask => askLine(ask, card.tool)).join(" ")}`,
+  };
   return {
-    kind: "panel", title: `${slippedTitle(slipped.length)}.`,
-    body: `Slipped: ${slipped.map(ask => askLine(ask, card.tool)).join(" ")} ${tomorrow}`,
-    primary: { label: "Sail today’s tide again", target: "sail" }, links,
+    kind: "panel", title: shelved ? `Tomorrow: ${next.name}.` : result.title,
+    body: shelved ? `${result.title} ${result.body}` : result.body,
+    primary: returnedToday && !shelved ? { label: "Take it to Bram", target: "bram" } : null,
+    links: [{ label: "Sail today’s tide again", action: "sail" }, { label: "Open the tide log", action: "log" }],
   };
 }
 
