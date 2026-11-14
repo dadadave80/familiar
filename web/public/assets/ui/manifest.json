@@ -1,0 +1,299 @@
+{
+  "purpose": "Painted UI runtime artwork; transparent cut-outs with original masters preserved",
+  "encoder": "magick four-corner floodfill per-asset fuzz/erode blur0x1 Lanczos + cwebp quality88 method6 alpha100 sharp_yuv",
+  "sharedPortraitCrop": {
+    "x": 202,
+    "y": 100,
+    "width": 852,
+    "height": 1049
+  },
+  "askContentSize": 84,
+  "askMargin": 6,
+  "files": [
+    {
+      "source": "assets/source/ui/ask-all-marks.png",
+      "output": "assets/ui/ask-all-marks.webp",
+      "sourceSha256": "2b6fde1125c309b744ed08272924f00b52379e2b8a4dd8e31b86382a8bff7ddb",
+      "sha256": "642d8ab9d559cdc5ae6f8a3ee5dc619f71971a689e6cfaa90a8470e08ae9645a",
+      "sourceBytes": 284405,
+      "bytes": 1890,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-both-shells.png",
+      "output": "assets/ui/ask-both-shells.webp",
+      "sourceSha256": "9138fe5fdbad0446ff6e7e766aea2fe36aede3b8b75e2f62abed03071cedf2b7",
+      "sha256": "9f2cddd44a8d5d8681ee1742ff87cb301e5ce8751bcfb292973832fcdaff2724",
+      "sourceBytes": 556120,
+      "bytes": 3626,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-bridge.png",
+      "output": "assets/ui/ask-bridge.webp",
+      "sourceSha256": "8bec26911363f93fdf0541f3975df804e8ad2cf8b41bc7c7507f8770cfc748c6",
+      "sha256": "d92f175a44945491f6b43e0a6feff6dd42ebb400f46db33eae993f38ccb75505",
+      "sourceBytes": 378873,
+      "bytes": 2780,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-coiled.png",
+      "output": "assets/ui/ask-coiled.webp",
+      "sourceSha256": "1676b668e8e8c68b8b59a35c08731e51f543a4adc157209ea9615be2cdaf7124",
+      "sha256": "d1addd7d7787958b79070d31910ed543dcf42a17b5afa856b5d1076b758ae0f1",
+      "sourceBytes": 679976,
+      "bytes": 3588,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-dry.png",
+      "output": "assets/ui/ask-dry.webp",
+      "sourceSha256": "1ec777d2dadcf2b48f77ab32813a92b5df761b10efa2e40c07dbdd2eef01bf81",
+      "sha256": "52d6a9cbee733e055bbf0c7e78f3dc98f3da4f34d5361efee149a45a7ea6f800",
+      "sourceBytes": 894268,
+      "bytes": 3830,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-lens.png",
+      "output": "assets/ui/ask-lens.webp",
+      "sourceSha256": "5f81289981ede39f3bdcbdfce8612c0c9f4b442500f76ad0cf0894536d9aceb2",
+      "sha256": "995768cd35d224a366daa1196fbb525c161ab533c82fb08ad95bab2a1e74d0b3",
+      "sourceBytes": 652931,
+      "bytes": 3928,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-moth.png",
+      "output": "assets/ui/ask-moth.webp",
+      "sourceSha256": "28ee1913f12e75ffa880bd97c97d51ba6b3fc4aa6cedae88e57f26f609414f8c",
+      "sha256": "2940261fc8f92597790057d09d883af11ea87d5a6939940aadb8d1fb8bcbacf3",
+      "sourceBytes": 654777,
+      "bytes": 4096,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-no-wait.png",
+      "output": "assets/ui/ask-no-wait.webp",
+      "sourceSha256": "07f269bffe48bbd4849ff23f678dfa62a4d8151fcf09eaf08ebf1d0472e073a1",
+      "sha256": "ee22eec578bafbb95b14cfff0606f1fea8c5381a6792165c49caab04a5e4faaf",
+      "sourceBytes": 372218,
+      "bytes": 2862,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-one-crossing.png",
+      "output": "assets/ui/ask-one-crossing.webp",
+      "sourceSha256": "4fea3115c8599b01846448760b63bfb3ecafe98df8c6fdbc8236214cc7bc10ea",
+      "sha256": "e739889dedcd79bfcbee3ec925883e6fce4b009376e53e022f2b28566f89c439",
+      "sourceBytes": 520466,
+      "bytes": 2930,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-shut-shell.png",
+      "output": "assets/ui/ask-shut-shell.webp",
+      "sourceSha256": "bced80b63cb580dae3f946c9d7185b460fac13f8287d7de74f6e4f96bb11ed2e",
+      "sha256": "2c16dbaf5dd29299252e0159b80e4127d7dd829fd88d05efdce7bc7443a8ca55",
+      "sourceBytes": 722134,
+      "bytes": 2978,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-splash.png",
+      "output": "assets/ui/ask-splash.webp",
+      "sourceSha256": "444dbc5c65cb5dedb35029d41a91875ff36a030a3e1a3be10adaae759682a015",
+      "sha256": "661529803f8ad108a47992fa35ba26259dcfe4a49557b0185f2b33b664b89690",
+      "sourceBytes": 608042,
+      "bytes": 4248,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/ask-within.png",
+      "output": "assets/ui/ask-within.webp",
+      "sourceSha256": "4fe81ede5b8df100437460c3c52a0278ff516ef5fa7c58c37f50f01a35da5a0c",
+      "sha256": "c535215afcbe33895b66c7778f358f78ed9419c176bc57a5bddc06ec7b614e3e",
+      "sourceBytes": 413362,
+      "bytes": 2998,
+      "resizedTo": {
+        "width": 96,
+        "height": 96
+      },
+      "family": "ask",
+      "fuzz": 8,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/mochi-portrait.png",
+      "output": "assets/ui/mochi-portrait.webp",
+      "sourceSha256": "eed2974998310050308ceb9b105653579c85462904ed908b3ca4fb9ffcb9f44b",
+      "sha256": "cd81992ff446c4daf2cc36a80f788d9950f5957f18243cd2bf82b0dc6dd63d18",
+      "sourceBytes": 1126529,
+      "bytes": 15242,
+      "resizedTo": {
+        "width": 256,
+        "height": 256
+      },
+      "family": "portrait",
+      "fuzz": 4,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/mochi-portrait-proud.png",
+      "output": "assets/ui/mochi-portrait-proud.webp",
+      "sourceSha256": "3d328ae25ef06702e4311b63beb995bc47299434a88e0deb9093bb780c719fef",
+      "sha256": "700a88a1b408387465efdcc127ad8b6461df10442384e2aa8722120083f6b587",
+      "sourceBytes": 1085350,
+      "bytes": 15148,
+      "resizedTo": {
+        "width": 256,
+        "height": 256
+      },
+      "family": "portrait",
+      "fuzz": 4,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/mochi-portrait-splashed.png",
+      "output": "assets/ui/mochi-portrait-splashed.webp",
+      "sourceSha256": "c125818b1cb6580ee9bf8440f8e3f5a40939cf6020414a05da70d0796c08ac35",
+      "sha256": "49af4f36145de8eb0e857008494d222095c8d8bbd200600ce439857a47f4ebb7",
+      "sourceBytes": 1199076,
+      "bytes": 17396,
+      "resizedTo": {
+        "width": 256,
+        "height": 256
+      },
+      "family": "portrait",
+      "fuzz": 4,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/sign-beacon.png",
+      "output": "assets/ui/sign-beacon.webp",
+      "sourceSha256": "ce396916579271e73c937042e3511ecd99a2f282501fb4070f1e4d056e56b952",
+      "sha256": "7d4b864654aca70f470e37144419cd6888df0f1c2108574904a520028b3357d2",
+      "sourceBytes": 722365,
+      "bytes": 20738,
+      "resizedTo": {
+        "width": 480,
+        "height": 266
+      },
+      "family": "sign",
+      "fuzz": 4,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/sign-bram.png",
+      "output": "assets/ui/sign-bram.webp",
+      "sourceSha256": "6a7f6710aa741d273fd2205c3b38c4548cdfa34ec20c0e3ff4de4a1e905aa759",
+      "sha256": "1fd010597a6f8d96193163d729904e46b69482ee619d5001902d793362fffffb",
+      "sourceBytes": 734900,
+      "bytes": 22166,
+      "resizedTo": {
+        "width": 480,
+        "height": 266
+      },
+      "family": "sign",
+      "fuzz": 4,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/sign-satchel.png",
+      "output": "assets/ui/sign-satchel.webp",
+      "sourceSha256": "a0e762afe28f2e6acabf1b3c1b9fab67d82d2512a023f3c26703ccaf9405392d",
+      "sha256": "5c489cd845260715763987b5acde322e24320a3eb47f0084d3fcf49cee653311",
+      "sourceBytes": 730576,
+      "bytes": 21290,
+      "resizedTo": {
+        "width": 480,
+        "height": 266
+      },
+      "family": "sign",
+      "fuzz": 4,
+      "erode": 1
+    },
+    {
+      "source": "assets/source/ui/sign-workbench.png",
+      "output": "assets/ui/sign-workbench.webp",
+      "sourceSha256": "2b9382c1877252acd1d8bea959e6c09b48418edf85195de4c04666758541f49f",
+      "sha256": "494e33bbe660d959137598e3281f3bba888ff9e86ac33c369c53616f529f4ac3",
+      "sourceBytes": 768612,
+      "bytes": 22606,
+      "resizedTo": {
+        "width": 480,
+        "height": 265
+      },
+      "family": "sign",
+      "fuzz": 4,
+      "erode": 1
+    }
+  ]
+}

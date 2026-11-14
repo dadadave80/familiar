@@ -15,8 +15,9 @@ export const RUNTIME_WEBPS=[
   ...["card-brams-bridge","card-coiled-rope","card-dry-and-tidy","card-dry-paws","card-every-source","card-full-satchel","card-lantern-haul","card-left-for-bram","card-no-waiting","card-once-across","card-quiet-shell","card-surf-home","card-tidy-tide","card-wake-both-shells","keeper-ask","log-cover","log-page","seal-all-three","seal-kept","seal-slipped"].map(name=>`assets/tide/${name}.webp`),
   ...["glass","purse","reed","shelf-till","wish-token"].map(name=>`assets/season/${name}.webp`),
   ...["plank-1","plank-2","plank-3","plank-4","post","bell","tag","paper"].map(name=>`assets/title/title-${name}.webp`),
+  ...["sign-beacon","sign-bram","sign-workbench","sign-satchel","mochi-portrait","mochi-portrait-splashed","mochi-portrait-proud","ask-lens","ask-moth","ask-dry","ask-splash","ask-coiled","ask-no-wait","ask-all-marks","ask-one-crossing","ask-both-shells","ask-bridge","ask-shut-shell","ask-within"].map(name=>`assets/ui/${name}.webp`),
 ];
-export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate.webp.json","assets/expedition/provenance.json","assets/expedition/runtime/manifest.json","assets/tide/manifest.json","assets/tide/provenance.json","assets/season/manifest.json","assets/season/provenance.json","assets/title/manifest.json","assets/title/provenance.json"] as const;
+export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate.webp.json","assets/expedition/provenance.json","assets/expedition/runtime/manifest.json","assets/tide/manifest.json","assets/tide/provenance.json","assets/season/manifest.json","assets/season/provenance.json","assets/title/manifest.json","assets/title/provenance.json","assets/ui/manifest.json","assets/ui/provenance.json"] as const;
 export const BRAND_ASSETS=["icons/mochi.ico",...[32,180,192,512].map(size=>`icons/mochi-${size}.png`),"social/familiar-harbor.jpg","familiar.webmanifest"];
 const primaryFunction="api/v1/privy/wallet.func";
 const aliases=["api/health.func","api/v1/privy/player.func","api/v1/privy/note.func"] as const;
@@ -52,7 +53,7 @@ function publicBytes(bytes:Uint8Array,path:string) {
 /** Add only approved art and branding that the baseline lacks; never replace its assets. */
 export async function copyRuntimeAssets(sourcePublic:string,destination:string) {
   await physicalDirectory(sourcePublic);await physicalDirectory(join(sourcePublic,"assets"));
-  for(const directory of ["first-light-motion","expedition","expedition/runtime","tide","season","title"])await physicalDirectory(join(sourcePublic,"assets",directory));
+  for(const directory of ["first-light-motion","expedition","expedition/runtime","tide","season","title","ui"])await physicalDirectory(join(sourcePublic,"assets",directory));
   for(const directory of ["icons","social"])await physicalDirectory(join(sourcePublic,directory));
   await staticFiles(destination);
   const added:{path:string;sha256:string}[]=[],reused:{path:string;sha256:string}[]=[],writes:{path:string;bytes:Uint8Array}[]=[];
