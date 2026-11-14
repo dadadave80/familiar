@@ -1,0 +1,80 @@
+{
+  "created": "2026-11-14",
+  "generator": {
+    "tool": "image_gen.imagegen",
+    "requestedModel": "gpt-6-astra",
+    "actualModel": "not exposed by the built-in tool"
+  },
+  "files": {
+    "mochi-quay.png": {
+      "prompt": "Use case: identity-preserve / illustration-story. Recompose reference image 1, the canonical Familiar Mochi arrival scene, into a true tall 390:844 portrait composition, intended output1170x2532. Reference image2 is the house harbor materials and geography. Preserve ONE Mochi exactly: orange felt tabby, three forehead stripes, cream muzzle and paws, two dark whiskers per cheek, brown eyes, red scarf and stitched brown satchel. Same curious capable three-quarter head tilt and standing pose, unchanged character proportions. At logical390x844, place her complete silhouette including tail within x95-264/y290-540, feet at y540 and eyeline around y365. She is a nearby companion; leave clear low-detail open space to her left for a later Bram entrance. Lighthouse is behind her on the right: entire red cap, dark glass lantern room and wooden balcony must stay within x262-344/y155-285 with ≥24px right clearance; tower and base within x250-358/y260-425. Unlit beacon, no beam. Soft peach dawn, lilac cloud undersides, blue-green harbor, tactile sandstone, miniature trees, cottage terracotta and brass. Keep x20-190/y14-75 quiet subdued dawn sky or dark low-detail foliage behind future native wordmark. All quay posts and ropes above y555. Reserve x26-364/y600-744 and y760-824 for quiet low-contrast gently shaded stone, with no flowers, strong bright joints, posts or rope crossing this region. No baked caption gradients. Full tall authored painting, no letterbox, no stretched or cropped inset. No new accessories, no redesign, no second cat or enlarged background face, no Wren, no added Bram, no new plot evidence, text, logos, interface or borders. This is a provisional FILM staging target, not a claim to match an unavailable live prologue.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/mochi-quay-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "sourceSha256": "00e75b1464b4bbbecc40b6e1064121a8df3df74f8a1ddbce8a8cd237e883f760",
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "50279475395149dd3838cc9f92da387c1e1cece19912347a8fdd4e5f2364efde"
+      },
+      "delivery": {
+        "width": 1170,
+        "height": 2532,
+        "method": "ImageMagick proportional resize to cover, centered extent; less than 4 delivery pixels removed vertically; no stretching or subject crop."
+      },
+      "registration": "Film target only. No captured live Slice B prologue exists in accessible worktrees; cross-scene match remains unverified.",
+      "styleReferenceHashes": {
+        "web/assets/source/first-light-motion/harbor.png": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920",
+        "web/assets/source/opening/generated/mochi-quay-reference.png": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/opening/generated/mochi-quay-reference.png",
+          "sha256": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+        },
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        }
+      ]
+    },
+    "mochi-quay-landscape.png": {
+      "prompt": "Use case: identity-preserve / illustration-story. Create one beautiful premium handcrafted Familiar landscape film plate, exactly 16:10 composition, intended 2304x1440. Image 1 is the canonical Mochi arrival character and dawn scene: preserve Mochi's orange felt tabby identity, three forehead stripes, cream muzzle and paws, two dark whiskers per cheek, brown eyes, red scarf, and stitched brown satchel, her curious capable expression and current standing pose. Image 2 is the house harbor material and geography reference. Compose a single spatially coherent landscape view of this harbor at warm peach and lilac dawn. Place ONE complete Mochi in the right half, full silhouette at logical x875-1140/y330-665 on a 1440x900 canvas; feet around y665, eyeline around y425, nearby companion scale. Place the complete dark beacon including red cap, lantern room, wooden balcony, tower and base behind her toward logical x1170-1340/y145-510, at least 70 pixels from right edge. The beacon remains unlit. Naturally extend actual water, sky and wet sandstone toward the left with continuous miniature perspective; left x50-570/y540-850 is quiet softly shaded low-detail stone for future native captions and buttons. Top-left x30-260/y20-95 quiet dark foliage or subdued dawn sky for a future wordmark. Keep posts and rope out of the reading column. Preserve Familiar rounded cream sandstone, terracotta roof, imperfect clay masonry, felt textures, brass, wood, subtle miniature greenery. Warm luminous morning everywhere except naturally shaded left stone. No gradients painted for captions. No second Mochi, no enlarged background face, no portrait panel, no seam, no mirroring, no blurred filler, no Wren, no Bram added, no new accessories or narrative elements, no text or interface anywhere.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/mochi-quay-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "sourceSha256": "356ae00ca91d9147ce02bd294879939a2744ec615069079bd70200e300ed97c5",
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "9cb9de8e64629b9972568b52c278fe835574f7dac5909ff09bf6f9afbdf0b265"
+      },
+      "delivery": {
+        "width": 2304,
+        "height": 1440,
+        "method": "ImageMagick proportional resize to cover, centered extent; less than 2 delivery pixels removed vertically; no stretching or subject crop."
+      },
+      "registration": "Film target only, no live prologue registration reference available.",
+      "styleReferenceHashes": {
+        "web/assets/source/first-light-motion/harbor.png": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920",
+        "web/assets/source/opening/generated/mochi-quay-reference.png": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/opening/generated/mochi-quay-reference.png",
+          "sha256": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+        },
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        }
+      ]
+    }
+  }
+}

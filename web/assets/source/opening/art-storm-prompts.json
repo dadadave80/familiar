@@ -1,0 +1,136 @@
+{
+  "created": "2026-11-14",
+  "generator": {
+    "tool": "image_gen.imagegen",
+    "requestedModel": "gpt-6-astra",
+    "model": "Underlying image model not exposed by tool",
+    "modelVerified": false,
+    "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+  },
+  "files": {
+    "storm.png": {
+      "prompt": "Use case: stylized-concept. Recompose reference 1 (existing storm) with materials and harbor architecture locked to reference 2 (canonical house harbor) into a premium handcrafted cozy game painting. EXACT very tall 390:844 portrait aspect, output 1170x2532 pixels. This is a new camera composition, not a crop of a 2:3 image. Tiny clay sandstone cottages, terracotta roofs, tactile rounded imperfect masonry, miniature timber, twisted rope, soft clustered foliage. Night rain crosses petrol-teal water under muted slate-violet clouds. FULL red capped lighthouse, complete lantern room AND balcony entirely inside logical x248-344 y175-305, tower/base inside x234-360 y290-445. Use these logical coordinates on 390x844 canvas, multiply by3 for output. Keep >=24 logical pixels to right of balcony. Restrained amber beacon beam crosses sea leftward. Warm cottage windows imply shelter. Quiet dark sky at x20-190 y14-75 behind future native wordmark. All foreground posts/rope above y550. Lower third (y600-844) natural low-detail damp softly shaded sandstone quay, subtle broad reflections, absolutely no large flowers/posts/ropes or high-contrast paving seams here. Reserve calm caption area x26-364 y600-744 and controls y760-824. Sophisticated stop-motion materials, intimate lovely miniature light, no shiny plastic, no photographic storm spectacle. No characters, cats, damage, lightning, text, logos, UI, borders, or baked gradients. Preserve charming warm shelter amid rain and full architecture; beautiful production art.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/storm-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "attempts": 1,
+      "normalization": {
+        "operation": "Crop surplus upper sky and lower foreground (798x1727+0+200), then resize to1170x2532. Subpixel aspect rounding only; no subject cropping.",
+        "upscaled": true
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/storm.png",
+        "width": 798,
+        "height": 1972,
+        "sha256": "f2dcf51a97984e0740b521eb5321721f73db3acac82d5ea76544944cdf1ae58a"
+      },
+      "sourceSha256": "06571cc51e50d426045cec796742535395ae96f610bc6545f91071517be378f4",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/storm-reference.png": "0ad423df4331fe6eb71121bda74f21e724984c30f56cd2d4171e30bed907e566",
+        "web/assets/source/first-light-motion/harbor.png": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    },
+    "beacon-dark.png": {
+      "prompt": "Use case: lighting-weather. Edit only the light in supplied approved Familiar storm plate. Keep EXACT1170x2532 canvas aspect390:844, camera, geometry and every object pixel-position; no zoom, no crop, no recomposition. Extinguish ONLY upper lighthouse lantern room and amber beam and corresponding amber sea reflection. Keep warm cottage windows and little tower stair windows. Glass is dark cool blue transparent glass, not black hole. Keep red cap, balcony, clouds, rain, waves, cottage, tiny foliage, stone quay and foreground all precisely registered. Entire lighthouse top-right stays in same coordinates. Absolutely no additional damage, people, Wren, cats, cause for failure, text, UI, symbols or gradients. Faithful high-quality localized lighting edit for matched dissolve.",
+      "styleReferences": [
+        "web/assets/source/opening/storm.png"
+      ],
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "8fb9f2798bb795343fa9dd4e987dc7adee0f7a8cb6841720009a0ccd46672aa4"
+      },
+      "sourceSha256": "bb5dc1091803367023bfb1be2ca0278a3846056511402c05240a66817e92b301",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/storm.png": "06571cc51e50d426045cec796742535395ae96f610bc6545f91071517be378f4"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    },
+    "storm-landscape.png": {
+      "prompt": "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders.",
+      "initialPrompt": "Use case: stylized-concept. Create ONE spatially coherent landscape composition16:10,2304x1440, adapting supplied APPROVED Familiar storm portrait and house harbor reference. Exact same storm narrative, handmade clay sandstone, rounded cream cottages/terracotta roofs, tactile wood/brass/foliage. Complete lighthouse RED CAP, glowing upper lantern room, balcony, tower and island in right half logical x1000-1310 y150-580 on1440x900 canvas. Warm restrained amber beam reaches left across petrol-teal sea. Cottage, tiny quay, quiet practical lights to left of lighthouse in mid-distance. Large atmospheric slate violet storm cloud sky, rain, sheltered harbor; gentle courage not disaster. Foreground natural continuous broad damp sandstone quay. Calm low-detail darker area logical x50-570/y540-850 for native captions; no detailed flowers, bright stone seams or poles here. All railings/posts above y520. Keep top-left x35-230/y20-90 quiet dark sky; top-right clear for Skip. Full bleed environment reaches every edge. NO duplicate background layer, no inset portrait, seam, mirrored scene, blurred filler, vignette, people, cats, text/UI/baked gradients. Beautiful premium handcrafted miniature stop-motion world; preserve all architecture identity and refined warm/cool lighting.",
+      "refinementPrompts": [
+        "Use case: precise-object-edit. Recompose supplied landscape Familiar storm painting at EXACT16:10 aspect2304x1440. Preserve this exquisite handmade clay sandstone, warm shelter, purple rainy sky and lantern glow. Preserve the complete lighthouse location and scale in right half. IMPORTANT IMPROVEMENT: relocate the large foreground cottage, its tree and all left-side architecture up and away into the middle distance so all cottages fit within logical x650-1030/y240-480 on1440x900 canvas. Left x0-600 now looks out across open soft rainy sky, quiet teal sheltered water, and uncluttered low-contrast damp quay. Quay railings/posts ALL above logical y500; broad continuous paving from y520 to900, with no flower clusters, tall posts or bright seams in x40-600. Left reading column x50-570/y540-850 must be utterly calm soft shaded stone. Top-left x20-230/y14-90 quiet dark sky. No recognizable foreground cottage competing behind caption. Full coherent perspective throughout, naturally receding harbor village beside beacon to right. ONE image not panels, no repeated or mirrored subjects or filler strips, no blur gradient or vignette. Keep full red cap/lantern/balcony/tower/island, beam leftward, warm windows. No people/cats/text/UI/borders. Highest quality cinematic world. Reposition architecture, never just darken it.",
+        "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders."
+      ],
+      "styleReferences": [
+        "web/assets/source/opening/generated/storm-landscape-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "attempts": 3,
+      "native": {
+        "path": "web/assets/source/opening/generated/storm-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "3b2f6c82a2de66acb578e3e8c1a8518f91fc16a3222a85af175aeeafa817676f"
+      },
+      "sourceSha256": "6bb8efb394000432004c255da16fc613fcf12a6734e6b0d4f7dd78e5eee5dbcf",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/storm-landscape-layout.png": "bd614e24c45067fed06c5ae49c8a4b01994c8dc4652ae5b6371c22e38f50b1ca"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    },
+    "beacon-dark-landscape.png": {
+      "prompt": "Use case: lighting-weather. Localized light cleanup only, preserve exact16:10 canvas and ALL object geometry/pixel positions of supplied dark-beacon landscape. The UPPER BEACON IS OFF. REMOVE the large broad bright GOLDEN VERTICAL REFLECTION STRIP beneath the lighthouse on the RIGHT, both on SEA below island and on wet foreground stone below/right rail. This gold strip is residual light from failed upper beacon and must disappear. Replace those golden pixels with cool petrol teal/blue sea and dim taupe wet paving continuous with neighbors. Keep cottage-window golden reflections in middle x700-1000logical. Lighthouse SMALL stair windows may remain tiny warm lights, but their small dim reflections cannot form a wide bright stripe or spotlight on paving. Upper lantern room dark cool glass, absolutely no glow/beam. Preserve lighthouse cap/tower/island, cottages, rain/clouds, waves, clean left caption area and every post/rope location unchanged. No damage/characters/text/UI/gradients. The only change is removing physically incorrect broad right gold reflections; faithful miniature night mood.",
+      "initialPrompt": "Use case: lighting-weather. Edit supplied approved landscape storm plate at exact same16:10/2304x1440. Preserve EXACT camera, scale, geometry, clouds, rain, sea wave shapes, all houses, trees, full lighthouse red cap/balcony/tower/island and foreground railings/paving. Change ONLY lighthouse upper lantern-room illumination: turn it off, remove leftward amber beam and its sea reflection. Keep all cottage and tower stair window warm lights intact. Lantern room remains recognizable dark cool glass, not black hole or boarded up. Keep every object registered for a matched dissolve. No text/UI/logos/borders/gradients, no characters or damage.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/beacon-dark-landscape-lighting.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm-landscape.png"
+      ],
+      "attempts": 3,
+      "refinement": "Cleared desktop reading field by re-deriving dark plate from approved storm, then removed residual beacon-derived amber sea/stone reflection.",
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "ab91a3b7a407ed6881bfd468b7c28cf2b777de62bb932ee2c7272bb726bd1d67"
+      },
+      "sourceSha256": "b79e1c684d6e78325020e1df607b69b514532e548b4529a9fd6f1e1063596f3d",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/beacon-dark-landscape-lighting.png": "b14e2e09b5a79f3d0447fa290efeb0f991785d74b676102624baa8d1f6295ad4"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    }
+  }
+}
