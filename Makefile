@@ -29,5 +29,5 @@ judge:
 	bun --no-env-file scripts/judge.ts
 
 break:
-	cargo test --manifest-path contracts/Cargo.toml -p familiar-root break_ -- --nocapture
+	cargo test --manifest-path contracts/Cargo.toml -p familiar-root -p familiar-season break_ -- --nocapture
 	bun test services/relayer/src/auth/sign.test.ts
