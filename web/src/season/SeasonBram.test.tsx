@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import SeasonBram, { TodayHaul } from "./SeasonBram";
+import SeasonBram, { Status, TodayHaul } from "./SeasonBram";
 import SeasonBoundary from "./SeasonBoundary";
 import { deviceDay, keepTide, seedPreview, type TideReturn } from "./data";
 import type { ShelfView, TodayView } from "./model";
@@ -14,6 +14,25 @@ const props={live:{shelf,today,account:null,wish:null,postcard:null,error:""},sa
 const full=["step:north","step:north","step:west","wait","wait","step:east","reel:lens","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"];
 const lens=["wait","step:west","wait","step:north","step:north","take:lens","step:south","step:east","return"];
 const entry=(id:string,commands:string[]):TideReturn=>({id,commands,contentVersion:"first_light_v2",tool:"rope",cargo:[],outcome:"returned",savedAt:"2026-11-14T23:59:59Z"});
+
+test("the preview status explains blocked storage once in idle and confirmed states",()=>{
+  const note="This shelf lasts only until the page closes. This browser isn’t keeping site data.";
+  for(const state of [{kind:"idle"} as const,{kind:"confirmed",value:null} as const]){
+    const html=renderToStaticMarkup(<Status state={state} confirmed="Shelved for this visit: 1 glass. Not recorded." previewSaved={false}/>);
+    expect(html).toContain(note);
+    expect(html.split(note)).toHaveLength(2);
+    expect(html).not.toContain("Shelved on this device");
+  }
+  expect(renderToStaticMarkup(<Status state={{kind:"confirmed",value:null}} confirmed="Shelved on this device: 1 glass. Not recorded." previewSaved/>)).toContain("Shelved on this device");
+  expect(renderToStaticMarkup(<Status state={{kind:"idle"}} confirmed="" previewSaved/>)).not.toContain(note);
+});
+
+test("a shelving press supplies distinct saved and in-memory confirmations",()=>withReturns([entry("full",full)],()=>{
+  let texts:string[]=[];
+  const haul=TodayHaul({...props,onPreview:(_market,saved,unsaved)=>{texts=[saved,unsaved??""];}});
+  haul.props.children[0].props.children[0].props.onPress();
+  expect(texts).toEqual(["Shelved on this device: 1 glass and 1 reed bundle. Not recorded.","Shelved for this visit: 1 glass and 1 reed bundle. Not recorded."]);
+}));
 
 test("the shelf boundary preserves healthy content and gives a local reload message on failure",()=>{
   const boundary=new SeasonBoundary({children:<p>Bram’s shelf</p>});

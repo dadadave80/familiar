@@ -4,13 +4,21 @@ import { readTideLog, readTidePending, recordTide, writeTidePending } from "../t
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);}};};
 
+test("preview writes report whether the browser kept the shelf",()=>{
+  const market=seedPreview(null,20771),store=memory();
+  const blocked={setItem(){throw new DOMException("Site data blocked","SecurityError");}};
+  expect(writePreview(market,blocked)).toBe(false);
+  expect(writePreview(market,store)).toBe(true);
+  expect(readPreview(store,20771)).toEqual(market);
+});
+
 test("blocked site data leaves tide and shelf readers empty and preserves writer failure contracts",()=>{
   const previous=Object.getOwnPropertyDescriptor(globalThis,"localStorage"),blocked=new DOMException("Site data blocked","SecurityError");
   Object.defineProperty(globalThis,"localStorage",{configurable:true,get(){throw blocked;}});
   try{
     expect(readTideLog("preview")).toEqual([]);expect(readTidePending("preview")).toBeNull();
     expect(readPreview()).toBeNull();expect(readTide("preview")).toEqual([]);
-    expect(()=>writePreview(seedPreview(null))).not.toThrow();
+    expect(writePreview(seedPreview(null))).toBe(false);
     for(const pending of [null,{day:20771,late:false}])expect(()=>writeTidePending("preview",pending)).not.toThrow();
     expect(()=>recordTide("preview",{day:20771,tool:"rope",commands:["return"],late:false})).toThrow(blocked);
     expect(()=>keepTide("preview",{id:"blocked",contentVersion:"first_light_v2",tool:"rope",commands:["return"],cargo:[],outcome:"returned",savedAt:"t"})).toThrow(blocked);

@@ -43,7 +43,7 @@ export function readPreview(store?:Pick<Storage,"getItem">,day=deviceDay()):Prev
     const {docked,...market}=v;
     return rollPreview({...market,day:n(v.day)?v.day:day,...(n(docked)?{docked}:{})},day);}catch{return null;}
 }
-export function writePreview(value:PreviewMarket,store?:Pick<Storage,"setItem">){try{(store??localStorage).setItem(PREVIEW_KEY,JSON.stringify(value));}catch{/* The preview keeps running in memory. */}}
+export function writePreview(value:PreviewMarket,store?:Pick<Storage,"setItem">):boolean {try{(store??localStorage).setItem(PREVIEW_KEY,JSON.stringify(value));return true;}catch{return false;}}
 export function previewDock(current:PreviewMarket,goods:[number,number],day=deviceDay()):{market:PreviewMarket}|{block:string} {
   const m=rollPreview(current,day);
   if(m.docked===day)return {block:"Bram has already shelved a haul today."};

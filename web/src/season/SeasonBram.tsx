@@ -38,9 +38,9 @@ function useSeason(accountId:string|null, pet:string|null) {
   return {live,loading,refresh};
 }
 
-const Status=({state,confirmed,ref}:{state:ActionState<unknown>;confirmed:string;ref:React.Ref<HTMLParagraphElement>})=>{
+export const Status=({state,confirmed,previewSaved=true,ref}:{state:ActionState<unknown>;confirmed:string;previewSaved?:boolean;ref?:React.Ref<HTMLParagraphElement>})=>{
   const text=state.kind==="pending"?state.label:state.kind==="confirmed"?confirmed:state.kind==="refused"||state.kind==="uncertain"?state.words:"";
-  return <p ref={ref} tabIndex={-1} className="ss-status" role="status" aria-live="polite" data-state={state.kind}>{text}</p>;
+  return <p ref={ref} tabIndex={-1} className="ss-status" role="status" aria-live="polite" data-state={state.kind}>{text}{!previewSaved&&`${text?" ":""}This shelf lasts only until the page closes. This browser isn’t keeping site data.`}</p>;
 };
 /**
  * A button that stays focusable while unavailable (aria-disabled), so a press that makes it
@@ -60,13 +60,14 @@ export default function SeasonBram({session,onOpenTide,tideScope}:SeasonBramProp
   const tabRefs=useRef<(HTMLButtonElement|null)[]>([]);
   const [action,setAction]=useState<ActionState<unknown>>({kind:"idle"}),[confirmedText,setConfirmedText]=useState("");
   const [storedPreview,setPreview]=useState<PreviewMarket|null>(()=>readPreview());
+  const [previewSaved,setPreviewSaved]=useState(true);
   const preview=storedPreview&&rollPreview(storedPreview);
-  useEffect(()=>{if(!saved&&!preview&&live.shelf){const seeded=seedPreview(live.shelf);setPreview(seeded);writePreview(seeded);}},[saved,preview,live.shelf]);
+  useEffect(()=>{if(!saved&&!preview&&live.shelf){const seeded=seedPreview(live.shelf);setPreview(seeded);setPreviewSaved(writePreview(seeded));}},[saved,preview,live.shelf]);
   const openRequest=saved&&!!session?.state.pending;
   const busy=action.kind==="pending"||!!session?.state.busy||openRequest;
   const rootRef=useRef<HTMLElement>(null),statusRef=useRef<HTMLParagraphElement>(null);
-  function onPreview(next:PreviewMarket,text:string) {
-    setPreview(next);writePreview(next);setAction({kind:"confirmed",value:null});setConfirmedText(text);
+  function onPreview(next:PreviewMarket,text:string,unsavedText=text) {
+    setPreview(next);const kept=writePreview(next);setPreviewSaved(kept);setAction({kind:"confirmed",value:null});setConfirmedText(kept?text:unsavedText);
     requestAnimationFrame(()=>{if(!rootRef.current?.contains(document.activeElement))statusRef.current?.focus();});
   }
   const onPreviewBlock=(words:string)=>setAction({kind:"refused",code:"PREVIEW",words});
@@ -112,11 +113,11 @@ export default function SeasonBram({session,onOpenTide,tideScope}:SeasonBramProp
       {TABS.map(([id,label],i)=><button key={id} ref={el=>{tabRefs.current[i]=el;}} role="tab" id={`ss-tab-${id}`} aria-controls={`ss-panel-${id}`} aria-selected={tab===id} tabIndex={tab===id?0:-1} onClick={()=>setTab(id)}>{label}</button>)}
     </div>
     {openRequest&&action.kind!=="pending"&&<p className="ss-problem" role="status">{OPEN_REQUEST}</p>}
-    <Status ref={statusRef} state={action} confirmed={confirmedText}/>
+    <Status ref={statusRef} state={action} confirmed={confirmedText} previewSaved={saved||previewSaved}/>
     <div role="tabpanel" id={`ss-panel-${tab}`} aria-labelledby={`ss-tab-${tab}`} className="ss-panel" aria-busy={loading}>
       {tab==="shelf"&&<Shelf live={live} saved={saved} registered={registered} busy={busy} preview={preview}
         onPreview={onPreview} onPreviewBlock={onPreviewBlock}
-        onResetPreview={()=>{const seeded={...seedPreview(live.shelf),docked:preview?.docked};setPreview(seeded);writePreview(seeded);setAction({kind:"idle"});}}
+        onResetPreview={()=>{const seeded={...seedPreview(live.shelf),docked:preview?.docked};setPreview(seeded);setPreviewSaved(writePreview(seeded));setAction({kind:"idle"});}}
         act={act}/>}
       {tab==="wish"&&<WishTab live={live} saved={saved} registered={registered} hasPet={!!pet} busy={busy} act={act}/>}
     </div>
@@ -135,7 +136,7 @@ function Stepper({value,min,max,onChange,label}:{value:number;min:number;max:num
 }
 
 function Shelf({live,saved,registered,busy,preview,onPreview,onPreviewBlock,onResetPreview,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;
-  onPreview:(m:PreviewMarket,text:string)=>void;onPreviewBlock:(words:string)=>void;onResetPreview:()=>void;act:Act}) {
+  onPreview:(m:PreviewMarket,text:string,unsavedText?:string)=>void;onPreviewBlock:(words:string)=>void;onResetPreview:()=>void;act:Act}) {
   const [qty,setQty]=useState<Record<Good,number>>({glass:1,reed:1});
   const till=saved?live.shelf?.till:preview?.till;
   if(!live.shelf&&!preview)return <p>Reading Bram’s shelf…</p>;
@@ -177,7 +178,7 @@ function Shelf({live,saved,registered,busy,preview,onPreview,onPreviewBlock,onRe
 }
 
 export function TodayHaul({live,saved,registered,busy,preview,scope,onOpenTide,onPreview,onPreviewBlock,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;scope:string;onOpenTide:()=>void;
-  onPreview:(m:PreviewMarket,text:string)=>void;onPreviewBlock:(words:string)=>void;act:Act}) {
+  onPreview:(m:PreviewMarket,text:string,unsavedText?:string)=>void;onPreviewBlock:(words:string)=>void;act:Act}) {
   const today=live.today;
   if(!today)return <p>Reading Bram’s ledger…</p>;
   const minted=saved?today.minted_today:null;
@@ -192,7 +193,7 @@ export function TodayHaul({live,saved,registered,busy,preview,scope,onOpenTide,o
   return <>
     {candidates.map(({r,c})=><div key={r.id} className="ss-act">
       <Press off={busy||(saved?!registered:!preview)} onPress={()=>{
-        if(!saved){const result=previewDock(preview!,c!.goods);if("block"in result)onPreviewBlock(result.block);else onPreview(result.market,`Shelved on this device: ${haulLine(c!.goods)}. Not recorded.`);return;}
+        if(!saved){const result=previewDock(preview!,c!.goods);if("block"in result)onPreviewBlock(result.block);else onPreview(result.market,`Shelved on this device: ${haulLine(c!.goods)}. Not recorded.`,`Shelved for this visit: ${haulLine(c!.goods)}. Not recorded.`);return;}
         void act<Mint>({kind:"claim",contentVersion:r.contentVersion,tool:r.tool,commands:r.commands},"The harbor is replaying Mochi’s steps…",m=>`Shelved ${haulLine(m.goods)}: ${scoreLine(m)}. Recorded.`);
       }}>Shelve {haulLine(c!.goods)}</Press>
       <span className="ss-info">{r.tool==="rope"?"Rope":"Lantern"} · {dayLabel(deviceDay(Date.parse(r.savedAt)))}</span>
