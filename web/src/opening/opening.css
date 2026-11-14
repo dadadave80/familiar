@@ -1,7 +1,23 @@
 html:has(.familiar-opening:not(.framed)),body:has(.familiar-opening:not(.framed)){margin:0;width:100%;height:100%;overflow:hidden;background:#304e40}
-.familiar-opening{position:fixed;inset:0;height:100dvh;z-index:60}
+.familiar-opening{--fo-card:#fbf3e2;--fo-ink:#263e32;--fo-secondary-ink:#4f5d52;--fo-hairline:#e6d6b4;position:fixed;inset:0;height:100dvh;z-index:60}
 .familiar-opening.framed{position:absolute;height:auto;z-index:auto}
 .familiar-opening button{font-family:inherit}
 .familiar-opening button:focus-visible{outline:3px solid #fff5ce;outline-offset:3px}
+.familiar-opening [data-plank]:focus-visible{outline:none;filter:drop-shadow(0 0 2px #263e32) drop-shadow(0 0 3px #fff5ce) drop-shadow(0 0 7px #fff5ce)!important}
 .familiar-opening .fo-bell:focus-visible{border-radius:8px}
-.familiar-opening .fo-row:hover{background:#fff1ca}
+.familiar-opening .fo-paper button:focus-visible{outline-color:#2b5f4d}
+.familiar-opening .fo-primary,.familiar-opening .fo-secondary{display:flex;align-items:center;justify-content:center;gap:10px;box-sizing:border-box;border-radius:999px;cursor:pointer;text-wrap:balance}
+.familiar-opening .fo-primary{min-height:52px;padding:10px 26px;border:0;background:#2b5f4d;color:#fff6e2;box-shadow:inset 0 1px 0 #5f9a83,inset 0 -3px 0 #1d4436,0 6px 14px rgba(31,68,54,.28);font:650 18px/1.2 'Fraunces Variable',serif}
+.familiar-opening .fo-primary:active{transform:translateY(1px);box-shadow:inset 0 1px 0 #5f9a83,inset 0 -1px 0 #1d4436,0 6px 14px rgba(31,68,54,.28)}
+.familiar-opening .fo-secondary{min-height:48px;padding:9px 18px;border:1.5px solid #d6c29b;background:#fffaf0;color:var(--fo-ink);font:600 17px/1.2 'Fraunces Variable',serif}
+.familiar-opening .fo-secondary:hover{background:#fff3dc}
+.familiar-opening .fo-primary svg{width:1.12em;height:1.12em;flex-shrink:0}
+.familiar-opening .fo-secondary svg{width:1.06em;height:1.06em;flex-shrink:0}
+.familiar-opening .fo-peg{border-radius:999px}
+.familiar-opening .fo-peg:hover{box-shadow:inset 0 0 0 1.5px #d6c29b}
+.familiar-opening [data-el="scroll"]{scrollbar-width:thin;scrollbar-color:#4f5d52 #fbf3e2}
+.familiar-opening .fo-chapter-name,.familiar-opening .fo-prompt{background:#263e32;border-radius:999px;box-shadow:0 3px 12px rgba(38,62,50,.22)}
+.familiar-opening .fo-chapter-name{padding:.35em .7em}
+.familiar-opening .fo-prompt{padding:12px 20px}
+.familiar-opening ::selection{background:#e6d6b4;color:#263e32}
+@media(pointer:coarse){.familiar-opening .fo-primary{min-height:56px}}
