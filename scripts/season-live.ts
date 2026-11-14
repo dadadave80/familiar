@@ -9,10 +9,15 @@ const SEASON = "season.familiar-game.testnet";
 const ROUTE = ["step:north", "step:north", "step:west", "wait", "wait", "step:east", "reel:lens", "step:east", "step:west", "step:east", "take:moth", "step:west", "step:east", "step:south", "step:west", "step:south", "return"];
 const rpc = new JsonRpcProvider({ url: "https://test.rpc.fastnear.com" });
 if ((await rpc.getNetworkId()) !== "testnet") throw new Error("Refusing a non-testnet RPC.");
-const view = <T,>(method: string, args: object = {}) => rpc.callFunction<T>({ contractId: SEASON, method, args });
+const view = async <T,>(method: string, args: Record<string, unknown> = {}): Promise<T> => {
+  const value = await rpc.callFunction({ contractId: SEASON, method, args });
+  if (value === undefined) throw new Error(`${method} returned nothing`);
+  return value as unknown as T;
+};
 
 const today = await view<{ day: number; content_version: string }>("get_today");
 if (today.content_version !== "first_light_v2") throw new Error(`Day ${today.day} is ${today.content_version}; run on an odd (Beacon Court) day.`);
+const day = today.day;
 
 const key = KeyPair.fromRandom("ed25519");
 let id = `familiar-season-player-${Date.now().toString(36)}.testnet`;
@@ -52,5 +57,5 @@ await call("buy", { good: "reed", qty: 1, max_price: after.goods.find(g => g.goo
 const account = await view("get_account", { account_id: id });
 
 await mkdir(".data", { recursive: true });
-await Bun.write(`.data/season-live-${today.day}.json`, JSON.stringify({ network: "testnet", season: SEASON, day: today.day, player: id, mint, account, transactions: evidence }, null, 2));
+await Bun.write(`.data/season-live-${day}.json`, JSON.stringify({ network: "testnet", season: SEASON, day, player: id, mint, account, transactions: evidence }, null, 2));
 console.info("mint:", JSON.stringify(mint), "\naccount:", JSON.stringify(account));
