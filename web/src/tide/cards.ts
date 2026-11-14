@@ -34,6 +34,7 @@ export const TIDE_POOL: readonly TideCard[] = [
 
 /** The same day boundary as the season contract: whole days of UTC time. */
 export const tideDay = (now: number = Date.now()) => Math.floor(now / 86_400_000);
+export const msUntilNextTideDay = (now: number = Date.now()) => (tideDay(now) + 1) * 86_400_000 - now;
 export function cardForDay(day: number): TideCard {
   const size = TIDE_POOL.length;
   return TIDE_POOL[((Math.trunc(day) % size) + size) % size]!;

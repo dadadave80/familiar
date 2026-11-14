@@ -109,6 +109,74 @@ async function checkRestartLayout(page: Page, label: string) {
   }), `${label}: keyboard focus is visible`);
 }
 
+async function checkMidnight(page: Page, origin: string, mode: "harbor" | "wake" | "outing" | "unmarked-outing" | "override") {
+  const midnight = nextDay * 86_400_000;
+  const outing = mode === "outing" || mode === "unmarked-outing";
+  const expectedPending = mode === "unmarked-outing" ? null : { day, late: false };
+  await page.clock.install({ time: new Date(midnight - 10_000) });
+  // Keep a slow asset load from crossing midnight before the scenario starts.
+  await page.clock.setFixedTime(new Date(midnight - 10_000));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(({ saveKey, passageKey, pendingKey, blockPending }) => {
+    localStorage.setItem(saveKey, JSON.stringify({
+      version: 2, home: { banked: ["lens", "moth", "vane"], lit: true, signaled: true, lantern: null }, active: null, last: null,
+    }));
+    localStorage.setItem(passageKey, JSON.stringify({
+      version: 1, services: ["bell", "reed"], watchedReeds: true, heardBell: false, active: null,
+    }));
+    if (blockPending) {
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key: string, value: string) {
+        if (key === pendingKey) throw new DOMException("Site data is blocked", "QuotaExceededError");
+        setItem.call(this, key, value);
+      };
+    }
+  }, { saveKey, passageKey, pendingKey, blockPending: mode === "unmarked-outing" });
+  await page.goto(new URL(`/outing/?play${mode === "override" ? `&tide-day=${day}` : ""}`, origin).href);
+  await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready", "true", { timeout: 30000 });
+  await page.clock.setSystemTime(new Date(midnight - 10_000));
+  await page.clock.pauseAt(new Date(midnight - 1_000));
+  const harbor = page.locator(".exp-departure"), panel = page.locator(".exp-panel");
+  await expect(harbor).toContainText(card.name);
+  await harbor.locator('[data-action="tide"]').click();
+  await expect(panel.getByRole("heading", { name: card.name, exact: true })).toBeVisible();
+  const asks = page.locator(".tide-asks");
+  if (outing) {
+    await panel.getByRole("button", { name: "Sail today’s tide", exact: true }).click();
+    await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode", "court");
+    await expect(asks).toBeVisible();
+    await expect(asks.locator("li[data-status]")).toHaveCount(3);
+  }
+  const beforeAsks = await asks.allTextContents();
+  if (mode === "wake") {
+    await page.clock.setSystemTime(new Date(midnight + 1_000));
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  } else await page.clock.fastForward(2_000);
+  if (outing) {
+    assert.deepEqual(await asks.allTextContents(), beforeAsks, "midnight keeps the active card’s asks");
+    assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), expectedPending, "midnight keeps the outing’s original marker");
+    await page.getByRole("button", { name: "Game menu", exact: true }).click();
+    await panel.getByRole("button", { name: "Start this tide over", exact: true }).click();
+    assert.deepEqual(await asks.allTextContents(), beforeAsks, "restart after midnight keeps the original card’s asks");
+    assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), expectedPending, "restart after midnight keeps the outing’s original marker");
+    await page.locator('button[data-command="return"]').click();
+    await page.clock.runFor(1_000);
+    await expect(panel.getByRole("heading", { name: card.name, exact: true })).toBeVisible();
+    const entries = await page.evaluate(key => JSON.parse(localStorage.getItem(key) ?? "[]"), logKey);
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].day, day, "a return after midnight is logged on the day it started");
+    assert.equal(entries[0].cardId, card.id);
+  } else {
+    const expectedDay = mode === "override" ? day : nextDay, expectedCard = cardForDay(expectedDay);
+    await expect(panel.getByRole("heading", { name: expectedCard.name, exact: true })).toBeVisible();
+    await panel.getByRole("button", { name: "Close panel", exact: true }).click();
+    await expect(harbor).toContainText(expectedCard.name);
+    await harbor.locator('[data-action="tide"]').click();
+    await panel.getByRole("button", { name: "Sail today’s tide", exact: true }).click();
+    assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), { day: expectedDay, late: false }, "the first Sail after midnight uses the displayed day");
+  }
+}
+
 try {
   await server.listen();
   const origin = server.resolvedUrls!.local[0]!;
@@ -455,11 +523,17 @@ try {
     await harbor.getByRole("button", { name: "Open the tide log", exact: true }).click();
     await expect(panel.locator(".tide-list")).not.toHaveAttribute("data-arrival", "true");
     await expect(panel.locator(".tide-page-stamp .tide-stamp")).not.toHaveAttribute("data-press", "true");
+    for (const mode of ["harbor", "wake", "outing", "unmarked-outing", "override"] as const) {
+      const midnightPage = await browser.newPage({ viewport });
+      midnightPage.on("pageerror", error => errors.push(error.message));
+      try { await checkMidnight(midnightPage, origin, mode); }
+      finally { await midnightPage.close(); }
+    }
   } finally {
     await browser.close();
     assert.deepEqual(errors, [], "uncaught browser errors");
   }
-  console.info(`${tag} / 1280x800: holding transitions, four harbor states, earlier-day range, arrival stamps, solved outing, unchanged home, title entry and both restart paths passed`);
+  console.info(`${tag} / 1280x800: holding transitions, four harbor states, earlier-day range, arrival stamps, solved outing, unchanged home, title entry, both restart paths and UTC midnight rollover passed`);
 } finally {
   await server.close();
   console.info(`Screenshots: ${shots}`);

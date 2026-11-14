@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { TURN_LIMIT } from "../expedition/types";
 import { replayRun, solve, startRun, stepRun } from "./asks";
-import { cardForDay, TIDE_POOL } from "./cards";
+import { cardForDay, tideDay, TIDE_POOL } from "./cards";
 import { betterTide, readTideLog, readTidePending, recordTide, tideLogKey, tideSummary, writeTidePending } from "./log";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);},removeItem:(k:string)=>{m.delete(k);}};};
@@ -100,6 +100,16 @@ test("pending outings round-trip, clear and tolerate unavailable storage",()=>{
   for(const raw of ["{","null",'{"day":1.5,"late":false}','{"day":1,"late":0}']){store.setItem(key,raw);expect(readTidePending("p",store)).toBeNull();}
   const blocked=()=>{throw Error("blocked");},broken={getItem:blocked,setItem:blocked,removeItem:blocked};
   expect(readTidePending("p",broken)).toBeNull();expect(()=>writeTidePending("p",{day,late:false},broken)).not.toThrow();expect(()=>writeTidePending("p",null,broken)).not.toThrow();
+});
+
+test("an outing docked after midnight is scored for its pending day",()=>{
+  const store=memory(),midnight=(day+1)*86_400_000;
+  writeTidePending("p",{day:tideDay(midnight-10_000),late:false},store);
+  const pending=readTidePending("p",store)!;
+  const recorded=recordTide("p",{...input(),...pending,now:new Date(midnight+10_000)},store).entry;
+  expect(recorded).toMatchObject({day,cardId:card.id,tool:card.tool,kept:[true,true,true],late:false});
+  expect(readTidePending("p",store)).toEqual({day,late:false});
+  expect(readTideLog("p",store).some(entry=>entry.day===tideDay(midnight))).toBe(false);
 });
 
 test("score comparison and summary count asks and complete cards",()=>{

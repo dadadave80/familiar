@@ -8,11 +8,12 @@ import "./tide.css";
 
 export interface TideDayView { day: number; card: TideCard; entry: TideEntry | null }
 
-export default function TideAsk({ today, earlier, canSail, onSail, onOpenLog }: {
-  today: TideDayView; earlier: readonly TideDayView[]; canSail: boolean;
+export default function TideAsk({ today, earlier, sailBlockedReason, onSail, onOpenLog }: {
+  today: TideDayView; earlier: readonly TideDayView[]; sailBlockedReason: string | null;
   onSail: (day: number) => void; onOpenLog: (day?: number) => void;
 }): JSX.Element {
   const id = useId();
+  const canSail = sailBlockedReason === null;
   const { card, entry } = today;
   const kept = entry?.kept.filter(Boolean).length ?? 0;
   return <section className="tide" aria-labelledby={`${id}-title`}>
@@ -38,7 +39,7 @@ export default function TideAsk({ today, earlier, canSail, onSail, onOpenLog }: 
         {entry.attempts > 1 && <p className="tide-note">{entry.attempts} sails today.</p>}
       </>}
       <button type="button" className="exp-primary" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(today.day); }}>{entry ? "Sail it again" : "Sail today’s tide"}</button>
-      {!canSail && <p className="tide-note" id={`${id}-busy`}>Finish the outing in progress first.</p>}
+      {!canSail && <p className="tide-note" id={`${id}-busy`}>{sailBlockedReason}</p>}
     </div>
     {earlier.length > 0 && <details className="tide-earlier">
       <summary>Earlier tides</summary>

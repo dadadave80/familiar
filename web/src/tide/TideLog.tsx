@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 import type { Area, BankedItem, Tool } from "../expedition/types";
 import type { TideCard } from "./asks";
 import { CARD_PICTURE, logCoverArt, logPageArt, sealArt } from "./art";
@@ -14,10 +14,12 @@ export type LogPage =
   | { kind: "story"; id: string; title: string; subtitle: string; area: Area; tool: Tool; banked: readonly BankedItem[]; commands: readonly string[] }
   | { kind: "tide"; day: number; card: TideCard; entry: TideEntry };
 
-export default function TideLog({ pages, initialPage, pressDay, reduced, canSail, summary, onSail }: {
-  pages: readonly LogPage[]; initialPage?: number; pressDay?: number; reduced: boolean; canSail: boolean;
+export default function TideLog({ pages, initialPage, pressDay, reduced, sailBlockedReason, summary, onSail }: {
+  pages: readonly LogPage[]; initialPage?: number; pressDay?: number; reduced: boolean; sailBlockedReason: string | null;
   summary: { sailed: number; kept: number; allThree: number }; onSail: (day: number) => void;
 }): JSX.Element {
+  const id = useId();
+  const canSail = sailBlockedReason === null;
   const last = Math.max(0, pages.length - 1);
   const [selected, setSelected] = useState(() => Math.max(0, Math.min(last, Math.trunc(initialPage ?? 0))));
   useEffect(() => { setSelected(Math.max(0, Math.min(last, Math.trunc(initialPage ?? 0)))); }, [initialPage, last]);
@@ -92,8 +94,8 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, canSail
         <div><dt>The Tidekeeper’s way</dt><dd>{page.card.best} {page.card.best === 1 ? "decision" : "decisions"}</dd></div>
       </dl>
       {page.entry.kept.every(Boolean) && page.entry.decisions <= page.card.best && <p className="tide-note">Mochi matched the Tidekeeper’s way.</p>}
-      <button type="button" className="exp-primary" aria-disabled={!canSail} onClick={() => { if (canSail) onSail(page.day); }}>Sail this tide again</button>
-      {!canSail && <p className="tide-note">Finish the outing in progress first.</p>}
+      <button type="button" className="exp-primary" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(page.day); }}>Sail this tide again</button>
+      {!canSail && <p className="tide-note" id={`${id}-busy`}>{sailBlockedReason}</p>}
     </>}
     </>}
   </section>;

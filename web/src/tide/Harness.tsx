@@ -58,14 +58,14 @@ export default function TideHarness(): JSX.Element {
       {!askOpen && <button type="button" onClick={() => setAskOpen(true)}>Today’s tide</button>}
       {askOpen && <div className="exp-panel tide-harness-panel">
         <button type="button" className="exp-close" aria-label="Close panel" onClick={() => setAskOpen(false)}><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg></button>
-        <TideAsk today={{ day: 20771, card: sample.card, entry: sailed ? sample.entry : null }} earlier={earlierDays(20771, sample.entries)} canSail onSail={onSail} onOpenLog={day => { setInitialPage(pageForDay(sample.pages, day)); setLogOpen(true); setMessage("Sample log page selected."); }} />
+        <TideAsk today={{ day: 20771, card: sample.card, entry: sailed ? sample.entry : null }} earlier={earlierDays(20771, sample.entries)} sailBlockedReason={null} onSail={onSail} onOpenLog={day => { setInitialPage(pageForDay(sample.pages, day)); setLogOpen(true); setMessage("Sample log page selected."); }} />
         <button type="button" aria-pressed={sailed} onClick={() => setSailed(value => !value)}>{sailed ? "Show unsailed state" : "Show sailed state"}</button>
         <p className="tide-harness-status" role="status">{message}</p>
       </div>}
       {!logOpen && <button type="button" onClick={() => setLogOpen(true)}>Bram’s tide log</button>}
       {logOpen && <div className="exp-panel tide-harness-panel">
         <button type="button" className="exp-close" aria-label="Close panel" onClick={() => setLogOpen(false)}><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14" /></svg></button>
-        <TideLog pages={sample.pages} initialPage={initialPage} reduced={matchMedia("(prefers-reduced-motion: reduce)").matches} canSail summary={tideSummary(sample.entries)} onSail={onSail} />
+        <TideLog pages={sample.pages} initialPage={initialPage} reduced={matchMedia("(prefers-reduced-motion: reduce)").matches} sailBlockedReason={null} summary={tideSummary(sample.entries)} onSail={onSail} />
       </div>}
     </div>
   </main>;
