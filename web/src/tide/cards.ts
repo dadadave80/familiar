@@ -72,7 +72,7 @@ export function askChip(ask: Ask, tool: Tool, run: Run): string {
   if (ask.kind === "haul") {
     const lens = state.cargo.includes("lens"), moth = state.cargo.includes("moth");
     if (ask.haul === "both") return `Both finds · ${Number(lens) + Number(moth)} of 2`;
-    return ask.haul === "lens" ? `Lens · ${lens ? "in the pack" : "still out"}` : `Moth only · ${moth ? "in the pack" : "still out"}`;
+    return ask.haul === "lens" ? `Lens · ${lens ? "in the pack" : "still out"}` : `Moth only · ${lens ? "lens taken" : moth ? "in the pack" : "still out"}`;
   }
   switch (ask.style) {
     case "dry": return "Dry paws";

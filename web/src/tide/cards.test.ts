@@ -99,3 +99,9 @@ test("the splash chip counts splashes past one",()=>{
   expect(askChip(ask,"rope",soaked(2))).toBe("One splash · 1 of 1");
   expect(askChip(ask,"rope",soaked(1))).toBe("One splash · 2 splashes");
 });
+
+test("the moth-only chip says when the lens was taken",()=>{
+  const ask={kind:"haul",haul:"moth"} as const,start=startRun("lantern");
+  expect(askChip(ask,"lantern",start)).toBe("Moth only · still out");
+  expect(askChip(ask,"lantern",{...start,state:{...start.state,cargo:["lens"]}})).toBe("Moth only · lens taken");
+});

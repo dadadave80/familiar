@@ -67,6 +67,7 @@
 .tide-page-stamp{position:absolute;top:-8px;right:3px;z-index:1}
 .tide-page-stamp .tide-stamp[data-press]{animation:tide-stamp-arrive 260ms cubic-bezier(.34,1.56,.64,1) 500ms backwards}
 @keyframes tide-stamp-arrive{from{opacity:0;transform:rotate(calc(var(--tilt) - 9deg)) scale(1.35)}to{opacity:1;transform:rotate(var(--tilt)) scale(1)}}
+.tide-list[data-arrival]{scroll-margin-bottom:24px}
 .tide-list[data-arrival] .tide-ask-mark{animation:tide-ask-press 260ms cubic-bezier(.34,1.56,.64,1) var(--ask-delay) backwards}
 @keyframes tide-ask-press{from{opacity:0;transform:rotate(-9deg) scale(1.35)}to{opacity:1;transform:none}}
 .tide .tide-facts{display:grid;gap:8px;margin:16px 0;padding:12px;background:var(--ss-card);border-radius:8px;font-variant-numeric:tabular-nums}
