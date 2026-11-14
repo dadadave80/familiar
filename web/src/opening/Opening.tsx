@@ -1,4 +1,4 @@
-// Title screen for /outing/, ported from the Claude Design file FamiliarOpening.dc.html.
+// Title screen for /outing/.
 // The render loop writes styles directly; React only renders text and structure.
 import { Component, type CSSProperties, type SyntheticEvent } from "react";
 import "@fontsource-variable/fraunces";
@@ -8,6 +8,8 @@ import { MOCHI_POSES, type MochiPoseName } from "../motion/mochi";
 import "./opening.css";
 
 const ART = "/assets/expedition/runtime/";
+const TITLE = "/assets/title/";
+const TITLE_ART = ["title-plank-1", "title-plank-2", "title-plank-3", "title-plank-4", "title-post", "title-bell", "title-tag", "title-paper"];
 const cache = new Map<string, CSSProperties>();
 /** Inline style string -> React style object, so the markup stays close to the design file. */
 export function sx(text: string): CSSProperties {
@@ -53,8 +55,7 @@ const E: Record<Ease, (p: number) => number> = {
   in: p => p * p * p, back: p => 1 + 2.70158 * Math.pow(p - 1, 3) + 1.70158 * Math.pow(p - 1, 2),
 };
 const COLS = ["Left", "Center", "Right"];
-const PLANK = "position:relative;height:56px;width:236px;box-sizing:border-box;padding:0 12px 0 30px;border:1px solid #d6b374;border-radius:9px;background:#5d432c;color:#fff0ce;box-shadow:inset 0 1px 0 #b48d55,0 4px 14px #382b2040;font:650 23px/1 'Fraunces Variable',serif;letter-spacing:-.02em;text-align:left;cursor:pointer;transform-origin:0 50%;opacity:0;pointer-events:none";
-const NAIL = "position:absolute;left:11px;top:50%;width:7px;height:7px;margin-top:-4px;border-radius:50%;background:#e4be78;box-shadow:inset -1px -1px 0 #9a733a";
+const PLANK = "position:relative;height:56px;width:236px;box-sizing:border-box;padding:0 12px 0 30px;border:0;color:#fff0ce;filter:drop-shadow(0 3px 3px #2a1d1166);text-shadow:0 1px 2px #2a1d11cc;font:650 23px/1 'Fraunces Variable',serif;letter-spacing:-.02em;text-align:left;cursor:pointer;transform-origin:0 50%;opacity:0;pointer-events:none";
 const LABEL: Record<Plank, string> = { continue: "Continue", new: "New Harbor", tide: "Today’s Tide", options: "Options", credits: "Credits" };
 
 const col = (x: number) => 126.67 + x * 253.33, row = (y: number) => 800 - y * 140;
@@ -194,8 +195,8 @@ export default class Opening extends Component<Props, State> {
   // ---- beats
   async boot() {
     const k = ++this.seq, s = this.s; this.mode = "boot"; Object.assign(s, { veil: 1, tide: 0, tideA: 1, boot: 1, chapA: 0, promptA: 0, zoomAdd: .07 }); this.bootShown = 0; this.bootReal = 0; this.bootT0 = this.t;
-    const urls = ["harbor", "mochi-poses", "bram", "moth", "tide-court", "tidekeeper", "stone-island", "wooden-bridge", "shell", "lens", "wave"]; let n = 0; const total = urls.length + 1, bump = () => { n++; this.bootReal = n / total; };
-    urls.forEach(u => { const i = new Image(); i.onload = i.onerror = bump; i.src = ART + u + ".webp"; });
+    const urls = [...["harbor", "mochi-poses", "bram", "moth", "tide-court", "tidekeeper", "stone-island", "wooden-bridge", "shell", "lens", "wave"].map(name => ART + name + ".webp"), ...TITLE_ART.map(name => TITLE + name + ".webp")]; let n = 0; const total = urls.length + 1, bump = () => { n++; this.bootReal = n / total; };
+    urls.forEach(url => { const i = new Image(); i.onload = i.onerror = bump; i.src = url; });
     (document.fonts ? Promise.all([document.fonts.load("620 80px 'Fraunces Variable'"), document.fonts.load("700 16px 'Figtree Variable'")]) : Promise.resolve()).then(bump, bump);
     await new Promise<void>(res => { this.bootDone = res; }); if (k !== this.seq) return;
     void this.tw(s, "veil", 0, 700, "lin", 420); await this.tw(s, "tide", 1.06, 900, "in"); if (k !== this.seq) return; s.boot = 0;
@@ -378,7 +379,11 @@ export default class Opening extends Component<Props, State> {
     e = $("post"); if (e) { e.style.transformOrigin = "890px 858px"; e.style.transform = "translateX(" + dx + "px) scale(" + k + ")"; }
     const bt = t - this.bellAt; let ang = this.bellFix ?? 0;
     if (live) { if (bt < 5000) ang = this.bellAmp * 16 * Math.exp(-bt / 900) * Math.sin(bt / 130); if (this.mode === "title" && !this.soundOn && bt > 5000) { const n = t % 7000; if (n < 1400) ang += 3 * Math.exp(-n / 420) * Math.sin(n / 110); } }
-    e = $("bell"); if (e) e.style.transform = "rotate(" + ang + "deg)";
+    e = $("bell"); if (e) {
+      const hit = fz ? 60 : Math.max(60, 44 / (S * k));
+      e.style.width = hit + "px"; e.style.left = (826 - hit / 2) + "px"; e.style.height = Math.max(144, hit) + "px";
+      e.style.transform = "rotate(" + ang + "deg)";
+    }
     [0, 180].forEach((dl, i) => { const el = $("ring" + (i + 1)); if (!el) return; const p = this.bellFix != null ? .35 + i * .25 : (bt - dl) / 1100; if (p > 0 && p < 1 && (this.bellFix != null || this.bellAmp >= 1)) { el.style.opacity = String((1 - p) * .9); el.style.transform = "scale(" + (1 + p * 2.2) + ")"; } else el.style.opacity = "0"; });
     const ids = this.items(), inMenu = this.mode === "menu";
     ids.forEach((id, i) => {
@@ -386,7 +391,7 @@ export default class Opening extends Component<Props, State> {
       const p = this.mp[id]!, seld = inMenu && this.sel === id, dt2 = t - (this.dip[id] ?? -1e9), dip = dt2 < 900 && live ? 3.2 * Math.exp(-dt2 / 260) * Math.cos(dt2 / 90) : 0, sway = live ? Math.sin(st / 1000 * 1.3 + i * 1.7) * .7 : 0;
       el.style.transform = "rotate(" + ((1 - p) * -22 + p * ([-1.6, 1.2, -.8, 1.5, -1.1][i % 5]! + sway) + (seld ? 1.6 : 0) + dip) + "deg) scaleX(" + Math.max(.001, p) + ")";
       el.style.width = PW + "px"; el.style.fontSize = tight ? Math.max(17, Math.min(21, PW / 10.6)) + "px" : "23px"; el.style.paddingRight = port ? "8px" : "12px"; el.style.opacity = String(Math.min(1, p * 1.6)); el.style.pointerEvents = p > .9 && inMenu && !this.frozen ? "auto" : "none";
-      el.style.background = seld ? "#6a4d31" : "#5d432c"; el.style.borderColor = seld ? "#ffe1a1" : "#d6b374"; el.style.color = seld ? "#fff5d8" : "#fff0ce"; el.style.zIndex = seld ? "2" : "1";
+      el.style.filter = seld ? "drop-shadow(0 0 1.5px #ffe1a1) drop-shadow(0 0 7px #ffd58acc) brightness(1.06)" : "drop-shadow(0 3px 3px #2a1d1166)"; el.style.color = seld ? "#fff5d8" : "#fff0ce"; el.style.zIndex = seld ? "2" : "1";
     });
     e = $("scroll");
     if (e) {
@@ -398,8 +403,8 @@ export default class Opening extends Component<Props, State> {
 
     // wind-moth
     let tg = { x: gx(852), y: gy(444) };
-    if (inMenu && this.sel && !this.state.scroll) tg = { x: gx(900 + PW - (tight ? 32 : 0)), y: gy(520 + ids.indexOf(this.sel) * 63 + 40) };
-    else if (this.mothTo === "board" && this.mode !== "menu") tg = { x: gx(900 + BW - (BW < 250 ? 34 : 24)), y: gy(602) };
+    if (inMenu && this.sel && !this.state.scroll) tg = { x: gx(882 + PW - (tight ? 32 : 0)), y: gy(520 + ids.indexOf(this.sel) * 63 + 40) };
+    else if (this.mothTo === "board" && this.mode !== "menu") tg = { x: gx(882 + BW - (BW < 250 ? 34 : 24)), y: gy(602) };
     tg.x = Math.max(-tx / S + 38, Math.min((W - tx) / S - 38, tg.x)); tg.y = Math.max(-ty / S + 48, tg.y);
     const mo = this.moth, ddx = tg.x - mo.x, ddy = tg.y - mo.y;
     if (live) { const kk = 1 - Math.exp(-this.dt * .0055); mo.x += ddx * kk; mo.y += ddy * kk; } else { mo.x = tg.x; mo.y = tg.y; }
@@ -453,32 +458,28 @@ export default class Opening extends Component<Props, State> {
             <div data-el="mochi" role="img" aria-label="Mochi" style={{ ...sx("position:absolute;left:525px;top:664px;width:190px;height:190px;transform-origin:50% 87.5%"), background: `url('${ART}mochi-poses.webp') 0% 100%/400% 400% no-repeat` }} />
 
             <div data-el="post" onPointerDown={this.stop} style={sx("position:absolute;left:0;top:0")}>
-              <div style={sx("position:absolute;left:882px;top:452px;width:16px;height:406px;border-radius:2px;background:linear-gradient(90deg,#4d3823,#77583a 45%,#5d432c)")} />
-              <div style={sx("position:absolute;left:878px;top:446px;width:24px;height:9px;border-radius:3px;background:#766346")} />
-              <div style={sx("position:absolute;left:818px;top:466px;width:70px;height:7px;border-radius:3px;background:#77583a;box-shadow:0 2px 0 #4d382366")} />
-              <div data-el="ring1" style={sx("position:absolute;left:796px;top:470px;width:60px;height:60px;box-sizing:border-box;border:2px solid #ffe1a1;border-radius:50%;opacity:0;pointer-events:none")} />
-              <div data-el="ring2" style={sx("position:absolute;left:796px;top:470px;width:60px;height:60px;box-sizing:border-box;border:2px solid #ffe1a1;border-radius:50%;opacity:0;pointer-events:none")} />
-              <button data-el="bell" className="fo-bell" onClick={this.onBell} aria-label={st.sound ? "Mute game audio" : "Enable game audio"} aria-pressed={st.sound} style={sx("position:absolute;left:796px;top:471px;width:60px;height:124px;padding:0;border:0;background:transparent;cursor:pointer;transform-origin:50% 0")}>
-                <span style={sx("position:absolute;left:29px;top:0;width:2px;height:10px;background:#5d4228")} />
-                <span style={sx("position:absolute;left:9px;top:9px;width:42px;height:40px;border-radius:21px 21px 5px 5px / 28px 28px 5px 5px;background:linear-gradient(105deg,#f6d894 0%,#e3bc79 42%,#b88947 100%);box-shadow:inset -4px -3px 0 #a9783a55,0 3px 6px #38281840")} />
-                <span style={sx("position:absolute;left:4px;top:45px;width:52px;height:9px;border-radius:5px;background:linear-gradient(105deg,#eecb86,#c79a55)")} />
-                <span style={sx("position:absolute;left:26px;top:52px;width:9px;height:9px;border-radius:50%;background:#77583a")} />
-                <span style={sx("position:absolute;left:30px;top:60px;width:1.5px;height:20px;background:#e0bf86")} />
-                <span style={sx("position:absolute;left:26px;top:79px;width:9px;height:9px;box-sizing:border-box;border:1.5px solid #e0bf86;border-radius:50%")} />
-                <span style={sx("position:absolute;left:-8px;top:92px;width:76px;height:24px;box-sizing:border-box;display:grid;place-items:center;background:#f3e1b8;border:1px solid #a77d45;border-radius:4px;color:#2d4637;font:700 12px/1 'Figtree Variable',sans-serif;transform:rotate(-3deg);box-shadow:0 2px 5px #382b2040")}>{st.sound ? "Sound on" : "Sound off"}</span>
+              {/* Hook seat (15,183) in the 281×1240 cut-out meets (826,471); footing ends at y858. */}
+              <img src={TITLE + "title-post.webp"} alt="" draggable={false} width={281} height={1240} style={sx("position:absolute;left:820.51px;top:404px;width:102.88px;height:454px;pointer-events:none")} />
+              <div data-el="ring1" style={sx("position:absolute;left:796px;top:481px;width:60px;height:60px;box-sizing:border-box;border:2px solid #ffe1a1;border-radius:50%;opacity:0;pointer-events:none")} />
+              <div data-el="ring2" style={sx("position:absolute;left:796px;top:481px;width:60px;height:60px;box-sizing:border-box;border:2px solid #ffe1a1;border-radius:50%;opacity:0;pointer-events:none")} />
+              <button data-el="bell" className="fo-bell" onClick={this.onBell} aria-label={st.sound ? "Mute game audio" : "Enable game audio"} aria-pressed={st.sound} style={sx("position:absolute;left:796px;top:471px;width:60px;height:144px;padding:0;border:0;background:transparent;cursor:pointer;transform-origin:50% 0")}>
+                <img src={TITLE + "title-bell.webp"} alt="" draggable={false} width={137} height={330} style={sx("position:absolute;left:50%;top:0;width:auto;height:110px;transform:translateX(-50%);pointer-events:none")} />
+                <span style={{ ...sx("position:absolute;left:50%;top:107px;width:86.67px;height:33.33px;transform:translateX(-50%) rotate(-3deg);pointer-events:none"), background: `url('${TITLE}title-tag.webp') center/100% 100% no-repeat` }}>
+                  <span style={sx("position:absolute;inset:5px 5px 0;display:grid;place-items:center;color:#2d4637;font:700 14px/1 'Figtree Variable',sans-serif;white-space:nowrap")}>{st.sound ? "Sound on" : "Sound off"}</span>
+                </span>
               </button>
 
-              <div data-el="planks" role="menu" aria-label="Title menu" style={sx("position:absolute;left:900px;top:520px;width:236px;display:flex;flex-direction:column;gap:7px")}>
-                {ids.map(id => (
-                  <button key={id} data-plank={id} role="menuitem" onPointerEnter={this.onPlankEnter} onClick={this.onPlankClick} style={sx(PLANK)}>
-                    <span style={sx(NAIL)} />{LABEL[id]}
+              <div data-el="planks" role="menu" aria-label="Title menu" style={sx("position:absolute;left:882px;top:520px;width:236px;display:flex;flex-direction:column;gap:7px")}>
+                {ids.map((id, i) => (
+                  <button key={id} data-plank={id} role="menuitem" onPointerEnter={this.onPlankEnter} onClick={this.onPlankClick} style={{ ...sx(PLANK), background: `url('${TITLE}title-plank-${i % 4 + 1}.webp') center/100% 100% no-repeat` }}>
+                    {LABEL[id]}
                   </button>))}
               </div>
 
-              <div data-el="scroll" role="dialog" aria-label={scrollTitle} style={sx("position:absolute;left:900px;top:520px;width:250px;transform-origin:50% 0;opacity:0;pointer-events:none")}>
-                <div style={sx("position:relative;height:56px;box-sizing:border-box;display:flex;align-items:center;padding:0 16px 0 30px;border:1px solid #ffe1a1;border-radius:9px;background:#6a4d31;color:#fff5d8;box-shadow:inset 0 1px 0 #b48d55,0 4px 14px #382b2040;font:650 23px/1 'Fraunces Variable',serif;letter-spacing:-.02em")}><span style={sx("position:absolute;left:11px;top:50%;width:7px;height:7px;margin-top:-4px;border-radius:50%;background:#e4be78")} />{scrollTitle}</div>
+              <div data-el="scroll" role="dialog" aria-label={scrollTitle} style={sx("position:absolute;left:882px;top:520px;width:250px;transform-origin:50% 0;opacity:0;pointer-events:none")}>
+                <div style={{ ...sx("position:relative;height:56px;box-sizing:border-box;display:flex;align-items:center;padding:0 16px 0 30px;color:#fff5d8;filter:drop-shadow(0 3px 3px #2a1d1166);text-shadow:0 1px 2px #2a1d11cc;font:650 23px/1 'Fraunces Variable',serif;letter-spacing:-.02em"), background: `url('${TITLE}title-plank-1.webp') center/100% 100% no-repeat` }}>{scrollTitle}</div>
                 <div style={sx("display:flex;justify-content:space-between;padding:0 34px;height:10px")}><span style={sx("width:2px;background:#c9ad79")} /><span style={sx("width:2px;background:#c9ad79")} /></div>
-                <div style={sx("padding:14px 16px 12px;background:#f3e1b8;border:2px solid #fff0cf;outline:1px solid #a77d45;border-radius:12px;box-shadow:0 8px 24px #352c2440;color:#263e32;font:500 14px/1.4 'Figtree Variable',sans-serif;display:flex;flex-direction:column;gap:10px")}>
+                <div style={{ ...sx("padding:24px 22px 22px;filter:drop-shadow(0 8px 12px #352c2440);color:#263e32;font:500 14px/1.4 'Figtree Variable',sans-serif;display:flex;flex-direction:column;gap:10px"), background: `url('${TITLE}title-paper.webp') center/100% 100% no-repeat` }}>
                   {st.scroll === "tide" && <>
                     <p style={{ margin: 0 }}>One ask a day from the Tidekeeper, on a fresh Beacon Court.</p>
                     {this.hasLitHarbor ? <button className="fo-row" onClick={this.onTide} style={sx("min-height:44px;border:1px solid #ae9062;border-radius:9px;padding:9px 14px;background:#eddbad;color:#2d4637;box-shadow:inset 0 2px 0 #fff0cf,inset 0 -2px 0 #b9945a40,0 3px 8px #33271120;font:750 15px/1.2 'Figtree Variable',sans-serif;cursor:pointer")}>Continue to today’s ask</button> : <p style={{ margin: 0 }}>The asks begin once the beacon is lit.</p>}
