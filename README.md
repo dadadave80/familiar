@@ -11,7 +11,7 @@ bun install --frozen-lockfile
 make dev
 ```
 
-No account is needed for the device preview. Use neighboring-platform taps, WASD/arrows or accessible buttons. Inspect is free. Sound is opt-in; reduced motion keeps the same outcomes. Device saves stay on that browser and never silently merge into a signed-in harbor.
+No account is needed for the device preview. On touch screens, swipe once to move or tap a glowing neighboring platform. Tap **Wait** beside Mochi to wait and **Home** at the dock to finish the outing. On desktop, use WASD/arrows, Space to wait, R to finish at the dock and I for the free guide while the game has focus. Tide Run collects finds and banks cargo when Mochi steps onto them; the three-ask courts also use E for nearby objects. Mouse targeting still works; optional **Button controls** expose the same actions. Sound is opt-in; reduced motion keeps the same outcomes. Device saves stay on that browser and never silently merge into a signed-in harbor.
 
 ## Commands
 
