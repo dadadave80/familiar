@@ -3,9 +3,10 @@ import { CONTENT_VERSION } from "../expedition/types";
 import { replayRun, solve, startRun, stepRun, type Run } from "./asks";
 import { cardForDay, TIDE_POOL } from "./cards";
 import type { TideEntry } from "./log";
+import type { DayResult } from "./run-day";
 import {
   askFlips, devTideDay, earlierDays, harborTide, homeResult, logPages, outingNotice, pageForCard, pageForDay, restartTide,
-  stampSheet, storyPages, storyTitle, tideObjective, tidePages, tideResult, todayView, type StoryRecord, type TideLink,
+  runPages, stampSheet, storyPages, storyTitle, tideObjective, tidePages, tideResult, todayView, type StoryRecord, type TideLink,
 } from "./pages";
 
 const today = 20771;
@@ -13,6 +14,10 @@ const card = cardForDay(today);
 const next = cardForDay(today + 1);
 const commands = solve(card.tool, card.asks)!;
 const returned = replayRun(card.tool, commands)!;
+
+function result(day = today, overrides: Partial<DayResult> = {}): DayResult {
+  return { day, score: 6, guess: 6, banked: ["reed", "glass"], stamps: { home: true, guess: true, dry: true }, splashes: 0, ...overrides };
+}
 
 function entry(day = today, overrides: Partial<TideEntry> = {}): TideEntry {
   const daily = cardForDay(day);
@@ -132,7 +137,7 @@ describe("stamp sheet", () => {
     const sheet = stampSheet(entries);
     expect(sheet.map(slot => slot.card)).toEqual([...TIDE_POOL]);
     expect(sheet).toHaveLength(14);
-    expect(sheet.find(slot => slot.card.id === collected.cardId)).toEqual({ card, entry: collected, allThree: false });
+    expect(sheet.find(slot => slot.card.id === collected.cardId)).toEqual({ card, entry: collected, result: null, allThree: false });
     expect(sheet.filter(slot => slot.entry !== null)).toHaveLength(1);
     expect(sheet.find(slot => slot.card.id === rescued.cardId)?.entry).toBeNull();
     expect(stampSheet([]).every(slot => slot.entry === null && !slot.allThree)).toBe(true);
@@ -366,5 +371,128 @@ describe("development tide day", () => {
     }
     expect(devTideDay("")).toBeNull();
     expect(devTideDay("?other=20771")).toBeNull();
+  });
+});
+
+describe("tide-run pages and stamps", () => {
+  test("sorts run pages without changing the input and derives the day's card", () => {
+    const earlier = result(today - 1), later = result();
+    const results = Object.freeze([later, earlier]);
+    expect(runPages(results)).toEqual([
+      { kind: "run", day: today - 1, card: cardForDay(today - 1), result: earlier },
+      { kind: "run", day: today, card, result: later },
+    ]);
+    expect(results).toEqual([later, earlier]);
+    expect(runPages([])).toEqual([]);
+  });
+
+  test("merges daily pages after stories with legacy pages first on the same day", () => {
+    const records = [story("first")];
+    const pages = logPages(records, [entry(today + 1), entry()], [result(today + 2), result(), result(today - 1)]);
+    expect(pages.map(page => page.kind === "story" ? page.id : `${page.kind}:${page.day}`)).toEqual([
+      "first", `run:${today - 1}`, `tide:${today}`, `run:${today}`, `tide:${today + 1}`, `run:${today + 2}`,
+    ]);
+    expect(pageForDay(pages, today)).toBe(3);
+    expect(pageForDay(pages, today + 1)).toBe(4);
+    expect(pageForDay(pages, today - 1)).toBe(1);
+    expect(pageForDay(pages, -1)).toBe(5);
+    expect(pageForDay(pages)).toBe(5);
+  });
+
+  test("a run alone collects a stamp, even when no stamp was kept", () => {
+    const empty = result(today, { banked: [], stamps: { home: false, guess: false, dry: false } });
+    const slot = stampSheet([], [empty]).find(slot => slot.card.id === card.id)!;
+    expect(slot).toEqual({ card, entry: null, result: empty, allThree: false });
+    expect(stampSheet([]).every(slot => slot.result === null)).toBe(true);
+  });
+
+  test("legacy slots carry a null run result", () => {
+    expect(stampSheet([entry()]).find(slot => slot.card.id === card.id)!.result).toBeNull();
+  });
+
+  test("chooses a card's run by kept count, then score, then earlier day", () => {
+    const partial = result(today, { score: 100, stamps: { home: true, guess: false, dry: true } });
+    const complete = result(today + 14, { score: 5 });
+    const high = result(today + 28, { score: 8 });
+    const tiedLater = result(today + 42, { score: 8 });
+    for (const results of [[partial, complete, tiedLater, high], [high, tiedLater, complete, partial]]) {
+      const slot = stampSheet([], results).find(slot => slot.card.id === card.id)!;
+      expect(slot.result).toBe(high);
+      expect(slot.allThree).toBe(true);
+    }
+    const exactEarly = result(today, { score: 8 });
+    expect(stampSheet([], [tiedLater, exactEarly]).find(slot => slot.card.id === card.id)?.result).toBe(exactEarly);
+  });
+
+  test("legacy and run results each contribute their best record and brass seals", () => {
+    const legacy = entry();
+    const partial = result(today + 14, { stamps: { home: true, guess: false, dry: false } });
+    const mixed = stampSheet([legacy], [partial]).find(slot => slot.card.id === card.id)!;
+    expect(mixed.entry).toBe(legacy);
+    expect(mixed.result).toBe(partial);
+    expect(mixed.allThree).toBe(true);
+    const legacyPartial = entry(today, { kept: [true, false, false] });
+    expect(stampSheet([legacyPartial], [result()]).find(slot => slot.card.id === card.id)?.allThree).toBe(true);
+  });
+
+  test("page selection prefers more kept, then run pages, then each flow's best", () => {
+    const legacy = entry();
+    const partial = result(today + 14, { score: 100, stamps: { home: true, guess: true, dry: false } });
+    expect(pageForCard(logPages([], [legacy], [partial]), card.id)).toBe(0);
+    const complete = result(today + 28, { score: 8 });
+    const tiedLater = result(today + 42, { score: 8 });
+    const pages = logPages([story("first")], [legacy], [partial, tiedLater, complete]);
+    for (const ordered of [pages, [...pages].reverse()]) {
+      const best = ordered[pageForCard(ordered, card.id)];
+      expect(best?.kind).toBe("run");
+      if (best?.kind === "run") expect(best.result).toBe(complete);
+    }
+    expect(pageForCard(runPages([partial, complete]), next.id)).toBe(-1);
+    const rescued = entry(today, { outcome: "rescued" });
+    expect(pageForCard(logPages([], [rescued], [partial]), card.id)).toBe(1);
+  });
+});
+
+describe("tide-run harbor card", () => {
+  const base = { lit: true, card, next, guess: 6, returnedToday: false, shelved: false };
+  const practice: TideLink[] = [{ label: "Sail again for practice", action: "sail" }, { label: "Open the tide log", action: "log" }];
+
+  test("stays quiet before the light, before and after a result", () => {
+    expect(harborTide({ ...base, lit: false, result: null })).toBeNull();
+    expect(harborTide({ ...base, lit: false, result: result() })).toBeNull();
+  });
+
+  test("introduces today's tide and Bram's guess", () => {
+    expect(harborTide({ ...base, result: null })).toEqual({
+      kind: "panel", title: "Today’s tide: Surf home.", body: "Twelve waves. Bram guesses 6.",
+      primary: { label: "See today’s tide", target: "tide" }, links: [],
+    });
+  });
+
+  test("a shelved day with a missing result still shows tomorrow", () => {
+    expect(harborTide({ ...base, shelved: true, result: null })).toEqual({
+      kind: "panel", title: "Tomorrow: Bram’s bridge.", body: "Today’s haul is on Bram’s shelf.", primary: null,
+      links: [{ label: "Sail today’s tide", action: "sail" }, { label: "Open the tide log", action: "log" }],
+    });
+  });
+
+  test("an unshelved return offers Bram, then the practice and log links", () => {
+    expect(harborTide({ ...base, returnedToday: true, result: result() })).toEqual({
+      kind: "panel", title: "All three kept.", body: "Banked 6 · Bram guessed 6.",
+      primary: { label: "Take it to Bram", target: "bram" }, links: practice,
+    });
+  });
+
+  test("a shelved result shows tomorrow with the day's score", () => {
+    for (const returnedToday of [false, true]) expect(harborTide({ ...base, returnedToday, shelved: true, result: result() })).toEqual({
+      kind: "panel", title: "Tomorrow: Bram’s bridge.",
+      body: "All three kept. Banked 6 · Bram guessed 6. Today’s haul is on Bram’s shelf.", primary: null, links: practice,
+    });
+  });
+
+  test("a result without a fresh return offers only practice and the log", () => {
+    expect(harborTide({ ...base, result: result(today, { stamps: { home: true, guess: false, dry: false } }) })).toEqual({
+      kind: "panel", title: "1 of 3 kept.", body: "Banked 6 · Bram guessed 6.", primary: null, links: practice,
+    });
   });
 });

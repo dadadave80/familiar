@@ -5,7 +5,7 @@ import { askLine, cardForDay, TIDE_POOL } from "./cards";
 import { betterTide, type TideEntry, type TidePending } from "./log";
 import type { TideDayView } from "./TideAsk";
 import type { LogPage } from "./TideLog";
-import { resultLine, resultTitle, type DayResult } from "./run-day";
+import { keptCount as runKeptCount, resultLine, resultTitle, type DayResult } from "./run-day";
 
 export type StoryRecord = Pick<ReturnRecord, "id" | "contentVersion" | "outcome" | "cargo" | "area" | "tool" | "banked" | "commands">;
 
@@ -62,18 +62,30 @@ function bestReturn(entries: readonly TideEntry[], cardId: string): TideEntry | 
   return best;
 }
 
-export interface StampSlot { card: TideCard; entry: TideEntry | null; allThree: boolean }
+function bestRun(results: readonly DayResult[], cardId: string): DayResult | null {
+  let best: DayResult | null = null;
+  for (const result of results) {
+    if (cardForDay(result.day).id !== cardId) continue;
+    if (!best || runKeptCount(result) > runKeptCount(best)
+      || runKeptCount(result) === runKeptCount(best) && (result.score > best.score || result.score === best.score && result.day < best.day)) best = result;
+  }
+  return best;
+}
 
-export function stampSheet(entries: readonly TideEntry[]): StampSlot[] {
+export interface StampSlot { card: TideCard; entry: TideEntry | null; result: DayResult | null; allThree: boolean }
+
+export function stampSheet(entries: readonly TideEntry[], results: readonly DayResult[] = []): StampSlot[] {
   return TIDE_POOL.map(card => {
-    const entry = bestReturn(entries, card.id);
-    return { card, entry, allThree: entry?.kept.every(Boolean) ?? false };
+    const entry = bestReturn(entries, card.id), result = bestRun(results, card.id);
+    return { card, entry, result, allThree: !!entry?.kept.every(Boolean) || !!result && runKeptCount(result) === 3 };
   });
 }
 
 export function pageForCard(pages: readonly LogPage[], cardId: string): number {
-  const best = bestReturn(pages.flatMap(page => page.kind === "tide" ? [page.entry] : []), cardId);
-  return best ? pages.findIndex(page => page.kind === "tide" && page.entry === best) : -1;
+  const entry = bestReturn(pages.flatMap(page => page.kind === "tide" ? [page.entry] : []), cardId);
+  const result = bestRun(pages.flatMap(page => page.kind === "run" ? [page.result] : []), cardId);
+  if (result && (!entry || runKeptCount(result) >= entry.kept.filter(Boolean).length)) return pages.findIndex(page => page.kind === "run" && page.result === result);
+  return entry ? pages.findIndex(page => page.kind === "tide" && page.entry === entry) : -1;
 }
 
 export function todayView(today: number, entries: readonly TideEntry[]): TideDayView {
