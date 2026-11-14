@@ -49,7 +49,7 @@ export const TOOL_NOTE: Record<Tool, string> = {
 const column = { left: "Left", center: "Center", right: "Right" } as const;
 /** The full sentence, as the Tidekeeper asks it on the card. */
 export function askLine(ask: Ask, tool: Tool): string {
-  if (ask.kind === "within") return `Be home within ${ask.decisions} decisions.`;
+  if (ask.kind === "within") return `Be home within ${ask.decisions} ${ask.decisions === 1 ? "decision" : "decisions"}.`;
   if (ask.kind === "haul") return ask.haul === "both" ? "Bring both finds home." : ask.haul === "lens" ? "Bring the lens home." : "Bring the moth home, and leave the lens in its shell.";
   switch (ask.style) {
     case "dry": return "Keep Mochi dry the whole way.";
@@ -76,7 +76,7 @@ export function askChip(ask: Ask, tool: Tool, run: Run): string {
   }
   switch (ask.style) {
     case "dry": return "Dry paws";
-    case "splash": return `One splash · ${3 - state.resolve} of 1`;
+    case "splash": return `One splash · ${3 - state.resolve > 1 ? `${3 - state.resolve} splashes` : `${3 - state.resolve} of 1`}`;
     case "coiled": return tool === "rope" ? "Rope coiled" : "Lantern unlit";
     case "no-wait": return "No waiting";
     case "all-marks": return `Three sources · ${facts.marks.length} of 3`;

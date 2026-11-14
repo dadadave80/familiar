@@ -92,3 +92,10 @@ test("bridge chips name the requested lane and the bridge's current lane",()=>{
     expect(askChip(ask,"lantern",elsewhere)).toBe(`Bridge at ${name} · now ${style==="bridge-center"?"Left":"Center"}`);
   }
 });
+
+test("the splash chip counts splashes past one",()=>{
+  const ask={kind:"style",style:"splash"} as const,start=startRun("rope");
+  const soaked=(resolve:number)=>({...start,state:{...start.state,resolve}});
+  expect(askChip(ask,"rope",soaked(2))).toBe("One splash · 1 of 1");
+  expect(askChip(ask,"rope",soaked(1))).toBe("One splash · 2 splashes");
+});
