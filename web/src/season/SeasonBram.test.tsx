@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import SeasonBram, { Status, TodayHaul } from "./SeasonBram";
+import SeasonBram, { Shelf, Status, TodayHaul, WishTab } from "./SeasonBram";
 import SeasonBoundary from "./SeasonBoundary";
 import { deviceDay, keepTide, seedPreview, type TideReturn } from "./data";
 import type { ShelfView, TodayView } from "./model";
@@ -30,7 +30,7 @@ test("the preview status explains blocked storage once in idle and confirmed sta
 test("a shelving press supplies distinct saved and in-memory confirmations",()=>withReturns([entry("full",full)],()=>{
   let texts:string[]=[];
   const haul=TodayHaul({...props,onPreview:(_market,saved,unsaved)=>{texts=[saved,unsaved??""];}});
-  haul.props.children[0].props.children[0].props.onPress();
+  haul.props.children[0].props.children.find((child:{props:{onPress?:()=>void}})=>child.props.onPress).props.onPress();
   expect(texts).toEqual(["Shelved on this device: 1 glass and 1 reed bundle. Not recorded.","Shelved for this visit: 1 glass and 1 reed bundle. Not recorded."]);
 }));
 
@@ -58,6 +58,8 @@ test("Bram has one haul block before two tabs and keeps the action status region
   expect(html).toContain("Shelf &amp; till");expect(html).toContain("Mochi’s wish");
   expect(html.indexOf("Today’s haul")).toBeLessThan(html.indexOf('role="tablist"'));
   expect(html).not.toContain("Sail today’s tide");expect(html).not.toContain("Bram’s season");
+  expect(html).toContain("Device preview · not recorded");
+  expect(html).not.toContain("Prices follow Bram’s formula on this device");
 }));
 
 test("the haul states read the ledger first, then a saved docking before the other route",()=>{
@@ -77,9 +79,39 @@ test("shelving offers replayed hauls best first, names the outing day and works 
   const html=renderToStaticMarkup(<TodayHaul {...props}/>);
   expect(html.indexOf("Shelve 1 glass and 1 reed bundle")).toBeLessThan(html.indexOf("Shelve 1 glass</button>"));
   expect(html).toContain("Rope · Saturday 14 November");expect(html).not.toContain('aria-disabled="true"');
+  expect(html.match(/class="ss-primary"/g)).toHaveLength(1);
+  expect(html).toContain('class="ss-haul-art" aria-hidden="true"');
+  expect(html).toContain('/assets/season/glass.webp');expect(html).toContain('/assets/season/reed.webp');
+  expect(renderToStaticMarkup(<TodayHaul {...props} primary={false}/>)).not.toContain('class="ss-primary"');
   expect(renderToStaticMarkup(<TodayHaul {...props} saved/>)).toContain('aria-disabled="true"');
   expect(renderToStaticMarkup(<TodayHaul {...props} saved registered/>)).not.toContain('aria-disabled="true"');
 }));
+
+test("market cards keep both quotes and trade actions, with formulas in closed details",()=>{
+  const html=renderToStaticMarkup(<Shelf {...props} onResetPreview={()=>{}}/>);
+  const cards=[...html.matchAll(/<article class="ss-trade-card">(.*?)<\/article>/g)].map(match=>match[1]!);
+  expect(cards).toHaveLength(4);
+  for(const card of cards){
+    expect(card.match(/<button/g)).toHaveLength(1);
+    expect(card).toMatch(/\b(Buy|Sell) 1<\/button>/);
+    expect(card).toContain('alt="" width="56" height="56"');
+    expect(card).toContain('aria-describedby="ss-');
+  }
+  expect(html.match(/<details class="ss-pricing"><summary>How Bram prices this<\/summary><p class="ss-reason">/g)).toHaveLength(2);
+  expect(html).toContain("base 8");expect(html).toContain("base 4");
+  expect(html).toContain('aria-label="Fewer: glass to trade"');expect(html).toContain('aria-label="More: reed bundles to trade"');
+  expect(html).not.toContain("Prices here use the same formula as Bram’s ledger");
+});
+
+test("wishes explain the saved harbor requirement and retain the saved wish controls",()=>{
+  const preview=renderToStaticMarkup(<WishTab {...props} hasPet={false}/>);
+  expect(preview).toContain("Mochi’s wishes need a saved harbor.");expect(preview).not.toContain("Sign in from the menu");
+  expect(preview).not.toContain("Set Mochi’s wish");
+  const saved=renderToStaticMarkup(<WishTab {...props} saved registered hasPet/>);
+  expect(saved).toContain('role="radiogroup" aria-label="Good"');expect(saved).toContain('role="radiogroup" aria-label="How many"');
+  expect(saved).toContain('aria-label="Highest price per unit"');expect(saved).toContain("Set Mochi’s wish");
+  expect(saved).toContain('class="ss-primary"');
+});
 
 test("a device docking removes the shelving offers for that day",()=>withReturns([entry("full",full)],()=>{
   const html=renderToStaticMarkup(<TodayHaul {...props} preview={{...props.preview,docked:deviceDay()}}/>);

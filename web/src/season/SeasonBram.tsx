@@ -50,6 +50,11 @@ function Press({off,onPress,children,className,describedBy,label}:{off:boolean;o
   return <button className={className} aria-disabled={off} aria-describedby={describedBy} aria-label={label} onClick={()=>{if(!off)onPress();}}>{children}</button>;
 }
 
+const iconPaths={shelf:"M4 4v16M20 4v16M4 12h16M4 20h16M8 7v5M12 5v7M16 8v4",buy:"M12 4v16m-6-6 6 6 6-6",sell:"M12 20V4m-6 6 6-6 6 6",minus:"M5 12h14",plus:"M12 5v14M5 12h14",wish:"M5 4h14v16l-7-4-7 4Z",back:"m9 5-6 6 6 6M3 11h11a6 6 0 0 1 6 6"};
+function SeasonIcon({kind}:{kind:keyof typeof iconPaths}) {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={iconPaths[kind]}/></svg>;
+}
+
 export interface SeasonBramProps { session?:HarborSession;onOpenTide:()=>void;tideScope:string }
 
 export default function SeasonBram({session,onOpenTide,tideScope}:SeasonBramProps) {
@@ -96,19 +101,19 @@ export default function SeasonBram({session,onOpenTide,tideScope}:SeasonBramProp
       <img src={`${ART}shelf-till.webp`} alt="" width="72" height="72"/>
       <div>
         <h3>Bram’s shelf</h3>
-        <p className="ss-mode" data-mode={saved?"saved":"preview"}>{saved?`Bram’s ledger for ${accountId}`:"Device preview. Prices follow Bram’s formula on this device; nothing here is recorded."}</p>
+        <p className="ss-mode" data-mode={saved?"saved":"preview"}>{saved?`Bram’s ledger for ${accountId}`:"Device preview · not recorded"}</p>
       </div>
     </header>
-    {holdings&&<p className="ss-holdings"><img src={`${ART}purse.webp`} alt="" width="28" height="28"/><span><b>{holdings.shells}</b> Shells</span><span><b>{holdings.goods[0]}</b> glass</span><span><b>{holdings.goods[1]}</b> reed</span>{!saved&&<small>Sample haul of {haulLine(PREVIEW_SAMPLE)} for the preview</small>}</p>}
     {live.error&&<p className="ss-problem" role="alert">{live.error} <button className="ss-link" onClick={()=>void refresh()}>Read again</button></p>}
     {needsLedger&&<div className="ss-ledger">
       <p>Bram keeps a ledger page for each harbor. Open yours before your first trade, tide or wish.</p>
-      <div className="ss-act"><Press className="exp-primary" off={busy} onPress={()=>void act<unknown>({kind:"register"},"Bram is writing your page…",()=>"Your ledger page is open. Recorded.")}>Open my ledger page</Press><span className="ss-info">Holds {STORAGE_NEAR} test NEAR as its storage deposit</span></div>
+      <div className="ss-act"><Press className="ss-primary" off={busy} onPress={()=>void act<unknown>({kind:"register"},"Bram is writing your page…",()=>"Your ledger page is open. Recorded.")}><SeasonIcon kind="shelf"/>Open my ledger page</Press><span className="ss-info">Holds {STORAGE_NEAR} test NEAR as its storage deposit</span></div>
     </div>}
     <section className="ss-returns ss-haul" aria-label="Today’s haul">
       <h4>Today’s haul</h4>
-      <TodayHaul live={live} saved={saved} registered={registered} busy={busy} preview={preview} scope={tideScope} onOpenTide={onOpenTide} onPreview={onPreview} onPreviewBlock={onPreviewBlock} act={act}/>
+      <TodayHaul live={live} saved={saved} registered={registered} busy={busy} preview={preview} scope={tideScope} primary={tab==="shelf"||!saved||!pet} onOpenTide={onOpenTide} onPreview={onPreview} onPreviewBlock={onPreviewBlock} act={act}/>
     </section>
+    {holdings&&<p className="ss-holdings"><img src={`${ART}purse.webp`} alt="" width="28" height="28"/><span><b>{holdings.shells}</b> Shells</span><span><b>{holdings.goods[0]}</b> glass</span><span><b>{holdings.goods[1]}</b> reed</span>{!saved&&<small>Sample haul of {haulLine(PREVIEW_SAMPLE)} for the preview</small>}</p>}
     <div className="ss-tabs" role="tablist" aria-label="Bram’s shelf" onKeyDown={keyTabs}>
       {TABS.map(([id,label],i)=><button key={id} ref={el=>{tabRefs.current[i]=el;}} role="tab" id={`ss-tab-${id}`} aria-controls={`ss-panel-${id}`} aria-selected={tab===id} tabIndex={tab===id?0:-1} onClick={()=>setTab(id)}>{label}</button>)}
     </div>
@@ -129,13 +134,13 @@ const tradeText=(t:Trade)=>`${t.side==="buy"?"Bought":"Sold"} ${t.qty} ${goodNam
 
 function Stepper({value,min,max,onChange,label}:{value:number;min:number;max:number;onChange:(n:number)=>void;label:string}) {
   return <div className="ss-stepper" role="group" aria-label={label}>
-    <Press label={`Fewer: ${label}`} off={value<=min} onPress={()=>onChange(value-1)}>−</Press>
+    <Press label={`Fewer: ${label}`} off={value<=min} onPress={()=>onChange(value-1)}><SeasonIcon kind="minus"/></Press>
     <output aria-live="polite">{value}</output>
-    <Press label={`More: ${label}`} off={value>=max} onPress={()=>onChange(value+1)}>+</Press>
+    <Press label={`More: ${label}`} off={value>=max} onPress={()=>onChange(value+1)}><SeasonIcon kind="plus"/></Press>
   </div>;
 }
 
-function Shelf({live,saved,registered,busy,preview,onPreview,onPreviewBlock,onResetPreview,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;
+export function Shelf({live,saved,registered,busy,preview,onPreview,onPreviewBlock,onResetPreview,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;
   onPreview:(m:PreviewMarket,text:string,unsavedText?:string)=>void;onPreviewBlock:(words:string)=>void;onResetPreview:()=>void;act:Act}) {
   const [qty,setQty]=useState<Record<Good,number>>({glass:1,reed:1});
   const till=saved?live.shelf?.till:preview?.till;
@@ -159,25 +164,31 @@ function Shelf({live,saved,registered,busy,preview,onPreview,onPreviewBlock,onRe
           side==="buy"?"Bram is wrapping your goods…":"Bram is counting out Shells…",tradeText);
       }
       return <article key={good} className="ss-good">
-        <img src={`${ART}${good}.webp`} alt="" width="56" height="56"/>
-        <div className="ss-good-body">
           <h4>{good==="glass"?"Sea glass":"Reed bundles"} <span>{view.stock} on the shelf</span></h4>
-          <dl className="ss-prices"><div><dt>Bram sells at</dt><dd>{view.buy_price}</dd></div><div><dt>Bram pays</dt><dd>{view.sell_price}</dd></div></dl>
-          <p className="ss-reason">{reasonLine({...view,buy_price:view.buy_price},till??0)}</p>
-          <div className="ss-trade">
-            <Stepper value={n} min={1} max={20} label={`${goodName(good,2)} to trade`} onChange={v=>setQty(q=>({...q,[good]:v}))}/>
-            <div className="ss-act"><Press off={locked||!!buyBlock} describedBy={`ss-buy-${good}`} onPress={()=>trade("buy")}>Buy {n}</Press><span className="ss-info" id={`ss-buy-${good}`}>{buyBlock??`costs ${buy?quoteLine(buy):"…"}`}</span></div>
-            <div className="ss-act"><Press off={locked||!!sellBlock} describedBy={`ss-sell-${good}`} onPress={()=>trade("sell")}>Sell {n}</Press><span className="ss-info" id={`ss-sell-${good}`}>{sellBlock??`pays ${quoteLine(sell)}`}</span></div>
+          <Stepper value={n} min={1} max={20} label={`${goodName(good,2)} to trade`} onChange={v=>setQty(q=>({...q,[good]:v}))}/>
+          <div className="ss-trade-cards">
+            <article className="ss-trade-card">
+              <img src={`${ART}${good}.webp`} alt="" width="56" height="56"/>
+              <dl className="ss-prices"><div><dt>Bram sells at</dt><dd>{view.buy_price}</dd></div></dl>
+              <Press off={locked||!!buyBlock} describedBy={`ss-buy-${good}`} onPress={()=>trade("buy")}><SeasonIcon kind="buy"/>Buy {n}</Press>
+              <span className="ss-info" id={`ss-buy-${good}`}>{buyBlock??`costs ${buy?quoteLine(buy):"…"}`}</span>
+            </article>
+            <article className="ss-trade-card">
+              <img src={`${ART}${good}.webp`} alt="" width="56" height="56"/>
+              <dl className="ss-prices"><div><dt>Bram pays</dt><dd>{view.sell_price}</dd></div></dl>
+              <Press off={locked||!!sellBlock} describedBy={`ss-sell-${good}`} onPress={()=>trade("sell")}><SeasonIcon kind="sell"/>Sell {n}</Press>
+              <span className="ss-info" id={`ss-sell-${good}`}>{sellBlock??`pays ${quoteLine(sell)}`}</span>
+            </article>
           </div>
-        </div>
+          <details className="ss-pricing"><summary>How Bram prices this</summary><p className="ss-reason">{reasonLine({...view,buy_price:view.buy_price},till??0)}</p></details>
       </article>;
     })}
-    <p className="ss-note">{saved?"Each trade is priced unit by unit and refused if any unit moves past the quote shown.":"Prices here use the same formula as Bram’s ledger, starting from the shelf as last read."}</p>
+    {saved&&<p className="ss-note">Each trade is priced unit by unit and refused if any unit moves past the quote shown.</p>}
     {!saved&&<button className="ss-link" onClick={onResetPreview}>Start the preview again</button>}
   </>;
 }
 
-export function TodayHaul({live,saved,registered,busy,preview,scope,onOpenTide,onPreview,onPreviewBlock,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;scope:string;onOpenTide:()=>void;
+export function TodayHaul({live,saved,registered,busy,preview,scope,primary=true,onOpenTide,onPreview,onPreviewBlock,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;scope:string;primary?:boolean;onOpenTide:()=>void;
   onPreview:(m:PreviewMarket,text:string,unsavedText?:string)=>void;onPreviewBlock:(words:string)=>void;act:Act}) {
   const today=live.today;
   if(!today)return <p>Reading Bram’s ledger…</p>;
@@ -191,17 +202,18 @@ export function TodayHaul({live,saved,registered,busy,preview,scope,onOpenTide,o
   candidates.sort((a,b)=>value(b.c!.goods)-value(a.c!.goods));
   if(!candidates.length)return <><p>Bring a find home from today’s tide and Bram will shelve it.</p><button className="ss-link" onClick={onOpenTide}>See today’s ask</button></>;
   return <>
-    {candidates.map(({r,c})=><div key={r.id} className="ss-act">
-      <Press off={busy||(saved?!registered:!preview)} onPress={()=>{
+    {candidates.map(({r,c},i)=><div key={r.id} className="ss-act ss-haul-offer">
+      <span className="ss-haul-art" aria-hidden="true">{GOODS.filter((_,g)=>c!.goods[g]!>0).map(good=><img key={good} src={`${ART}${good}.webp`} alt="" width="56" height="56"/>)}</span>
+      <Press className={primary&&i===0&&(!saved||registered)?"ss-primary":undefined} off={busy||(saved?!registered:!preview)} onPress={()=>{
         if(!saved){const result=previewDock(preview!,c!.goods);if("block"in result)onPreviewBlock(result.block);else onPreview(result.market,`Shelved on this device: ${haulLine(c!.goods)}. Not recorded.`,`Shelved for this visit: ${haulLine(c!.goods)}. Not recorded.`);return;}
         void act<Mint>({kind:"claim",contentVersion:r.contentVersion,tool:r.tool,commands:r.commands},"The harbor is replaying Mochi’s steps…",m=>`Shelved ${haulLine(m.goods)}: ${scoreLine(m)}. Recorded.`);
-      }}>Shelve {haulLine(c!.goods)}</Press>
+      }}><SeasonIcon kind="shelf"/>Shelve {haulLine(c!.goods)}</Press>
       <span className="ss-info">{r.tool==="rope"?"Rope":"Lantern"} · {dayLabel(deviceDay(Date.parse(r.savedAt)))}</span>
     </div>)}
   </>;
 }
 
-function WishTab({live,saved,registered,hasPet,busy,act}:{live:Live;saved:boolean;registered:boolean;hasPet:boolean;busy:boolean;act:Act}) {
+export function WishTab({live,saved,registered,hasPet,busy,act}:{live:Live;saved:boolean;registered:boolean;hasPet:boolean;busy:boolean;act:Act}) {
   const [good,setGood]=useState<Good>("glass"),[qty,setQty]=useState(1),[limit,setLimit]=useState(8);
   const status=wishStatus(live.wish,live.postcard);
   const shells=live.account?.shells??0,maxLimit=Math.floor(PURSE_MAX/qty),block=wishBlock(limit,qty,shells);
@@ -211,15 +223,15 @@ function WishTab({live,saved,registered,hasPet,busy,act}:{live:Live;saved:boolea
       <p>{status.kind==="waiting"?<>Mochi is waiting for <b>{status.wish.qty} {goodName(status.wish.good,status.wish.qty)}</b> at up to <b>{status.wish.limit}</b> Shells each. Her purse holds {status.wish.purse} Shells.</>
         :status.kind==="filled"?"Mochi’s last wish was filled. Her postcard is below.":status.kind==="cancelled"?"Mochi’s last wish was taken back. Her postcard is below.":"Mochi has no wish waiting. She can hold up to 24 Shells in her purse for one."}</p>
     </header>
-    {!saved?<p className="ss-note">Mochi’s wish lives in your saved harbor. Sign in from the menu to set one.</p>:!hasPet?<p className="ss-note">Bring Mochi home in your saved harbor before setting a wish.</p>:<>
-      {status.kind==="waiting"&&<div className="ss-act"><Press off={busy} onPress={()=>void act<Postcard>({kind:"cancel-wish"},"Taking the wish back…",c=>`Wish taken back; ${c.refunded} Shells returned. Recorded.`)}>Take the wish back</Press><span className="ss-info">Returns {status.wish.purse} Shells</span></div>}
+    {!saved?<p className="ss-note">Mochi’s wishes need a saved harbor.</p>:!hasPet?<p className="ss-note">Bring Mochi home in your saved harbor before setting a wish.</p>:<>
+      {status.kind==="waiting"&&<div className="ss-act"><Press off={busy} onPress={()=>void act<Postcard>({kind:"cancel-wish"},"Taking the wish back…",c=>`Wish taken back; ${c.refunded} Shells returned. Recorded.`)}><SeasonIcon kind="back"/>Take the wish back</Press><span className="ss-info">Returns {status.wish.purse} Shells</span></div>}
       <fieldset className="ss-wish-form" disabled={!registered}>
         <legend>{status.kind==="waiting"?"Replace the wish":"Set a wish"}</legend>
         <span className="ss-field">Good</span><div className="ss-choice" role="radiogroup" aria-label="Good">{GOODS.map(g=><label key={g}><input type="radio" name="ss-wish-good" checked={good===g} onChange={()=>setGood(g)}/><img src={`${ART}${g}.webp`} alt="" width="32" height="32"/><span>{g==="glass"?"Glass":"Reed"}</span></label>)}</div>
         <span className="ss-field">How many</span><div className="ss-choice" role="radiogroup" aria-label="How many">{Array.from({length:WISH_QTY_MAX},(_,i)=>i+1).map(q=><label key={q}><input type="radio" name="ss-wish-qty" checked={qty===q} onChange={()=>{setQty(q);setLimit(l=>Math.min(l,Math.floor(PURSE_MAX/q)));}}/><span>{q}</span></label>)}</div>
         <div className="ss-limit"><span id="ss-limit-label">Highest price per unit</span><Stepper value={limit} min={1} max={maxLimit} onChange={setLimit} label="Highest price per unit"/></div>
-        <div className="ss-act"><Press className="exp-primary" off={!!block||busy} onPress={()=>void act<WishResult>({kind:"set-wish",good,limit,qty},"Bram is checking Mochi’s papers…",
-          r=>r.status==="filled"?`Filled at once: ${r.postcard?postcardLines(r.postcard)[1]:""} Recorded.`:r.status==="waiting"?`Mochi’s wish is waiting. Her purse holds ${r.wish?.purse??limit*qty} Shells. Recorded.`:"Recorded.")}>Set Mochi’s wish</Press>
+        <div className="ss-act"><Press className={registered?"ss-primary":undefined} off={!!block||busy} onPress={()=>void act<WishResult>({kind:"set-wish",good,limit,qty},"Bram is checking Mochi’s papers…",
+          r=>r.status==="filled"?`Filled at once: ${r.postcard?postcardLines(r.postcard)[1]:""} Recorded.`:r.status==="waiting"?`Mochi’s wish is waiting. Her purse holds ${r.wish?.purse??limit*qty} Shells. Recorded.`:"Recorded.")}><SeasonIcon kind="wish"/>Set Mochi’s wish</Press>
           <span className="ss-info">{block??`Purse ${limit*qty} of ${PURSE_MAX} Shells${status.kind==="waiting"?"; the old purse comes back once the new wish is placed":""}`}</span></div>
         {live.shelf&&<p className="ss-note">Bram sells {goodName(good,2)} at {live.shelf.goods.find(g=>g.good===good)?.buy_price} now. A wish whose limit covers every unit fills at once; otherwise a later trade that brings the price within it does.</p>}
       </fieldset>
