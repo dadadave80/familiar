@@ -1,4 +1,5 @@
 import { guide } from "./browser-controls";
+import { prepareBrowser } from "./browser-fixtures";
 import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -44,19 +45,63 @@ const returnDay=20771,returned=cautiousTide(returnDay),beforeReturn=replayTide({
 assert(beforeReturn?.outcome==="active");
 const returnHaul=shelfHaul(dayResult(returned));
 assert(returnHaul.reed+returnHaul.glass>0,"focus fixture brings a haul to Bram's shelf");
+
+async function checkTitleEntry(browser: Awaited<ReturnType<typeof chromium.launch>>, origin: URL, reducedMotion: "reduce" | "no-preference", hasSave: boolean) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, reducedMotion });
+  const network = await prepareBrowser(page, origin, returnDay, { clock: "manual" });
+  try {
+    if (hasSave) await page.addInitScript(key => {
+      localStorage.setItem(key, JSON.stringify({ version: 2, home: { banked: [], lit: false, signaled: false, lantern: null }, active: null, last: null }));
+    }, saveKey);
+    await page.goto(new URL("/outing/", origin).href);
+    const opening = page.getByTestId("opening"), begin = opening.locator('[data-el="begin"]');
+    const label = hasSave ? "Continue" : "Begin";
+    await expect(opening).toHaveAttribute("data-mode", "title", { timeout: 30000 });
+    await expect(begin).toHaveText(label);
+    await expect(begin).toHaveJSProperty("hidden", false);
+    await expect(begin).toHaveCSS("display", "flex");
+    await begin.focus();
+    await expect(begin).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(opening).toHaveAttribute("data-mode", "menu");
+    const hiddenEntry = async () => {
+      await expect(begin).toHaveCSS("display", "none");
+      await expect(begin).toBeHidden();
+      await begin.evaluate(button => (button as HTMLButtonElement).focus());
+      await expect(begin).not.toBeFocused();
+    };
+    await hiddenEntry();
+    const plank = opening.locator(hasSave ? '[data-plank="continue"]' : '[data-plank="new"]');
+    await expect(plank).toBeFocused();
+    await opening.getByRole("menuitem", { name: "Today’s Tide", exact: true }).click();
+    const paper = opening.getByRole("dialog", { name: "Today’s Tide", exact: true });
+    await expect(paper).toBeVisible();
+    await hiddenEntry();
+    const enter = paper.getByRole("button", { name: "Enter the harbor", exact: true });
+    await enter.focus();
+    await expect(enter).toBeFocused();
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
+    await page.keyboard.press("Enter");
+    await page.clock.runFor(32);
+    await expect(opening).toHaveAttribute("data-mode", "travel");
+    await hiddenEntry();
+    await page.clock.resume();
+    await expect(opening).toHaveCount(0, { timeout: 30000 });
+    network.assertClean();
+  } finally { await page.close(); }
+}
 try {
   await server?.listen();
   const origin = new URL(compiled?`http://127.0.0.1:${compiled.port}`:server!.resolvedUrls!.local[0]!);
   for (const engine of [chromium, webkit]) {
     const browser = await engine.launch();
     try {
+      for (const reducedMotion of ["reduce", "no-preference"] as const) {
+        for (const hasSave of [false, true]) await checkTitleEntry(browser, origin, reducedMotion, hasSave);
+      }
       const mobile = engine === webkit;
       const page = await browser.newPage({ viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 800 }, hasTouch: mobile, reducedMotion: "reduce" });
-      await page.route("**/*", route => {
-        const url = new URL(route.request().url());
-        if (url.origin !== origin.origin || /^\/(?:api|npc-api)\//.test(url.pathname)) return route.abort();
-        return route.continue();
-      });
+      const network=await prepareBrowser(page,origin,returnDay);
       await page.goto(origin.href);
       await expect(page.getByRole("heading", { level: 1 })).toContainText("A small friend.");
       await page.evaluate(records => { for (const [key, value] of Object.entries(records)) localStorage.setItem(key, value); }, oldRecords);
@@ -88,6 +133,11 @@ try {
       }
       await page.getByRole("button",{name:"Harbor chart",exact:true}).and(page.locator(":visible")).click();
       await page.locator('.exp-panel[data-surface="chart"] .harbor-routes > li').first().getByRole("button").click();
+      const preparation = page.locator('.exp-panel[data-surface="sail"]');
+      await expect(preparation.getByRole("radio", { name: "Beacon Court", exact: true })).toBeChecked();
+      await preparation.getByRole("radio", { name: /^Lantern/ }).check();
+      await expect(preparation.getByRole("radio", { name: /^Lantern/ })).toBeChecked();
+      await preparation.getByRole("radio", { name: /^Rope/ }).check();
       await page.locator('.exp-panel[data-surface="sail"] .exp-primary').click();
       await guide(page,"step:west");
       await expect(game).toHaveAttribute("data-busy", "false");
@@ -111,8 +161,6 @@ try {
       await page.reload();
       await passTitle("reload");
       await expect(world).toHaveAttribute("data-turn", "1");
-      await page.clock.install({time:new Date(returnDay*86_400_000+43_200_000)});
-      await page.clock.setFixedTime(new Date(returnDay*86_400_000+43_200_000));
       await page.evaluate(({saveKey,bookKey,state})=>{
         localStorage.setItem(saveKey,JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},last:null,active:null}));
         localStorage.setItem(bookKey,JSON.stringify({version:1,active:{seed:state.seed,moves:state.moves},days:[]}));
@@ -132,10 +180,11 @@ try {
       await expect(page.locator('.exp-panel[data-surface="log"] .tide-log-run')).toBeVisible();
       await page.keyboard.press("Escape");
       const harborPrimary=page.locator(".exp-departure .exp-primary");
-      await expect(harborPrimary).toHaveAttribute("data-action","tide");await expect(harborPrimary).toBeFocused();
-      await harborPrimary.click();await expect(page.locator('.exp-panel[data-surface="bram"]')).toBeVisible();
+      await expect(harborPrimary).toHaveText("Prepare Chapter 2");await expect(harborPrimary).toBeFocused();
+      await harborPrimary.click();await expect(page.getByRole("button",{name:"Sail with Mochi",exact:true})).toBeVisible();
       await page.keyboard.press("Escape");await expect(harborPrimary).toBeFocused();
       assert.deepEqual(await page.evaluate(keys=>Object.fromEntries(keys.map(key=>[key,localStorage.getItem(key)])),Object.keys(oldRecords)),oldRecords);
+      network.assertClean();
       console.info(`${engine.name()}: introduction, account boundary, ${paths.length} game entry URLs, saved-run resume and preserved original records passed`);
     } finally { await browser.close(); }
   }

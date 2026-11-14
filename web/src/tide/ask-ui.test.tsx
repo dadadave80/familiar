@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { replayRun, solve, startRun, type Ask } from "./asks";
-import { askChip, askLine, cardForDay } from "./cards";
+import { askChip, askLine, cardForDay, TIDE_POOL } from "./cards";
 import type { TideEntry } from "./log";
 import TideAsk from "./TideAsk";
 import TideHud from "./TideHud";
 import TideLog from "./TideLog";
+import { CARD_PICTURE } from "./art";
 import type { DayResult } from "./run-day";
 
 const day = 20771, card = cardForDay(day);
@@ -68,10 +69,10 @@ const runAsk = { day, card, guess: 6, result: null, sailBlockedReason: null, onS
 
 test("today’s tide run keeps the card, painted asks and Bram’s guess together", () => {
   const html = renderToStaticMarkup(<TideAsk {...runAsk}/>);
-  expect(html).toContain("Today’s tide");
-  expect(html).toContain(`<h4>${card.name}</h4>`);
+  expect(html).toContain("Today’s Tide Run");
+  expect(html).toContain("Bring finds home before the tide turns.");
   expect(html).toContain("Saturday 14 November");
-  expect(html).toContain("Twelve waves, two lanes at a time from the seventh. Each wave leaves a prize; bank it at the dock.");
+  expect(html).toContain("Twelve waves; two lanes at a time from the seventh. Waves can leave finds. Bring them to the center dock to bank them.");
   expect(html).toContain("The Tidekeeper asks");
   for (const line of ["Come home with something.", "Match or beat Bram’s guess of 6.", "Keep Mochi dry the whole tide."]) expect(html).toContain(line);
   for (const icon of ["/assets/season/purse.webp", "/assets/ui/ask-all-marks.webp", "/assets/ui/ask-dry.webp"]) {
@@ -94,11 +95,32 @@ test("a recorded tide run marks the three asks and offers practice", () => {
   expect(html.match(/class="tide-ask-mark"/g)).toHaveLength(3);
   expect(html.match(/\(kept\)/g)).toHaveLength(2);
   expect(html.match(/\(slipped\)/g)).toHaveLength(1);
-  expect(html).toContain("Today’s tide: Banked 7 · Bram guessed 6. Another sail is practice; the first tide each day is the one that counts.");
+  expect(html).toContain("Today’s Tide Run: Banked 7 · Bram guessed 6.");
   expect(html).toContain("Sail again for practice");
   expect(html).not.toContain("tide-stamp-seal");
   const allThree = renderToStaticMarkup(<TideAsk {...runAsk} result={{ ...runResult, stamps: { home: true, guess: true, dry: true } }}/>);
   expect(allThree).toContain('class="tide-stamp-seal"');
+});
+
+test("all fourteen device cards retain their picture but use neutral Tide Run preparation and disclose first-finished scoring before Sail", () => {
+  const disclosure = "Your first finished daily outing sets that day’s score and stamps, even if the tide turns or Bram brings Mochi home. Later sails are practice. Pausing does not finish an outing.";
+  for (const daily of TIDE_POOL) {
+    const retained = renderToStaticMarkup(<TideAsk today={{ day, card: daily, entry: null }} earlier={[]} sailBlockedReason={null} onSail={() => {}} onOpenLog={() => {}}/>);
+    expect(retained).toContain(`<h4>${daily.name}</h4>`);
+    for (const ask of daily.asks) expect(retained).toContain(askLine(ask, daily.tool));
+    for (const result of [null, runResult]) {
+      const html = renderToStaticMarkup(<TideAsk {...runAsk} card={daily} result={result}/>);
+      expect(html).toContain("Today’s Tide Run");
+      expect(html).toContain(`alt="${CARD_PICTURE[daily.id]}"`);
+      expect(html).not.toContain(`<h4>${daily.name}</h4>`);
+      expect(html).toContain(disclosure);
+      expect(html.indexOf(disclosure)).toBeLessThan(html.indexOf('class="exp-primary"'));
+      expect(html).toContain("A paused outing keeps its original day.");
+      expect(html).not.toContain("Each wave leaves a prize");
+      expect(html).not.toContain("No waiting");
+      expect(html).not.toContain("Surf home");
+    }
+  }
 });
 
 test("a blocked run sail stays focusable and describes its reason", () => {

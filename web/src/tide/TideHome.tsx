@@ -1,6 +1,6 @@
 import { useId, type CSSProperties, type JSX } from "react";
 import { cardStatus, type Run, type TideCard } from "./asks";
-import { askLine } from "./cards";
+import { askLine, dayLabel } from "./cards";
 import { CARD_PICTURE, sealArt } from "./art";
 import { homeResult } from "./pages";
 import TideStamp from "./TideStamp";
@@ -32,6 +32,7 @@ function RunHome({ card, result, canShelve, reduced, notice, sailBlockedReason, 
       {kept && <img className="tide-home-portrait" src="/assets/ui/mochi-portrait-proud.webp" width={72} height={72} alt="" decoding="async"/>}
       <h2 id={`${id}-title`}>{resultTitle(result)}</h2>
     </div>
+    <p className="tide-day">Tide Run · {dayLabel(result.day)}</p>
     <p className="tide-home-sub">{resultLine(result)}</p>
     <HaulRow result={result}/>
     {notice && <p className="tide-home-note">{notice}</p>}

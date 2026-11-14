@@ -9,8 +9,9 @@ import { cautiousMove } from "../web/src/run/bot";
 import { dayResult } from "../web/src/run/save";
 import { shelfGoods } from "../web/src/tide/run-day";
 import { haulLine } from "../web/src/season/model";
+import { BROWSER_DAY, prepareBrowser } from "./browser-fixtures";
 
-// Bram's shelf panels, against the live season.<root> views (public RPC).
+// Bram's shelf panels use deterministic public-view responses; no network leaves the fixtures.
 // Signed out uses the real game; signed in uses the dev-only harness, whose signing is mocked.
 const shots=resolve(process.argv[2]??await mkdtemp(join(tmpdir(),"season-shots-")));await mkdir(shots,{recursive:true});
 const server=await createServer({root:resolve(import.meta.dir,"../web"),envDir:false,envPrefix:[],cacheDir:await mkdtemp(join(tmpdir(),"familiar-season-")),logLevel:"error",
@@ -18,7 +19,7 @@ const server=await createServer({root:resolve(import.meta.dir,"../web"),envDir:f
 const bookKey="familiar.expedition.local.v2:tide-run.v1";
 /** Today's daily tide as the cautious bot sails it; it banks reed or glass on the days probed, and the suite fails loudly if not. */
 function dailyTide() {
-  let daily=startTide({seed:Math.floor(Date.now()/86_400_000)});
+  let daily=startTide({seed:BROWSER_DAY});
   while(daily.outcome==="active")daily=applyMove(daily,cautiousMove(daily,VALUE))!.after;
   const goods=shelfGoods(dayResult(daily));
   assert.ok(goods[0]+goods[1]>0,"today's cautious tide brings reed or glass home");
@@ -37,6 +38,7 @@ try{
   try{
     for(const viewport of [{width:390,height:844},{width:1440,height:900}]){
       const tag=`${viewport.width}x${viewport.height}`,page=await browser.newPage({viewport});
+      const network=await prepareBrowser(page,origin,BROWSER_DAY);
       await page.goto(new URL("/outing/?play",origin).href);
       await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
       await page.locator(".exp-place-bram").click();
@@ -157,7 +159,7 @@ try{
         await expect(page.locator(".ss-status")).toContainText("Shelved 1 glass and 1 reed bundle: 100% of the best haul",{timeout:10000});
         await page.screenshot({path:join(shots,`harness-docked-${tag}.png`)});
       }
-      await page.close();
+      network.assertClean();await page.close();
       console.info(`${tag}: preview shelf/sell/run haul/shelve/wish and harness ledger/refusal/sale/wish/postcard passed`);
     }
   }finally{await browser.close();}

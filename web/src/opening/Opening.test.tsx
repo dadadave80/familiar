@@ -3,7 +3,46 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { HarborAudio } from "../expedition/audio";
 import Opening from "./Opening";
 
-test("painted boards survive frame updates and the bell keeps its pivot and touch target", () => {
+test("fresh title has native Begin and daily paper enters without selecting an activity", async () => {
+  const starts: unknown[] = [];
+  const opening = new Opening({ audio: new HarborAudio(), hasSave: false, onStart: async start => { starts.push(start); }, onDone() {} });
+  expect(renderToStaticMarkup(opening.render())).toContain('data-el="begin"');
+  expect(renderToStaticMarkup(opening.render())).not.toContain("New Harbor");
+  opening.state = { ...opening.state, scroll: "tide" };
+  const html = renderToStaticMarkup(opening.render());
+  expect(html).toContain("Daily outings begin once the beacon is lit. Enter the harbor to see this harbor’s outing and rules.");
+  expect(html).toContain("Enter the harbor");
+  opening.tw = async () => {};
+  opening.wait = async () => {};
+  opening.s = {};
+  await opening.travel("new");
+  expect(starts).toEqual([{ sound: false, music: .8, effects: 1 }]);
+  const entries: unknown[][] = [];
+  opening.travel = async (...args) => { entries.push(args); };
+  opening.setState = () => {};
+  opening.onTide();
+  expect(entries).toEqual([["new"]]);
+  const saved = new Opening({ audio: new HarborAudio(), hasSave: true, onStart: async () => {}, onDone() {} });
+  expect(renderToStaticMarkup(saved.render())).toMatch(/data-el="begin"[^>]*>Continue<\/button>/);
+  saved.tw = async () => {};
+  saved.setState = () => {};
+  saved.travel = async (...args) => { entries.push(args); };
+  saved.onTide();
+  expect(entries).toEqual([["new"], ["continue"]]);
+});
+
+test("public title idle never starts the retained court demonstration", () => {
+  const opening = new Opening({ audio: new HarborAudio(), hasSave: false, onStart: async () => {}, onDone() {} });
+  let demonstrations = 0;
+  opening.attract = async () => { demonstrations++; };
+  opening.draw = () => {};
+  const previous = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = () => 0;
+  try { opening.mode = "title"; opening.t = 30_000; opening.tick(30_000); expect(demonstrations).toBe(0); }
+  finally { globalThis.requestAnimationFrame = previous; }
+});
+
+test("painted menu targets settle between frames and the bell keeps its pivot and touch target", () => {
   for (const [width, height] of [[320, 480], [390, 844], [844, 390], [1280, 800], [1536, 1024]]) {
     const opening = new Opening({ audio: new HarborAudio(), hasSave: false, onStart: async () => {}, onDone() {} });
     const bell = { style: {} as Record<string, string>, isConnected: true };
@@ -29,6 +68,13 @@ test("painted boards survive frame updates and the bell keeps its pivot and touc
     for (const board of Object.values(boards)) expect(board.style.background).toBe("painted board");
     expect(boards.new.style.filter).toContain("brightness(1.06)");
     expect(boards.tide.style.filter).toBe("drop-shadow(0 3px 3px #2a1d1166)");
+    opening.landed = true;
+    const settled = { world: world.style.transform, boards: Object.values(boards).map(board => board.style.transform) };
+    for (const time of [10_000, 13_000, 17_000]) {
+      opening.t = time;
+      opening.draw();
+      expect({ world: world.style.transform, boards: Object.values(boards).map(board => board.style.transform) }).toEqual(settled);
+    }
   }
 });
 

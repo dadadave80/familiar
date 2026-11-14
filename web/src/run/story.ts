@@ -17,23 +17,24 @@ export interface Chapter {
 export const CHAPTERS: Readonly<Record<StoryPrize, Chapter>> = {
   lens: {
     number: 1, title: "First light", seed: 5,
-    before: "The lens went over the wall in the storm. It’s in the left shell. The old crab won’t let anyone near it.",
-    goal: "Grab what the tide leaves. Don’t be in a lane when its wave lands. Step on the dock to bank.",
+    before: "The storm carried the Beacon Lens into the left shell. Bring it back so we can light the beacon.",
+    goal: "Bring the Beacon Lens home from the left shell.",
     after: ["Forty years I’ve known that crab. Never once seen it hold still."],
   },
   vane: {
     number: 2, title: "What the tide brings", seed: 4,
-    before: "Reeds from Wren’s garden. Glass from her windows. That’s not flotsam. The crab is bringing her house back.",
-    goal: "The Signal Vane is in the right shell. Bring it home, and anything else the tide leaves.",
+    before: "The beacon is lit. Bram needs the Signal Vane to read the wind. Bring it home from the right shell.",
+    goal: "Bring the Signal Vane home from the right shell.",
     after: [
       "Wren kept this light. The night it failed she rowed out to guide the boats in by hand. The boats came home.",
+      "Reeds from Wren’s garden. Glass from her windows. That’s not flotsam. The crab is bringing her house back.",
       "The Tidekeeper was her familiar. It has been waiting for her light ever since. And now it’s on.",
     ],
   },
   moth: {
     number: 3, title: "The last thing", seed: 15,
     before: "There’s one thing it never gave up. Her wind-moth. Kept it dry in that shell through the whole storm.",
-    goal: "The moth is in the right shell. It takes two places in the pack.",
+    goal: "Bring the wind-moth home from the right shell. It needs two pack slots.",
     after: ["It knows she isn’t coming. It gave you the moth anyway.", "Two familiars and one light. That’ll do for a harbor."],
   },
 };
@@ -71,33 +72,39 @@ const OPENED: Readonly<Record<StoryPrize, string>> = {
   moth: "The right shell opens. Something inside is glowing.",
 };
 const CARRIED: Readonly<Record<StoryPrize, string>> = {
-  lens: "Mochi has the lens. Home is the dock.",
-  vane: "Mochi has the vane. Home is the dock.",
-  moth: "Mochi cradles the moth. It takes two places in her pack.",
+  lens: "Mochi carries the Beacon Lens. Bring it to the center dock to bank it.",
+  vane: "Mochi carries the Signal Vane. Bring it to the center dock to bank it.",
+  moth: "Mochi cradles the wind-moth. Bring it to the center dock to bank it.",
 };
 const HOME: Readonly<Record<StoryPrize, string>> = {
-  lens: "The lens is home. The rest of the tide is yours.",
-  vane: "The vane is home. The rest of the tide is yours.",
-  moth: "The moth is home.",
+  lens: "Lens safe. Finish and return to fit it into the beacon.",
+  vane: "Vane safe. Finish and return to fit it onto the signal post.",
+  moth: "Moth safe. Finish and return to bring it into the harbor.",
 };
 const isStory = (item: Item | null): item is StoryPrize => item === "lens" || item === "vane" || item === "moth";
 
 /** One or two sentences about what this move really did, or nothing. Nothing is said that did not happen. */
-export function consequence({ events }: TideTransition): string {
+export function consequence({ events, after }: TideTransition): string {
   const facts: string[] = [];
   for (const event of events) switch (event.kind) {
-    case "pickup": facts.push(isStory(event.item) ? CARRIED[event.item] : `Mochi takes the ${itemName(event.item)}.`); break;
+    case "pickup":
+      if (after.outcome === "active" && after.pack.includes(event.item) && !events.some(later => later.kind === "splash" && later.lost === event.item))
+        facts.push(isStory(event.item) ? CARRIED[event.item] : `Mochi takes the ${itemName(event.item)}.`);
+      break;
     case "full": facts.push(`No room for the ${itemName(event.item)}. Bank at the dock first.`); break;
     case "bank": {
       const story = event.items.find(isStory);
-      facts.push(story ? HOME[story] : `Banked ${list(event.items)}: +${event.gained}.`);
+      if (!story || after.banked.includes(story)) facts.push(story ? HOME[story] : `Banked ${list(event.items)}: +${event.gained}.`);
       break;
     }
     case "sweep": facts.push(`The wave takes ${list(event.items.map(item => item.kind), true)} back.`); break;
     case "shield": facts.push("The Tidekeeper puts a claw in the water. The wave goes around."); break;
-    case "splash": facts.push(event.lost
-      ? `Splashed. The ${itemName(event.lost)} ${isStory(event.lost) ? "goes back to its shell" : "is gone"}.`
-      : "Splashed. Mochi shakes it off."); break;
+    case "splash": {
+      const returned = after.outcome === "active" && after.items.some(item => item.kind === event.lost);
+      const lost = isStory(event.lost) ? returned ? "goes back to its shell" : "was not banked" : "is gone";
+      facts.push(event.lost ? `Splashed. The ${itemName(event.lost)} ${lost}.` : "Splashed. Mochi shakes it off.");
+      break;
+    }
     case "open": facts.push(OPENED[event.item]); break;
     case "leave": facts.push(`The tide leaves ${list(event.items.map(item => item.kind))}.`); break;
     case "end":
