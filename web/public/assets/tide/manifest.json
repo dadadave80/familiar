@@ -1,0 +1,246 @@
+{
+  "purpose": "Tide runtime artwork; opaque card pictures and alpha cut-outs with original masters preserved",
+  "encoder": "magick Lanczos + cwebp quality88 method6 alpha100 sharp_yuv",
+  "files": [
+    {
+      "source": "assets/source/tide/card-brams-bridge.png",
+      "output": "assets/tide/card-brams-bridge.webp",
+      "sourceSha256": "491e1e0f763713d140c93aa2cb8ab7917d4e4c6422685177255010ba40934e14",
+      "sha256": "87abbdba0f54b797ce678e844d8739f594f8d98ac7c8e1db1e67e3de4ea700de",
+      "sourceBytes": 1173108,
+      "bytes": 24754,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-coiled-rope.png",
+      "output": "assets/tide/card-coiled-rope.webp",
+      "sourceSha256": "eb9100170b2b92160559ea96659998b5d97e2a44c87a484e62121a66d8fccabb",
+      "sha256": "5ac25f9187b11456633b2b098fa9e8a0df2899eb4939ab6b8d588d6e34388fcc",
+      "sourceBytes": 1171455,
+      "bytes": 21120,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-dry-and-tidy.png",
+      "output": "assets/tide/card-dry-and-tidy.webp",
+      "sourceSha256": "6cc3efc1c094a770eac5290e630db23a815be90316abc8ab69ca1416748cb1f7",
+      "sha256": "5cb27e4e4225af4ba0ed35f757d8333fd4a34c48161a46b995aee6745d37c54d",
+      "sourceBytes": 1211846,
+      "bytes": 22918,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-dry-paws.png",
+      "output": "assets/tide/card-dry-paws.webp",
+      "sourceSha256": "8be8ae175a28fb947a35fce49cd1ad4885fce137ad952a6394d4433da078f871",
+      "sha256": "e0d3c28444736e009b925472c91d072df8f8fa00aefef11c2afd57a3e16f86d8",
+      "sourceBytes": 1216077,
+      "bytes": 24030,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-every-source.png",
+      "output": "assets/tide/card-every-source.webp",
+      "sourceSha256": "5184a277dfd1de409b1980b1b55279ff7aba13713752aed3aa953882bb8960c9",
+      "sha256": "6334d1d3b2c5b4fca098cd97a3c635a80219122479bce9e3959ab7666efe7327",
+      "sourceBytes": 1190539,
+      "bytes": 21904,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-full-satchel.png",
+      "output": "assets/tide/card-full-satchel.webp",
+      "sourceSha256": "712186f4396ae09fb88b19eff361d6a4979258f0ef4cb159ab99a3b3665c0e0d",
+      "sha256": "c6bf3165fbd5ed1666a89e162f3c879f21789a67a707501cc9511ab66e92f66f",
+      "sourceBytes": 1433834,
+      "bytes": 34152,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-lantern-haul.png",
+      "output": "assets/tide/card-lantern-haul.webp",
+      "sourceSha256": "048c67fc6e1ccbc80bda4186e8bf48ddaee06e5160ab15d550439d81402b186d",
+      "sha256": "95c3fb1b3d2b5490dd876d868411edeade9d1a7eb8fdbb51594dfea2c0c3f05b",
+      "sourceBytes": 1404258,
+      "bytes": 36648,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-left-for-bram.png",
+      "output": "assets/tide/card-left-for-bram.webp",
+      "sourceSha256": "80ff332f5e6aba55332d8745374ff3829c8fda0c970c312b508810be324088b8",
+      "sha256": "e8253681252cf033dfc7419cbb29fd443f5aed9870479c523542f14ab84ea90f",
+      "sourceBytes": 1207381,
+      "bytes": 20204,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-no-waiting.png",
+      "output": "assets/tide/card-no-waiting.webp",
+      "sourceSha256": "f1a3be1be0bca425e76f81423bbcfdd755b5ed88689323ab19e73b9f8a474aba",
+      "sha256": "17c49fa356802aa256a1c79576289c29ae0c0685132f8e01e07c7b93cd3ccde5",
+      "sourceBytes": 1201643,
+      "bytes": 23874,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-once-across.png",
+      "output": "assets/tide/card-once-across.webp",
+      "sourceSha256": "6cb501ec52341f527a0bcaea273964553d108e59224b435ca08bb71ecff2f2cb",
+      "sha256": "4e024f4d711c5301575058ba33ee900a5af8844e7eed01d44e58308477cfabfa",
+      "sourceBytes": 1215052,
+      "bytes": 25388,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-quiet-shell.png",
+      "output": "assets/tide/card-quiet-shell.webp",
+      "sourceSha256": "64a4350d0ed723085e58cb11757037d026c7db5bab59a62e8c9c5996af92886c",
+      "sha256": "2dd4c5ae4fb4679994bf55a094edc08cb8b88241b72230b751366806bd261afd",
+      "sourceBytes": 1212642,
+      "bytes": 22364,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-surf-home.png",
+      "output": "assets/tide/card-surf-home.webp",
+      "sourceSha256": "911dacdfc689778cc53069b97f41e3b0dd0ff3b6c6fb2a018cdb01aa3d3dd0be",
+      "sha256": "a023b18401da65fac17df8642f2f7abf2331474b732fd170c892985a1365f210",
+      "sourceBytes": 1416185,
+      "bytes": 29804,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-tidy-tide.png",
+      "output": "assets/tide/card-tidy-tide.webp",
+      "sourceSha256": "ca7118607a175b3d59cb443ac4adefd1a3f60aad21e00de4d9b293d4b3d05284",
+      "sha256": "aeaa3948bf38dff20d575c1a8dd41088885dadeddf237be5cc519f2af7157d41",
+      "sourceBytes": 1200555,
+      "bytes": 21966,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/card-wake-both-shells.png",
+      "output": "assets/tide/card-wake-both-shells.webp",
+      "sourceSha256": "2d777a705a0512c927f855d5d29d6e551c32910d1278c95d08ecf2a6fbdac3a7",
+      "sha256": "41aa1cf519bbf5b3562da49d0a14fa37a34c501966879efa2979133740e8f9ec",
+      "sourceBytes": 1442867,
+      "bytes": 33908,
+      "resizedTo": {
+        "width": 480,
+        "height": 480
+      }
+    },
+    {
+      "source": "assets/source/tide/keeper-ask.png",
+      "output": "assets/tide/keeper-ask.webp",
+      "sourceSha256": "9a9ab752c4781420b6f11a6c367056bd55d52db8813eef61de62d8a2a9320485",
+      "sha256": "43346946bb8f34741d90f7ec797fb923df5d80a8284b429a839a16489511e0fb",
+      "sourceBytes": 1028457,
+      "bytes": 114792,
+      "resizedTo": {
+        "width": 960,
+        "height": 640
+      }
+    },
+    {
+      "source": "assets/source/tide/log-cover.png",
+      "output": "assets/tide/log-cover.webp",
+      "sourceSha256": "e7b3d6ac87bfd557cde0ffca0335ab89e555f79f47896afbdaa24dbf23812549",
+      "sha256": "4cc7fbb7eab29c35e5613351b11612ed69b1786015f1d16f112a5387ee83899c",
+      "sourceBytes": 1592022,
+      "bytes": 32954,
+      "resizedTo": {
+        "width": 384,
+        "height": 384
+      }
+    },
+    {
+      "source": "assets/source/tide/log-page.png",
+      "output": "assets/tide/log-page.webp",
+      "sourceSha256": "d5644fc3845dd106da3ae9853147d7a0b38a73a4ed1f214423ed20764b8964bf",
+      "sha256": "b846179d2e048e68bbbba5149b45fb09a133022257be94800a11461f28838907",
+      "sourceBytes": 1139080,
+      "bytes": 41618,
+      "resizedTo": {
+        "width": 900,
+        "height": 905
+      }
+    },
+    {
+      "source": "assets/source/tide/seal-all-three.png",
+      "output": "assets/tide/seal-all-three.webp",
+      "sourceSha256": "81e4d06194c726b3832948a4ed38f28c11aefdb8b59881198c60390ce7bddc4d",
+      "sha256": "bb5d94f932d85b9e51eeb64c923ba4fc5535fcdbf0658f4e32fb75c2fa270d88",
+      "sourceBytes": 1134008,
+      "bytes": 5722,
+      "resizedTo": {
+        "width": 168,
+        "height": 168
+      }
+    },
+    {
+      "source": "assets/source/tide/seal-kept.png",
+      "output": "assets/tide/seal-kept.webp",
+      "sourceSha256": "32e110f10fb92de976a928d7644b3c0b80c36ad675613fa171a819bbee39fab0",
+      "sha256": "d000367fc1c1d2a937628814cc254bc68f56630816b21ad0a149b216e40a68e8",
+      "sourceBytes": 1116912,
+      "bytes": 4748,
+      "resizedTo": {
+        "width": 168,
+        "height": 168
+      }
+    },
+    {
+      "source": "assets/source/tide/seal-slipped.png",
+      "output": "assets/tide/seal-slipped.webp",
+      "sourceSha256": "e5d651ead47ce1589d407499784a5d2a9f2396140dcb7e8015e60059081a589c",
+      "sha256": "475f077e10ecb3f8ba0cb505396632df642240adde88a7f5be7ed10d1dc5a192",
+      "sourceBytes": 1083960,
+      "bytes": 6122,
+      "resizedTo": {
+        "width": 168,
+        "height": 168
+      }
+    }
+  ]
+}
