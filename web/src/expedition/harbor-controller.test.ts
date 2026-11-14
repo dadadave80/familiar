@@ -4,6 +4,8 @@ import {createHash} from "node:crypto";
 import {syntheticReturnLock} from "./return-record.fixture";
 import fixtures from "../../../contracts/common/fixtures/court.json";
 import {HarborController,canonicalWorkshop,type HarborConnection,type HarborClient} from "./harbor-controller";
+import {SeasonNotSent} from "./harbor-port";
+import {settleError} from "../season/model";
 import {replayCourt} from "./engine";
 import {returnRecordKey} from "./return-record";
 import type {PlayerBinding} from "../tidebound/domain";
@@ -154,7 +156,8 @@ test("season actions send one exact allowlisted call to season.<root> and return
  await saved(f);
  const client=(f.controller as unknown as {connection:{client:HarborClient&{lastFinal:unknown}}}).connection.client;
  const view=client.view.bind(client);let minimum="12500000000000000000000";
- client.view=(async(contract:string,method:string,args?:Record<string,unknown>)=>method==="storage_minimum"?(expect(contract).toBe(`season.${root}`),minimum):view(contract,method,args)) as typeof client.view;
+ let ledger:unknown=null;
+ client.view=(async(contract:string,method:string,args?:Record<string,unknown>)=>method==="storage_minimum"?(expect(contract).toBe(`season.${root}`),minimum):method==="get_account"?(expect(args).toEqual({account_id:binding.nearAccountId}),ledger):view(contract,method,args)) as typeof client.view;
  f.onSend=(method)=>{client.lastFinal={hash:"h",method,receiver:`season.${root}`,failed:method==="sell",outcome:{status:{SuccessValue:btoa("{}")}}};};
  expect(await f.controller.seasonAct({kind:"buy",good:"glass",qty:2,maxPrice:9})).toEqual({failed:false,outcome:{status:{SuccessValue:btoa("{}")}}});
  expect((await f.controller.seasonAct({kind:"sell",good:"reed",qty:1,minPrice:3}))?.failed).toBe(true);
@@ -172,5 +175,11 @@ test("season actions send one exact allowlisted call to season.<root> and return
   {method:"storage_deposit",args:{},options:{receiver:`season.${root}`,deposit:12500000000000000000000n}},
  ]);
  minimum="1";await expect(f.controller.seasonAct({kind:"register"})).rejects.toThrow("page size");expect(f.sent.length).toBe(6);
+ minimum="12500000000000000000000";ledger={shells:0};
+ const twice=await f.controller.seasonAct({kind:"register"}).catch(error=>error);
+ expect(twice).toBeInstanceOf(SeasonNotSent);expect(twice.message).toBe("Your ledger page is already open. Nothing was sent.");expect(f.sent.length).toBe(6);
+ f.snapshot.pets=[];await f.controller.refresh();
+ const nopet=await f.controller.seasonAct({kind:"set-wish",good:"glass",limit:1,qty:1}).catch(error=>error);
+ expect(nopet).toBeInstanceOf(SeasonNotSent);expect(settleError(nopet)).toEqual({kind:"refused",code:"NOT_SENT",words:"Bring Mochi home before setting a wish."});expect(f.sent.length).toBe(6);
  f.onSend=()=>{};expect(await f.controller.seasonAct({kind:"buy",good:"glass",qty:1,maxPrice:8})).toBeNull();
 });

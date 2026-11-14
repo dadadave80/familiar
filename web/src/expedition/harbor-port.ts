@@ -27,6 +27,8 @@ export type SeasonIntent =
   | {kind:"set-wish";good:"glass"|"reed";limit:number;qty:number}
   | {kind:"cancel-wish"};
 export interface SeasonFinal {failed:boolean;outcome:unknown}
+/** Thrown by a season action that stopped before anything was handed to the signer. Its message is player-facing. */
+export class SeasonNotSent extends Error { override name="SeasonNotSent"; }
 export interface WorldReview {id:string;intent:WorldIntent;title:string;description:string;costs:readonly string[];confirmLabel:string}
 export interface WorkshopModel {
   authority:"local-preview"|"near-testnet";motifs:readonly MotifId[];creditAvailable:boolean;

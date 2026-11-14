@@ -165,6 +165,8 @@ export const OPEN_REQUEST="An earlier request is still open. Finish it in Accoun
 /** A thrown send is never a refusal: the action may still land. Messages are mapped to season words, never passed through. */
 export function settleError(error:unknown):ActionState<never> {
   const message=error instanceof Error?error.message:"";
+  // Stopped before the signer saw anything: the controller's own words are already player-facing.
+  if(error instanceof Error&&error.name==="SeasonNotSent")return {kind:"refused",code:"NOT_SENT",words:message};
   const code=message.match(/ERR_[A-Z0-9_]+/)?.[0];
   if(code&&REFUSALS[code])return {kind:"refused",code,words:refusalWords(code)};
   if(/more test NEAR/i.test(message))return {kind:"refused",code:"FUNDS",words:"Your harbor account needs a little more test NEAR before Bram can record this. Nothing was sent."};

@@ -4,7 +4,7 @@ import {RULES_VERSION,type PlayerBinding} from "../tidebound/domain";
 import type {ChainSnapshot,TideboundClient} from "../tidebound/client";
 import {quoteItemStorage,storageNear} from "../tidebound/storage";
 import {ReturnRecords,validateRunContext,type ReturnRecord,type ReturnRecordLock} from "./return-record";
-import type {HarborSession,HarborState,HomeCheckpoint,RunContext,SeasonFinal,SeasonIntent,WorldIntent,WorldReview,WorkshopModel} from "./harbor-port";
+import {SeasonNotSent,type HarborSession,type HarborState,type HomeCheckpoint,type RunContext,type SeasonFinal,type SeasonIntent,type WorldIntent,type WorldReview,type WorkshopModel} from "./harbor-port";
 import {SEASON_STORAGE_DEPOSIT} from "../../../services/relayer/src/auth/sign";
 import type {CourtState,BankedItem} from "./types";
 
@@ -171,14 +171,17 @@ export class HarborController implements HarborSession {
   }
   /** Season 2: one typed call on season.<root>, sent through the same pending-action path. Returns the final outcome only. */
   async seasonAct(intent:SeasonIntent):Promise<SeasonFinal|null> {
-    let final:SeasonFinal|null=null;
-    await this.work(async()=>{
+    let final:SeasonFinal|null=null,sending=false;
+    try{await this.work(async()=>{
       const binding=this.requireSaved(),epoch=this.epoch,client=this.connection!.client,season=`season.${client.root}`;
       let method:string,args:Record<string,unknown>,deposit=0n;
       switch(intent.kind){
         case "register": {
           const minimum=await client.view<string>(season,"storage_minimum");this.guard(epoch,binding);
           check(BigInt(minimum)===SEASON_STORAGE_DEPOSIT,"Bram’s ledger changed its page size. Nothing was sent.");
+          // A second tab or a stale view must not pay the deposit twice: the contract would keep it as a top-up.
+          const existing=await client.view<unknown>(season,"get_account",{account_id:binding.nearAccountId});this.guard(epoch,binding);
+          check(existing===null,"Your ledger page is already open. Nothing was sent.");
           method="storage_deposit";args={};deposit=SEASON_STORAGE_DEPOSIT;break;
         }
         case "claim": method="claim_daily";args={rules_version:RULES_VERSION,content_version:intent.contentVersion,tool:intent.tool,area:"beacon",commands:[...intent.commands]};break;
@@ -189,11 +192,11 @@ export class HarborController implements HarborSession {
           method=intent.kind==="set-wish"?"set_wish":"cancel_wish";args=intent.kind==="set-wish"?{pet,good:intent.good,limit:intent.limit,qty:intent.qty}:{pet};break;
         }
       }
-      this.guard(epoch,binding);client.lastFinal=null;
+      this.guard(epoch,binding);client.lastFinal=null;sending=true;
       await client.send(binding,method,args,{receiver:season,deposit});this.guard(epoch,binding);
       const last=client.lastFinal as TideboundClient["lastFinal"]|undefined;
       final=last&&last.method===method&&last.receiver===season?{failed:last.failed,outcome:last.outcome}:null;
-    },false);
+    },false);}catch(error){if(!sending)throw new SeasonNotSent(error instanceof Error?error.message:"Nothing was sent.");throw error;}
     return final;
   }
   private async original(kind:"resume"|"check"|"expiry") {return this.work(async()=>{
