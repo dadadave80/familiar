@@ -2,6 +2,20 @@
 
 ![Familiar: a little adventure with Mochi. A felt-miniature harbor at sunset: Mochi, an orange kitten in a red bandana, leaps between spiral stepping stones past a teal wave and a glowing wind-moth, while the stone-crab Tidekeeper watches and Bram the badger waves from the quay below the lighthouse.](docs/readme-banner.jpg)
 
+**Play it:** https://familiar-two.vercel.app (no account needed). Built at NEAR HACKATHON, November 2026; every commit is inside the hackathon window (first commit 2026-11-05).
+
+Familiar is a cozy turn-based puzzle game for phones and desktop browsers. You guide Mochi, a kitten, across the tide to bring the harbor's Beacon Lens home and relight the beacon. Onchain games usually ask for a wallet before they offer a game. Familiar plays first, and signing in later makes Mochi her own keyless NEAR testnet account.
+
+## Try it
+
+1. Open https://familiar-two.vercel.app on a phone or in a narrow browser window. You see the introduction.
+2. Start the game and choose **Help Mochi**. You see the first chapter's goal: "Bring the Beacon Lens home from the left shell."
+3. Swipe, or tap a glowing stone, to move. Each step moves the water, and a wave lands after every third move.
+4. Step onto the lens, carry it to the center dock, choose **Finish and return**, then fit the lens. The beacon lights.
+5. In a clone, run `make judge`. It reads live testnet state over public RPC with no keys and checks the claims under [NEAR in Familiar](#near-in-familiar).
+
+## Details
+
 A cozy turn-based Phaser puzzle adventure: guide Mochi as a volunteer harbor helper and restore the light. The introduction at `/` leads to `/outing/`. Three device story chapters recover the Beacon Lens, Signal Vane and wind-moth. Chapter 1 has eight calm waves; the later chapters have twelve. Each step or wait spends one move; a wave lands after every third move. Mochi collects finds by stepping onto them and banks cargo on arrival at the center dock.
 
 The harbor prioritizes an open outing or unfinished filing, then a recovered repair, then the next story chapter. Once the beacon is lit, **Today’s tide · optional** opens daily preparation alongside the remaining story. The first finished daily outing sets that day’s score and stamps, including a zero-score, rescued or tide-turned outing; later sails are practice. Pausing leaves the outing open on its original day. Story outings use no daily result. The Home sheet and Log keep daily results; Bram shelves eligible reed and glass. Bell/Reed Steps, the later shore-bell discovery and optional courts remain on the Chart under their existing discovery requirements. Saved harbors keep the Tidekeeper’s three-ask court; each selected activity teaches its own rules and tools.
