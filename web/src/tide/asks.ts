@@ -33,8 +33,8 @@ export const NO_FACTS: RunFacts = { waits: 0, marks: [], crossings: 0 };
 
 export function nextFacts(facts: RunFacts, before: CourtState, command: Command, after: CourtState): RunFacts {
   const marked = phaseOf(before) === "rising" && after.locked !== null && !facts.marks.includes(after.locked);
-  // A splash can wash Mochi back over the bridge row; only a walked crossing counts.
-  const crossed = command.startsWith("step:") && Math.abs(after.position.y - before.position.y) > 1 && after.resolve === before.resolve;
+  // A legal step from either landing crosses before the surge can splash Mochi back.
+  const crossed = command === "step:north" && before.position.y === 1 || command === "step:south" && before.position.y === 3;
   return {
     waits: facts.waits + (command === "wait" ? 1 : 0),
     marks: marked ? [...facts.marks, after.locked!] : facts.marks,

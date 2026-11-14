@@ -66,6 +66,16 @@ test("an empty return keeps no asks on any card without changing live statuses",
   }
 });
 
+test("a walked crossing still counts when the same surge washes Mochi back",()=>{
+  const card=TIDE_POOL.find(card=>card.id==="once-across")!;
+  const repeated=replayRun(card.tool,["wait","step:north","step:north","step:north","step:east","step:north","take:moth","step:south","step:west","step:south","return"])!;
+  expect(repeated.state.outcome).toBe("returned");expect(repeated.facts.crossings).toBe(3);
+  expect(cardStatus(card,repeated)).toEqual(["kept","slipped","kept"]);
+  const onceEachWay=replayRun(card.tool,["step:north","step:north","step:west","step:east","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"])!;
+  expect(onceEachWay.state.outcome).toBe("returned");expect(onceEachWay.facts.crossings).toBe(2);
+  expect(askStatus(card.asks[1],onceEachWay)).toBe("kept");
+});
+
 test("a budget holds through the final return decision but not an extra active decision",()=>{
   const card=cardForDay(20771),route=solve(card.tool,card.asks)!,ask={kind:"within",decisions:route.length} as const;
   const before=replayRun(card.tool,route.slice(0,-1))!,home=stepRun(before,"return")!;
