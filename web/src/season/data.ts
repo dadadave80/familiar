@@ -16,17 +16,28 @@ export async function seasonView<T>(method:string, args:Record<string,unknown>={
 
 // ---------- device preview ----------
 
-export interface PreviewMarket { version:1;shelf:{stock:number;heat_fp:number}[];till:number;shells:number;goods:[number,number];traded:[number,number] }
+export interface PreviewMarket { version:1;day:number;shelf:{stock:number;heat_fp:number}[];till:number;shells:number;goods:[number,number];traded:[number,number] }
+/** The device's day, on the contract's boundary (floor of UTC time / 24 h). */
+export const deviceDay=(now=Date.now())=>Math.floor(now/86_400_000);
+const TILL_CAP=300,TILL_REFILL=60,HEAT_HALVINGS_CAP=64;
+/** The contract's lazy day effects: heat halves per day, the till refills toward its cap, daily limits reset. */
+export function rollPreview(m:PreviewMarket,day=deviceDay()):PreviewMarket {
+  const days=day-m.day;if(days<=0)return m;
+  return {...m,day,traded:[0,0],
+    shelf:m.shelf.map(s=>({stock:s.stock,heat_fp:days>=HEAT_HALVINGS_CAP?0:Number(BigInt(s.heat_fp)>>BigInt(days))})),
+    till:m.till<TILL_CAP?Math.min(TILL_CAP,m.till+TILL_REFILL*days):m.till};
+}
 const PREVIEW_KEY="familiar.season.preview.v1";
 /** A sample haul so the preview has something to sell. It is not a real haul and is labelled as such. */
 export const PREVIEW_SAMPLE:[number,number]=[1,2];
-export function seedPreview(shelf:ShelfView|null):PreviewMarket {
-  return {version:1,shelf:GOODS.map(g=>{const v=shelf?.goods.find(x=>x.good===g);return {stock:v?.stock??40,heat_fp:v?.heat_fp??0};}),till:shelf?.till??300,shells:0,goods:[...PREVIEW_SAMPLE],traded:[0,0]};
+export function seedPreview(shelf:ShelfView|null,day=deviceDay()):PreviewMarket {
+  return {version:1,day:shelf?.day??day,shelf:GOODS.map(g=>{const v=shelf?.goods.find(x=>x.good===g);return {stock:v?.stock??40,heat_fp:v?.heat_fp??0};}),till:shelf?.till??300,shells:0,goods:[...PREVIEW_SAMPLE],traded:[0,0]};
 }
-export function readPreview(store:Pick<Storage,"getItem">=localStorage):PreviewMarket|null {
+export function readPreview(store:Pick<Storage,"getItem">=localStorage,day=deviceDay()):PreviewMarket|null {
   try{const v=JSON.parse(store.getItem(PREVIEW_KEY)??"null") as PreviewMarket;
     const n=(x:unknown)=>Number.isSafeInteger(x)&&(x as number)>=0;
-    if(v?.version!==1||v.shelf?.length!==2||!v.shelf.every(s=>n(s.stock)&&n(s.heat_fp))||![v.till,v.shells,...v.goods,...v.traded].every(n))return null;return v;}catch{return null;}
+    if(v?.version!==1||v.shelf?.length!==2||!v.shelf.every(s=>n(s.stock)&&n(s.heat_fp))||![v.till,v.shells,...v.goods,...v.traded].every(n))return null;
+    return rollPreview({...v,day:n(v.day)?v.day:day},day);}catch{return null;}
 }
 export function writePreview(value:PreviewMarket,store:Pick<Storage,"setItem">=localStorage){try{store.setItem(PREVIEW_KEY,JSON.stringify(value));}catch{/* The preview keeps running in memory. */}}
 export const previewView=(m:PreviewMarket,good:Good):Pick<GoodView,"good"|"stock"|"heat_fp"|"target"|"base"|"buy_price"|"sell_price">=>{
@@ -34,8 +45,8 @@ export const previewView=(m:PreviewMarket,good:Good):Pick<GoodView,"good"|"stock
   return {good,stock:s.stock,heat_fp:s.heat_fp,target:40,base:good==="glass"?8:4,buy_price:quoteBuy(good,s,1)?.units[0]??0,sell_price:quoteSell(good,s,1).units[0]!};
 };
 /** Applies a trade to the preview with the same unit-by-unit pricing and checks as the contract. */
-export function previewTrade(m:PreviewMarket,side:"buy"|"sell",good:Good,qty:number):{market:PreviewMarket;quote:Quote}|{block:string} {
-  const i=GOODS.indexOf(good),shelf=m.shelf[i]!;
+export function previewTrade(current:PreviewMarket,side:"buy"|"sell",good:Good,qty:number,day=deviceDay()):{market:PreviewMarket;quote:Quote}|{block:string} {
+  const m=rollPreview(current,day),i=GOODS.indexOf(good),shelf=m.shelf[i]!;
   const quote=side==="buy"?quoteBuy(good,shelf,qty):quoteSell(good,shelf,qty);
   const block=tradeBlock(quote,{shells:m.shells,held:m.goods[i]!,till:m.till,tradedToday:m.traded[i]!});
   if(block||!quote)return {block:block??"Bram’s shelf does not have that many."};

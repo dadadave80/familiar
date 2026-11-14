@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { keepTide, previewTrade, readPreview, readTide, seasonView, seedPreview, writePreview, type TideReturn } from "./data";
+import { keepTide, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, writePreview, type TideReturn } from "./data";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);}};};
 
@@ -18,6 +18,19 @@ test("the device preview prices like the contract and refuses what the contract 
   expect(previewTrade({...m,traded:[20,0]},"sell","glass",1)).toEqual({block:"Bram trades 20 of each good with you a day."});
   const store=memory();writePreview(sold.market,store);expect(readPreview(store)).toEqual(sold.market);
   store.setItem("familiar.season.preview.v1",'{"version":1,"shelf":[]}');expect(readPreview(store)).toBeNull();
+});
+
+test("the device preview rolls over each day like the contract: heat halves, till refills, limits reset", () => {
+  const m={...seedPreview(null,100),till:200,traded:[20,3] as [number,number],shelf:[{stock:30,heat_fp:8_000_000},{stock:40,heat_fp:1}]};
+  expect(rollPreview(m,100)).toBe(m);
+  expect(rollPreview(m,101)).toMatchObject({day:101,till:260,traded:[0,0],shelf:[{stock:30,heat_fp:4_000_000},{stock:40,heat_fp:0}]});
+  expect(rollPreview(m,103)).toMatchObject({till:300,shelf:[{heat_fp:1_000_000},{heat_fp:0}]});
+  expect(rollPreview({...m,till:340},101).till).toBe(340);
+  expect(rollPreview(m,100+64).shelf[0]!.heat_fp).toBe(0);
+  expect(previewTrade(m,"sell","glass",1,100)).toEqual({block:"Bram trades 20 of each good with you a day."});
+  expect("market"in previewTrade(m,"sell","glass",1,101)).toBe(true);
+  const store=memory();writePreview(m,store);expect(readPreview(store,102)).toMatchObject({day:102,traded:[0,0],till:300});
+  const old=memory();const {day:_,...legacy}=m;old.setItem("familiar.season.preview.v1",JSON.stringify(legacy));expect(readPreview(old,105)?.day).toBe(105);
 });
 
 test("tide returns are kept per harbor, newest first, ten at most", () => {
