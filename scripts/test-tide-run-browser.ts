@@ -7,10 +7,11 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, webkit, expect, type Locator, type Page } from "@playwright/test";
 import { createServer } from "vite";
-import { VALUE, applyMove, replayTide, startTide, type Move, type TideStart } from "../web/src/run/engine";
+import { VALUE, applyMove, legalMoves, replayTide, startTide, stepDestination, type Move, type TideStart, type TideState } from "../web/src/run/engine";
 import { cautiousMove } from "../web/src/run/bot";
-import { storyStart } from "../web/src/run/story";
+import { CHAPTERS, storyStart } from "../web/src/run/story";
 import { dayLabel } from "../web/src/tide/cards";
+import { GUIDANCE_KEY } from "../web/src/run/guidance";
 
 const KEY: Record<Move, string> = { north: "ArrowUp", south: "ArrowDown", west: "ArrowLeft", east: "ArrowRight", wait: "Space", home: "r" };
 /** The cautious bot's route. In a story tide it wants the chapter's prize above everything. */
@@ -123,12 +124,318 @@ async function guidanceOverflow(page:Page) {
   assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),saved,"revealing all guidance preserves the exact outing trace");
   await reading.evaluate(node=>{node.scrollTop=0;});
 }
+
+async function storyComposition(page:Page) {
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  await expect.poll(()=>page.getByTestId("expedition-world").evaluate(node=>Boolean(JSON.parse(node.getAttribute("data-harbor-anchors")??"{}").story))).toBe(true);
+  const geometry=await page.evaluate(()=>{
+    const panel=document.querySelector(".exp-story-panel")!,rect=panel.getBoundingClientRect();
+    const story=JSON.parse(document.querySelector('[data-testid="expedition-world"]')!.getAttribute("data-harbor-anchors")!).story;
+    return{panel:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},story,width:innerWidth,height:innerHeight};
+  });
+  assert(geometry.story,"staged art reports actual scene bounds");
+  for(const name of ["bram","mochi","lanternRoom",...(geometry.story.keeper?["keeper"]:[])]) {
+    const art=geometry.story[name];assert(art&&art.width>0&&art.height>0,`${name} is visible in the held composition`);
+    assert(art.x>=0&&art.y>=0&&art.x+art.width<=geometry.width+.5&&art.y+art.height<=geometry.height+.5,`${name} remains inside the viewport`);
+    assert(art.y+art.height<=geometry.panel.y+.5,`${name} stays unobscured above the parchment`);
+  }
+}
+
+async function exposedTideTargets(page:Page,state:TideState) {
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  const destinations=legalMoves(state).flatMap(move=>{const position=stepDestination(state,move);return position?[position]:[];});
+  const geometry=await page.getByTestId("tide-world").evaluate((node,destinations)=>{
+    const tiles=JSON.parse(node.getAttribute("data-tiles")!),actions=JSON.parse(node.getAttribute("data-actions")!),actor=JSON.parse(node.getAttribute("data-actor")!);
+    const active=[...tiles.filter((tile:any)=>destinations.some(position=>position.x===tile.position.x&&position.y===tile.position.y)),...actions];
+    return{actor,actions:actions.map((action:any)=>action.action),active:active.map((target:any)=>({...target,exposed:[[0,0],[-.45,-.45],[.45,-.45],[-.45,.45],[.45,.45]].every(([x,y])=>document.elementFromPoint(target.x+x!*target.width,target.y+y!*target.height)?.tagName==="CANVAS")})),width:innerWidth,height:innerHeight};
+  },destinations);
+  assert(geometry.actions.includes("wait"),"labelled Wait remains exposed");
+  if(legalMoves(state).includes("home")&&state.moves.length)assert(geometry.actions.includes("home"),"Finish remains exposed at the dock");
+  for(const[index,target]of geometry.active.entries()) {
+    assert(target.width>=44&&target.height>=44,"every active world target retains a 44px hit area");
+    assert(target.exposed&&target.x-target.width/2>=0&&target.x+target.width/2<=geometry.width&&target.y-target.height/2>=0&&target.y+target.height/2<=geometry.height,"active hit areas fit and remain uncovered with native controls open");
+    assert(Math.abs(target.x-geometry.actor.x)>=(target.width+geometry.actor.width)/2||Math.abs(target.y-geometry.actor.y)>=(target.height+geometry.actor.height)/2,"Mochi's Phaser exclusion bounds leave every active target usable");
+    for(const other of geometry.active.slice(index+1))assert(Math.abs(target.x-other.x)>=(target.width+other.width)/2||Math.abs(target.y-other.y)>=(target.height+other.height)/2,"legal destinations, Wait and Finish do not overlap");
+  }
+}
+
+async function destinationEdgeTaps(browser:import("@playwright/test").Browser,origin:URL) {
+  const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"});
+  const network=await prepareBrowser(page,origin,BROWSER_DAY);
+  try {
+    await page.goto(new URL("/outing/?play",origin).href);
+    await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await sailStory(page);
+    const run=page.getByTestId("tide-run"),world=page.getByTestId("tide-world");
+    await expect(world).toHaveAttribute("data-ready","true");await buttonControls(page,true);
+    await expect.poll(()=>page.getByRole("region",{name:"Outing guidance",exact:true}).evaluate(node=>{
+      const reading=node.getBoundingClientRect(),tray=node.closest(".passage-tray")!.getBoundingClientRect();
+      const controls=node.closest(".tide-controls")!.querySelector(".exp-button-controls")!.getBoundingClientRect();
+      return reading.top>=tray.top&&reading.bottom<=controls.top;
+    })).toBe(true);
+    await exposedTideTargets(page,startTide(storyStart("lens")));
+    await freeActorTaps(page,"open controls before destination-edge taps");
+    let state=startTide(storyStart("lens"));
+    const accept=async(move:Move,act:()=>Promise<void>)=>{
+      state=applyMove(state,move)!.after;
+      await act();await expect(run).toHaveAttribute("data-beat",String(state.beat));await expect(run).toHaveAttribute("data-busy","false");
+      assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).active.moves,bookKey),state.moves,"an edge tap accepts exactly its destination move");
+    };
+    const directions=["north","west","east"] as const,edges=[[0,-1],[-1,0],[1,0],[0,1]] as const;
+    for(const move of directions)for(const [index,[dx,dy]] of edges.entries()) {
+      await exposedTideTargets(page,state);
+      const to=stepDestination(state,move)!;
+      const tile=await world.evaluate((node,to)=>{
+        const tiles=JSON.parse(node.getAttribute("data-tiles")!);
+        return tiles.find((tile:any)=>tile.position.x===to.x&&tile.position.y===to.y) as {x:number;y:number;width:number;height:number};
+      },to);
+      await accept(move,()=>page.touchscreen.tap(tile.x+dx*(tile.width/2-1),tile.y+dy*(tile.height/2-1)));
+      if(move!=="east"||index!==edges.length-1)await accept(move==="north"?"south":move==="west"?"east":"west",()=>guide(page,move==="north"?"south":move==="west"?"east":"west"));
+    }
+    await freeActorTaps(page,"open controls after destination-edge taps");
+  }finally{network.assertClean();await page.close();}
+}
+
+async function persistentTeaching(browser:import("@playwright/test").Browser,origin:URL) {
+  const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"});
+  const network=await prepareBrowser(page,origin,BROWSER_DAY);
+  await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,intro:"help",buttons:false})),GUIDANCE_KEY);
+  try {
+    await page.goto(new URL("/outing/?play",origin).href);
+    await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await sailStory(page);
+    const run=page.getByTestId("tide-run"),feedback=page.getByTestId("tide-feedback");
+    await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true");
+    let beat=0;
+    const take=async(move:Move)=>{await guide(page,move);await expect(run).toHaveAttribute("data-beat",String(++beat));await expect(run).toHaveAttribute("data-busy","false");};
+    for(const move of ["wait","north","south"] as const)await take(move);
+    const bridge="That wave moved the bridge to the left lane. Cross the channel there.";
+    await expect(feedback).toHaveText(bridge);await take("wait");await expect(feedback).toHaveText(bridge);
+    await page.getByRole("button",{name:"Dismiss cue",exact:true}).click();await take("wait");
+    await expect(feedback).not.toHaveText(bridge);
+    // Start the actual authored trace afresh, so pickup and splash occur in the running component.
+    await page.evaluate(key=>localStorage.removeItem(key),bookKey);await page.reload();
+    await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await sailStory(page);
+    await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true");beat=0;
+    for(const move of zeroLens.slice(0,7))await take(move);
+    const carried="Mochi has the Beacon Lens. Bring it to the center dock before taking more risks.";
+    await expect(feedback).toHaveText(carried);await take("wait");await expect(feedback).toHaveText(carried);
+    await take("east");
+    await expect(feedback).toContainText("Splashed.");await expect(feedback).not.toContainText("Mochi has the Beacon Lens");
+    await expect(page.getByTestId("tide-prize-status")).toHaveCount(0);
+    assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).active.moves,bookKey),[...zeroLens.slice(0,7),"wait","east"]);
+  }finally{network.assertClean();await page.close();}
+}
+
+async function freeActorTaps(page:Page,label:string) {
+  const run=page.getByTestId("tide-run"),world=page.getByTestId("tide-world");
+  await expect(run).toHaveAttribute("data-busy","false");
+  await expect(world).toHaveAttribute("data-actor",/^\{/);
+  const actor=JSON.parse((await world.getAttribute("data-actor"))!) as {x:number;y:number;width:number;height:number};
+  const before=await page.evaluate(key=>localStorage.getItem(key),bookKey),beat=await run.getAttribute("data-beat");
+  for(const[name,y]of [["body",actor.y],["head",actor.y-actor.height*.35]] as const) {
+    const target={x:actor.x,y};
+    assert.equal(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.tagName,target),"CANVAS",`${label}: Mochi’s ${name} is exposed`);
+    await page.touchscreen.tap(target.x,target.y);
+    await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+    await expect(run).toHaveAttribute("data-beat",beat!);
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),before,`${label}: tapping Mochi’s ${name} spends zero moves`);
+  }
+}
+
+async function earnedExchange(page:Page,kind:"lens"|"vane"|"moth",engine:string) {
+  const lines=kind==="lens"?["Mochi lifts the lens into place. The beacon finds the bay again.","The Tidekeeper goes still beneath the light.",...CHAPTERS.lens.after]
+    :kind==="vane"?["The vane catches the breeze.",...CHAPTERS.vane.after]
+    :["The little wings sound rather like a kettle beginning to sing. Bram makes room beside the hearth.",...CHAPTERS.moth.after];
+  const dialog=page.getByRole("dialog").filter({has:page.getByRole("button",{name:/^Continue(?: with Mochi)?$/,exact:true})});
+  await expect(dialog).toBeVisible();
+  const persisted=await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[bookKey,"familiar.expedition.local.v2"]);
+  for(const[index,line]of lines.entries()) {
+    await expect(dialog).toContainText(line);
+    await expect(dialog.getByRole("heading")).toBeFocused();
+    await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-story-beat",String(index));
+    await storyComposition(page);
+    if(kind==="lens"&&index===1)await expect.poll(()=>page.getByTestId("expedition-world").evaluate(node=>Boolean(JSON.parse(node.getAttribute("data-harbor-anchors")!).story.keeper))).toBe(true);
+    await page.screenshot({path:join(cacheDir,`${engine}-${kind}-exchange-${index}-390x844.png`)});
+    await dialog.getByRole("button",{name:index===lines.length-1?"Continue with Mochi":"Continue",exact:true}).click();
+  }
+  assert.deepEqual(await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[bookKey,"familiar.expedition.local.v2"]),persisted,"reading earned exchanges spends no moves or extra saves");
+}
+
+async function milestoneFocus(page:Page) {
+  const opener=page.getByRole("button",{name:"Open the tide log",exact:true}).and(page.locator(":visible"));
+  await opener.focus();await page.keyboard.press("Enter");
+  const log=page.getByRole("dialog",{name:"Bram’s tide log",exact:true});
+  const summaries=log.locator(".tide-memories summary"),close=log.getByRole("button",{name:"Close panel",exact:true});
+  await expect(summaries).toHaveCount(2);
+  await expect(log).not.toContainText("Chart of Mochi’s route");
+  await summaries.first().focus();await page.keyboard.press("Enter");
+  await expect(summaries.first().locator("..")).toHaveAttribute("open","");
+  await page.keyboard.press("Space");await expect(summaries.first().locator("..")).not.toHaveAttribute("open","");
+  await summaries.last().focus();await page.keyboard.press("Tab");await expect(close).toBeFocused();
+  await page.keyboard.press("Shift+Tab");await expect(summaries.last()).toBeFocused();
+  await page.keyboard.press("Escape");await expect(opener).toBeFocused();
+  const preferences=await page.evaluate(key=>localStorage.getItem(key),GUIDANCE_KEY);
+  const progress=await page.evaluate(key=>localStorage.getItem(key),bookKey);
+  await page.getByRole("button",{name:"Game menu",exact:true}).click();
+  await page.getByRole("button",{name:"Read introduction",exact:true}).click();
+  const replay=page.getByRole("dialog",{name:"How it began",exact:true});
+  await expect(replay).toContainText("The storm had taken the beacon’s lens. Mochi was ready to help.");
+  await expect(replay.getByRole("button",{name:"Help Mochi",exact:true})).toHaveCount(0);
+  await expect(replay).not.toContainText("Bring the Beacon Lens home from the left shell.");
+  await replay.getByRole("button",{name:"Back to Mochi",exact:true}).click();
+  assert.equal(await page.evaluate(key=>localStorage.getItem(key),GUIDANCE_KEY),preferences,"manual replay does not change guidance preferences");
+  assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),progress,"manual replay preserves the original trace");
+}
+
+async function skipIntroduction(browser:import("@playwright/test").Browser,origin:URL) {
+  const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:"reduce"});
+  const network=await prepareBrowser(page,origin,BROWSER_DAY,{guidance:false});
+  try {
+    await page.goto(new URL("/outing/?play",origin).href);
+    const introduction=page.getByRole("dialog",{name:"Keep Wren’s Light",exact:true});await expect(introduction).toBeVisible();
+    const untouched=await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[bookKey,"familiar.expedition.local.v2"]);
+    await introduction.getByRole("button",{name:"Skip introduction",exact:true}).click();
+    assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),GUIDANCE_KEY),{version:1,intro:"skip",buttons:false});
+    assert.deepEqual(await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[bookKey,"familiar.expedition.local.v2"]),untouched,"Skip changes guidance alone");
+    await page.reload();await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
+    await expect(introduction).toHaveCount(0);
+    await page.getByRole("button",{name:"Game menu",exact:true}).click();
+    await page.getByRole("button",{name:"Guidance: off",exact:true}).click();
+    assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),GUIDANCE_KEY),{version:1,intro:"help",buttons:false});
+    await page.getByRole("button",{name:"Guidance: on",exact:true}).click();
+    assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),GUIDANCE_KEY),{version:1,intro:"skip",buttons:false});
+    assert.deepEqual(await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[bookKey,"familiar.expedition.local.v2"]),untouched,"changing guidance spends no moves");
+  }finally{network.assertClean();await page.close();}
+}
+
+async function preferenceWriteFailure(browser:import("@playwright/test").Browser,origin:URL) {
+  const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"});
+  const network=await prepareBrowser(page,origin,BROWSER_DAY,{guidance:false}),errors:string[]=[];
+  page.on("pageerror",error=>errors.push(error.message));
+  await page.addInitScript(key=>{
+    const write=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(name,value){if(name===key)throw new DOMException("Guidance storage is blocked","QuotaExceededError");return write.call(this,name,value);};
+  },GUIDANCE_KEY);
+  try {
+    await page.goto(new URL("/outing/?play",origin).href);
+    const intro=page.getByRole("dialog",{name:"Keep Wren’s Light",exact:true});await expect(intro).toBeVisible();
+    await intro.getByRole("button",{name:"Use buttons",exact:true}).click();
+    await expect(intro).toContainText("Button controls will be open when you sail.");
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),GUIDANCE_KEY),null,"failed preference writes preserve the original absence");
+    await intro.getByRole("button",{name:"Help Mochi",exact:true}).click();
+    await expect(page.getByRole("heading",{name:"Chapter 1: First light",exact:true})).toBeVisible();
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),null,"Help still opens preparation without departing");
+    await expect(page.locator(".exp-save-problem")).toHaveCount(0);
+    await page.getByRole("button",{name:"Sail with Mochi",exact:true}).click();
+    const run=page.getByTestId("tide-run");await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready","true");
+    await expect(run).toHaveAttribute("data-buttons-open","true");
+    await expect(page.getByTestId("tide-feedback")).toHaveText("Swipe on the board, or tap a glowing neighboring stone. Mochi moves one step at a time.");
+    const trace=await page.evaluate(key=>localStorage.getItem(key),bookKey);
+    await buttonControls(page,false);await expect(run).toHaveAttribute("data-buttons-open","false");
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),trace,"a failed preference write while closing controls never changes the outing");
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),GUIDANCE_KEY),null);
+    await guide(page,"wait");await expect(run).toHaveAttribute("data-beat","1");await expect(run).toHaveAttribute("data-busy","false");
+    await expect(page.getByTestId("tide-feedback")).toHaveText("Every step or wait advances the water by one move. Reading and menus do not.");
+    assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).active.moves,bookKey),["wait"],"play accepts a real saved decision despite blocked preference storage");
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),GUIDANCE_KEY),null);assert.deepEqual(errors,[]);
+  }finally{network.assertClean();await page.close();}
+}
+
+async function guidedJourney(browser:import("@playwright/test").Browser,engine:typeof chromium,origin:URL,input:"buttons"|"touch") {
+  const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"});
+  const network=await prepareBrowser(page,origin,BROWSER_DAY,{guidance:false});
+  try {
+    await page.goto(new URL("/outing/?play",origin).href);
+    const intro=page.getByRole("dialog",{name:"Keep Wren’s Light",exact:true});
+    await expect(intro.getByRole("heading")).toBeFocused();
+    await storyComposition(page);
+    await expect(intro).toContainText("You guide Mochi as a volunteer harbor helper.");
+    await readable(intro.locator(".exp-story-objective"));
+    if(input==="buttons") {
+      await intro.getByRole("button",{name:"Use buttons",exact:true}).click();
+      await expect(intro).toContainText("Button controls will be open when you sail.");
+      await readable(intro.locator(".exp-story-objective"));
+      assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!),GUIDANCE_KEY),{version:1,intro:null,buttons:true});
+      await page.goto(new URL("/outing/",origin).href);
+      await expect(page.locator('[data-el="begin"]')).toHaveText("Begin");
+      await page.locator('[data-el="begin"]').click();await page.locator('[data-plank="new"]').click();
+      await expect(intro).toBeVisible();
+    }
+    await page.screenshot({path:join(cacheDir,`${engine.name()}-${input}-prologue-390x844.png`)});
+    await intro.getByRole("button",{name:"Help Mochi",exact:true}).click();
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),null,"Help opens preparation without departing");
+    await page.getByRole("button",{name:"Sail with Mochi",exact:true}).click();
+    const run=page.getByTestId("tide-run"),world=page.getByTestId("tide-world");
+    await expect(world).toHaveAttribute("data-ready","true");
+    await exposedTideTargets(page,startTide(storyStart("lens")));
+    await expect(page.getByTestId("tide-feedback")).toHaveText("Swipe on the board, or tap a glowing neighboring stone. Mochi moves one step at a time.");
+    const original=await page.evaluate(key=>localStorage.getItem(key),bookKey);
+    const tileAt=async(x:number,y:number)=>{
+      const tiles=JSON.parse((await world.getAttribute("data-tiles"))!) as {position:{x:number;y:number};x:number;y:number}[];
+      const tile=tiles.find(tile=>tile.position.x===x&&tile.position.y===y);assert(tile);return tile;
+    };
+    await freeActorTaps(page,`${engine.name()} ${input} initial`);
+    if(input==="touch") {
+      const distant=await tileAt(2,4);await page.touchscreen.tap(distant.x,distant.y);
+      await expect(page.getByTestId("tide-feedback")).toHaveText("Choose a glowing neighboring stone. Mochi moves one step at a time.");
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),original,"distant feedback spends zero moves");
+    }
+    await page.evaluate(key=>{
+      const write=Storage.prototype.setItem;
+      Storage.prototype.setItem=function(name,value){if(name===key){Storage.prototype.setItem=write;throw new DOMException("Blocked fixture save","QuotaExceededError");}return write.call(this,name,value);};
+    },bookKey);
+    await guide(page,"wait");
+    await expect(page.getByTestId("tide-feedback")).toHaveText("This move could not be saved. Try it again when this browser can save.");
+    await expect(run).toHaveAttribute("data-beat","0");
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),original,"rejected saves do not observe a lesson or spend a move");
+    const cdp=engine===chromium&&input==="touch"?await page.context().newCDPSession(page):null;
+    for(const[index,move]of zeroLens.entries()) {
+      await expect(run).toHaveAttribute("data-busy","false");
+      if(input==="buttons")await page.locator(`[data-move="${move}"]`).click();
+      else if(cdp) {
+        const from=index===0?JSON.parse((await world.getAttribute("data-actor"))!) as {x:number;y:number}:await tileAt(1,2),dx=move==="west"?-60:move==="east"?60:0,dy=move==="north"?-60:move==="south"?60:0;
+        await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[{id:1,x:from.x,y:from.y}]});
+        await cdp.send("Input.dispatchTouchEvent",{type:"touchMove",touchPoints:[{id:1,x:from.x+dx,y:from.y+dy}]});
+        await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
+      }else {
+        const after=applyMove(replayTide(storyStart("lens"),zeroLens.slice(0,index))!,move)!.after;
+        const target=await tileAt(after.position.x,after.position.y);await page.touchscreen.tap(target.x,target.y);
+      }
+      await expect(run).toHaveAttribute("data-beat",String(index+1));
+      await expect(run).toHaveAttribute("data-busy","false");
+      if(index===0)await expect(page.getByTestId("tide-feedback")).toHaveText("Every step or wait advances the water by one move. Reading and menus do not.");
+      if(index===1)await expect(page.getByTestId("tide-feedback")).toHaveText("The numbers show moves until the next wave. Mochi moves first, then the wave lands.");
+      assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).active.moves,bookKey),zeroLens.slice(0,index+1));
+      const settled=replayTide(storyStart("lens"),zeroLens.slice(0,index+1))!;
+      if(settled.pack.includes("lens"))await exposedTideTargets(page,settled);
+    }
+    const decision=page.getByTestId("tide-lens-decision");await expect(decision).toBeVisible();
+    const banked=await page.evaluate(key=>localStorage.getItem(key),bookKey);
+    await run.focus();await page.keyboard.press("Space");
+    assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),banked,"lens decision pauses commands");
+    await decision.getByRole("button",{name:"Keep gathering",exact:true}).click();
+    await expect(run).toBeFocused();assert.equal(await page.evaluate(key=>localStorage.getItem(key),bookKey),banked);
+    await exposedTideTargets(page,zeroLensState);
+    await buttonControls(page,true);await exposedTideTargets(page,zeroLensState);
+    await freeActorTaps(page,`${engine.name()} ${input} lens banked with buttons open`);
+    await page.getByTestId("tide-finish-return").click();
+    await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
+    assert.equal(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).active,bookKey),null);
+    const home=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!).home);
+    assert.deepEqual(home.banked,["lens"]);assert.equal(home.lit,false);
+    return zeroLens;
+  }finally{network.assertClean();await page.close();}
+}
 try {
   await server.listen();
   const origin = new URL(server.resolvedUrls!.local[0]!);
   for(const engine of [chromium,webkit]) {
   const browser = await engine.launch();
   try {
+    await destinationEdgeTaps(browser,origin);
+    await persistentTeaching(browser,origin);
+    await preferenceWriteFailure(browser,origin);
+    await skipIntroduction(browser,origin);
+    assert.deepEqual(await guidedJourney(browser,engine,origin,"touch"),await guidedJourney(browser,engine,origin,"buttons"),"guided gestures and native buttons accept the same canonical decisions");
     const probe=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,reducedMotion:"reduce"});
     const probeNetwork=await prepareBrowser(probe,origin,BROWSER_DAY);
     await probe.goto(new URL("/outing/?play",origin).href);await expect(probe.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
@@ -139,6 +446,9 @@ try {
     await probe.mouse.up();await probe.keyboard.press("Escape");await expect(probeRun).toBeFocused();await worldAction(probe,"wait",true);
     await expect(probeRun).toHaveAttribute("data-beat","1");
     assert.deepEqual(await probe.evaluate(key=>JSON.parse(localStorage.getItem(key)!).active.moves,bookKey),["wait"],"a release while the guide is open cannot block the next native touch");
+    await buttonControls(probe);await probe.locator('[data-move="wait"]').click();
+    await expect(probeRun).toHaveAttribute("data-beat","2");await buttonControls(probe,false);
+    assert.deepEqual(await probe.evaluate(key=>JSON.parse(localStorage.getItem(key)!).active.moves,bookKey),["wait","wait"],"labelled world Wait and native Wait each spend exactly one move");
     for(const failFiling of [false,true]){
       await probe.evaluate(()=>localStorage.clear());await probe.reload();await expect(probe.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await sailStory(probe);
       await expect(probe.getByTestId("tide-world")).toHaveAttribute("data-ready","true");
@@ -158,7 +468,7 @@ try {
         await readable(probe.getByTestId("tide-prize-status"));
         await readable(probe.getByTestId("tide-finish-return"));
         await guidanceOverflow(probe);
-        await buttonControls(probe);await readable(probe.locator(".exp-button-controls-body"));await buttonControls(probe,false);
+        await buttonControls(probe);await readable(probe.locator(".exp-button-controls-body"));await exposedTideTargets(probe,zeroLensState);await buttonControls(probe,false);
         await probe.screenshot({path:join(cacheDir,`${engine.name()}-lens-safe-zero-score-${size.width}x${size.height}.png`)});
       }
       await probe.setViewportSize({width:390,height:844});
@@ -310,6 +620,7 @@ try {
         await expect(page.getByTestId("tide-finish")).toBeEnabled();
       }
       await page.getByTestId("tide-finish").click();
+      if(start.story==="moth")await earnedExchange(page,"moth",engine.name());
       await harbor();
       return state;
     }
@@ -340,7 +651,7 @@ try {
       assert.equal(geometry.count,15);assert.deepEqual(geometry.hidden,[],`${engine.name()} ${size.width}x${size.height}: all world targets remain exposed`);
       assert.deepEqual(geometry.scroll,[0,0,0,0],"the gesture playfield never scrolls the page");
       await guidanceOverflow(page);
-      await buttonControls(page);await readable(page.locator(".exp-button-controls-body"));await buttonControls(page,false);
+      await buttonControls(page);await readable(page.locator(".exp-button-controls-body"));await exposedTideTargets(page,startTide(storyStart("lens")));await buttonControls(page,false);
       await page.screenshot({path:join(cacheDir,`${engine.name()}-hints-${size.width}x${size.height}.png`)});
     }
     await page.setViewportSize({width:390,height:844});
@@ -374,6 +685,8 @@ try {
     assert.deepEqual((await home()).banked, ["lens"]);
     await page.locator('[data-action="home-next"]').click();
     await page.getByRole("button", { name: "Fit the Beacon Lens" }).click();
+    await earnedExchange(page,"lens",engine.name());
+    await milestoneFocus(page);
 
     await expect(page.locator(".exp-departure-heading p")).toHaveText("The beacon is lit. Bram needs the Signal Vane to read the wind. Bring it home from the right shell.");
     await expect(page.getByRole("button",{name:"Today’s tide · optional",exact:true})).toBeVisible();
@@ -411,6 +724,7 @@ try {
     await sail(storyStart("vane"), 3);
     await page.getByRole("button",{name:"Fit the Signal Vane",exact:true}).click();
     await page.getByRole("button", { name: "Fit the Signal Vane" }).click();
+    await earnedExchange(page,"vane",engine.name());
 
     await sailStory(page);
     await sail(storyStart("moth"));

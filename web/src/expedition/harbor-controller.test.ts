@@ -45,6 +45,45 @@ test("restore selects no world and preserves existing Mochi, historical saves an
  expect(f.data.get("familiar.first-light.beacon.v1")).toBe("unchanged-v1-save");expect(f.provisions).toBe(0);expect(f.sent).toEqual([]);
  f.supported=false;await expect(f.controller.selectSaved()).rejects.toThrow("private preview");expect(f.controller.state.mode).toBe("preview");expect(f.sent).toEqual([]);
 });
+test("open returns initial restoration completion without blocking local play while it waits",async()=>{
+ const f=fixture();let restore!:(value:PlayerBinding)=>void,finishRead!:()=>void,entered!:()=>void;
+ const reading=new Promise<void>(resolve=>entered=resolve);
+ f.adapter.restoreSession=()=>new Promise(resolve=>restore=resolve);
+ f.reads=()=>{entered();return new Promise<void>(resolve=>finishRead=resolve);};
+ let complete=false;const opening=f.controller.open();expect(opening).toBeInstanceOf(Promise);
+ void opening.then(()=>{complete=true;});
+ const context=f.controller.runContext(preview);expect(context.authority).toBe("local-preview");f.controller.setActiveRun(context);
+ expect(complete).toBe(false);restore(binding);await reading;
+ expect(complete).toBe(false);expect(f.controller.state.snapshot).toBeNull();finishRead();await opening;
+ expect(complete).toBe(true);expect(f.controller.state.snapshot?.binding).toEqual(binding);
+ expect(f.controller.state.mode).toBe("preview");expect(f.sent).toEqual([]);expect(f.provisions).toBe(0);
+});
+test("StrictMode-style cleanup and reopening ignore the old restoration generation",async()=>{
+ const f=fixture(),resolves:((value:PlayerBinding)=>void)[]=[];
+ f.adapter.restoreSession=()=>new Promise(resolve=>resolves.push(resolve));
+ const first=f.controller.open();f.controller.close();const current=f.controller.open();
+ resolves[0]!(binding);await first;
+ expect(f.controller.state.binding).toBeNull();expect(f.controller.state.snapshot).toBeNull();
+ resolves[1]!(binding);await current;
+ expect(f.controller.state.binding).toEqual(binding);expect(f.sent).toEqual([]);
+});
+test("a replaced controller cannot settle or restore its replacement",async()=>{
+ const old=fixture(),replacement=fixture();let finishOld!:(value:PlayerBinding)=>void,finishReplacement!:(value:PlayerBinding)=>void;
+ old.adapter.restoreSession=()=>new Promise(resolve=>finishOld=resolve);
+ replacement.adapter.restoreSession=()=>new Promise(resolve=>finishReplacement=resolve);
+ const first=old.controller.open();old.controller.close();let replacementComplete=false;
+ const current=replacement.controller.open();void current.then(()=>{replacementComplete=true;});
+ finishOld(binding);await first;
+ expect(replacementComplete).toBe(false);expect(replacement.controller.state.binding).toBeNull();expect(old.controller.state.binding).toBeNull();
+ finishReplacement(binding);await current;expect(replacementComplete).toBe(true);expect(replacement.controller.state.binding).toEqual(binding);
+});
+test("unconfigured and failed initial restoration settle without changing authority",async()=>{
+ const local=new HarborController(null,{getItem:()=>null,setItem:()=>{}});
+ expect(local.open()).toBeInstanceOf(Promise);await local.open();expect(local.state.mode).toBe("preview");
+ const f=fixture();f.adapter.restoreSession=async()=>{throw Error("offline");};
+ await f.controller.open();expect(f.controller.state.binding).toBeNull();expect(f.controller.state.mode).toBe("preview");
+ expect(f.controller.state.message).toBe("Sign in with the same identity to check the saved harbor.");expect(f.sent).toEqual([]);
+});
 test("waiting for sign-in does not block a local outing or merge it into a remembered saved harbor",async()=>{
  const f=fixture();let release!:(binding:PlayerBinding)=>void;
  f.adapter.authenticate=()=>new Promise(resolve=>release=resolve);

@@ -6,6 +6,7 @@ import { tideSummary, type TideEntry } from "./log";
 import { logPages } from "./pages";
 import type { DayResult } from "./run-day";
 import TideLog from "./TideLog";
+import { CHAPTERS, harborMemories } from "../run/story";
 
 const day = 20771, card = cardForDay(day);
 const result: DayResult = {
@@ -87,4 +88,44 @@ test("mixed logs retain the legacy stamp label while crediting a run's brass sea
   expect(html).toContain('aria-label="Surf home stamp, 2 of 3 asks kept. Open its page."');
   expect(html).toContain("1 of 14 collected, 1 with the brass seal");
   expect(html).toContain("Page 2 of 2");
+});
+
+test("harbor memories follow earned home state without creating route pages", () => {
+  expect(harborMemories({ banked: [], lit: false, signaled: false })).toEqual([]);
+  const filed = harborMemories({ banked: ["lens", "vane"], lit: false, signaled: false });
+  expect(filed.map(memory => memory.id)).toEqual(["lens", "vane"]);
+  expect(filed.map(memory => memory.lines)).toEqual([
+    ["Mochi brought the Beacon Lens safely to the harbor."], ["Mochi recovered the Signal Vane."],
+  ]);
+  const memories = harborMemories({ banked: ["lens", "vane", "moth"], lit: true, signaled: true });
+  expect(memories.map(memory => memory.title)).toEqual(["The lens comes home", "Wren’s light", "The vane comes home", "The light’s keeper", "Two familiars and one light"]);
+  expect(memories[1]!.lines).toEqual(["The beacon shines again. The Tidekeeper stopped to watch."]);
+  expect(memories[3]!.lines).toEqual(CHAPTERS.vane.after);
+  expect(memories[4]!.lines).toEqual(["The Tidekeeper let Mochi bring Wren’s wind-moth home. Bram made room beside the hearth.", ...CHAPTERS.moth.after]);
+  expect(logPages([], [], [])).toEqual([]);
+  expect(JSON.stringify(memories)).not.toMatch(/\b(day|date|commands|decisions|accepted|stamps)\b/);
+});
+
+test("a milestone-only log has native expandable memories and no invented chart or daily result", () => {
+  const home = { banked: ["lens"], lit: true, signaled: false };
+  const renderMemory = () => renderToStaticMarkup(<TideLog pages={[]} memories={harborMemories(home)} reduced
+    sailBlockedReason={null} summary={tideSummary([])} onSail={() => {}}/>);
+  const html = renderMemory();
+  expect(html).toContain('aria-label="Harbor memories"');
+  expect(html).toContain("<details><summary>The lens comes home</summary>");
+  expect(html).toContain("<details><summary>Wren’s light</summary>");
+  expect(html).toContain("Harbor memories appear as Mochi brings finds home. Daily pages appear after a finished daily outing.");
+  expect(html).not.toContain("The log is empty");
+  expect(html).not.toContain("Chart of Mochi’s route");
+  expect(html).not.toContain("Page 1 of");
+  expect(html).not.toContain("data-kept");
+  expect(renderMemory()).toBe(html);
+});
+
+test("an empty saved-harbor log preserves its actual return-page promise", () => {
+  const html=renderToStaticMarkup(<TideLog device={false} pages={[]} reduced sailBlockedReason={null}
+    summary={tideSummary([])} onSail={() => {}}/>);
+  expect(html).toContain("The log is empty. Bring the lens home and Bram starts the first page.");
+  expect(html).not.toContain("Harbor memories appear");
+  expect(html).not.toContain('aria-label="Harbor memories"');
 });

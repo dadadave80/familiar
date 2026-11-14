@@ -1,4 +1,5 @@
 import { guide, worldAction, buttonControls, departCourt } from "./browser-controls";
+import { prepareBrowser } from "./browser-fixtures";
 import assert from "node:assert/strict";
 import {mkdtemp,mkdir,writeFile} from "node:fs/promises";
 import {join,resolve} from "node:path";
@@ -17,13 +18,14 @@ const server=await createServer({root:resolve(import.meta.dir,"../web"),cacheDir
 await server.listen();const origin=server.resolvedUrls!.local[0]!.replace(/\/$/,"");
 const browser=await chromium.launch({headless:true}),key="familiar.expedition.local.v2";
 const results:Record<string,unknown>[]=[];
+const networks:Awaited<ReturnType<typeof prepareBrowser>>[]=[];
 const tideFixtureDay=20771,tideFixtureCard=cardForDay(tideFixtureDay),tideFixtureRoute=solve(tideFixtureCard.tool,tideFixtureCard.asks,tideFixtureCard.best);
 assert(tideFixtureRoute?.at(-1)==="return","the tide fixture ends with a real dock return");
 const tideFixtureRun=replayRun(tideFixtureCard.tool,tideFixtureRoute.slice(0,-1));
 assert(tideFixtureRun&&tideFixtureRun.state.outcome==="active"&&tideFixtureRun.state.resolve<3,"the active tide fixture has taken its one splash");
 async function state(page:Page){return page.evaluate(key=>{const raw=localStorage.getItem(key);return raw?JSON.parse(raw).active?.state??null:null;},key);}
 async function touch(cdp:CDPSession,type:"touchStart"|"touchMove"|"touchEnd"|"touchCancel",point?:{x:number;y:number}){await cdp.send("Input.dispatchTouchEvent",{type,touchPoints:point?[{id:1,x:point.x,y:point.y,radiusX:2,radiusY:2,force:1}]:[]});}
-async function open(tide=false,freshTide=false){const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"}),page=await context.newPage();await page.route("**/*",route=>route.request().url().startsWith(origin)&&!new URL(route.request().url()).pathname.startsWith("/api/")?route.continue():route.abort());if(tide)await page.addInitScript(({key,day,state})=>{
+async function open(tide=false,freshTide=false){const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,reducedMotion:"reduce"}),page=await context.newPage();networks.push(await prepareBrowser(page,origin));if(tide)await page.addInitScript(({key,day,state})=>{
  localStorage.setItem(key,JSON.stringify({version:2,home:{banked:["lens"],lit:true,signaled:false,lantern:null},last:null,active:{context:{authority:"local-preview",banked:[],lit:true,signaled:false},state,season:true}}));
  localStorage.setItem("familiar.tide.pending.v1:preview",JSON.stringify({day,late:false}));
  },{key,day:tideFixtureDay,state:freshTide?replayRun(tideFixtureCard.tool,[])!.state:tideFixtureRun!.state});await page.goto(origin+"/outing/?play");await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-lease","held");return {context,page,cdp:await context.newCDPSession(page)};}
@@ -206,4 +208,4 @@ try{
   assert.equal((results[2]!.after as {turn:number}).turn,1,"A qualifying swipe is one movement decision, without a destination tap");
   assert.deepEqual((results[2]!.after as {commands:string[]}).commands,["step:west"]);
   assert.equal((results[3]!.after as {turn:number}).turn,0,"Press and release must target the same platform even below the drag threshold");
-}finally{await browser.close();await server.close();}
+}finally{try{for(const network of networks)network.assertClean();}finally{await browser.close();await server.close();}}

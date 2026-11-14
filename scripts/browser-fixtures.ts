@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import type { Page } from "@playwright/test";
 import type { ShelfView, TodayView } from "../web/src/season/model";
+import { GUIDANCE_KEY } from "../web/src/run/guidance";
 
 export const BROWSER_DAY=20771;
 const RPC="https://test.rpc.fastnear.com/",ROOT="familiar-game.testnet";
-const accounts=new Set([`alice.${ROOT}`,`bob.${ROOT}`,`harness.${ROOT}`]);
+const accounts=new Set([`alice.${ROOT}`,`bob.${ROOT}`,`harness.${ROOT}`,`helper-a.${ROOT}`]);
 const pets=new Set([`mochi.${ROOT}`,`mochi-harness.${ROOT}`]);
 
 /** Public reads only. A mismatched envelope is an unexpected request, never a live fallback. */
@@ -44,10 +45,18 @@ function shiftBrowserDate(time:number) {
   });
 }
 
+/** Gameplay fixtures choose guidance explicitly; pristine introduction tests omit this setup. */
+export async function seedGameplayGuidance(page:Page) {
+  await page.addInitScript(key=>{
+    if(localStorage.getItem(key)===null)localStorage.setItem(key,JSON.stringify({version:1,intro:"skip",buttons:false}));
+  },GUIDANCE_KEY);
+}
+
 /** Date drives the UTC day; native frame/timer clocks must keep driving Phaser. */
-export async function prepareBrowser(page:Page,origin:string|URL,day=BROWSER_DAY,{clock=true}: {clock?:boolean|"manual"}={}) {
+export async function prepareBrowser(page:Page,origin:string|URL,day=BROWSER_DAY,{clock=true,guidance=true}: {clock?:boolean|"manual";guidance?:boolean}={}) {
   const resourceUrl=new URL(origin),local=resourceUrl.origin,unexpected:string[]=[],rpc:string[]=[];
   assert(["localhost","127.0.0.1","[::1]"].includes(resourceUrl.hostname)||local==="https://familiar-two.vercel.app","Browser fixtures require a local server or the existing hosted QA origin");
+  if(guidance)await seedGameplayGuidance(page);
   if(clock==="manual")await page.clock.install({time:new Date(day*86_400_000+43_200_000)});
   else if(clock)await page.addInitScript(shiftBrowserDate,day*86_400_000+43_200_000);
   await page.route("**/*",async route=>{

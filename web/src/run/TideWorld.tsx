@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { countdown, type Move, type Position, type TideEvent, type TideTransition } from "./engine";
 import { itemName, laneNames } from "./story";
-import type { TideScene, TideSnapshot, TideTile, TideActionAnchor } from "./scene";
+import type { TideScene, TideSnapshot, TideTile, TideActionAnchor, TideActorBounds } from "./scene";
 
 export interface TideWorldProps {
   snapshot: TideSnapshot;
@@ -20,6 +20,7 @@ export interface TideWorldProps {
 export default function TideWorld(props: TideWorldProps) {
   const mount = useRef<HTMLDivElement>(null), scene = useRef<TideScene | null>(null), current = useRef(props);
   const [ready, setReady] = useState(false),[tiles,setTiles]=useState<readonly TideTile[]>([]),[actions,setActions]=useState<readonly TideActionAnchor[]>([]);
+  const [actor,setActor]=useState<TideActorBounds|null>(null);
   current.current = props;
   useEffect(() => {
     let alive = true, game: import("phaser").Game | undefined;
@@ -29,7 +30,7 @@ export default function TideWorld(props: TideWorldProps) {
       const next = new TideScene(current.current.snapshot, {
         target: position => current.current.onTarget(position),
         move:move=>current.current.onMove(move),inspect:()=>current.current.onInspect(),
-        geometry:(tiles,actions)=>{if(alive){setTiles(tiles);setActions(actions);}},
+        geometry:(tiles,actions,actor)=>{if(alive){setTiles(tiles);setActions(actions);setActor(actor);}},
         ready: () => { if (!alive) return; setReady(true); current.current.onReady(); next.setGated(current.current.paused); },
         fault: message => { if (alive) current.current.onFault(message); },
         beat: event => { if (alive) current.current.onBeat(event); },
@@ -50,12 +51,14 @@ export default function TideWorld(props: TideWorldProps) {
     const refresh=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>scene.current?.refreshLayout());};
     const observer=new ResizeObserver(refresh);
     if(mount.current)observer.observe(mount.current);
-    mount.current?.closest(".exp-game")?.querySelectorAll(".exp-command-tray,.exp-hud,.exp-feedback").forEach(element=>observer.observe(element));
+    const root=mount.current?.closest(".exp-game");
+    root?.querySelectorAll(".exp-command-tray,.exp-hud,.exp-feedback,.exp-button-controls,.exp-button-controls-body").forEach(element=>observer.observe(element));
+    root?.addEventListener("toggle",refresh,true);
     refresh();
-    return()=>{cancelAnimationFrame(frame);observer.disconnect();};
+    return()=>{cancelAnimationFrame(frame);observer.disconnect();root?.removeEventListener("toggle",refresh,true);};
   },[ready,props.paused]);
   const { tide } = props.snapshot;
   const coming = tide.outcome === "active" ? ` The next wave takes ${laneNames(tide.next.lanes)} in ${countdown(tide)}${tide.next.drops.length ? ` and leaves ${tide.next.drops.map(drop => itemName(drop.kind)).join(" and ")}` : ""}.` : "";
-  return <div ref={mount} className="exp-world" data-testid="tide-world" data-ready={ready} data-tiles={JSON.stringify(tiles)} data-actions={JSON.stringify(actions)} data-position={`${tide.position.x},${tide.position.y}`} data-beat={tide.beat}
+  return <div ref={mount} className="exp-world" data-testid="tide-world" data-ready={ready} data-tiles={JSON.stringify(tiles)} data-actions={JSON.stringify(actions)} data-actor={actor ? JSON.stringify(actor) : undefined} data-position={`${tide.position.x},${tide.position.y}`} data-beat={tide.beat}
     role="img" aria-label={`The tide court: three lanes from the dock to the far shore.${coming} Swipe or tap a glowing stone, or use WASD and arrows. Hints and optional Button controls follow.`} />;
 }

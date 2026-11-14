@@ -47,10 +47,10 @@ export default function World(props:ExpeditionWorldProps){
     const refresh=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>scene.current?.refreshLayout());};
     const observer=new ResizeObserver(refresh);
     if(mount.current)observer.observe(mount.current);
-    mount.current?.closest(".exp-game")?.querySelectorAll(".exp-command-tray,.exp-hud,.exp-feedback").forEach(element=>observer.observe(element));
+    mount.current?.closest(".exp-game")?.querySelectorAll(".exp-command-tray,.exp-hud,.exp-feedback,.exp-story-panel").forEach(element=>observer.observe(element));
     refresh();
     return()=>{cancelAnimationFrame(frame);observer.disconnect();};
-  },[ready,!!props.snapshot.court,props.paused]);
+  },[ready,!!props.snapshot.court,props.paused,props.snapshot.storyStage?.kind,props.snapshot.storyStage?.keeper]);
   const {passage,court,home}=props.snapshot;
   let description=court?"Spatial tide court. Swipe or tap the world, or use WASD and arrows. Hints and optional Button controls follow.":"Mochi and Bram at Pocket Harbor. Choose a place using the harbor controls.";
   if(passage&&court){
@@ -64,5 +64,6 @@ export default function World(props:ExpeditionWorldProps){
     if(home.services.includes("reed"))description+=" The Reed skiff is moored on the harbor side.";
   }
   if(!court&&home.heardBell)description+=" Bram has rigged the shore bell pull for future crossings.";
+  if(props.snapshot.storyStage?.keeper)description+=" The Tidekeeper stands still beneath the beacon’s light.";
   return <div ref={mount} className="exp-world" data-testid="expedition-world" data-ready={ready} data-tiles={JSON.stringify(tiles)} data-actions={JSON.stringify(actions)} data-position={court?`${court.position.x},${court.position.y}`:"home"} data-turn={court?.turn??0} data-passage={passage?.job} data-service-stage={passage?.stage} data-home-services={home.services?.join(" ")} data-preview-exit={props.snapshot.previewWave?.exit} data-lantern-motif={!court&&home.lantern?home.motif:undefined} data-lantern-finish={!court&&home.lantern?home.polished?"harbor_polish":"original":undefined} role="img" aria-label={description}/>;
 }

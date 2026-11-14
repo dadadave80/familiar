@@ -30,3 +30,10 @@ test("outing guidance shares the hint reading area while native controls remain 
   expect(html).toContain('<p>Banking keeps the outing open.</p><div id="outing-help" class="exp-input-help">');
   expect(html).toContain('</div></div><details class="exp-button-controls">');
 });
+
+test("a controlled button preference opens native controls while the default remains closed", () => {
+  const html=renderToStaticMarkup(<ControlHints id="remembered-buttons" buttonsOpen onButtonsOpenChange={()=>{}}><button>Wait</button></ControlHints>);
+  expect(html).toContain('<details class="exp-button-controls" open="">');
+  expect(html).toContain('<summary>Button controls</summary>');
+  expect(html).toContain('<button>Wait</button>');
+});

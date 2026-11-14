@@ -41,7 +41,7 @@ export class HarborController implements HarborSession {
     this.value=value;for(const listener of this.listeners)listener();
   }
   private guard(epoch:number,binding?:PlayerBinding) {check(this.live&&epoch===this.epoch&&(!binding||bindingMatches(this.value.binding,binding)),"The signed-in harbor changed. Its original request and return are preserved.");}
-  open(){this.live=true;void this.restore();}
+  open(){this.live=true;return this.restore();}
   close(){this.live=false;this.epoch++;this.prepared=null;this.update({binding:null,snapshot:null,review:null,busy:false,mode:"preview"});}
   private context(snapshot:ChainSnapshot):RunContext {
     check(this.connection&&snapshot.pets[0],"Bring Mochi home before starting a saved expedition.");

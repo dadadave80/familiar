@@ -48,6 +48,19 @@ export function chapterFor(home: HarborStory): StoryPrize | null {
 }
 export const storyStart = (prize: StoryPrize): TideStart => ({ seed: CHAPTERS[prize].seed, story: prize });
 
+export interface HarborMemory { readonly id: string; readonly title: string; readonly lines: readonly string[] }
+
+/** Earned summaries have no invented route, date, or accepted return record. */
+export function harborMemories(home: HarborStory): HarborMemory[] {
+  const memories: HarborMemory[] = [];
+  if (home.banked.includes("lens")) memories.push({ id: "lens", title: "The lens comes home", lines: ["Mochi brought the Beacon Lens safely to the harbor."] });
+  if (home.lit) memories.push({ id: "light", title: "Wren’s light", lines: ["The beacon shines again. The Tidekeeper stopped to watch."] });
+  if (home.banked.includes("vane")) memories.push({ id: "vane", title: "The vane comes home", lines: ["Mochi recovered the Signal Vane."] });
+  if (home.signaled) memories.push({ id: "keeper", title: "The light’s keeper", lines: CHAPTERS.vane.after });
+  if (home.banked.includes("moth")) memories.push({ id: "moth", title: "Two familiars and one light", lines: ["The Tidekeeper let Mochi bring Wren’s wind-moth home. Bram made room beside the hearth.", ...CHAPTERS.moth.after] });
+  return memories;
+}
+
 const LANES = ["Left", "Center", "Right"] as const;
 const NAMES: Readonly<Record<Item, string>> = { reed: "reed", glass: "sea glass", pearl: "pearl", lens: "Beacon Lens", vane: "Signal Vane", moth: "wind-moth" };
 export const itemName = (item: Item) => NAMES[item];
