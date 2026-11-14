@@ -53,5 +53,5 @@ test("shelving offers replayed hauls best first, names the outing day and works 
 
 test("a device docking removes the shelving offers for that day",()=>withReturns([entry("full",full)],()=>{
   const html=renderToStaticMarkup(<TodayHaul {...props} preview={{...props.preview,docked:deviceDay()}}/>);
-  expect(html).toContain("Bram has already shelved a haul today.");expect(html).not.toContain("Shelve ");
+  expect(html).toContain("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");expect(html).not.toContain("Shelve ");
 }));

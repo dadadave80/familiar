@@ -59,15 +59,15 @@ try{
         await expect.poll(()=>page.evaluate(()=>!!document.activeElement?.closest(".ss")),{message:"focus stays in the panel after shelving removes its button"}).toBe(true);
         await expect(page.locator(".ss-holdings")).toContainText("Sample haul of 1 glass and 2 reed bundles for the preview");
         assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.season.preview.v1")!).goods),[2,2]);
-        await expect(page.locator(".ss-haul")).toContainText("Bram has already shelved a haul today.");
+        await expect(page.locator(".ss-haul")).toContainText("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");
         await expect(shelve).toHaveCount(0);
         await page.screenshot({path:join(shots,`preview-shelved-${tag}.png`)});
         await page.getByRole("button",{name:"Start the preview again"}).click();
-        await expect(page.locator(".ss-haul")).toContainText("Bram has already shelved a haul today.");
+        await expect(page.locator(".ss-haul")).toContainText("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");
         await page.reload();
         await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
         await page.locator(".exp-place-bram").click();
-        await expect(page.locator(".ss-haul")).toContainText("Bram has already shelved a haul today.");
+        await expect(page.locator(".ss-haul")).toContainText("Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.");
         const after=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview"),tide:JSON.parse(localStorage.getItem("familiar.season.tide.v1:preview")??"[]")}));
         assert.deepEqual(after.home,before.home,"First Light home unchanged by shelving");
         assert.equal(after.returns,before.returns,"First Light return memories unchanged");

@@ -183,7 +183,7 @@ export function TodayHaul({live,saved,registered,busy,preview,scope,onOpenTide,o
   const minted=saved?today.minted_today:null;
   if(minted)return <p className="ss-docked" data-docked="true">Bram shelved {haulLine(minted.goods)} today: {scoreLine(minted)}.</p>;
   if(today.content_version!=="first_light_v2")return <p className="ss-note">Bram shelves Beacon Court hauls every other day, and today isn’t one. Keep today’s find; he can shelve it tomorrow.</p>;
-  if(!saved&&preview?.docked===deviceDay())return <p className="ss-docked" data-docked="true">Bram has already shelved a haul today.</p>;
+  if(!saved&&preview?.docked===deviceDay())return <p className="ss-docked" data-docked="true">Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.</p>;
   const returns=scope==="preview"?readTide(scope):[...readTide(scope),...readTide("preview")];
   const candidates=returns.map(r=>({r,c:claimable(today,{tool:r.tool,commands:r.commands,contentVersion:r.contentVersion})})).filter(x=>x.c);
   const value=(goods:[number,number])=>GOODS.reduce((n,g,i)=>n+goods[i]!*(live.shelf?.goods.find(s=>s.good===g)?.price_fp??0),0);
