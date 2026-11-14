@@ -81,7 +81,8 @@ export function nativeGas(method:string):bigint {
   if(["tidebound_craft","tidebound_retry_operation"].includes(method))return teraToGas(120);
   if(["tidebound_polish","tidebound_cancel_polish"].includes(method))return teraToGas(100);
   if(["tidebound_place","tidebound_reconcile"].includes(method))return teraToGas(80);
-  if(["claim_daily","buy","sell"].includes(method))return teraToGas(100);
+  // Live day 20771 burnt under 4 Tgas each; 100 Tgas prepaid would reserve about 0.1 NEAR of a player's balance.
+  if(["claim_daily","buy","sell"].includes(method))return teraToGas(30);
   if(method==="set_wish")return teraToGas(80);
   return teraToGas(50);
 }
