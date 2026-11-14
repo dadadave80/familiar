@@ -375,16 +375,17 @@ export default function ExpeditionGame({session,accountPanel,audio:titleAudio,in
     setTideAway(false);setTideRound(n=>n+1);setResting(false);buffer.current=null;setSurface(null);setNotice("");
     audio.current?.playMusic("departure");
   }
-  function finishTideRun(state:TideState,again:boolean){
-    if(!tideBook.active||state.outcome==="active")return;
+  function finishTideRun(state:TideState,again:boolean):boolean{
+    if(!tideBook.active||state.outcome==="active")return false;
     const prize=state.story,won=!!prize&&state.banked.includes(prize);
-    if(won&&!persist({...saveRef.current,home:{...saveRef.current.home,banked:[...new Set([...saveRef.current.home.banked,prize])]}}))return;
+    if(won&&!persist({...saveRef.current,home:{...saveRef.current.home,banked:[...new Set([...saveRef.current.home.banked,prize])]}})){setProblem("");return false;}
     const first=!prize&&!tideBook.days.some(day=>day.seed===state.seed);
     const closed=closeTide(tideBook,state);
-    if(!storeTideBook(again?{...closed,active:startTide(prize?storyStart(prize):{seed:state.seed})}:closed))return;
-    if(again){setTideRound(n=>n+1);return;}
+    if(!storeTideBook(again?{...closed,active:startTide(prize?storyStart(prize):{seed:state.seed})}:closed))return false;
+    if(again){setTideRound(n=>n+1);return true;}
     setReadySceneKey(-1);setSceneKey(k=>k+1);
     setNotice(prize?won?`Mochi brought the ${names[prize]} home.${prize==="moth"?` Bram: “${CHAPTERS.moth.after.join(" ")}”`:""}`:`The ${names[prize]} is back in its shell. The tide will open it again.`:first?`Banked ${state.score}. Bram guessed ${bramsGuess(state.seed)}.`:`A practice tide: banked ${state.score}. Today’s first tide is the one that counts.`);
+    return true;
   }
   const button=(input:Command,label=commandName(input))=><button key={input} className={input==="return"?"exp-secondary":undefined} data-command={input} disabled={!legal.includes(input)||!!problem} onFocus={()=>setFocused(input)} onBlur={()=>setFocused(null)} onMouseEnter={()=>setFocused(input)} onMouseLeave={()=>setFocused(null)} onClick={()=>{const state=saveRef.current.active?.state,item=/^(take:|reel:)/.test(input)?input.slice(5) as "lens"|"moth"|"vane":null,position=state&&item?findPosition(state,item):null;if(position)target(position);else command(input);}} aria-label={label}>{input==="return"&&<Icon kind="home"/>}{label}</button>;
   const interactionLegal=busy?[]:legal;

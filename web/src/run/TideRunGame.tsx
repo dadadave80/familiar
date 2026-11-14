@@ -13,8 +13,8 @@ interface Props {
   initial: TideState; reduced: boolean; sound: boolean; audio: HarborAudio | null; blocked: boolean;
   /** Persists every accepted move. False means the browser could not save it. */
   onSave: (next: TideState) => boolean;
-  /** The tide has ended. `again` asks for the same tide once more. */
-  onFinish: (state: TideState, again: boolean) => void;
+  /** False means filing failed. `again` asks for the same tide once more. */
+  onFinish: (state: TideState, again: boolean) => boolean;
   /** Back to the harbor with the tide still in progress and saved. */
   onLeave: () => void;
   onToggleSound: () => void;
@@ -62,8 +62,9 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   const current = useRef(initial), pending = useRef<TideTransition | null>(null), serial = useRef(0);
   const [ready, setReady] = useState(false), [fault, setFault] = useState(""), [sceneKey, setSceneKey] = useState(0);
   const [away, setAway] = useState(document.hidden), [guide, setGuide] = useState(false);
+  const [finishError, setFinishError] = useState(false);
   const chapter = initial.story ? CHAPTERS[initial.story] : null;
-  const [notice, setNotice] = useState(() => initial.moves.length ? "" : chapter ? `Bram: “${chapter.before}”` : `The Tidekeeper turns to the ${laneNames(initial.next.lanes).toLowerCase()} lane.`);
+  const [notice, setNotice] = useState(() => initial.outcome !== "active" || initial.moves.length ? "" : chapter ? `Bram: “${chapter.before}”` : `The Tidekeeper turns to the ${laneNames(initial.next.lanes).toLowerCase()} lane.`);
   const dialog = useRef<HTMLDialogElement>(null), guideButton = useRef<HTMLButtonElement>(null);
   const guess = useMemo(() => initial.story ? null : bramsGuess(initial.seed), [initial.seed, initial.story]);
   const busy = !!result, paused = away || blocked || guide || !!fault;
@@ -106,9 +107,10 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
     pending.current = null; setResult(null);
   }
   function target(position: Position) { const move = moveToward(current.current, position); if (move) take(move); }
+  function finish(again: boolean) { setFinishError(!onFinish(current.current, again)); }
   function leave() {
     if (blocked) return;
-    if (current.current.outcome !== "active") onFinish(current.current, false); else onLeave();
+    if (current.current.outcome !== "active") finish(false); else onLeave();
   }
   useEffect(() => {
     function keys(event: KeyboardEvent) {
@@ -157,10 +159,11 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
         {state.story ? <p>{prizeHome ? `The ${itemName(state.story)} is home. Banked ${state.score} besides.` : `The ${itemName(state.story)} is still in its shell. The same tide comes again.`}</p>
           : <p>Banked {state.score}. Bram guessed {finished?.guess}.</p>}
         {stamps.length > 0 && <ul className="tide-stamps">{stamps.map(([label, earned]) => <li key={label} data-earned={earned}>{label}</li>)}</ul>}
+        {finishError && <p role="alert">This tide could not be saved. Try it again when this browser can save.</p>}
       </div>
       <div className="tide-finish-actions">
-        <button className="exp-primary" data-testid="tide-finish" disabled={blocked} onClick={() => onFinish(current.current, false)}>Back to the harbor</button>
-        {!prizeHome && <button data-testid="tide-again" disabled={blocked} onClick={() => onFinish(current.current, true)}>{state.story ? "Try this tide again" : "Sail it again for practice"}</button>}
+        <button className="exp-primary" data-testid="tide-finish" disabled={blocked} onClick={() => finish(false)}>Back to the harbor</button>
+        {!prizeHome && <button data-testid="tide-again" disabled={blocked} onClick={() => finish(true)}>{state.story ? "Try this tide again" : "Sail it again for practice"}</button>}
       </div>
     </section> : <section className="exp-command-tray passage-tray" aria-label="Guide Mochi">
       <div className="exp-objective-row"><p className="exp-objective">{objective}</p><button ref={guideButton} className="exp-inspect-button" data-testid="tide-guide" disabled={lockControls} onClick={() => setGuide(true)}>How it works</button></div>

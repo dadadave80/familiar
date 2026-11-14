@@ -32,7 +32,7 @@ export function readBook(storage: Pick<Storage, "getItem">, key: string): TideBo
   const active = value.active === null ? null : restore(value.active);
   const days = (value.days as Trace[]).map(restore);
   if (days.some((day, i) => day.story || day.outcome === "active" || (i > 0 && day.seed <= days[i - 1]!.seed))) throw bad();
-  return { active: active && active.outcome === "active" ? active : null, days };
+  return { active, days };
 }
 
 export function writeBook(storage: Pick<Storage, "getItem" | "setItem">, key: string, book: TideBook) {

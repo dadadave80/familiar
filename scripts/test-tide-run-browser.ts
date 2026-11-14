@@ -51,12 +51,39 @@ try {
       for (const key of keys) { await expect(run).toHaveAttribute("data-busy", "false"); await page.keyboard.press(key); }
       await expect(run).toHaveAttribute("data-busy", "false");
     };
-    const home = () => page.evaluate(() => JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!).home as { banked: string[] });
+    const home = () => page.evaluate(() => (JSON.parse(localStorage.getItem("familiar.expedition.local.v2") ?? "null")?.home ?? { banked: [] }) as { banked: string[] });
+    const failNextWrite = (key: string) => page.evaluate(key => {
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (name, value) {
+        if (name === key) { Storage.prototype.setItem = setItem; throw new DOMException("Saving is blocked", "QuotaExceededError"); }
+        setItem.call(this, name, value);
+      };
+    }, key);
     async function sail(start: TideStart, from = 0) {
       const { keys, state } = route(start);
       await press(keys.slice(from));
       await expect(run).toHaveAttribute("data-outcome", state.outcome);
       await expect(run).toHaveAttribute("data-score", String(state.score));
+      if (start.story === "lens") {
+        await page.reload(); await passTitle();
+        await expect(run).toHaveAttribute("data-outcome", state.outcome);
+        await expect(page.getByTestId("tide-finish")).toBeVisible();
+        await expect(page.locator("[data-move]")).toHaveCount(0);
+        await expect(page.getByTestId("tide-feedback")).toBeEmpty();
+        for (const key of ["familiar.expedition.local.v2", bookKey]) {
+          await failNextWrite(key);
+          await page.getByTestId("tide-finish").click();
+          await expect(run.getByRole("alert")).toHaveText("This tide could not be saved. Try it again when this browser can save.");
+          await expect(page.getByTestId("tide-finish")).toBeEnabled();
+          assert.deepEqual((await home()).banked, key === bookKey ? ["lens"] : []);
+        }
+      } else if (!start.story) {
+        await failNextWrite(bookKey);
+        await page.getByTestId("tide-again").click();
+        await expect(run.getByRole("alert")).toHaveText("This tide could not be saved. Try it again when this browser can save.");
+        await expect(page.getByTestId("tide-finish")).toBeEnabled();
+        await expect(page.getByTestId("tide-again")).toBeEnabled();
+      }
       await page.getByTestId("tide-finish").click();
       await harbor();
       return state;
@@ -109,6 +136,6 @@ try {
     assert.deepEqual(book.days.map((entry: { seed: number; moves: string[] }) => [entry.seed, entry.moves.length]), [[day, daily.moves.length]]);
     await expect(title).toHaveText("The Tidekeeper has an ask.");
     assert.deepEqual(errors, []);
-    console.info("tide run: three story tides, leave, reload and resume, and today's tide passed on a device harbor");
+    console.info("tide run: three story tides, finished reload, failed-save retries, leave and resume, and today's tide passed on a device harbor");
   } finally { await browser.close(); }
 } finally { await server.close(); }

@@ -292,7 +292,8 @@ export class TideScene extends Phaser.Scene {
   }
 
   private async present(transition: TideTransition, id: number) {
-    const epoch = ++this.epoch, reduced = this.snapshot.reducedMotion;
+    const epoch = ++this.epoch;
+    let reduced = this.snapshot.reducedMotion;
     this.presentationSize = { w: this.scale.width, h: this.scale.height };
     this.playing = true;
     this.shown = reduced ? transition.after : transition.before;
@@ -300,6 +301,9 @@ export class TideScene extends Phaser.Scene {
     this.layout();
     for (const event of transition.events) {
       if (this.stopped || this.epoch !== epoch) return;
+      if (!reduced && this.snapshot.reducedMotion) {
+        reduced = true; this.shown = transition.after; this.shut = this.shellShut(this.shown); this.layout();
+      }
       this.hooks.beat(event);
       if (reduced) await this.hold(30); else await this.presentEvent(event);
     }

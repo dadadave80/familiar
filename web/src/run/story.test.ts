@@ -51,6 +51,16 @@ function memory() {
   return { data, getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); } };
 }
 
+test("a finished tide stays active until the player files it", () => {
+  const storage = memory(), key = "tide";
+  for (const finished of [careful("lens").state, cautiousTide(20771)]) {
+    expect(finished.outcome).not.toBe("active");
+    const book = { active: finished, days: [] };
+    writeBook(storage, key, book);
+    expect(readBook(storage, key)).toEqual(book);
+  }
+});
+
 test("a tide book survives a reload and keeps each day's first tide", () => {
   const storage = memory(), key = "tide";
   expect(readBook(storage, key)).toEqual(emptyBook());
