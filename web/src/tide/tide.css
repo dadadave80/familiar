@@ -18,6 +18,7 @@
 .tide-stamp[data-press]{animation:tide-stamp-press 260ms cubic-bezier(.34,1.56,.64,1)}
 .exp-game .tide-departure-stamp{float:right;margin:3px 3px 12px 14px}
 .exp-game .tide-departure-stamp~.exp-primary{display:block;clear:both}
+.exp-game .exp-departure:has(.tide-departure-stamp) .exp-harbor-links{flex-wrap:wrap;justify-content:flex-start;column-gap:12px}
 @keyframes tide-stamp-press{from{transform:rotate(calc(var(--tilt) - 9deg)) scale(1.35)}to{transform:rotate(var(--tilt)) scale(1)}}
 .tide .tide-day,.tide .tide-sub,.tide .tide-note{color:var(--ss-soft);font-size:13px;line-height:1.45}
 .tide .tide-day{margin-bottom:18px}
@@ -64,6 +65,10 @@
 .tide-log-chart-stamped .tide-chart>svg{padding-top:78px}
 .tide-log-chart .tide-chart-controls{grid-area:2/1;margin-top:12px}
 .tide-page-stamp{position:absolute;top:-8px;right:3px;z-index:1}
+.tide-page-stamp .tide-stamp[data-press]{animation:tide-stamp-arrive 260ms cubic-bezier(.34,1.56,.64,1) 500ms backwards}
+@keyframes tide-stamp-arrive{from{opacity:0;transform:rotate(calc(var(--tilt) - 9deg)) scale(1.35)}to{opacity:1;transform:rotate(var(--tilt)) scale(1)}}
+.tide-list[data-arrival] .tide-ask-mark{animation:tide-ask-press 260ms cubic-bezier(.34,1.56,.64,1) var(--ask-delay) backwards}
+@keyframes tide-ask-press{from{opacity:0;transform:rotate(-9deg) scale(1.35)}to{opacity:1;transform:none}}
 .tide .tide-facts{display:grid;gap:8px;margin:16px 0;padding:12px;background:var(--ss-card);border-radius:8px;font-variant-numeric:tabular-nums}
 .tide .tide-facts div{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .tide .tide-facts dt{font-size:13px;color:var(--ss-soft)}
@@ -92,7 +97,7 @@
 .tide-asks .tide-mark img{display:block;width:16px;height:16px}
 .tide-asks>li[data-status=kept]{border-color:#9fd0a8}
 .tide-asks>li[data-status=slipped]{border-style:dashed;border-color:#a99c7a;color:#e3d7b9;text-decoration:none}
-.tide-asks>li[data-motion=kept]{animation:tide-chip-pop 180ms ease-out}
+.tide-asks>li[data-motion=holding]{animation:tide-chip-pop 180ms ease-out}
 .tide-asks>li[data-motion=slipped]{animation:tide-chip-slip 200ms ease-out}
 @keyframes tide-chip-pop{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
 @keyframes tide-chip-slip{from{color:#fff1d4;border-color:#b7a878}to{color:#e3d7b9;border-color:#a99c7a}}
@@ -112,4 +117,4 @@
 @media(max-height:499px){.exp-game .tide-asks{top:76px;left:12px;flex-direction:row;flex-wrap:wrap;max-width:46vw;gap:3px}.tide-asks>li{font-size:10px;padding:3px 6px}}
 @media(max-height:499px){.exp-game .tide-outing{top:76px;left:12px;max-width:46vw}}
 @media(max-width:480px){.tide .tide-pages{gap:6px}.exp-game .tide .tide-pages button{padding:8px 5px}.tide .tide-facts{padding:10px}.tide.tide-harness-panels{padding:12px;gap:16px}.tide.tide-harness-note{margin-inline:12px}}
-@media(prefers-reduced-motion:reduce){.tide-chart .tide-chart-wave,.tide-stamp[data-press],.tide-asks>li[data-motion]{animation:none}}
+@media(prefers-reduced-motion:reduce){.tide-chart .tide-chart-wave,.tide-stamp[data-press],.tide-page-stamp .tide-stamp[data-press],.tide-asks>li[data-motion],.tide-list[data-arrival] .tide-ask-mark{animation:none}}

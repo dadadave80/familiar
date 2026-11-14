@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 import type { Area, BankedItem, Tool } from "../expedition/types";
 import type { TideCard } from "./asks";
 import { CARD_PICTURE, logCoverArt, logPageArt, sealArt } from "./art";
@@ -26,6 +26,10 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, canSail
   const [pressTarget, setPressTarget] = useState(pressDay);
   const pressShown = useRef(false);
   const selectedDay = page?.kind === "tide" ? page.day : undefined;
+  const arrivalAsks = useRef<HTMLOListElement>(null);
+  useLayoutEffect(() => {
+    if (pressTarget !== undefined && selectedDay === pressTarget) arrivalAsks.current?.scrollIntoView({ block: "end", behavior: "instant" });
+  }, [selectedDay, pressTarget]);
   useEffect(() => {
     if (pressTarget !== undefined && selectedDay === pressTarget) pressShown.current = true;
     else if (pressShown.current) setPressTarget(undefined);
@@ -46,7 +50,7 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, canSail
       <img src={logCoverArt} width={92} height={92} alt="" decoding="async" />
       <div>
         <h3>Bram’s tide log</h3>
-        {summary.sailed > 0 && <p className="tide-sub">{summary.sailed} tide{summary.sailed === 1 ? "" : "s"} sailed · {summary.kept} asks kept · {summary.allThree} with all three</p>}
+        {summary.sailed > 0 && <p className="tide-sub">{summary.sailed} tide{summary.sailed === 1 ? "" : "s"} sailed · {summary.kept} ask{summary.kept === 1 ? "" : "s"} kept · {summary.allThree} with all three</p>}
       </div>
     </header>
     <section className="tide-collection" aria-label="The Tidekeeper’s stamps">
@@ -71,22 +75,23 @@ export default function TideLog({ pages, initialPage, pressDay, reduced, canSail
     <h4>{title}</h4>
     <p className="tide-sub">{page.kind === "story" ? page.subtitle : `${dayLabel(page.day)}${page.entry.late ? " · sailed late" : ""}`}</p>
     <div className={`tide-log-chart${page.kind === "tide" ? " tide-log-chart-stamped" : ""}`} style={{ "--tide-paper": `url(${logPageArt})` } as CSSProperties}>
-      {frames ? <TideChart key={pageKey} frames={frames} area={page.kind === "story" ? page.area : "beacon"} reduced={reduced} label={`Chart of Mochi’s route: ${title}, ${frames.length - 1} decisions.`} />
+      {frames ? <TideChart key={pageKey} frames={frames} area={page.kind === "story" ? page.area : "beacon"} reduced={reduced} label={`Chart of Mochi’s route: ${title}, ${frames.length - 1} ${frames.length === 2 ? "decision" : "decisions"}.`} />
         : <p>This page’s route could not be redrawn on this device.</p>}
       {page.kind === "tide" && <span className="tide-page-stamp">
         <TideStamp key={pageKey} id={page.card.id} size={84} tilt={5} seal={page.entry.kept.every(Boolean)} label={CARD_PICTURE[page.card.id]} press={page.day === pressTarget} />
       </span>}
     </div>
     {page.kind === "tide" && <>
-      <ol className="tide-list">{page.card.asks.map((ask, i) => <li key={i} data-kept={String(page.entry.kept[i])}>
-        <span className="tide-ask-mark" aria-hidden="true"><img src={sealArt(page.entry.kept[i] ? "kept" : "slipped")} width={24} height={24} alt="" decoding="async" /></span>
+      <ol ref={arrivalAsks} key={pageKey} className="tide-list" data-arrival={page.day === pressTarget || undefined}>{page.card.asks.map((ask, i) => <li key={i} data-kept={String(page.entry.kept[i])}>
+        <span className="tide-ask-mark" aria-hidden="true" style={{ "--ask-delay": `${i * 120}ms` } as CSSProperties}><img src={sealArt(page.entry.kept[i] ? "kept" : "slipped")} width={24} height={24} alt="" decoding="async" /></span>
         <span>{askLine(ask, page.card.tool)}<span className="tide-sr"> ({page.entry.kept[i] ? "kept" : "slipped"})</span></span>
       </li>)}</ol>
       <dl className="tide-facts">
         <div><dt>Decisions</dt><dd>{page.entry.decisions}</dd></div>
         <div><dt>Sails</dt><dd>{page.entry.attempts}</dd></div>
-        <div><dt>The Tidekeeper’s way</dt><dd>{page.card.best}</dd></div>
+        <div><dt>The Tidekeeper’s way</dt><dd>{page.card.best} {page.card.best === 1 ? "decision" : "decisions"}</dd></div>
       </dl>
+      {page.entry.kept.every(Boolean) && page.entry.decisions <= page.card.best && <p className="tide-note">Mochi matched the Tidekeeper’s way.</p>}
       <button type="button" className="exp-primary" aria-disabled={!canSail} onClick={() => { if (canSail) onSail(page.day); }}>Sail this tide again</button>
       {!canSail && <p className="tide-note">Finish the outing in progress first.</p>}
     </>}

@@ -53,7 +53,7 @@ export default function TideHarness(): JSX.Element {
       </section>
       <div className="tide-harness-court">
         <div className="exp-hud"><strong>Beacon Court</strong><span>Low tide · Sample outing</span></div>
-        <TideHud card={sample.card} run={sailed ? sample.returned : sample.run} />
+        <TideHud card={sample.card} run={sailed ? sample.returned : sample.run} reduced={matchMedia("(prefers-reduced-motion: reduce)").matches} />
       </div>
       {!askOpen && <button type="button" onClick={() => setAskOpen(true)}>Today’s tide</button>}
       {askOpen && <div className="exp-panel tide-harness-panel">

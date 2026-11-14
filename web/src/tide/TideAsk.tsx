@@ -33,28 +33,28 @@ export default function TideAsk({ today, earlier, canSail, onSail, onOpenLog }: 
       </ol>
       {entry && <>
         <p className="tide-result">{entry.outcome === "returned"
-          ? `Best so far: ${kept} of 3 asks kept in ${entry.decisions} ${entry.decisions === 1 ? "decision" : "decisions"}. The Tidekeeper knows a way in ${card.best}.`
+          ? `Best so far: ${kept} of 3 asks kept in ${entry.decisions} ${entry.decisions === 1 ? "decision" : "decisions"}. The Tidekeeper knows a way in ${card.best} ${card.best === 1 ? "decision" : "decisions"}.`
           : "Bram fetched Mochi back this time. Nothing kept yet — the tide is still yours to sail."}</p>
         {entry.attempts > 1 && <p className="tide-note">{entry.attempts} sails today.</p>}
       </>}
       <button type="button" className="exp-primary" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(today.day); }}>{entry ? "Sail it again" : "Sail today’s tide"}</button>
       {!canSail && <p className="tide-note" id={`${id}-busy`}>Finish the outing in progress first.</p>}
     </div>
-    <details className="tide-earlier">
+    {earlier.length > 0 && <details className="tide-earlier">
       <summary>Earlier tides</summary>
-      {earlier.length ? <ul>{earlier.map(({ day, card: past, entry: saved }) => <li key={day}>
+      <ul>{earlier.map(({ day, card: past, entry: saved }) => <li key={day}>
         <TideStamp id={past.id} size={56} tilt={-2} seal={saved?.kept.every(Boolean)} />
         <div>
         <p className="tide-day">{dayLabel(day)}</p>
         <h4>{past.name}</h4>
         <p className="tide-note">{saved ? `${saved.kept.filter(Boolean).length} of 3 kept` : "Not sailed"}</p>
         <div className="tide-actions">
-          <button type="button" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(day); }}>{saved ? "Sail again" : "Sail late"}</button>
+          <button type="button" className={!saved ? "exp-text-button" : undefined} aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(day); }}>{saved ? "Sail again" : "Sail late"}</button>
           {saved && <button type="button" className="exp-text-button" onClick={() => onOpenLog(day)}>See the page</button>}
         </div>
         </div>
-      </li>)}</ul> : <p className="tide-note">No earlier tides this week.</p>}
-    </details>
+      </li>)}</ul>
+    </details>}
     <button type="button" className="exp-text-button tide-open-log" onClick={() => onOpenLog()}>Open the tide log</button>
   </section>;
 }
