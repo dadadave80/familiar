@@ -21,7 +21,8 @@ import "./game.css";
 import { keepTide } from "../season/data";
 
 const SEASON2=import.meta.env.VITE_SEASON2_ENABLED==="true";
-const SeasonBram=lazy(()=>import("../season/SeasonBram"));
+// Behind the flag so a build without Season 2 leaves the screens out entirely.
+const SeasonBram=SEASON2?lazy(()=>import("../season/SeasonBram")):()=>null;
 
 export const EXPEDITION_SAVE_KEY="familiar.expedition.local.v2";
 interface LocalHome extends HomeCheckpoint {lantern:null|{motif:"crest"|"moth";socket:"porch"|"dock"}}
