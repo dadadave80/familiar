@@ -103,7 +103,11 @@ export class TideScene extends Phaser.Scene {
   private field() {
     const portrait = this.w <= 900 && this.h > this.w;
     if (portrait && this.h < 500) { const top = 144, bottom = this.h - 166, width = this.w * .82; return { cx: this.w / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 }; }
-    if (this.h <= 500) { const available = this.w - 280, width = Math.max(240, Math.min(available * .91, 760)), top = 98, bottom = this.h - 34; return { cx: available / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 }; }
+    if (this.h <= 500) {
+      // The painted island and its rings extend below the dock anchor.
+      const available = this.w - 280, width = Math.max(240, Math.min(available * .91, 760)), top = 98, bottom = this.h - (portrait ? 34 : 56);
+      return { cx: available / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 };
+    }
     const top = portrait ? (this.h < 650 ? 151 : Math.max(200, this.h * .29)) : Math.max(190, this.h * .31);
     const bottom = portrait ? this.h - 276 : this.h - 72;
     const width = Math.min(portrait ? this.w * .84 : this.w * .50, 760);
@@ -186,7 +190,7 @@ export class TideScene extends Phaser.Scene {
     const crossing = this.point({ x: tide.bridge, y: 2 }), span = f.dy * 1.65 * 1.36;
     this.bridgeArt.setPosition(crossing.x, crossing.y).setDisplaySize(span / 3, span).setAngle(0).setAlpha(1);
     const dock = this.point(DOCK);
-    if (!(portrait && this.h < 500 && same(tide.position, DOCK))) this.keep(this.label(dock.x, dock.y + (this.h < 500 ? -tile.height * .45 : tile.height * .72), "DOCK", Math.max(13, Math.min(14, this.w / 28))));
+    if (!(portrait && this.h < 500 && same(tide.position, DOCK))) this.keep(this.label(dock.x, dock.y + (portrait && this.h < 500 ? -tile.height * .45 : tile.height * .72), "DOCK", Math.max(13, Math.min(14, this.w / 28))));
     const keeperHeight = Math.min(this.h < 500 ? f.top - (portrait ? 78 : 15) : 230, this.h * .26, portrait ? this.w * (this.h < 650 ? .38 : .45) : this.w * .52, portrait ? f.top - (this.h < 650 ? 15 : 80) : Infinity);
     this.keeper.setPosition(this.h < 500 && !portrait ? f.cx + Math.min(60, f.width * .18) : portrait && this.h < 650 ? this.w * .72 : f.cx, f.top - 8).setDisplaySize(keeperHeight * 1.32, keeperHeight);
 
