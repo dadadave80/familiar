@@ -12,6 +12,7 @@ async function entry() {
   if (path === "" || path === "/plan" || path.startsWith("/plan/")) return (await import("./landing/Landing")).Landing;
   if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("storyboard")) return (await import("./opening/Storyboard")).default;
   if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("season-harness")) return (await import("./season/Harness")).default;
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("tide-harness")) return (await import("./tide/Harness")).default;
   const game=Promise.all([import("./expedition/Game"),import("./expedition/harbor-session")]);
   // `?play` skips the title screen (browser tests and direct links into play).
   if(new URLSearchParams(window.location.search).has("play")){
@@ -30,7 +31,7 @@ async function entry() {
     let screen:React.ReactNode=null;
     if(play){
       const [{default:Game},{HarborSessionBoundary,HarborAccountPanel}]=play.mods;
-      screen=<HarborSessionBoundary>{session=><Game session={session} accountPanel={<HarborAccountPanel/>} audio={audio} initialSound={play.start.sound} initialMix={[play.start.music,play.start.effects]}/>}</HarborSessionBoundary>;
+      screen=<HarborSessionBoundary>{session=><Game session={session} accountPanel={<HarborAccountPanel/>} audio={audio} initialSound={play.start.sound} initialMix={[play.start.music,play.start.effects]} initialSurface={play.start.surface}/>}</HarborSessionBoundary>;
     }
     return <>
       {screen}

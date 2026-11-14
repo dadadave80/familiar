@@ -65,6 +65,7 @@ try{
         if(before.home)assert.deepEqual(after.home,before.home,"First Light home unchanged by a tide outing");else assert.deepEqual(after.home.banked,[],"tide cargo is not banked");
         assert.equal(after.returns,before.returns,"First Light return memories unchanged");
         assert.equal(after.tide.length,1);assert.deepEqual(after.tide[0].commands,route);assert.deepEqual(after.tide[0].cargo,["lens","moth"]);
+        if(await page.locator(".exp-panel").isVisible())await page.getByRole("button",{name:"Close panel",exact:true}).click();
         await page.locator(".exp-place-bram").click();await page.getByRole("tab",{name:"Today’s tide"}).click();
         await expect(page.locator(".ss-returns")).toContainText("Rope outing · 1 glass and 1 reed bundle");
         await page.screenshot({path:join(shots,`preview-tide-ready-${tag}.png`)});

@@ -23,7 +23,8 @@ export function sx(text: string): CSSProperties {
 }
 
 export type OpeningBeat = "live" | "boot" | "title" | "bell" | "attract" | "menu" | "travel";
-export interface OpeningStart { sound: boolean; music: number; effects: number }
+export interface OpeningStart { sound: boolean; music: number; effects: number; surface?: "tide" }
+function litHarbor(): boolean { try { return Object.keys(localStorage).some(key => key.startsWith("familiar.expedition.") && (() => { try { return JSON.parse(localStorage.getItem(key) ?? "null")?.home?.lit === true; } catch { return false; } })()); } catch { return false; } }
 interface Props {
   audio: HarborAudio;
   hasSave: boolean;
@@ -54,7 +55,6 @@ const E: Record<Ease, (p: number) => number> = {
 const COLS = ["Left", "Center", "Right"];
 const PLANK = "position:relative;height:56px;width:236px;box-sizing:border-box;padding:0 12px 0 30px;border:1px solid #d6b374;border-radius:9px;background:#5d432c;color:#fff0ce;box-shadow:inset 0 1px 0 #b48d55,0 4px 14px #382b2040;font:650 23px/1 'Fraunces Variable',serif;letter-spacing:-.02em;text-align:left;cursor:pointer;transform-origin:0 50%;opacity:0;pointer-events:none";
 const NAIL = "position:absolute;left:11px;top:50%;width:7px;height:7px;margin-top:-4px;border-radius:50%;background:#e4be78;box-shadow:inset -1px -1px 0 #9a733a";
-const TAG = "padding:4px 7px;background:#fff6dd;border:1px solid #a77d45;border-radius:4px;font:700 11px/1 'Figtree Variable',sans-serif";
 const LABEL: Record<Plank, string> = { continue: "Continue", new: "New Harbor", tide: "Today’s Tide", options: "Options", credits: "Credits" };
 
 const col = (x: number) => 126.67 + x * 253.33, row = (y: number) => 800 - y * 140;
@@ -69,6 +69,7 @@ const GEO = {
 export default class Opening extends Component<Props, State> {
   state: State = { prompt: "Press any key", sound: false, scroll: "", music: 4, effects: 5, cap1: "", cap2: "", lane: "" };
   root: HTMLDivElement | null = null;
+  readonly hasLitHarbor = litHarbor();
   t = 0; dt = 16; last = 0; raf = 0; seq = 0; dead = false; frozen = false; rm = false; soundOn = false; landed = false; handedOff = false;
   tweens: Tween[] = [];
   els: Record<string, HTMLElement | null> = {};
@@ -172,6 +173,7 @@ export default class Opening extends Component<Props, State> {
     this.setState(st => bus === "music" ? { ...st, music: level } : { ...st, effects: level }, () => { this.props.audio.setMix(this.state.music / 5, this.state.effects / 5); this.sfx("step"); });
   };
   onBack = () => this.closeScroll();
+  onTide = () => { if (this.frozen) return; void this.tw(this.s, "scrollP", 0, 200, "in").then(() => this.setState({ scroll: "" })); void this.travel("continue", "tide"); };
   onPlankEnter = (e: SyntheticEvent<HTMLButtonElement>) => { if (!this.frozen && this.mode === "menu" && !this.state.scroll) this.select(e.currentTarget.dataset.plank as Plank); };
   onPlankClick = (e: SyntheticEvent<HTMLButtonElement>) => { e.stopPropagation(); if (this.frozen || this.mode !== "menu") return; const id = e.currentTarget.dataset.plank as Plank; this.select(id); this.choose(id); };
   onKey = (e: KeyboardEvent) => {
@@ -219,7 +221,7 @@ export default class Opening extends Component<Props, State> {
     this.items().forEach((i, j) => void this.tw(this.mp, i, 1, 460, "back", 120 + j * 50));
     if (this.sel) this.root?.querySelector<HTMLElement>(`[data-plank="${this.sel}"]`)?.focus({ preventScroll: true });
   }
-  async travel(id: Plank) {
+  async travel(id: Plank, surface?: "tide") {
     const k = ++this.seq, s = this.s, ids = this.items(); this.mode = "travel"; this.dip[id] = this.t; this.sfx("pick"); this.poses(["reach-ready", 420]);
     await this.wait(260); if (k !== this.seq) return; if (this.soundOn) this.props.audio.playMusic("departure"); this.mothTo = "board";
     ids.forEach((i, j) => void this.tw(this.mp, i, 0, 300, "in", j * 40)); this.sel = null;
@@ -229,7 +231,7 @@ export default class Opening extends Component<Props, State> {
     // The camera has reached the dock: the tide rises, holds until the game is mounted beneath it, then draws back.
     this.mode = "wipe"; s.tideA = 1; s.tide = 0; await this.tw(s, "tide", 1.06, 620, "in"); if (k !== this.seq) return;
     this.handedOff = true;
-    await this.props.onStart({ sound: this.soundOn, music: this.state.music / 5, effects: this.state.effects / 5 });
+    await this.props.onStart({ sound: this.soundOn, music: this.state.music / 5, effects: this.state.effects / 5, ...(surface ? { surface } : {}) });
     await this.wait(140); await this.tw(s, "tideA", 0, 520, "out");
     if (k === this.seq && !this.dead) this.props.onDone();
   }
@@ -478,8 +480,8 @@ export default class Opening extends Component<Props, State> {
                 <div style={sx("display:flex;justify-content:space-between;padding:0 34px;height:10px")}><span style={sx("width:2px;background:#c9ad79")} /><span style={sx("width:2px;background:#c9ad79")} /></div>
                 <div style={sx("padding:14px 16px 12px;background:#f3e1b8;border:2px solid #fff0cf;outline:1px solid #a77d45;border-radius:12px;box-shadow:0 8px 24px #352c2440;color:#263e32;font:500 14px/1.4 'Figtree Variable',sans-serif;display:flex;flex-direction:column;gap:10px")}>
                   {st.scroll === "tide" && <>
-                    <p style={{ margin: 0 }}>One shared court a day, scored in Shells.</p>
-                    <span style={{ ...sx(TAG), alignSelf: "flex-start" }}>Coming soon</span>
+                    <p style={{ margin: 0 }}>One ask a day from the Tidekeeper, on a fresh Beacon Court.</p>
+                    {this.hasLitHarbor ? <button className="fo-row" onClick={this.onTide} style={sx("min-height:44px;border:1px solid #ae9062;border-radius:9px;padding:9px 14px;background:#eddbad;color:#2d4637;box-shadow:inset 0 2px 0 #fff0cf,inset 0 -2px 0 #b9945a40,0 3px 8px #33271120;font:750 15px/1.2 'Figtree Variable',sans-serif;cursor:pointer")}>Continue to today’s ask</button> : <p style={{ margin: 0 }}>The asks begin once the beacon is lit.</p>}
                   </>}
                   {st.scroll === "options" && <>
                     <button className="fo-row" onClick={this.onSoundRow} aria-pressed={st.sound} style={sx("min-height:44px;border:1px solid #ae9062;border-radius:9px;padding:9px 14px;background:#eddbad;color:#2d4637;box-shadow:inset 0 2px 0 #fff0cf,inset 0 -2px 0 #b9945a40,0 3px 8px #33271120;font:750 15px/1.2 'Figtree Variable',sans-serif;cursor:pointer")}>{st.sound ? "Sound on" : "Sound off"}</button>

@@ -54,7 +54,7 @@ try {
         await expect(game).toHaveAttribute("data-stage","delivered");
         if(job==="reed")await expect(game).toHaveAttribute("data-watched","true");
         await page.getByTestId("passage-finish").click();
-        const title=job==="bell"?"Supplies at Bell Steps.":"A harbor connected.";
+        const title=job==="bell"?"Supplies at Bell Steps.":"The Tidekeeper has an ask.";
         await expect(page.getByRole("heading",{name:title})).toBeVisible();
         await page.reload();
         await expect(page.getByRole("heading",{name:title})).toBeVisible();
@@ -63,7 +63,7 @@ try {
       }
       const passageKey=key+":shore-passages.v1";
       const beforeRest=await page.evaluate(k=>localStorage.getItem(k),passageKey);
-      await page.getByRole("button",{name:"Look over the harbor",exact:true}).click();
+      await page.locator(".exp-harbor-links").getByRole("button",{name:"Harbor chart",exact:true}).click();
       await expect(page.getByRole("heading",{name:"A harbor connected.",exact:true})).toBeVisible();
       await expect(page.getByRole("heading",{name:"Bell Steps",exact:true})).toBeVisible();
       await expect(page.getByText("Bram’s crates are stacked on the far work platform.",{exact:true})).toBeVisible();
