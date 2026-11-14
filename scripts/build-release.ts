@@ -3,13 +3,13 @@ import { join,resolve } from "node:path";
 import { buildAccountFunction,buildGameSite,currentRouting } from "./package-tidebound-review";
 
 export function releaseSettings(env:Record<string,string|undefined>){
-  if(env.VERCEL_ENV!=="production")return {appId:"",clientId:"",sealedNote:false,records:false,season:false};
+  if(env.VERCEL_ENV!=="production")return {appId:"",clientId:"",sealedNote:false,records:false};
   const appId=env.VITE_PRIVY_APP_ID??env.PRIVY_APP_ID??"",clientId=env.VITE_PRIVY_CLIENT_ID??"";
   const id=/^[A-Za-z0-9_-]{1,128}$/;
   if(!id.test(appId)||(clientId&&!id.test(clientId)))throw Error("Production requires a valid public Privy app ID and, if supplied, a valid public client ID.");
   // Mochi's sealed note needs the account endpoints, so it is off unless production explicitly opts in.
-  // Harbor records read public chain state for a signed-in player; Season 2 signs season calls. Both are explicit opt-ins.
-  return {appId,clientId,sealedNote:env.VITE_SEALED_NOTE_ENABLED==="true",records:env.VITE_RECORDS_ENABLED==="true",season:env.VITE_SEASON2_ENABLED==="true"};
+  // Harbor records read public chain state for a signed-in player and remain an explicit opt-in.
+  return {appId,clientId,sealedNote:env.VITE_SEALED_NOTE_ENABLED==="true",records:env.VITE_RECORDS_ENABLED==="true"};
 }
 
 export async function buildRelease(source:string,settings:ReturnType<typeof releaseSettings>){
@@ -20,7 +20,7 @@ export async function buildRelease(source:string,settings:ReturnType<typeof rele
   try{
     const site=join(staged,"static");
     await mkdir(site);
-    await buildGameSite(source,site,settings.appId,settings.clientId,settings.sealedNote,settings.records,settings.season);
+    await buildGameSite(source,site,settings.appId,settings.clientId,settings.sealedNote,settings.records);
     if(settings.appId)await buildAccountFunction(source,staged);
     await writeFile(join(staged,"config.json"),JSON.stringify(currentRouting(),null,2)+"\n");
     await rm(output,{recursive:true,force:true});
