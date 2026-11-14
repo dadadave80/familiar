@@ -12,8 +12,10 @@ const BASELINE_HTTP_PATHS=HTTP_PATHS.slice(0,3);
 export const RUNTIME_WEBPS=[
   ...["harbor","arena","wind-gate","mochi","mochi-poses","tidekeeper","lens","moth"].map(name=>`assets/first-light-motion/${name}.webp`),
   ...["harbor","mochi-poses","tidekeeper","shell","lens","moth","wave","bram","tide-court","stone-island","wooden-bridge"].map(name=>`assets/expedition/runtime/${name}.webp`),
+  ...["card-brams-bridge","card-coiled-rope","card-dry-and-tidy","card-dry-paws","card-every-source","card-full-satchel","card-lantern-haul","card-left-for-bram","card-no-waiting","card-once-across","card-quiet-shell","card-surf-home","card-tidy-tide","card-wake-both-shells","keeper-ask","log-cover","log-page","seal-all-three","seal-kept","seal-slipped"].map(name=>`assets/tide/${name}.webp`),
+  ...["glass","purse","reed","shelf-till","wish-token"].map(name=>`assets/season/${name}.webp`),
 ];
-export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate.webp.json","assets/expedition/provenance.json","assets/expedition/runtime/manifest.json"] as const;
+export const RUNTIME_METADATA=["assets/first-light-motion/provenance.json","assets/first-light-motion/wind-gate.webp.json","assets/expedition/provenance.json","assets/expedition/runtime/manifest.json","assets/tide/manifest.json","assets/tide/provenance.json","assets/season/manifest.json","assets/season/provenance.json"] as const;
 export const BRAND_ASSETS=["icons/mochi.ico",...[32,180,192,512].map(size=>`icons/mochi-${size}.png`),"social/familiar-harbor.jpg","familiar.webmanifest"];
 const primaryFunction="api/v1/privy/wallet.func";
 const aliases=["api/health.func","api/v1/privy/player.func","api/v1/privy/note.func"] as const;
@@ -49,7 +51,7 @@ function publicBytes(bytes:Uint8Array,path:string) {
 /** Add only approved art and branding that the baseline lacks; never replace its assets. */
 export async function copyRuntimeAssets(sourcePublic:string,destination:string) {
   await physicalDirectory(sourcePublic);await physicalDirectory(join(sourcePublic,"assets"));
-  for(const directory of ["first-light-motion","expedition","expedition/runtime"])await physicalDirectory(join(sourcePublic,"assets",directory));
+  for(const directory of ["first-light-motion","expedition","expedition/runtime","tide","season"])await physicalDirectory(join(sourcePublic,"assets",directory));
   for(const directory of ["icons","social"])await physicalDirectory(join(sourcePublic,directory));
   await staticFiles(destination);
   const added:{path:string;sha256:string}[]=[],reused:{path:string;sha256:string}[]=[],writes:{path:string;bytes:Uint8Array}[]=[];
