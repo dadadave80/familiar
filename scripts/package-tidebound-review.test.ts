@@ -94,14 +94,14 @@ async function runtimeFixture() {
   return {...f,source};
 }
 test("the public package ships the optimized sprites while their full-size inputs stay in source",async()=>{
-  expect(RUNTIME_WEBPS).toHaveLength(44);
+  expect(RUNTIME_WEBPS).toHaveLength(52);
   for(const name of ["tide-court","stone-island","wooden-bridge","bram","shell","wave"]){
     expect(RUNTIME_WEBPS).toContain(`assets/expedition/runtime/${name}.webp`);
     expect(RUNTIME_WEBPS).not.toContain(`assets/expedition/${name}.webp`);
     expect(RUNTIME_WEBPS).not.toContain(`assets/first-light-motion/${name}.webp`);
   }
   expect(RUNTIME_METADATA).toContain("assets/expedition/provenance.json");
-  for(const directory of ["tide","season"]){
+  for(const directory of ["tide","season","title"]){
     const prefix=`assets/${directory}/`;
     expect([...RUNTIME_WEBPS,...RUNTIME_METADATA].filter(path=>path.startsWith(prefix)).sort()).toEqual(
       (await staticFiles(join(import.meta.dir,"../web/public/assets",directory))).map(path=>prefix+path));
@@ -121,7 +121,7 @@ test("current art, complete provenance and Wind Gate receipt are copied with has
   expect((await staticFiles(f.baseline)).some(path=>path.endsWith("unapproved.png"))).toBe(false);
 });
 test("a symlinked new-art directory cannot turn the publication allowlist into an arbitrary file read",async()=>{
-  for(const relative of ["assets/expedition","assets/expedition/runtime","assets/tide","assets/season","icons","social"]){
+  for(const relative of ["assets/expedition","assets/expedition/runtime","assets/tide","assets/season","assets/title","icons","social"]){
   const f=await runtimeFixture(),directory=join(f.source,relative),outside=join(f.root,"outside-art");
   await rename(directory,outside);await symlink(outside,directory,"dir");
   const before=await staticFiles(f.baseline);
