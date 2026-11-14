@@ -1,0 +1,123 @@
+{
+  "created": "2026-11-14",
+  "purpose": "Familiar title signpost artwork: four walnut boards, the post, bell, paper tag and parchment sheet",
+  "generator": {
+    "tool": "Codex CLI (`codex exec`, image_gen.imagegen built-in tool)",
+    "model": "gpt-6-astra",
+    "reasoningEffort": "ultra",
+    "cliVersion": "0.169.0",
+    "sessions": [
+      {
+        "id": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+        "files": [
+          "title-plank-1.webp",
+          "title-plank-2.webp",
+          "title-plank-3.webp",
+          "title-plank-4.webp",
+          "title-post.webp",
+          "title-bell.webp",
+          "title-tag.webp",
+          "title-paper.webp"
+        ]
+      }
+    ]
+  },
+  "styleReferences": [
+    "web/assets/source/expedition/wooden-bridge.png",
+    "web/assets/source/first-light-motion/bram.png",
+    "web/assets/source/first-light-motion/harbor.png",
+    "web/assets/source/first-light-motion/lens.png",
+    "web/assets/source/first-light-motion/mochi.png"
+  ],
+  "delivery": "Original generated dimensions and object pixels are preserved in the PNG masters; only connected exterior cream was normalized to #F4EBD9 before delivery. Runtime WebPs are produced by scripts/optimize-title-assets.ts (see manifest.json): four-corner flood fill, alpha erosion and blur, trimmed object bounds and Lanczos resizing. Masters are never resized or modified by the optimizer.",
+  "files": {
+    "title-plank-1.webp": {
+      "master": "web/assets/source/title/title-plank-1.png",
+      "prompt": "Refine this single blank walnut board. Preserve exactly its beautiful softly modeled handmade clay-and-wood texture, dark warm walnut center, golden sunset top/right rim, single small iron nail on the far LEFT, worn gently chipped corners, square right end and front-on slight three-quarter camera. Make the board face about 12% TALLER while preserving its current width: its final silhouette width-to-height ratio must be 4.2 to 1, not a thin 4.6:1 strip. Keep it centered, with at least 7% image width clear cream space on both sides, and lots of cream above and below. Middle 80% of the face must remain very calm, low contrast dark brown, no knots/cracks/stains or nail heads. No text or symbols. Output 1536x1024 landscape at highest visual quality. Background must be solid #F4EBD9, perfectly uniform, no noise texture on background, no vignette, gradient, ground plane or shadow on backdrop. Only one solid blank wooden board, no arrow point, no extra objects, no holes, no letters/numbers/logos/watermarks.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-0d362200-a5e2-4059-beca-c79f6360b0af.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 3,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-4bb989fe-896b-47a8-bd68-72b09cf3a3ad.png"
+      ]
+    },
+    "title-plank-2.webp": {
+      "master": "web/assets/source/title/title-plank-2.png",
+      "prompt": "Use case: precise-object-edit. The FIRST image is the individual board to correct, the SECOND is the approved hero for proportions and lighting. Regenerate the first board at highest quality, preserving its one small dark iron nail near the LEFT end, dark warm walnut quiet text face, rounded softly worn left edge and tiny upper-right corner chip. Match the second image's board proportions and canvas layout: output 1536x1024 landscape, NOT an ultrawide canvas. Board silhouette width:height exactly about 4.2:1, not the first image's long narrow 5.4:1 strip. Make board about 1280px wide by 305px tall, centered, with at least 8% image width clear space each side. Wood face around #5d432c, low contrast fine grain across middle80%, no knots/cracks/stains/nails there. Same golden back-right sunset rim, lilac-pink shadows, handmade clay-and-wood miniatures. Keep this board distinct from the hero through its upper-right chip and long fine grain. No arrow point. Perfectly flat uniform solid light cream #F4EBD9 backdrop, no backdrop grain/noise/gradient/vignette, no ground plane or cast shadow. One object only, no text, symbols, letters, logos or holes.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-65a388e7-ee86-43cb-a34e-6ec21b3f391d.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-efc46fc9-0fcf-4ab0-8995-edfd71ee5217.png",
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-0d362200-a5e2-4059-beca-c79f6360b0af.png"
+      ]
+    },
+    "title-plank-3.webp": {
+      "master": "web/assets/source/title/title-plank-3.png",
+      "prompt": "Use case: stylized-concept. Highest available visual quality. Create ONE isolated production prop for Familiar. Reference 1 is the approved title hero board: all new props must be siblings of its handmade modeled material, soft edge treatment, warm walnut and sunset lighting. Reference 2 is the authoritative harbor scene, for camera, saturation, low warm sunset from the back RIGHT and soft lilac-pink sky bounce in shadows. Front-on eye level with a very slight three-quarter turn. Soft tactile felt-and-clay miniature diorama, softly worn edges, subtle subsurface warmth, no hard graphic outline, no flat vector/UI sticker look, no plastic gloss.\nBACKGROUND for the entire image: a perfectly flat uniform light cream #F4EBD9, edge to edge. No texture/noise on background, no gradient, no vignette, no ground plane, no cast shadow on backdrop, no scenery, no additional props, no frame. Every part of the object has at least 8% margin from every image edge. Only shading on the object. No enclosed see-through gaps: all holes/loops must be filled with solid material; no backdrop islands. No text, letters, numbers, symbols, emblems, signatures, logos or watermark.\nSUBJECT: one blank horizontal wooden sign board. Output 1536x1024 landscape. Make its silhouette 4.2 times as wide as tall, about 1280x305 pixels, centered, with safe 8% side margins. Match reference 1 closely in size, warm dark walnut face value (around #5d432c), thickness, camera, warm perimeter light, and small dark iron nail near the LEFT end (within the leftmost 7% of the board). This must be a distinct sibling, not a duplicated plank. Individual variation: a barely perceptible natural bow in the top and bottom long edges, a softer upper-left corner, and a different delicate horizontal grain. The bow is only about 1% of board width; broad quiet rectangular face remains.\nThe right end is square or very gently rounded, never an arrow. Soft rounded chipped corners, narrow warm worn edges. Central 80% of the face must be calm and dark for overlaid #FFF0CE text: low-contrast fine grain only, no knots, cracks, stains or nail heads. No text in this generated image. Do not add a border, a second nail or hardware. Reference 3 is only supporting wood family; do not copy the bridge.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-ce085932-41fc-4c33-bf40-dc89d4b308b2.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-0d362200-a5e2-4059-beca-c79f6360b0af.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/wooden-bridge.png"
+      ]
+    },
+    "title-plank-4.webp": {
+      "master": "web/assets/source/title/title-plank-4.png",
+      "prompt": "Use case: stylized-concept. Highest available visual quality. Create ONE isolated production prop for Familiar. Reference 1 is the approved title hero board: all new props must be siblings of its handmade modeled material, soft edge treatment, warm walnut and sunset lighting. Reference 2 is the authoritative harbor scene, for camera, saturation, low warm sunset from the back RIGHT and soft lilac-pink sky bounce in shadows. Front-on eye level with a very slight three-quarter turn. Soft tactile felt-and-clay miniature diorama, softly worn edges, subtle subsurface warmth, no hard graphic outline, no flat vector/UI sticker look, no plastic gloss.\nBACKGROUND for the entire image: a perfectly flat uniform light cream #F4EBD9, edge to edge. No texture/noise on background, no gradient, no vignette, no ground plane, no cast shadow on backdrop, no scenery, no additional props, no frame. Every part of the object has at least 8% margin from every image edge. Only shading on the object. No enclosed see-through gaps: all holes/loops must be filled with solid material; no backdrop islands. No text, letters, numbers, symbols, emblems, signatures, logos or watermark.\nSUBJECT: one blank horizontal wooden sign board. Output 1536x1024 landscape. Make its silhouette 4.2 times as wide as tall, about 1280x305 pixels, centered, with safe 8% side margins. Match reference 1 closely in size, warm dark walnut face value (around #5d432c), thickness, camera, warm perimeter light, and small dark iron nail near the LEFT end (within the leftmost 7% of the board). This must be a distinct sibling, not a duplicated plank. Individual variation: a tiny wear notch confined to the bottom-right edge and softly rubbed upper-left corner; grain is finer and straighter than the hero, with a distinct edge chip pattern. Keep the board essentially straight.\nThe right end is square or very gently rounded, never an arrow. Soft rounded chipped corners, narrow warm worn edges. Central 80% of the face must be calm and dark for overlaid #FFF0CE text: low-contrast fine grain only, no knots, cracks, stains or nail heads. No text in this generated image. Do not add a border, a second nail or hardware. Reference 3 is only supporting wood family; do not copy the bridge.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-e97e6b30-99b0-4f03-a4af-1311d5540252.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-0d362200-a5e2-4059-beca-c79f6360b0af.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/wooden-bridge.png"
+      ]
+    },
+    "title-post.webp": {
+      "master": "web/assets/source/title/title-post.png",
+      "prompt": "Precise single-object proportion edit, highest quality. Keep the supplied wooden post exactly as shown in all materials, soft sunset lighting, colors, location, full portrait 1024x1536 canvas, generous cream margin, two squat stones, little cap, short left arm and tiny downward iron hook. Change ONLY the narrow vertical shaft: make its width 20% greater while keeping height unchanged, and proportionally widen its cap. Current shaft is too thin; final shaft height to width should be approximately17:1. Keep the horizontal arm's current reach, around three final shaft widths. Preserve handmade warm walnut grain, gold right rim, lilac-pink shadows. No diagonal brace. Perfectly flat uniform #F4EBD9 backdrop with no shadow, floor, gradient, vignette or noise. No writing, text, symbols, other objects, gaps or holes. At least 10% clear top/bottom margin; do not zoom in.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-01e588a9-19ea-43b6-b060-fcbb5e1fa23e.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 3,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-c0359b84-5b31-40ff-900d-bb207d57ec24.png"
+      ]
+    },
+    "title-bell.webp": {
+      "master": "web/assets/source/title/title-bell.png",
+      "prompt": "Precise single-object proportion edit at highest quality. Keep this polished brass miniature harbor bell, tiny simple solid dark iron hanger at top center, round clapper, straight knotted rope, compact soft felt tassel, golden sunset right rim and soft lilac reflections. Change ONLY the bell body's width: make brass bell and lip approximately16% NARROWER, maintaining all current vertical heights. Scale the round clapper down just a little to match narrower bell. Keep centered attachment point, rope and tassel aligned. Final overall connected object width:height approximately1:2.3 (about465px wide,1080px tall). Preserve exact portrait1024x1536 canvas and current generous top/bottom margins. No giant mounting plate, no wings, no loops or see-through holes. Uniform mathematically flat solid #F4EBD9 backdrop, no gradient, vignette, noise, cast shadow or ground plane. One object only, no letters/text/symbols/logos/signature.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-0ac942d6-30e7-460a-8f46-f799a7fcdeaa.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 3,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-0f4d6f72-9398-45f4-aba0-f23cd195fb1c.png"
+      ]
+    },
+    "title-tag.webp": {
+      "master": "web/assets/source/title/title-tag.png",
+      "prompt": "Use case: stylized-concept. Highest available visual quality. Create ONE isolated production prop for Familiar. Reference 1 is the approved title hero board: all new props must be siblings of its handmade modeled material, soft edge treatment, warm walnut and sunset lighting. Reference 2 is the authoritative harbor scene, for camera, saturation, low warm sunset from the back RIGHT and soft lilac-pink sky bounce in shadows. Front-on eye level with a very slight three-quarter turn. Soft tactile felt-and-clay miniature diorama, softly worn edges, subtle subsurface warmth, no hard graphic outline, no flat vector/UI sticker look, no plastic gloss.\nBACKGROUND for the entire image: a perfectly flat uniform light cream #F4EBD9, edge to edge. No texture/noise on background, no gradient, no vignette, no ground plane, no cast shadow on backdrop, no scenery, no additional props, no frame. Every part of the object has at least 8% margin from every image edge. Only shading on the object. No enclosed see-through gaps: all holes/loops must be filled with solid material; no backdrop islands. No text, letters, numbers, symbols, emblems, signatures, logos or watermark.\nOutput LANDSCAPE 1536x1024.\nSUBJECT: one small blank handmade CREAM PAPER TAG, paper body about THREE times as wide as tall, approximately 1200px wide by 400px tall, centered in canvas. Delicate rounded cut corners, very slight curl at lower-right corner, tactile fine paper fibers like a miniature crafted by hand. At exact TOP CENTER a small short flax twine knot wraps over the edge of the paper, completely solid compact knot and short ends pressed together, NO punched hole, NO hanging loop or background gap. This is one connected object. Paper face light warm cream, in #F3E1B8 family. Middle 80% must be very calm, even and light: dark green #2D4637 game text will be drawn there in code. Absolutely NO generated letters or symbols. Thin warm ochre edge thickness and soft edge shading ALL AROUND its perimeter, enough separation from #F4EBD9 backdrop to preserve the silhouette on 8% corner floodfill, but NO ink outline or hard border. Tiny warm golden right edge, soft lilac-pink shadow at curled lower edge. Fine even texture, no stains, writing, decorations, fasteners or strong creases. The approved walnut hero governs light and crafted softness, not the tag's paper material.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-fc069b7d-d649-4d96-bc84-2b3fb11cbc67.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-0d362200-a5e2-4059-beca-c79f6360b0af.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/mochi.png"
+      ]
+    },
+    "title-paper.webp": {
+      "master": "web/assets/source/title/title-paper.png",
+      "prompt": "Use case: precise-object-edit. Redesign the blank parchment in image1 so it reads as a delicate SHEET OF PAPER, not thick dough or a padded mat. Image2 sets the warm sunset and handmade harbor world. Highest visual quality, output PORTRAIT 1024x1536. Preserve the quiet blank cream face and subtle bottom-corner curls, but reduce edge thickness by 75%, reduce edge waviness, reduce heavy raised rim. Use finely deckled paper edges, not large undulating lobes. Fine subtle fiber texture evenly spread, no fur or wood grain, no stains, no strong creases. Almost-flat central85% in light warm cream #F3E1B8, ready for dark green overlaid code text, but generate absolutely no text. Subtle amber warm shading along the fine edge and lilac-pink underneath small bottom curls, not an outline, with enough edge contrast to separate from backdrop. Sheet silhouette width:height 5:6. Make sheet approximately 760px wide by 912px tall, centered, with at least 12% clear side margins. All corners safely inside canvas. Background perfectly flat solid uniform #F4EBD9 with no texture, gradient, vignette, cast shadow or floor. No marks, symbols, letters, borders, drawings, holes or additional objects. It must be soft tactile handmade thin paper that belongs to the harbor.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-e44820bd-5232-4496-be8d-77117a4ea891.png",
+      "session": "01a1d945-d58a-7ba3-b35c-957915ee230b",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d945-d58a-7ba3-b35c-957915ee230b/exec-6c1f9736-e11d-4f65-be1c-24a33480ec01.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png"
+      ]
+    }
+  }
+}

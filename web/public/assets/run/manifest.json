@@ -1,0 +1,26 @@
+{
+  "purpose": "Tide-run prize derivatives; generated transparent alpha preserved",
+  "encoder": "ImageMagick trim, fit168 in transparent192; cwebp quality85 method6 alpha100",
+  "files": [
+    {
+      "source": "assets/source/run/pearl.png",
+      "output": "assets/run/pearl.webp",
+      "sourceSha256": "c5e7d222e3183d2e819b3803a41c590f31b2392550658150b0f4f3dc45509c72",
+      "sha256": "fc051c55e3f807609714f71fc3d57ca9d8fc88c59d5323c8a4e53fe6dc9db6ba",
+      "sourceBytes": 1007738,
+      "bytes": 4634,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "source": "assets/source/run/vane.png",
+      "output": "assets/run/vane.webp",
+      "sourceSha256": "0e823f929980bbbdb0b53aae3f5cc39c9b723379eea7bcb1b636f55fec91593c",
+      "sha256": "5ec1725419db2c9550851e8b185c0739fff24e7059ac301e87de268255e93609",
+      "sourceBytes": 831545,
+      "bytes": 5392,
+      "width": 192,
+      "height": 192
+    }
+  ]
+}

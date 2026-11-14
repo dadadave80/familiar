@@ -1,0 +1,143 @@
+.tide-run .exp-brand small { font-size: 13px; line-height: 1.3; }
+.tide-run h1.exp-place { max-width: none; font-size: 15px; padding: 9px 14px; border: 0; border-radius: 999px; background: #304e40; }
+.tide-run .passage-header-actions button { min-width: 44px; min-height: 44px; padding: 10px 14px; border: 1.5px solid var(--exp-hairline); border-radius: 999px; color: var(--exp-ink); background: #fffaf0; font: 600 17px/1.2 "Fraunces Variable", serif; white-space: nowrap; }
+.tide-run .passage-header-actions button:hover:not(:disabled) { color: var(--exp-ink); background: #fff3dc; }
+.tide-run .passage-header-actions .tide-sound { width: 44px; height: 44px; padding: 10px; }
+.tide-run button:focus-visible { outline: 3px solid #2b5f4d; outline-offset: 3px; }
+.tide-run .tide-hud, .tide-run .passage-tray { color: var(--exp-ink); background: var(--exp-card); border: 0; border-radius: var(--exp-card-radius); box-shadow: var(--exp-card-shadow); }
+.tide-run .tide-hud { gap: 14px; padding: 12px 16px; font-variant-numeric: tabular-nums; }
+.tide-run .tide-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.tide-run .tide-portrait { flex: none; width: 48px; height: 48px; object-fit: contain; }
+.tide-run .tide-vitals { display: grid; gap: 5px; }
+.tide-run .tide-vitals strong { font: 650 18px/1.15 "Fraunces Variable", serif; white-space: nowrap; }
+.tide-run .tide-hearts { display: flex; gap: 4px; color: #a04432; line-height: 1; }
+.tide-run .tide-hearts span { display: flex; }
+.tide-run .tide-hearts svg { width: 17px; height: 17px; }
+.tide-run .tide-heart-full svg { fill: currentColor; }
+.tide-run .tide-heart-empty { color: #8a7d68; }
+.tide-run .tide-tally { display: flex; align-items: center; gap: 7px; padding-left: 14px; border-left: 1px solid var(--exp-hairline); font-size: 13px; color: var(--exp-secondary-ink); }
+.tide-run .tide-tally > svg { flex: none; color: var(--exp-sea); }
+.tide-run .tide-tally b { display: block; font: 650 22px/1.1 "Fraunces Variable", serif; color: var(--exp-ink); }
+.tide-run .passage-tray { display: flex; flex-direction: column; gap: 12px; width: 340px; padding: 16px; }
+.tide-run .tide-asks { flex: none; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 3px; }
+.tide-run .tide-asks > li { flex: none; min-height: 32px; gap: 3px; padding: 3px; font: 500 12px/1.25 "Figtree Variable", sans-serif; white-space: nowrap; }
+.tide-run .tide-asks .tide-ask-icon img { width: 24px; height: 24px; }
+.tide-run .tide-tray-reading { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.tide-run .exp-current-controls { flex: none; }
+.tide-run .exp-objective-row { gap: 12px; align-items: center; margin-bottom: 10px; }
+.tide-run .exp-objective { font: 600 17px/1.3 "Fraunces Variable", serif; margin: 0!important; }
+.tide-run .exp-context-actions .exp-inspect-button, .tide-run .exp-context-actions .exp-text-button, .tide-run .tide-finish-actions .exp-text-button { min-width: 44px; min-height: 44px; padding: 8px 6px; border: 0; background: transparent; color: var(--exp-ink); box-shadow: none; font: 600 15px/1.3 "Figtree Variable", sans-serif; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.tide-run .exp-forecast { display: flex; align-items: flex-start; gap: 9px; padding: 12px 0; border-top: 1px solid var(--exp-hairline); border-bottom: 1px solid var(--exp-hairline); margin: 0 0 14px!important; min-height: 0; font: 500 14px/1.45 "Figtree Variable", sans-serif; }
+.tide-run .exp-forecast > svg { flex: none; margin-top: 1px; color: var(--exp-sea); }
+.tide-run .tide-forecast-soon, .tide-run .tide-forecast-soon > svg { color: #8e3527; }
+.tide-run .exp-directions { gap: 5px; }
+.tide-run .exp-directions button { width: 44px; height: 44px; border: 1.5px solid var(--exp-hairline); border-radius: 999px; background: #fffaf0; }
+.tide-run .exp-directions button:hover:not(:disabled) { background: #ede3ca; }
+.tide-run .exp-directions button:disabled { opacity: 1; color: #8a8272; background: #eee6d4; border-color: #ded1b7; }
+.tide-run .exp-directions .exp-wait { font: 600 17px/1 "Fraunces Variable", serif; }
+.tide-run .exp-context-actions button { min-height: 44px; font-size: 15px; white-space: nowrap; }
+.tide-run .exp-feedback { position: static; inset: auto; width: auto; max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--exp-secondary-ink); font-size: 13px; line-height: 1.4; }
+.tide-run .tide-finish .exp-feedback { margin-top: 16px; }
+.tide-run .tide-finish { top: 50%; bottom: auto; left: 50%; right: auto; transform: translate(-50%, -50%); width: min(520px, calc(100% - 24px)); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; display: block; padding: 26px; text-align: center; }
+.tide-run .tide-finish-portrait { display: block; margin: 0 auto 8px; }
+.tide-run .tide-finish h2 { margin: 0 0 12px; font-size: 30px; }
+.tide-run .tide-finish p { display: block; overflow: visible; white-space: normal; font-size: 15px; line-height: 1.45; }
+.tide-run .tide-finish-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+.tide-run .tide-finish-actions button { width: 100%; white-space: nowrap; }
+.tide-run .tide-stamps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 22px 0 0; padding: 18px 0 0; border-top: 1px solid var(--exp-hairline); list-style: none; font-size: 13px; line-height: 1.35; }
+.tide-run .tide-stamps li { display: flex; flex-direction: column; align-items: center; gap: 9px; color: var(--exp-secondary-ink); }
+.tide-run .tide-stamp-mark { position: relative; display: grid; place-items: center; width: 68px; height: 68px; border: 1px dashed #aa9774; border-radius: 50%; }
+.tide-run .tide-stamp-mark img { opacity: .4; filter: grayscale(1); }
+.tide-run .tide-stamp-mark > svg { position: absolute; bottom: -4px; right: -2px; width: 22px; height: 22px; padding: 3px; border-radius: 50%; color: var(--exp-secondary-ink); background: var(--exp-card); }
+.tide-run .tide-stamps li[data-earned=true] { color: var(--exp-sea); font-weight: 700; }
+.tide-run .tide-stamps li[data-earned=true] .tide-stamp-mark { border: 1px solid #80927b; background: #e6e7cf; }
+.tide-run .tide-stamps li[data-earned=true] img { opacity: 1; filter: none; }
+.tide-run .tide-stamps li[data-earned=true] svg { background: var(--exp-sea); color: var(--exp-paper); }
+.tide-run .passage-panel { width: min(580px, calc(100% - 24px)); padding: 24px; }
+.tide-run .passage-panel h2 { margin-bottom: 6px; font-size: 28px; }
+.tide-run .tide-guide { margin: 0; padding: 0; list-style: none; }
+.tide-run .tide-guide li { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--exp-hairline); font-size: 15px; line-height: 1.5; }
+.tide-run .tide-guide li > svg { flex: none; margin-top: 2px; color: var(--exp-sea); }
+.tide-run .tide-guide-keys { margin: 18px 0 0; font-size: 13px; line-height: 1.5; color: var(--exp-secondary-ink); }
+@media (max-width: 899px) and (orientation: portrait) {
+  .tide-run .exp-mast { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
+  .tide-run .exp-brand { justify-self: start; max-width: 182px; padding: 7px 10px; }
+  .tide-run .exp-brand small { max-width: 162px; text-align: center; }
+  .tide-run .passage-header-actions { grid-column: 2; grid-row: 1; }
+  .tide-run .passage-header-actions button { padding-inline: 10px; }
+  .tide-run h1.exp-place { grid-column: 1 / -1; justify-self: start; margin: 0; padding: 5px 10px; font-size: 13px; }
+  .tide-run .tide-hud { top: max(124px, calc(env(safe-area-inset-top) + 114px)); left: 10px; right: 10px; width: auto; max-width: none; gap: 10px; padding: 10px 12px; }
+  .tide-run .tide-portrait { width: 42px; height: 42px; }
+  .tide-run .tide-vitals strong { font-size: 16px; }
+  .tide-run .tide-hearts { gap: 3px; }
+  .tide-run .tide-hearts svg { width: 15px; height: 15px; }
+  .tide-run .tide-tally { gap: 5px; padding-left: 10px; }
+  .tide-run .tide-tally > svg { width: 18px; height: 18px; }
+  .tide-run .tide-tally b { font-size: 19px; }
+  .tide-run .passage-tray { left: 10px; right: 10px; width: auto; padding: 10px 12px; max-height: 212px; gap: 4px; }
+  .tide-run .exp-objective-row { gap: 8px; margin-bottom: 4px; }
+  .tide-run .exp-objective { font-size: 15px; }
+  .tide-run .exp-forecast { padding: 7px 0; margin-bottom: 8px!important; font-size: 13px; line-height: 1.35; }
+  .tide-run .exp-current-controls { flex-direction: column; gap: 0; align-items: stretch; }
+  .tide-run .exp-directions { flex: 1; min-width: 0; gap: 4px; }
+  .tide-run .exp-directions button { width: 56px; height: 56px; flex: none; }
+  .tide-run .exp-context-actions { flex: none; width: auto; min-height: 44px; }
+  .tide-run .tide-finish { padding: 24px 20px; }
+  .tide-run .tide-finish h2 { font-size: 28px; }
+  .tide-run .tide-stamps { gap: 8px; }
+  .tide-run .passage-panel { padding: 18px; }
+  .tide-run .tide-guide li { font-size: 14px; gap: 12px; padding: 12px 0; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .tide-run .exp-brand { padding: 6px 12px; }
+  .tide-run .exp-brand small { font-size: 13px; }
+  .tide-run .tide-hud { top: 70px; left: auto; right: 10px; width: 260px; max-width: none; gap: 6px; padding: 10px; }
+  .tide-run .tide-portrait { width: 32px; height: 32px; }
+  .tide-run .tide-vitals strong { font-size: 16px; }
+  .tide-run .tide-hearts svg { width: 15px; height: 15px; }
+  .tide-run .tide-tally { gap: 5px; padding-left: 6px; }
+  .tide-run .tide-tally > svg { display: none; }
+  .tide-run .tide-tally b { font-size: 18px; }
+  .tide-run .passage-tray { top: 140px; bottom: 10px; left: auto; right: 10px; width: 260px; max-height: none; padding: 10px; gap: 6px; overflow: hidden; }
+  .tide-run .tide-asks { justify-content: flex-start; gap: 6px; }
+  .tide-run .tide-asks .tide-ask-label { display: none; }
+  .tide-run .tide-tray-reading { flex: 1; }
+  .tide-run .exp-objective-row { flex-direction: column; align-items: stretch; gap: 0; margin: 0; }
+  .tide-run .exp-objective { font-size: 15px; }
+  .tide-run .exp-forecast { display: block; clear: both; padding: 8px 0; margin: 0 0 6px!important; font-size: 13px; line-height: 1.35; }
+  .tide-run .exp-forecast > svg { float: left; width: 18px; height: 18px; margin: 0 6px 2px 0; }
+  .tide-run .exp-current-controls { flex-direction: column; }
+  .tide-run .exp-directions { width: 100%; gap: 4px; }
+  .tide-run .exp-directions button { flex: none; }
+  .tide-run .exp-context-actions .exp-inspect-button, .tide-run .exp-context-actions .exp-text-button { padding-inline: 0; }
+  .tide-run .tide-finish { top: 140px; bottom: auto; transform: translateX(-50%); width: min(690px, calc(100% - 32px)); max-height: calc(100dvh - 150px); overflow-y: auto; display: flex; align-items: center; gap: 24px; padding: 20px 24px; }
+  .tide-run .tide-finish > div:first-child { flex: 1; min-width: 0; }
+  .tide-run .tide-finish-portrait { width: 52px; height: 52px; margin-bottom: 6px; }
+  .tide-run .tide-finish h2 { font-size: 24px; margin-bottom: 8px; }
+  .tide-run .tide-finish p { font-size: 13px; }
+  .tide-run .tide-finish-actions { flex: none; width: 230px; margin: 0; }
+  .tide-run .tide-finish-actions button { padding-inline: 12px; font-size: 16px; }
+  .tide-run .tide-finish:has(.tide-stamps) > div:first-child { display: grid; grid-template-columns: 52px minmax(0, 1fr); grid-template-rows: minmax(28px, auto) minmax(24px, auto); column-gap: 12px; text-align: left; }
+  .tide-run .tide-finish:has(.tide-stamps) .tide-finish-portrait { grid-row: 1 / 3; margin: 0; }
+  .tide-run .tide-finish:has(.tide-stamps) h2 { margin: 0; line-height: 28px; }
+  .tide-run .tide-finish:has(.tide-stamps) h2 + p { margin: 0; line-height: 18px; }
+  .tide-run .tide-finish:has(.tide-stamps) .exp-feedback { grid-column: 1 / -1; margin-top: 8px; line-height: 18px; }
+  .tide-run .tide-finish:has(.tide-stamps) [role=alert] { grid-column: 1 / -1; margin-top: 8px; }
+  .tide-run .tide-stamps { grid-column: 1 / -1; gap: 8px; margin-top: 8px; padding-top: 8px; line-height: 16px; }
+  .tide-run .tide-stamps li { flex-direction: row; gap: 6px; }
+  .tide-run .tide-stamp-mark { flex: none; width: 36px; height: 36px; }
+  .tide-run .tide-stamp-mark img { width: 28px; height: 28px; }
+  .tide-run .tide-stamp-mark > svg { width: 16px; height: 16px; }
+  .tide-run .passage-panel { max-height: calc(100dvh - 20px); padding: 16px 22px; }
+}
+@media (pointer: coarse) {
+  .tide-run .exp-directions { grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 56px); }
+  .tide-run .exp-directions button { width: 56px; height: 56px; min-height: 56px; }
+}
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+  .tide-run .exp-current-controls { display: grid; grid-template-columns: repeat(4, 56px); grid-template-rows: 56px 56px; gap: 4px; }
+  .tide-run .exp-directions { display: contents; }
+  .tide-run .exp-directions button { grid-column: auto; grid-row: 1; order: 0; }
+  .tide-run .exp-directions .exp-wait { grid-column: 1; grid-row: 2; }
+  .tide-run .exp-context-actions { grid-column: 2 / -1; grid-row: 2; gap: 4px; }
+}

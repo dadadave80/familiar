@@ -19,7 +19,7 @@ export const SIGNER_ACTIONS:readonly {receiver:"root"|"items"|"season"|"self";me
   {receiver:"items",method:"mt_transfer",label:"gift a lantern"},
   {receiver:"items",method:"storage_deposit",label:"cover a lantern’s storage"},
   {receiver:"season",method:"storage_deposit",label:"open your page in Bram’s ledger"},
-  {receiver:"season",method:"claim_daily",label:"dock today’s haul"},
+  {receiver:"season",method:"claim_daily",label:"shelve today’s haul"},
   {receiver:"season",method:"buy",label:"buy from Bram’s shelf"},
   {receiver:"season",method:"sell",label:"sell to Bram’s till"},
   {receiver:"season",method:"set_wish",label:"set Mochi’s wish"},

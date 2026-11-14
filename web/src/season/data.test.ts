@@ -1,7 +1,66 @@
-import { expect, test } from "bun:test";
-import { keepTide, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, writePreview, type TideReturn } from "./data";
+import { expect, spyOn, test } from "bun:test";
+import { SEASON_ROOT, keepTide, previewDock, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, shelfNote, shelvesBeaconCourt, writePreview, type TideReturn } from "./data";
+import { readTideLog, readTidePending, recordTide, writeTidePending } from "../tide/log";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);}};};
+
+test("preview writes report whether the browser kept the shelf",()=>{
+  const market=seedPreview(null,20771),store=memory();
+  const blocked={setItem(){throw new DOMException("Site data blocked","SecurityError");}};
+  expect(writePreview(market,blocked)).toBe(false);
+  expect(writePreview(market,store)).toBe(true);
+  expect(readPreview(store,20771)).toEqual(market);
+});
+
+test("blocked site data leaves tide and shelf readers empty and preserves writer failure contracts",()=>{
+  const previous=Object.getOwnPropertyDescriptor(globalThis,"localStorage"),blocked=new DOMException("Site data blocked","SecurityError");
+  Object.defineProperty(globalThis,"localStorage",{configurable:true,get(){throw blocked;}});
+  try{
+    expect(readTideLog("preview")).toEqual([]);expect(readTidePending("preview")).toBeNull();
+    expect(readPreview()).toBeNull();expect(readTide("preview")).toEqual([]);
+    expect(writePreview(seedPreview(null))).toBe(false);
+    for(const pending of [null,{day:20771,late:false}])expect(()=>writeTidePending("preview",pending)).not.toThrow();
+    expect(()=>recordTide("preview",{day:20771,tool:"rope",commands:["return"],late:false})).toThrow(blocked);
+    expect(()=>keepTide("preview",{id:"blocked",contentVersion:"first_light_v2",tool:"rope",commands:["return"],cargo:[],outcome:"returned",savedAt:"t"})).toThrow(blocked);
+  }finally{if(previous)Object.defineProperty(globalThis,"localStorage",previous);else Reflect.deleteProperty(globalThis,"localStorage");}
+});
+
+test("a stalled shelf read aborts after its eight-second budget",async()=>{
+  const timeout=AbortSignal.timeout.bind(AbortSignal),timer=spyOn(AbortSignal,"timeout").mockImplementation(ms=>{expect(ms).toBe(8000);return timeout(1);});
+  const stalled=(async(_url:unknown,init?:RequestInit)=>new Promise<Response>((_resolve,reject)=>{
+    const signal=init?.signal;if(!signal){reject(Error("Missing abort signal"));return;}
+    signal.addEventListener("abort",()=>reject(signal.reason),{once:true});
+  })) as typeof fetch;
+  try{await expect(seasonView("get_shelf",{},stalled)).rejects.toMatchObject({name:"TimeoutError"});}
+  finally{timer.mockRestore();}
+});
+
+test("a haul joins the preview satchel once a day, with another allowed after the day rolls", () => {
+  const current={...seedPreview(null,20771),traded:[20,0] as [number,number],till:200};
+  const docked=previewDock(current,[1,1],20771);if("block"in docked)throw Error(docked.block);
+  expect(docked.market).toMatchObject({goods:[2,3],docked:20771});
+  expect(current.goods).toEqual([1,2]);expect(current).not.toHaveProperty("docked");
+  expect(previewDock(docked.market,[1,0],20771)).toEqual({block:"Bram has already shelved a haul today."});
+  const next=previewDock(docked.market,[0,1],20772);if("block"in next)throw Error(next.block);
+  expect(next.market).toMatchObject({day:20772,goods:[2,4],docked:20772,traded:[0,0],till:260});
+});
+
+test("preview saves accept a valid docking day, discard invalid ones and retain older saves", () => {
+  const store=memory(),market=seedPreview(null,20771);
+  writePreview(market,store);expect(readPreview(store,20771)).toEqual(market);
+  for(const docked of [0,20771]){writePreview({...market,docked},store);expect(readPreview(store,20771)?.docked).toBe(docked);}
+  for(const docked of [-1,1.5,Number.MAX_SAFE_INTEGER+1,"20771",null]){
+    store.setItem("familiar.season.preview.v1",JSON.stringify({...market,docked}));
+    expect(readPreview(store,20771)).toEqual(market);
+  }
+});
+
+test("the shelf note follows the contract's alternating Beacon Court days and stays quiet for empty cargo", () => {
+  expect(shelvesBeaconCourt(20771)).toBe(true);expect(shelvesBeaconCourt(20772)).toBe(false);
+  expect(shelfNote({cargo:[],day:20771})).toBe("");expect(shelfNote({cargo:[],day:20772})).toBe("");
+  expect(shelfNote({cargo:["lens"],day:20771})).toBe(" Bram can shelve it today.");
+  expect(shelfNote({cargo:["moth"],day:20772})).toBe(" Bram can shelve it tomorrow.");
+});
 
 test("the device preview prices like the contract and refuses what the contract refuses", () => {
   const m=seedPreview(null);
@@ -45,7 +104,7 @@ test("views read final state from season.<root> and decode the result bytes", as
   let body:Record<string,unknown>={};
   const fetcher=(async(_url:string,init:RequestInit)=>{body=JSON.parse(String(init.body));return new Response(JSON.stringify({result:{result:[...new TextEncoder().encode('{"day":1}')]}}));}) as unknown as typeof fetch;
   expect(await seasonView<{day:number}>("get_today",{account_id:null},fetcher)).toEqual({day:1});
-  expect(body).toMatchObject({method:"query",params:{request_type:"call_function",finality:"final",account_id:"season.familiar-game.testnet",method_name:"get_today"}});
+  expect(body).toMatchObject({method:"query",params:{request_type:"call_function",finality:"final",account_id:"season."+SEASON_ROOT,method_name:"get_today"}});
   const failing=(async()=>new Response(JSON.stringify({error:{}}))) as unknown as typeof fetch;
   await expect(seasonView("get_shelf",{},failing)).rejects.toThrow("could not be read");
 });

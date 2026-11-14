@@ -1,6 +1,8 @@
 # Familiar
 
-A cozy turn-based Phaser puzzle adventure with Mochi and a coastal harbor to restore. The introduction at `/` leads to `/outing/`. Recover the Beacon Lens, route the tide through Wind Gate, help at Bell/Reed Steps, and follow Mochi's later shore-bell discovery.
+![Familiar: a little adventure with Mochi. A felt-miniature harbor at sunset: Mochi, an orange kitten in a red bandana, leaps between spiral stepping stones past a teal wave and a glowing wind-moth, while the stone-crab Tidekeeper watches and Bram the badger waves from the quay below the lighthouse.](docs/readme-banner.jpg)
+
+A cozy turn-based Phaser puzzle adventure with Mochi and a coastal harbor to restore. The introduction at `/` leads to `/outing/`. Recover the Beacon Lens, route the tide through Wind Gate, help at Bell/Reed Steps, and follow Mochi's later shore-bell discovery. Three story chapters are tide runs: twelve waves on a small board, where Mochi picks up what each wave leaves and banks it at the dock before the water lands. Once the beacon is lit, today's tide run is the daily, played and saved on this device: its three stamps (come home with something, match or beat Bram's guess, keep dry paws) are the day's asks, the first tide each day is the one that counts, and later sails are practice. The Home sheet shows the result, Bram's tide log keeps a page for each day, and Bram shelves the reed and glass Mochi brings home, to trade for Shells toward Mochi's wish. Saved harbors keep the Tidekeeper's three-ask court on Beacon Court, which device harbors can still open from the Chart.
 
 ## Run
 
@@ -39,6 +41,9 @@ Live stack: root `familiar-game.testnet`, items `items.familiar-game.testnet`. `
 ## Source
 
 - `web/src/expedition/`: rules, Phaser presentation, Mochi, sound and harbor.
+- `web/src/run/`: the tide run (`tide_run_v1`): rules, Bram's guess, the story chapters and the device tide book.
+- `web/src/tide/`: Today's tide, the Home sheet, Bram's tide log and the Tidekeeper's three-ask court with its solver.
+- `web/src/season/`: Bram's shelf, till and Mochi's wish over the testnet `season` contract.
 - `web/src/account/`, `web/src/tidebound/`: recoverable identity, original transactions and item provenance.
 - `web/src/compatibility/`: frozen historical return validation.
 - `contracts/`, `services/relayer/`: Rust testnet contracts and account HTTP service.

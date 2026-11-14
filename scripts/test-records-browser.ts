@@ -83,6 +83,11 @@ try {
     assert(await panel.evaluate(n=>n.contains(document.activeElement)),"focus stays in the panel after checking again");await expect(again).toBeFocused();
     const scroll=await panel.evaluate(n=>n.scrollWidth<=n.clientWidth);assert(scroll,"no horizontal scroll in the panel");
     if(shots)for(const [name,at] of [["top",0],["middle",.5],["end",1]] as const){await panel.evaluate((n,f)=>n.scrollTo(0,(n.scrollHeight-n.clientHeight)*f),at);await page.waitForTimeout(250);await page.screenshot({path:join(shots,`records-${width}x${height}-${name}.png`)});}
+    await panel.evaluate(n=>n.scrollTo({top:n.scrollHeight,behavior:"instant"}));
+    const panelBounds=await panel.boundingBox(),closeBounds=await panel.getByRole("button",{name:"Close panel",exact:true}).boundingBox(),headingBounds=await panel.getByRole("heading").first().boundingBox();
+    assert(panelBounds&&closeBounds&&headingBounds&&closeBounds.y>=panelBounds.y&&headingBounds.y>=panelBounds.y,"records heading and Close stay in view at the bottom");
+    await page.keyboard.press("Escape");await expect(panel).toHaveCount(0);
+    await expect(page.getByRole("button",{name:"Game menu",exact:true}).and(page.locator(":visible"))).toBeFocused();
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await page.close();
     console.log(`records ${width}x${height}: live-shape records, keyboard path, 44px targets passed`);
   }

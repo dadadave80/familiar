@@ -57,7 +57,7 @@ export function HarborAccountPanel() {
       {state.mode==="saved"&&state.snapshot&&!state.snapshot.pets.length&&<button disabled={blocked||!!state.pending} onClick={()=>void act(()=>controller.review({kind:"adopt"}))}>Bring Mochi home</button>}
       <button onClick={()=>void act(()=>controller.signOut())}>Sign out</button>
     </>:<>
-      <p>Use the same recoverable identity on each device. Login never creates another wallet or merges your memories.</p>
+      <p>Use the same recoverable identity on each device. Logging in never makes a second account or merges your memories.</p>
       {!controller.configured&&<p>Saving across devices is not connected at this address. Keep playing in the device preview.</p>}
       <button disabled={blocked||!controller.configured} onClick={()=>void act(async()=>{const binding=await controller.authenticate();if(alive.current)setUnbound(!binding);})}>{import.meta.env.VITE_ACCOUNT_PROVIDER==="privy"?"Continue with email":"Continue with Google"}</button>
       {unbound&&<form onSubmit={event=>{event.preventDefault();if(checked)void act(async()=>{await controller.provisionPlayer(username);if(alive.current)setUnbound(false);});}}>

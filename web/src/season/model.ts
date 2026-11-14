@@ -108,7 +108,7 @@ export const REFUSALS:Record<string,string> = {
   ERR_NOT_REGISTERED:"Open your page in Bram’s ledger first.",
   ERR_STORAGE_DEPOSIT:"The ledger page needs its full storage deposit.",
   ERR_STORAGE:"Your ledger page has no room for another of Mochi’s records.",
-  ERR_ALREADY_MINTED:"You have already docked today’s tide. Come back tomorrow.",
+  ERR_ALREADY_MINTED:"Bram has already shelved a haul today. Come back tomorrow.",
   ERR_WRONG_COURT:"That return is from a different day’s tide.",
   ERR_RULES_VERSION:"That return follows different rules.",
   ERR_COMMAND_BOUND:"That return has too many moves for today’s tide.",

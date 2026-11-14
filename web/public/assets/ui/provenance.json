@@ -1,0 +1,624 @@
+{
+  "created": "2026-11-14",
+  "purpose": "Familiar painted UI artwork: four harbor place signs, three interchangeable Mochi portraits and twelve Tidekeeper ask icons",
+  "generator": {
+    "tool": "Codex CLI (`codex exec`, image_gen.imagegen built-in tool)",
+    "model": "gpt-6-astra",
+    "reasoningEffort": "ultra",
+    "cliVersion": "0.169.0",
+    "cliVersionVerification": "Verified with codex --version on 2026-11-14; the supplied UI generation records do not independently record the CLI version.",
+    "sessions": [
+      {
+        "id": "01a1d965-fc27-7472-bf21-a1199d209111",
+        "files": [
+          "mochi-portrait.webp",
+          "sign-beacon.webp",
+          "sign-bram.webp",
+          "sign-satchel.webp",
+          "sign-workbench.webp"
+        ]
+      },
+      {
+        "id": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+        "files": [
+          "ask-lens.webp",
+          "ask-no-wait.webp",
+          "ask-within.webp"
+        ]
+      },
+      {
+        "id": "01a1d967-6170-7213-9784-0f8403ba32aa",
+        "files": [
+          "ask-dry.webp",
+          "ask-moth.webp",
+          "ask-splash.webp"
+        ]
+      },
+      {
+        "id": "01a1d96a-1a54-7810-8244-734e97bbe65f",
+        "files": [
+          "ask-all-marks.webp",
+          "ask-bridge.webp",
+          "ask-one-crossing.webp"
+        ]
+      },
+      {
+        "id": "01a1d96a-528d-7000-a4d3-31aa1cce014d",
+        "files": [
+          "ask-both-shells.webp",
+          "ask-coiled.webp",
+          "ask-shut-shell.webp"
+        ]
+      },
+      {
+        "id": "01a1d96a-6220-7512-acb3-ea840e2ddd7c",
+        "files": [
+          "mochi-portrait-proud.webp",
+          "mochi-portrait-splashed.webp"
+        ]
+      }
+    ]
+  },
+  "styleReferences": [
+    "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-b357f08c-c246-4943-a5b3-aea01c65b63f.png",
+    "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-c15335cf-2d90-48c3-9f75-2e30c68b370a.png",
+    "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-0270e35e-0472-4658-affd-e570dc8fb62f.png",
+    "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-354e177f-842c-4487-854a-d339a8401013.png",
+    "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-6a4f06b6-a00d-45ff-a89a-32645e83b851.png",
+    "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-78c92453-375b-4529-bef9-196d77e9b73d.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/stone-island.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/wooden-bridge.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/bram.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/mochi-poses-source.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/mochi.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/moth.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/shell.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/wave.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/tide/seal-kept.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-within.png",
+    "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/sign-beacon.png"
+  ],
+  "delivery": "The delivered cream-backed PNG masters are preserved byte-for-byte. Before delivery, signs and portraits had only their connected exterior backdrop normalized to #F4EBD9 at original dimensions; ask icons were extracted, trimmed and normalized to an 878 px longest object dimension on 1254 px cream squares, as recorded per file. Runtime WebPs are produced by scripts/optimize-ui-assets.ts (see manifest.json): four-corner flood fill and tuned alpha edge cleanup; signs trimmed to 480 px wide; all three portraits use one shared crop from the union of their alpha bounds, fitted into 256x256 transparent squares; ask icons are trimmed, fitted to 84 px and centered on 96x96 transparent squares with a six-pixel minimum margin. The optimizer never resizes or modifies the masters.",
+  "files": {
+    "ask-all-marks.webp": {
+      "master": "web/assets/source/ui/ask-all-marks.png",
+      "prompt": "Use case: stylized-concept. Create an exquisite finished square game UI icon for Familiar at highest visual quality. One compact arrangement consisting of EXACTLY THREE small round sandstone marker pebbles side by side in one straight HORIZONTAL ROW. Left, middle and right each distinct, with equal small gaps between them. Each is a chubby flattened rounded pebble with gently domed top, chunky bevel and the warm peach sandstone texture of reference 2. Each pebble has its own broad soft inner glow contained entirely INSIDE its stone surface: left sea-teal glow, middle honey-gold glow, right warm coral glow. They remain tactile carved sandstone stones, not glass gems, candy or buttons. The colored luminous center occupies most of each stone top, with subtly darker sandstone side faces. Absolutely NO markings or symbols on any stone: smooth unmarked surfaces. No swirl, carving, letters, numerals.\nReference1 is the approved hero icon: match its tactile hand-shaped clay miniature finish, broad value shapes, warm golden light from upper right, softly lit object rims and gentle saturated palette. Reference2 is the sandstone material authority only; do not copy island, spiral, moss or scene. Slightly top-down three-quarter view, see the round top and lower side thickness of all three. Entire trio centered at x50% y50%, overall width70% of square canvas with generous empty space all around. Readable at24px as three chunky luminous round pebbles, minimal texture/fine detail.\nBackground perfectly flat solid light cream #F4EBD9 edge-to-edge. No ground, cast/contact shadows, vignette, texture, gradient, halo or bloom outside objects. No enclosed see-through gaps. No extra objects. No text, numbers, arrows, slash, checkmark, graphic symbols, frame, badge circle or watermark.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-1a54-7810-8244-734e97bbe65f/exec-4316fdc0-ca50-4f0c-91e0-64e35535c156.png",
+      "session": "01a1d96a-1a54-7810-8244-734e97bbe65f",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/stone-island.png"
+      ],
+      "masterSha256": "2b6fde1125c309b744ed08272924f00b52379e2b8a4dd8e31b86382a8bff7ddb",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "First generation accepted after full-size inspection; final backdrop and occupancy normalized using corner fill.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e"
+    },
+    "ask-both-shells.webp": {
+      "master": "web/assets/source/ui/ask-both-shells.png",
+      "prompt": "Use case: precise-object-edit. Refine the supplied TWO OPEN SHELLS icon for production cutout. Keep exactly two open scallop shells side by side, their geometry and separate dark inner bowls, five broad lobes, cute chunky handmade clay material, muted teal hinge nubs, same positions and camera, no extra objects. Reference 1 is approved hero, match its rich saturated values and lighting. Reference 2 is edit target.\nCRITICAL CHANGE: every outer contour pixel of both shells must be saturated CORAL or muted DEEP TEAL, strongly distinct from the flat cream backdrop. Replace the pale yellow-white highlights along shell outer edges with saturated warm coral-peach highlights, still visibly darker and redder than cream. No near-white highlights, especially upper right rims. Use richer burnt-coral shadows inside the cups. The golden upper-right lighting should model the surface WITHOUT bleaching its silhouette. Smooth clean sculpted contours.\nCenter pair within 70% width of square canvas, min15% margin.\nPerfectly uniform flat #F4EBD9 digital matte backdrop edge to edge, no noise/texture/gradient/halo/vignette/ground/shadows. No enclosed see-through holes. No text, numbers, letters, symbols, arrows, badges, watermarks. Highest quality PNG.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-6e3a9c9e-9b8b-4014-be39-fcaab1935208.png",
+      "session": "01a1d96a-528d-7000-a4d3-31aa1cce014d",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-78c92453-375b-4529-bef9-196d77e9b73d.png"
+      ],
+      "masterSha256": "9138fe5fdbad0446ff6e7e766aea2fe36aede3b8b75e2f62abed03071cedf2b7",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "Regenerated to deepen coral edge highlights after 8% corner fill nibbled pale edges.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "rejectedVersions": [
+        {
+          "prompt": "Use case: stylized-concept. Paint one exquisite final UI ask icon for Familiar cozy harbor game, highest visual quality square PNG.\nSubject: TWO small coral-peach scallop shells SIDE BY SIDE, BOTH OPEN, their rounded fan-shaped upper valves lifted enough to expose two unmistakable deep warm coral inner cups. Each shell is a little hinged open clamshell with an upper fan and a lower bowl joined solidly at its hinge. There are exactly TWO complete shells. No pearls. The left shell is subtly smaller and tilted inward; the right shell is beside it, same size family, separated by a slim open background channel. Broad five-lobed scalloped fans, a few broad radial ribs, small muted teal accent at each hinge. Big simple chunky shell shapes, deep rust-coral interiors contrasted with salmon and peach lit edges; retain dark visible open mouths at 24px. No fine edge frills, no tiny decoration.\nReference image 1: approved hero icon, match tactile hand-shaped clay/felt surface, saturated but gentle palette, golden light from upper right, soft rim light ONLY on object, slightly top-down three-quarter camera and quality. Reference image 2: exact shell family shape, coral-peach color, teal hinge accent; transform that shell into two open shell objects. Reference image 3: soft miniature clay modeling only, do NOT copy badge or seal circle.\nComposition: the pair forms a single compact centered grouping filling about 70% canvas width, at least 15% margin all sides. No overlap that hides either opening.\nBackground perfectly flat uniform solid light cream #F4EBD9 edge to edge, digital flat matte. NO ground, cast shadow, contact shadow, halo, bloom, vignette, gradient or backdrop texture. No enclosed see-through gaps; all gaps between shells and around valves must connect to outside backdrop. No text, numbers, letters, symbols, arrows, slash, check marks, frames or watermarks. Objects only.",
+          "references": [
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/shell.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/tide/seal-kept.png"
+          ],
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-78c92453-375b-4529-bef9-196d77e9b73d.png",
+          "reason": "Pale upper-edge highlights were eaten by 8% corner fill, producing ragged contours."
+        }
+      ]
+    },
+    "ask-bridge.webp": {
+      "master": "web/assets/source/ui/ask-bridge.png",
+      "prompt": "Use case: stylized-concept. Exquisite finished square game UI icon for Familiar, highest visual quality. A small honey-brown wooden footbridge resting on TWO little peach sandstone piers, one left and one right. Make a clear chunky bridge silhouette: a gently arched thick timber deck spans horizontally left-to-right between two stout rounded sandstone block feet. Each foot is about a quarter of the total width. The open space beneath the span is fully open DOWNWARD to the outer cream background, never an enclosed hole. Four broad transverse deck planks, a low solid wooden side beam, NO railings, posts, ropes, vegetation, water or platform beneath. Bridge must look unmistakably like a tiny complete bridge, different from an isolated flat plank segment.\nReference 1 is the approved hero: match its softly sculpted clay miniature craftsmanship, strong value separation, restrained tactile texture and upper-right warm golden key light. Reference 2 supplies warm wooden material, simplified heavily; reference 3 supplies warm rounded sandstone. No emblem or carved symbols from the stone reference. Slightly top-down three-quarter view with front face visible, deck top visible, left-to-right span; centered object occupies 70% of square canvas width, at least15% clear margins.\nSaturated but gentle amber wood, deeper chestnut underside, peach sandstone with caramel shadow faces. Soft rim light only on object. Strong simple forms remain readable at24px. Background is perfectly flat solid uniform cream #F4EBD9 edge to edge, no ground, cast/contact shadow, gradient, vignette or halo. One object only. No text, letters, numbers, arrows, slashes, checkmarks or symbols, no frame/badge/watermark.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-1a54-7810-8244-734e97bbe65f/exec-20d5e719-8986-466c-8304-d414eda2c122.png",
+      "session": "01a1d96a-1a54-7810-8244-734e97bbe65f",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/wooden-bridge.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/stone-island.png"
+      ],
+      "masterSha256": "8bec26911363f93fdf0541f3975df804e8ad2cf8b41bc7c7507f8770cfc748c6",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "First generation accepted after full-size inspection; final backdrop and occupancy normalized using corner fill.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e"
+    },
+    "ask-coiled.webp": {
+      "master": "web/assets/source/ui/ask-coiled.png",
+      "prompt": "Use case: stylized-concept. Paint one exquisite final UI inventory icon for Familiar, a cozy harbor miniature game, highest visual quality square PNG.\nSubject: ONE neatly coiled harbor rope, low wide oval coil viewed slightly from above in three-quarter view. Three to four chunky honey-tan rope turns neatly nested in a compact low stack, with the short rope end tucked across the filled center. The center is filled by rope, not a background hole. Show the large twisting rope strands clearly but with minimal fine fibre detail. Strong contrast between golden raised strands and warm dark ochre creases. Soft felt-and-clay handmade miniature material. It must instantly read as rope even at 24 pixels, with a low oval silhouette distinct from an upright lens.\nImage 1 is the approved hero icon: match its tactile finish, richness, warm upper-right golden light and restrained rim light, slight top-down three-quarter camera, scale and simple silhouette. Image 2 supplies the harbor rope material and color only; DO NOT paint bridge or wood. Image 3 supplies soft hand-shaped clay texture only; do not paint its badge, shell or circle.\nComposition: centered single object filling about 70% canvas width with at least 15% clear margin, no props. Entire outer silhouette should be very clean, chunky, recognizable.\nBackground MUST be a perfectly flat solid light cream #F4EBD9, edge to edge, like digital matte color, with no texture, no gradient, no vignette, no ground plane, no cast or contact shadow and no halo. No enclosed see-through holes. No text, lettering, numbers, arrows, slash, checkmarks, symbols, frames, badge or watermark.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-4a0139e7-8f48-4f98-81ca-d93029a4e0c7.png",
+      "session": "01a1d96a-528d-7000-a4d3-31aa1cce014d",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/wooden-bridge.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/tide/seal-kept.png"
+      ],
+      "masterSha256": "1676b668e8e8c68b8b59a35c08731e51f543a4adc157209ea9615be2cdaf7124",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "First generation accepted; normalized to common scale and flat matte using corner flood fill.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e"
+    },
+    "ask-dry.webp": {
+      "master": "web/assets/source/ui/ask-dry.png",
+      "prompt": "Use case: stylized-concept. Paint one final master UI object icon for Familiar, cozy harbor puzzle game, highest available visual quality. Image 1 (ask-lens.png) is the exact set's tactile clay/felt polish, camera, warm light, big rounded forms and cream backdrop authority. Image 2 (mochi.png) supplies the orange kitten fur colour and plush material only. Subject: a single clean dry orange kitten paw, viewed from its soft underside so its rounded peach-pink central paw pad and four small toe pads are visible; a chubby three-dimensional soft felt paw with thick orange furry silhouette and tiny attached rounded wrist stump, NOT a printed paw symbol and NOT separate floating toe beans. Beside the paw at lower right sits one very tiny warm golden sun pebble, a plain plump amber-yellow pebble without rays, face or symbol. Treat this as one compact icon grouping. The paw is dominant, the sun pebble no more than one fifth of its size. Delicate visible felt texture but big simple shape, warm saturated gentle orange, clear shading between pads and fur; silhouette must read instantly at 24 pixels. Slightly top-down three-quarter view matching reference 1. Warm golden illumination from upper right and gentle soft rim light on object only. Center the object grouping; longest dimension about 70 percent of square canvas and at least 10 percent margin on every edge. Perfectly flat uniform cream background #F4EBD9 edge to edge. No ground plane, cast shadow, vignette, gradient, aura or halo. No water, dirt, shell, lens, cat face or full animal. No enclosed see-through gaps. No text, letters, numbers, arrows, slashes, check marks or other symbols, no frame or circular badge.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d967-6170-7213-9784-0f8403ba32aa/exec-5fa6d146-1b76-4f0a-b887-adff3611d8ae.png",
+      "session": "01a1d967-6170-7213-9784-0f8403ba32aa",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/mochi.png"
+      ],
+      "masterSha256": "1ec777d2dadcf2b48f77ab32813a92b5df761b10efa2e40c07dbdd2eef01bf81",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "First generation retained: dimensional orange plush paw, peach pads, small warm sun pebble, clean silhouette. Inspected generated image and normalized full-size cream master.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e"
+    },
+    "ask-lens.webp": {
+      "master": "web/assets/source/ui/ask-lens.png",
+      "prompt": "Precisely refine this Beacon Lens game icon. Preserve the beautiful chunky amber Fresnel glass, tactile brass, muted teal foot, exact design, same three-quarter view and upper-right warm lighting. Deliver highest-quality square PNG. Make the entire object SMALLER: its bounding box must be 70% of canvas height, from y=15% to y=85%, centered at x=50%, y=50%. It currently is too tall. Leave generous empty margins. Background must be absolutely flat solid #F4EBD9 everywhere with zero texture, no mottling, no vignette, no gradients, no ground, no shadows. Isolated object on a digital flat-color matte. No text or symbols. No enclosed see-through holes. Retain the rich sculpted depth on the OBJECT only, not on the background.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-eee8d422-da02-46d4-9879-99552d719c9d.png",
+      "session": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-354e177f-842c-4487-854a-d339a8401013.png"
+      ],
+      "masterSha256": "5f81289981ede39f3bdcbdfce8612c0c9f4b442500f76ad0cf0894536d9aceb2",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "Reduced oversized hero to the shared 70% canvas occupancy; requested perfectly flat cream backdrop.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "rejectedVersions": [
+        {
+          "name": "ask-lens.png",
+          "prompt": "Use case: stylized-concept. Create one exquisite final game UI icon, square 1024x1024 PNG, highest visual quality.\nSubject: the Beacon Lens from reference 1: a thick round antique warm brass lighthouse Fresnel lens, amber glass with three broad concentric ridges, a chunky little brass cradle and low teal-patinated brass foot. Preserve its identity but simplify drastically for recognition at 24 pixels. No delicate framework: the cradle hugs the lens with no enclosed background holes. The lens glass is opaque luminous honey and smoky teal, never transparent to the backdrop. The large round optic is the hero.\nReferences: image 1 is exact subject identity; image 2 is felt/clay miniature art treatment and warm family palette; image 3 is material/world context only. Do not reproduce their scenes, seal circle or backgrounds.\nComposition: one centered object, slightly top-down three-quarter view, face turned a little to viewer left so its right rim has depth. Entire object fits within a centered 70% by 70% box, all extremities at least 12% from edges. Strong chunky silhouette, broad value separations, minimal ornament, no fine scratches. Rich tactile hand-painted clay and softly worn brass with gentle miniature surface texture. Warm golden key light from upper right, restrained soft rim light only on the object. Deep warm brown and muted teal lower-left recesses.\nBackground: perfectly flat uniform solid light cream #F4EBD9 edge to edge. Treat it as a flat matte cutout color, NOT a photographed surface. No ground plane, NO cast shadow on background, no contact shadow, no vignette, no gradient, no halo, no bloom beyond silhouette.\nOnly the object. No text, letters, numbers, arrows, slash, check marks, pictograms, watermark, frame, badge, circle behind object. This is the hero that will define a cohesive twelve-icon set.",
+          "references": [
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/lens.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/tide/seal-kept.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/tide/card-surf-home.png"
+          ],
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-354e177f-842c-4487-854a-d339a8401013.png",
+          "rejection": "Object too large vertically (about 84%); cream backdrop has slight mottling. Regenerate with smaller object and flat backdrop.",
+          "codex_session_id": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+          "pixel_size": [
+            1254,
+            1254
+          ],
+          "source_part": "/Users/dadadave/.codex/specs/familiar-tidekeepers-ask-2026-11-14/art-provenance/part-lens-hourglasses.json"
+        }
+      ]
+    },
+    "ask-moth.webp": {
+      "master": "web/assets/source/ui/ask-moth.png",
+      "prompt": "Use case: stylized-concept. Create one final master UI object icon for Familiar, the cozy harbor puzzle game, at highest available visual quality. Image 1 (ask-lens.png) is exact set authority for tactile clay/felt polish, upper-right golden light, camera, scale and backdrop; image 2 (moth.png) supplies subject identity. Subject: one friendly glowing wind-moth with exactly four chunky broad pointed wings, two simple short thick antennae, a round HONEY-TAN FELT HEAD, two shiny dark eyes and a tiny smile, short plush hands and golden abdomen. Crucial extraction requirement: the entire outer silhouette INCLUDING THE TOP OF THE HEAD must have rich medium golden-brown/honey colour, clearly much darker and more saturated than the cream backdrop; absolutely no cream-white pale fur along the outer edge. The head is warm caramel honey felt, bright but never pale ivory. Four wings have rich amber thick edges and softly glowing golden inner surfaces, each with just one broad curved glowing inset; no filigree, no veins. Glow and rim light stay INSIDE the form, no halo. A beautiful dimensional handcrafted felt/clay miniature, not a flat vector or symbol, simplified to big readable shapes at 24 pixels. Slightly top-down three-quarter view. Warm light from upper right. Centered subject fills 70 percent of square canvas at longest extent with minimum 10 percent margin. Uniform flat solid cream #F4EBD9 backdrop edge to edge, no ground, cast shadow, vignette, gradient, aura, frame or badge circle. No enclosed see-through gaps, text, letters, numbers, arrows, slashes, check marks, stars, graphic symbols or additional objects.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d967-6170-7213-9784-0f8403ba32aa/exec-5bb3a18f-18da-4f50-84ff-b2332b3b9802.png",
+      "session": "01a1d967-6170-7213-9784-0f8403ba32aa",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/moth.png"
+      ],
+      "masterSha256": "28ee1913f12e75ffa880bd97c97d51ba6b3fc4aa6cedae88e57f26f609414f8c",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "Rejected first moth: pale cream outer head highlights connected to backdrop and were eroded by 8% corner flood fill. Regenerated with rich honey-tan head silhouette, preserved dark eyes and plush material. Inspected final cream master and full-size dark-teal cutout; intact.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "rejectedVersions": [
+        {
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d967-6170-7213-9784-0f8403ba32aa/exec-1f1267d2-ceb1-469b-b4e3-4e182f284122.png",
+          "prompt": "Use case: stylized-concept. Create one final master UI object icon for Familiar, the cozy harbor puzzle game, at the highest available visual quality. Image 1 (ask-lens.png) is the exact set style, camera, light, simple chunky sculptural finish, scale and backdrop authority; image 2 (moth.png) is subject identity only. Subject: the glowing wind-moth, one friendly small plush moth with a round cream felt head, two dark shiny eyes, a tiny smile, stout golden abdomen, exactly four broad softly pointed wings, and two simple short thick antennae. Preserve the moth's identity, but simplify all filigree to just one broad curved glow inset per wing; no hairline veins or filigree. Wing edges are thick deep honey amber, wings warm gold/ivory, luminous highlights entirely contained INSIDE the object with absolutely no aura on the background. Warm golden light from upper right, soft rim light contained on its form, tactile felt and softly painted clay miniature materials. Slightly top-down three-quarter view matching image 1. A clear big simple silhouette readable at 24 pixels. Object centered, occupies about 70% of square canvas at longest extent; at least 10% clear margin on every side. Perfectly uniform flat solid light cream #F4EBD9 backdrop edge to edge. No ground plane, no cast shadow, no gradient, no vignette, no halo, no frame, no badge circle. No enclosed see-through gaps. No other objects, no text, letters, numbers, arrows, slashes, check marks, stars or graphic symbols.",
+          "reason": "8% corner extraction eroded crown highlights."
+        }
+      ]
+    },
+    "ask-no-wait.webp": {
+      "master": "web/assets/source/ui/ask-no-wait.png",
+      "prompt": "Create a refined final game icon at highest visual quality, square PNG. Reference1 is the approved UPRIGHT brass hourglass; reference2 is the hero material and lighting. Make precisely the same kind of pocket hourglass as reference1, but lying STRICTLY HORIZONTALLY on its side with its axis left to right. It must read as a classic hourglass, NOT candy, a dumbbell, a bow tie, or binoculars.\nUse TWO SIMPLE FLAT BRASS DISK CAPS at the left/right ends, each thin in axial depth and viewed in perspective from a little above. NO extra round knobs, buttons, tiers or protrusions on the end faces. The hourglass glass tube between caps takes up 75% of the object's length and has a dramatic very narrow neck in its center. Its two rounded triangular lobes taper strongly to the neck. Distinctly hourglass-shaped sea-green glass with a golden sand bank resting along the LOWER SIDE of both chambers, sand horizontal and completely still. No sand stream. Glass is opaque sea-glass color with broad highlights and darker teal borders, not transparent to background. No support posts/rods/handle or any enclosed see-through gap. It is a sculpted tactile mini object, never a flat symbol.\nMatch the reference's soft clay-like brushed gold brass, warm upper-right golden light and subtle rim light, slight top-down three-quarter view. Strong simple silhouette at 24px. Center whole object, fill70% of square canvas width and leave generous15% margins. Absolutely uniform flat solid cream #F4EBD9 backdrop edge to edge with zero texture, floor, shadow, ground, vignette, halo or gradient. No text, letters, numbers, arrows, slashes, checkmarks, signs, frame, badge or any other objects.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-919c17c5-14f7-4cf6-9429-49a3ab251ac2.png",
+      "session": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-within.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png"
+      ],
+      "masterSha256": "07f269bffe48bbd4849ff23f678dfa62a4d8151fcf09eaf08ebf1d0472e073a1",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "Regenerated after 24px review: removed tiered end knobs, strengthened hourglass waist and settled sand.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "rejectedVersions": [
+        {
+          "name": "ask-no-wait.png",
+          "prompt": "Use case: stylized-concept. Create one final exquisite Familiar game ask icon at highest quality, square PNG. Reference 1 is the approved hero: match its tactile hand-painted clay miniature and softly worn rich golden brass, warm golden key light from upper right, shadowed teal lower-left depth, restrained soft rim light and slightly top-down three-quarter viewing angle.\nSubject: ONE tiny brass pocket hourglass lying COMPLETELY HORIZONTAL on its side, long axis left-to-right. This means never wait a turn. Big thick rounded warm brass end caps, a single broad sea-green glass hourglass bulb, pinch in center, sand completely still settled in a continuous low horizontal bank along the lower side of the glass. No pouring sand. The glass is opaque colored sea glass with broad highlights and clearly visible golden sand: not see-through to background. Keep a single continuous solid silhouette, no side rails or support rods creating enclosed see-through gaps. Chunky magical miniature, not a flat pictogram. No stand or ground. 24px recognition must be instantly horizontal hourglass, with unmistakable pinched waist and two large brass end caps.\nOne centered object occupying 70% of canvas width, at least 15% clear margins all around. Broad readable shapes, very little fine detail. Absolutely uniform solid cream #F4EBD9 background edge to edge, digital matte with NO texture or vignette. No ground, cast shadow, contact shadow, gradient or glow on backdrop. No text, letters, numbers, arrows, slashes, checkmarks, symbols, face, clock dial, badge, frame, extra objects.",
+          "references": [
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png"
+          ],
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-0270e35e-0472-4658-affd-e570dc8fb62f.png",
+          "regeneration_note": "Initial generation; horizontal axis and settled sand distinguish never-wait from upright time limit.",
+          "rejection": "Independent 24px review read the large tiered end caps as wrapped candy/dumbbell. Regenerated using simpler flat caps and a narrower waist.",
+          "codex_session_id": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+          "pixel_size": [
+            1254,
+            1254
+          ],
+          "source_part": "/Users/dadadave/.codex/specs/familiar-tidekeepers-ask-2026-11-14/art-provenance/part-lens-hourglasses.json"
+        }
+      ]
+    },
+    "ask-one-crossing.webp": {
+      "master": "web/assets/source/ui/ask-one-crossing.png",
+      "prompt": "Use case: stylized-concept. Paint an exquisite final square game UI icon, highest quality: one short wooden footbridge plank segment for the cozy harbor game Familiar. Reference 1 is the approved hero icon: match its tactile hand-shaped clay miniature polish, rich warm shading, chunky form language and scale. Reference 2 supplies the honey-brown weathered wooden bridge material; simplify it heavily. Subject is only a compact RECTANGULAR SEGMENT of THREE broad adjacent wooden deck planks joined tightly over two little hidden underside crosspieces. Three softly rounded planks with subtly uneven ends; just two dark seams and a few simple broad wood grain lines. No railings, posts, ropes or stone piers. The object must read at 24 pixels as a small flat wooden footbridge segment, not as a whole bridge or a crate. View slightly top-down three-quarter, segment recedes gently toward upper right; long silhouette mostly horizontal, not vertical. Warm golden light from upper right, soft rim highlights ON THE OBJECT only; gentle tactile surface, saturated but soft colors, dark chestnut undersides. Center the entire object within 70% of square canvas width, with at least 15% clear margin on all sides.\nPerfectly flat uniform solid light cream #F4EBD9 backdrop edge to edge. No ground plane, cast shadow, contact shadow, vignette, gradient or halo. No enclosed see-through gaps: planks touch. Only this one object, no decorations. No text, numbers, letters, arrows, slashes, checkmarks, icons, symbols, frame, badge circle, watermark.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-1a54-7810-8244-734e97bbe65f/exec-b1005026-6de5-439e-848f-5e77bcb055f3.png",
+      "session": "01a1d96a-1a54-7810-8244-734e97bbe65f",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/expedition/wooden-bridge.png"
+      ],
+      "masterSha256": "4fea3115c8599b01846448760b63bfb3ecafe98df8c6fdbc8236214cc7bc10ea",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "First generation accepted after full-size inspection; final backdrop and occupancy normalized using corner fill.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e"
+    },
+    "ask-shut-shell.webp": {
+      "master": "web/assets/source/ui/ask-shut-shell.png",
+      "prompt": "Use case: stylized-concept. Paint one exquisite final game UI icon: ONE firmly CLOSED coral scallop shell, highest quality square PNG.\nReference1 is the approved hero icon; match its tactile miniature clay/felt polish, warm upper-right golden light, soft rim light, slight top-down three-quarter view. Reference2 is the EXACT REQUIRED SILHOUETTE and orientation: classic scallop fan with its NARROW HINGE AT THE BOTTOM, broad scalloped rim SPREADING UPWARD. Reference3 provides the rich coral color and teal hinge values only, not pose.\nCRITICAL: Fan opens its SHAPE upward like reference2, but its two physical shell valves are firmly SHUT together. The five broad ridges radiate from a small teal hinge at the BOTTOM CENTER up to a wide scalloped TOP edge. The outer silhouette must be fan-shaped: widest across upper third, distinctly narrowing toward bottom hinge, NOT round, NOT pumpkin shaped, no stem on top. Show the upper valve angled slightly back so a slim warm dark closed seam and thick lower valve are visible along lower-right side. No open mouth, no visible interior.\nFive broad smooth raised clay ribs and scallops only, minimal ornament, no tiny decorative curls. Rich coral-orange body, salmon highlights, burnt-coral shadows, a muted teal small bottom hinge. Highlights stay saturated darker/redder than cream, never bleach the outer edge. Strong chunky silhouette and broad value masses recognizable at24px.\nCenter shell within a 70% canvas bounding box, minimum15% margin. Perfectly flat uniform solid #F4EBD9 background edge to edge; digital flat matte, no background texture, no gradient, no vignette, NO ground plane, contact shadow, cast shadow, halo or bloom. No enclosed see-through holes. No text, numbers, letters, arrows, symbols, slash, check marks, badge, frame or extra objects.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-9b4deef8-a96e-4980-8b04-1e1cead0ee70.png",
+      "session": "01a1d96a-528d-7000-a4d3-31aa1cce014d",
+      "attempts": 3,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/shell.png",
+        "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-6a4f06b6-a00d-45ff-a89a-32645e83b851.png"
+      ],
+      "masterSha256": "bced80b63cb580dae3f946c9d7185b460fac13f8287d7de74f6e4f96bb11ed2e",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "First corrected pale hinge highlight damaged by 8% corner fill; then changed top-hinge pose to classic upward fan with bottom hinge after review found a pumpkin silhouette at24px.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "rejectedVersions": [
+        {
+          "prompt": "Use case: stylized-concept. Paint one exquisite final UI ask icon for Familiar cozy harbor game, highest visual quality square PNG.\nSubject: ONE scallop shell firmly CLOSED, a single uninterrupted broad coral-peach fan shape, with five broad softly rounded scallops and deep gentle radial ribs. Show a short thick lower valve tucked tightly against the upper valve, with only a slim warm-dark seam along its forward lower lip, absolutely no open mouth, no visible interior. Small softly worn muted teal hinge nub. The shell is lying down with fan edge toward the viewer and hinge a little farther away, viewed slightly top-down in three-quarter view so its thick clay form reads. Rich coral sides, warm peach highlights, substantial warm-dark underside. Strong simple chunky silhouette with broad value masses, minimal fine detail, readable as a shut scallop at 24 pixels.\nImage 1 is the approved lens hero: match its exquisite tactile hand-painted clay/felt material, saturated gentle color, warm golden key light from upper right and soft rim light only on object, scale and miniature camera. Image 2 is the exact shell family: preserve scallop identity, coral-peach color and muted teal hinge accent, but make it firmly closed with a visible tight seam and chunky proportions. Image 3 is miniature clay texture reference only; do not copy badge/seal circle.\nComposition: only this single shell, centered, fills about 70% canvas width and height bounding box, at least 15% clear margin on all sides.\nBackground: absolutely uniform flat solid light cream #F4EBD9 edge to edge. Digital matte, no backdrop texture, NO ground plane, contact shadow, cast shadow, vignette, gradient, halo, bloom or enclosing badge. No enclosed see-through holes. No text, letters, numbers, symbols, arrows, slash, check marks, frame, watermark or extra objects.",
+          "references": [
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/shell.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/tide/seal-kept.png"
+          ],
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-7bb275ce-fc1e-4bcf-9f1b-df80f535e20a.png",
+          "reason": "Pale top teal hinge highlights were eaten by 8% corner fill."
+        },
+        {
+          "prompt": "Use case: precise-object-edit. Final production polish of single CLOSED scallop shell game icon, highest quality square PNG. Reference1 is approved hero style; reference2 is edit target; reference3 shows the matching open shells and their refined coral-teal values.\nPreserve reference2's single firmly shut scallop shape, five broad ribs and scallops, solid thick upper and lower valves, tight dark seam, muted teal hinge at back, centered slightly top-down three-quarter view. Change only the excessive pale edge highlights: the upper teal hinge currently has near-cream highlights that disappear on background removal. Make hinge medium deep teal with rich golden-green lighting that never approaches cream. Give shell outer contour saturated coral-peach edge highlights, darker and redder than cream, NO near-white bleached rim. Match reference3's rich coral family while retaining gentle warm golden modeling. Clay/felt tactile miniature finish, minimal fine details, large broad value shapes for 24px.\nCenter within70% width, min15% margin. Flat uniform solid #F4EBD9 digital matte background edge to edge, NO gradients, texture, ground, shadows, halos, vignette. No enclosed see-through holes, no open mouth/interior, no pearl. No text, letters, numbers, symbols, frame, badge, watermark or extra objects.",
+          "references": [
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+            "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-7bb275ce-fc1e-4bcf-9f1b-df80f535e20a.png",
+            "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-6e3a9c9e-9b8b-4014-be39-fcaab1935208.png"
+          ],
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d96a-528d-7000-a4d3-31aa1cce014d/exec-6a4f06b6-a00d-45ff-a89a-32645e83b851.png",
+          "reason": "At24px the top teal hinge and rounded lower lobes read as a pumpkin. Reversed to classic upward fan with hinge at bottom."
+        }
+      ]
+    },
+    "ask-splash.webp": {
+      "master": "web/assets/source/ui/ask-splash.png",
+      "prompt": "Use case: stylized-concept. Create one gorgeous final master UI object icon for Familiar cozy harbor game, at highest available visual quality. Image 1 ask-lens.png is exact set authority for tactile painted clay, warm golden light from upper right, chunky polished miniature forms, camera and scale. Image 2 wave.png supplies sea-water material and teal hue. Subject: one small lively teal water splash with a compact thick irregular body, three broad upward curling lobes, and exactly three chunky round teal droplets close above the body. Dark rich teal body shaded with broad turquoise inner highlights. A few softly rounded MINT GREEN foam caps on the three tips; ALL FOAM OUTER EDGES must be saturated medium seafoam-green clearly distinct from cream background, NO white or ivory along silhouette. Mint caps feel soft felt/clay, with bright highlights only inset inside the caps. Crucial: background corner flood fill with 8 percent colour tolerance must never eat into the object. Every outside edge including foam must remain sufficiently saturated/dark. No pale white outer highlights. Water feels lustrous and handcrafted. No thin spikes, spray mist, veins or hairline details. A strong simple chunky silhouette that reads as splash at 24 pixels, not a repeated wave pattern. Slightly top-down three-quarter view matching image 1. Compact centered grouping fills 70 percent of square canvas at longest extent; all droplets have 10 percent clear margins. Perfectly flat uniform solid cream #F4EBD9 background edge to edge. No ground, base, sea, platform, lens or other object. No shadow on background, no gradient, vignette, halo, frame or badge circle. No enclosed see-through holes, no text, letters, numbers, arrows, slashes, check marks, stars or graphic symbols.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d967-6170-7213-9784-0f8403ba32aa/exec-394c548d-89f4-4cf9-a32f-914428e451f4.png",
+      "session": "01a1d967-6170-7213-9784-0f8403ba32aa",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/wave.png"
+      ],
+      "masterSha256": "444dbc5c65cb5dedb35029d41a91875ff36a030a3e1a3be10adaae759682a015",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "Rejected first splash: cream foam caps connected to backdrop and were eroded by 8% corner flood fill. Regenerated with saturated seafoam-green caps over rich teal water; full-size dark-teal cutout verified intact.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "rejectedVersions": [
+        {
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d967-6170-7213-9784-0f8403ba32aa/exec-d8d56715-c575-4ef2-84e8-8f3eeb13fcd2.png",
+          "prompt": "Use case: stylized-concept. Create one beautiful final master UI object icon for Familiar, cozy harbor puzzle game, at highest available visual quality. Image 1 (ask-lens.png) is exact authority for matching the set's tactile painted clay polish, chunky forms, upper-right golden light, slightly top-down three-quarter camera, scale and cream backdrop. Image 2 (wave.png) is water colour and tactile material reference only. Subject: one small lively teal water splash, sculpted like a rounded miniature of sea-glass and soft painted clay: a compact thick irregular splash body with three broad upward curling lobes and just three generous round water droplets closely above it. No circular wave tunnel. Dark saturated teal body with broad mint-turquoise inner highlights and a few creamy foam lobes at tips; lustrous water that still feels handcrafted, no thin spikes or hairline foam. A simple strong graphic silhouette with dimensional material, readable at 24 pixels. No sea, base, ground, platform or other object. Main body and droplets form a centered compact grouping filling about 70 percent of the square canvas at longest extent; keep all marks and droplets at least 10 percent away from edges. Warm golden light from upper right and gentle soft rim light contained on object only. Perfectly flat uniform cream #F4EBD9 backdrop from edge to edge: no ground plane, no cast shadow, no vignette, no gradient, no halo, no frame or badge circle. No enclosed see-through gaps in splash. No text, letters, numbers, arrows, slashes, check marks, stars or symbols.",
+          "reason": "8% corner extraction erased broad white foam highlights."
+        }
+      ]
+    },
+    "ask-within.webp": {
+      "master": "web/assets/source/ui/ask-within.png",
+      "prompt": "Use case: stylized-concept. Create one final exquisite Familiar game ask icon at highest quality, square PNG. Image1 is approved hero art style; image2 is the companion sideways brass hourglass. Match their tactile hand-painted clay and softly worn golden brass, warm golden light from upper right and subtle teal depths. Do NOT include lens. Create the matching hourglass standing fully UPRIGHT, vertical axis, viewed slightly from above in three-quarter view. This represents home within a number of decisions.\nSubject: ONE tiny brass pocket hourglass, thick softly rounded golden brass top and bottom caps, a single broad sea-green glass bulb pinched in the middle. Golden sand forms a mound in top half with a clearly visible thin continuous stream through waist into a growing mound in bottom half. Bold contrast between warm sand and deep teal glass. The opaque colored glass contains its own shading and never reveals cream backdrop. No separate support rods: continuous filled silhouette with no enclosed see-through gaps. Keep simple classic hourglass profile with broad top/bottom, narrow waist. Gentle handworked materials, broad highlight, minimal small texture. No numbers or face or decorations.\nCentered object occupies70% canvas height with min15% margins, same visual scale as image1. Absolutely uniform flat solid cream #F4EBD9 backdrop edge to edge. No background texture, gradient, vignette, floor, ground, cast shadow, contact shadow or glow outside object. Only this single upright object, no frame, badge, other props, text, letters, numbers, arrows, slashes, checks or symbols. Must remain unmistakable upright hourglass at24px; companion sideways hourglass must be distinguishable by orientation.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-a36ac423-c119-4605-85ba-90d7c4557760.png",
+      "session": "01a1d966-102f-70d2-a3ea-f58c3dd8751e",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/ask-lens.png",
+        "/Users/dadadave/.codex/generated_images/01a1d966-102f-70d2-a3ea-f58c3dd8751e/exec-0270e35e-0472-4658-affd-e570dc8fb62f.png"
+      ],
+      "masterSha256": "4fe81ede5b8df100437460c3c52a0278ff516ef5fa7c58c37f50f01a35da5a0c",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": "ImageMagick 8% fuzz corner flood fill removes generated matte; trim; resize longest object dimension to 878 px; center on 1254 px square uniform #F4EBD9. No painted-object retouch.",
+      "regenerationNote": "Initial generation; upright axis and visible sand stream distinguish decision limit from never-wait.",
+      "rootSession": "01a1d966-102f-70d2-a3ea-f58c3dd8751e"
+    },
+    "mochi-portrait-proud.webp": {
+      "master": "web/assets/source/ui/mochi-portrait-proud.png",
+      "prompt": "Use case: identity-preserve. Asset type: premium cozy harbor game status-card avatar expression variant.\nEdit the supplied finished Mochi portrait. KEEP EXACTLY the same square canvas, framing, camera angle, position, head size and geometry, three-quarter pose looking slightly to viewer's RIGHT, ear positions, bust cutoff, round chubby kitten identity, orange color, THREE broad tapered darker-orange forehead stripes, broad cream muzzle and chest, peach inner ears, small dark brown nose, two thick dark clay whisker marks on each cheek, terracotta-red felt bandana with central-right knot and two rounded tails, warm upper-right rim light, soft tactile felt-and-clay miniature finish. This image will swap directly into the same avatar slot; do not change framing or rescale the subject.\nChange ONLY facial expression to proud after a successful harbor outing: BOTH eyes happily closed as two softly curved dark smile-arcs, a big pleased contented smile with lifted cheeks, chin up just a tiny touch. Warm gentle delighted pride; keep the subtle Mochi mouth design, no human teeth, no tongue sticking out, no blush disks. Keep head position, ears, silhouette and neck knot aligned to input. Fur remains dry and smooth, no droplets.\nHead-and-shoulders only; no arms/hands/paws/body/tail/satchel. Chest silhouette stays softly rounded and connected. At least 8% clear backdrop margin everywhere. Perfectly flat uniform solid light cream #F4EBD9 background edge to edge with identical background color, no texture, gradient, vignette, halo, ground plane, cast shadow on backdrop, props or frame. No see-through holes or gaps. No text, letters, numbers, symbols, logos or watermark. Highest visual quality, production-ready polished art. Preserve input native square resolution 1254x1254.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-6220-7512-acb3-ea840e2ddd7c/exec-e268e619-4d2e-46f5-ba0b-30cac4c49ed2.png",
+      "session": "01a1d96a-6220-7512-acb3-ea840e2ddd7c",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-b357f08c-c246-4943-a5b3-aea01c65b63f.png"
+      ],
+      "masterSha256": "3d328ae25ef06702e4311b63beb995bc47299434a88e0deb9093bb780c719fef",
+      "originalGeneratedSha256": "1299c4ca988c92e25ac4ba86f95bae221b02321fce24f3989933f61eb4c3a1db",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": {
+        "tool": "ImageMagick",
+        "operation": "Replace only four-corner-connected backdrop with exact #F4EBD9; fuzz 4%; opaque PNG; no resize/upscale, subject color grading, or geometry edits.",
+        "reason": "Generated cream backdrop had small pixel variations. Initial 8% background normalization was rejected because it nibbled pale rim highlights; 4% preserves those highlights and gives a uniform backdrop. Review extraction uses requested 8%.",
+        "corner_pixels": [
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)"
+        ]
+      },
+      "regenerationNote": "First generation accepted after full-size inspection by generator and art lead; framing and identity preserve hero.",
+      "rootSession": "01a1d965-fc27-7472-bf21-a1199d209111"
+    },
+    "mochi-portrait-splashed.webp": {
+      "master": "web/assets/source/ui/mochi-portrait-splashed.png",
+      "prompt": "Use case: identity-preserve. Asset type: premium cozy harbor game status-card avatar expression variant.\nEdit the supplied finished Mochi portrait. KEEP EXACTLY the same square canvas, framing, camera angle, position, head size and geometry, three-quarter pose looking slightly to viewer's RIGHT, ear positions, bust cutoff, round chubby kitten identity, orange color, THREE broad tapered darker-orange forehead stripes, broad cream muzzle and chest, peach inner ears, small dark brown nose, two thick dark clay whisker marks on each cheek, terracotta-red felt bandana with central-right knot and two rounded tails, warm upper-right rim light, soft tactile felt-and-clay miniature finish. This image will swap directly into the same avatar slot; do not change framing or rescale the subject.\nChange ONLY expression and surface wetness for a just-splashed state: wet, slightly darker damp fur gathered into small cute soft spiky tufts along cheeks/forehead/ear edges, only a FEW clear dimensional water droplets clinging to Mochi's fur (all attached, no floating droplets). Keep all three forehead stripes fully readable and original face silhouette recognizable. One eye, the eye on viewer's RIGHT, is squinting; the viewer's LEFT eye stays open and dark with its small white catchlight. A small surprised open oval mouth. Mochi remains adorable, relaxed and unbothered, never sad or scared. No extra facial features or blush.\nHead-and-shoulders only; no arms/hands/paws/body/tail/satchel. Chest silhouette stays softly rounded and connected. At least 8% clear backdrop margin everywhere. Perfectly flat uniform solid light cream #F4EBD9 background edge to edge with identical background color, no texture, gradient, vignette, halo, ground plane, cast shadow on backdrop, props or frame. No see-through holes or gaps. No text, letters, numbers, symbols, logos or watermark. Highest visual quality, production-ready polished art. Preserve input native square resolution 1254x1254.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d96a-6220-7512-acb3-ea840e2ddd7c/exec-83c89758-70d4-4c1c-bd8d-5611729b822e.png",
+      "session": "01a1d96a-6220-7512-acb3-ea840e2ddd7c",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-b357f08c-c246-4943-a5b3-aea01c65b63f.png"
+      ],
+      "masterSha256": "c125818b1cb6580ee9bf8440f8e3f5a40939cf6020414a05da70d0796c08ac35",
+      "originalGeneratedSha256": "1f4b0f39fb6594b9a1e11aa31300231d5781ebfb13a0deb326929feab6f00ea4",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": {
+        "tool": "ImageMagick",
+        "operation": "Replace only four-corner-connected backdrop with exact #F4EBD9; fuzz 4%; opaque PNG; no resize/upscale, subject color grading, or geometry edits.",
+        "reason": "Generated cream backdrop had small pixel variations. Initial 8% background normalization was rejected because it nibbled pale rim highlights; 4% preserves those highlights and gives a uniform backdrop. Review extraction uses requested 8%.",
+        "corner_pixels": [
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)"
+        ]
+      },
+      "regenerationNote": "First generation accepted after full-size inspection by generator and art lead; framing and identity preserve hero.",
+      "rootSession": "01a1d965-fc27-7472-bf21-a1199d209111"
+    },
+    "mochi-portrait.webp": {
+      "master": "web/assets/source/ui/mochi-portrait.png",
+      "prompt": "Use case: identity-preserve. Asset type: premium cozy harbor game status-card avatar.\nCreate one isolated head-and-shoulders bust of EXACTLY Mochi from the supplied character references, highest-quality tactile felt-and-clay miniature game art. The first two images are strict identity authorities; harbor image is lighting/material context only. Mochi is an orange tabby kitten with a huge round chubby head, THREE broad tapered darker orange forehead stripes, broad cream muzzle/lower face and cream upper chest, peach inner ears, small rounded dark-brown triangular nose, two thick dark brown clay whisker marks on each cheek, big polished dark eyes with small white catchlights. Red terracotta bandana with its rounded central-right neck knot and both short rounded tails clearly visible. Preserve the reference's exact identity, shapes, palette and handmade microtexture, do not redesign into a generic cat or a realistic animal.\nDefault expression: content and alert, tiny soft closed-mouth smile, ears up. Camera is front three-quarter, looking slightly toward viewer's RIGHT, nearly frontal so both eyes are very readable; same natural gentle uplift as the identity reference. Head-and-shoulders only, softly rounded natural cutoff at upper chest below bandana; no full torso, no arms/hands/paws, no tail, no satchel, no floating accessories. No realistic fine whisker filaments.\nSquare 1024x1024 canvas. Keep all ears, cheeks, bandana and chest fully inside the image with at least 9% margin EVERY side. Head large, comfortably fitting inside a round status avatar. Center head around (512,440); top of ears around y110; bust ends around y890. Soft warm golden light from back upper RIGHT, subtle warm rim, warm gentle front fill, dark eyes readable, no hard edge light.\nBackdrop perfectly uniform flat solid light cream #F4EBD9 edge to edge, identical color at every exterior pixel. NO ground plane, cast shadow on backdrop, gradient, vignette, halo, frame, props or environment. One connected bust silhouette, no enclosed see-through gaps. Chest ends in softly sculpted fur contour, no misty fade into backdrop. No text, letters, numbers, symbols, logos or watermark. Production master illustration, meticulous finish.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-b357f08c-c246-4943-a5b3-aea01c65b63f.png",
+      "session": "01a1d965-fc27-7472-bf21-a1199d209111",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/mochi.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/mochi-poses-source.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png"
+      ],
+      "masterSha256": "eed2974998310050308ceb9b105653579c85462904ed908b3ca4fb9ffcb9f44b",
+      "originalGeneratedSha256": "508ffc0c665c57924e6b38d015356c362614b9202f47c52d1bd14e16045eef67",
+      "masterSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "masterPreparation": {
+        "tool": "ImageMagick",
+        "operation": "Replace only four-corner-connected backdrop with exact #F4EBD9; fuzz 4%; opaque PNG; no resize/upscale, subject color grading, or geometry edits.",
+        "reason": "Generated cream backdrop had small pixel variations. Initial 8% background normalization was rejected because it nibbled pale rim highlights; 4% preserves those highlights and gives a uniform backdrop. Review extraction uses requested 8%.",
+        "corner_pixels": [
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)"
+        ]
+      },
+      "regenerationNote": "First generation accepted after full-size inspection.",
+      "rootSession": "01a1d965-fc27-7472-bf21-a1199d209111"
+    },
+    "sign-beacon.webp": {
+      "master": "web/assets/source/ui/sign-beacon.png",
+      "prompt": "Use case: precise-object-edit. Refine this supplied Beacon sign into the final production master. Preserve its beautiful pale honey-cream driftwood, rounded handmade bevels, calm empty text field, single sturdy short center stake, almost front-facing camera, warm back-upper-right light, tactile felt-and-clay finish, and blank face with absolutely no lettering.\nChange ONLY: simplify the left emblem to a SMALL inset ROUND PAINTED medallion, diameter about 19% of the board width. The medallion has a flat muted seafoam-blue painted ground with a simple ivory lighthouse shape, one terracotta roof, terracotta lower band, and one bright honey lamp window. Use only a few clear shapes so the painting reads at 28px. No landscape, sky, clouds, rocks, sea, railings or tiny details within the medallion. Make it feel hand-painted, slightly textured and flush with the board, not like a photograph inserted into a hole. The right 72% of board stays completely empty pale calm wood for a future nine-letter word.\nSlightly reduce whole object to 80% of canvas width so EVERY extremity is at least 8% from canvas edge. Board itself remains 3:1 and same form; single center stake is lowest point, no ground props.\nAll exterior background pixels must be a single flat uniform solid cream #F4EBD9, including under the stake. No backdrop noise, gradient, vignette, cast shadow, glow spill or ground plane. Keep self-shading only on object. One connected silhouette, no holes. No text, letters, numerals, logos, watermark, or abstract symbols. Only the requested figurative lighthouse painting. Landscape 1536x1024, highest visual quality.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-a69b0061-7257-4efd-8146-4abc7b2ff9d4.png",
+      "session": "01a1d965-fc27-7472-bf21-a1199d209111",
+      "attempts": 2,
+      "styleReferences": [
+        "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-c15335cf-2d90-48c3-9f75-2e30c68b370a.png"
+      ],
+      "masterSha256": "ce396916579271e73c937042e3511ecd99a2f282501fb4070f1e4d056e56b952",
+      "originalGeneratedSha256": "b813a7288f38d4e436a4d68d5ed57b5e1ecf797d39cdf305f4096c3166e1db5c",
+      "masterSize": {
+        "width": 1536,
+        "height": 1024
+      },
+      "masterPreparation": {
+        "tool": "ImageMagick",
+        "operation": "Replace only four-corner-connected backdrop with exact #F4EBD9; fuzz 4%; opaque PNG; no resize/upscale, subject color grading, or geometry edits.",
+        "reason": "Generated cream backdrop had small pixel variations. Initial 8% background normalization was rejected because it nibbled pale rim highlights; 4% preserves those highlights and gives a uniform backdrop. Review extraction uses requested 8%.",
+        "corner_pixels": [
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)"
+        ]
+      },
+      "regenerationNote": "Rejected first generation: medallion contained detailed landscape and was too large for 28 px. Regenerated with a smaller simple painted lighthouse and wider margins.",
+      "rootSession": "01a1d965-fc27-7472-bf21-a1199d209111",
+      "rejectedVersions": [
+        {
+          "prompt": "Use case: stylized-concept. Asset type: premium production game prop, a single isolated small standing harbor sign, hero of a four-sign family.\nInput references: harbor.png is the exact world, material and golden-hour lighting authority; title-plank-1.png and title-post.png define softly handmade wood edges and tactile miniature construction (but NOT their dark color); A-pocket-harbor.png shows the light Orchard board and calm lettering area to emulate.\nPaint one beautiful blank Beacon place sign: a sun-bleached PALE HONEY / CREAM driftwood board, roughly 3:1 board width:height, broad nearly front-facing readable face, subtly irregular softly rounded silhouette, restrained fine grain and small worn edges. It is a LIGHTER, SUNNIER cousin of the title wood. Reserve the RIGHT 72% of the board face as completely empty calm pale wood, sufficient for a nine-letter name later; no knots or dark grain across this area. On the LEFT end inset one small round painted medallion about 19% of board width, with a simple tactile miniature painting of the harbor's ivory lighthouse, terracotta cap/base, warm glowing yellow lamp. This is a painted pictorial emblem flush into the wood, NOT a separate figurine. No lettering anywhere.\nBoard mounted centrally on exactly one short sturdy wooden stake, visible below the board for about 60% of the board's height, ending in a blunt subtly tapered bottom which is the object's lowest point. No feet, no rocks, no vegetation, no rope. Entire sign is one connected solid silhouette, no holes or enclosed see-through gaps. Subtle top bevel visible as seen by the harbor camera. Soft felt-and-clay miniature diorama finish, not cartoon vector, not shiny plastic, not photographic lumber. Light from back upper RIGHT gives gentle warm rim along upper/right edge, front filled enough for calm pale face; self-shading only within object.\nLandscape canvas 1536x1024, sign centered and occupying about 82% canvas width; keep at least 8% clean margin each side and generous above/below. Perfectly flat uniform solid light cream #F4EBD9 backdrop edge to edge. No backdrop texture, vignette, gradient, ground plane, cast shadow, halo, props, frame, or background scene. No text, letters, numbers, graphic symbols, logos, watermark or pseudo-writing. Only the requested figurative lighthouse painting on the inset medallion. Highest visual quality, meticulous polished game art.",
+          "references": [
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/title/title-plank-1.png",
+            "/Users/dadadave/Dev/projects/familiar/web/assets/source/title/title-post.png",
+            "/Users/dadadave/Dev/projects/familiar/A-pocket-harbor.png"
+          ],
+          "original_generated_path": "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-c15335cf-2d90-48c3-9f75-2e30c68b370a.png",
+          "rejection": "Over-detailed landscape in oversized medallion; simplified for 28 px and widened side margins."
+        }
+      ]
+    },
+    "sign-bram.webp": {
+      "master": "web/assets/source/ui/sign-bram.png",
+      "prompt": "Use case: precise-object-edit. Asset: sign-bram, sibling of the supplied Beacon sign. Create ONE isolated standing sign, no scene.\nImage 1 is the exact family master: preserve its board dimensions, overall size and placement on the 1536x1024 landscape canvas, pale honey/cream driftwood face, nearly frontal camera, round left inset medallion size/location, softly rounded handmade edges, short sturdy central stake and lowest-point stake tip. Preserve warm light from back upper RIGHT and quiet pale empty right 72% of face. Materials: highest-quality tactile felt-and-clay miniature, hand-carved sun-bleached wood, gentle grain; same premium finish as reference.\nChange the left painted medallion ONLY to a simple miniature illustration of a small wooden trading crate holding ONE pale turquoise sea-glass pebble and a short bundle of golden reeds. Bram reference is the gentle badger trader who owns this sign: do NOT paint the badger or any portrait. Crate is honey-brown with just two broad slats, sea-glass is a single big readable rounded green-blue shape, reeds are 3-4 thick golden stems with simple tips. All fit inside medallion against muted seafoam teal painted ground matching the Beacon emblem. Broad few hand-painted shapes, readable at 28px; no scene, no detailed objects, no photographic insert. Medallion painted flush onto inset wood, not separate props. Slightly different subtle grain and small edge wear from Beacon so individually handmade, but same family silhouette and proportions.\nKeep right face blank and light for a nine-letter dark-brown name added later. No text, letters, numbers, abstract symbols, logos or watermark. One connected sign silhouette; no holes, see-through gaps, rope loops, extra feet, stones, vegetation or props.\nPerfectly uniform flat solid cream #F4EBD9 backdrop edge to edge with no gradient, noise, vignette, ground plane, cast shadow, glow or frame. At least 8% margin every side, matching first reference composition. Highest visual quality.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-233bb744-1774-45e3-9c0a-01db7ba1f44a.png",
+      "session": "01a1d965-fc27-7472-bf21-a1199d209111",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/sign-beacon.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/bram.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png"
+      ],
+      "masterSha256": "6a7f6710aa741d273fd2205c3b38c4548cdfa34ec20c0e3ff4de4a1e905aa759",
+      "originalGeneratedSha256": "87f59331656bebbdb7f8fc1e5011cf9afb09b2089057292bb18394e431f4e1ee",
+      "masterSize": {
+        "width": 1536,
+        "height": 1024
+      },
+      "masterPreparation": {
+        "tool": "ImageMagick",
+        "operation": "Replace only four-corner-connected backdrop with exact #F4EBD9; fuzz 4%; opaque PNG; no resize/upscale, subject color grading, or geometry edits.",
+        "reason": "Generated cream backdrop had small pixel variations. Initial 8% background normalization was rejected because it nibbled pale rim highlights; 4% preserves those highlights and gives a uniform backdrop. Review extraction uses requested 8%.",
+        "corner_pixels": [
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)"
+        ]
+      },
+      "regenerationNote": "First generation accepted after full-size inspection.",
+      "rootSession": "01a1d965-fc27-7472-bf21-a1199d209111"
+    },
+    "sign-satchel.webp": {
+      "master": "web/assets/source/ui/sign-satchel.png",
+      "prompt": "Use case: precise-object-edit. Create sign-satchel, fourth sibling of the supplied Beacon sign, ONE isolated standing prop. First reference strictly defines same family dimensions, 1536x1024 landscape composition, 3:1 rounded light-wood board, nearly front-facing camera, short sturdy central stake, left circular medallion about 19% board width, and blank pale right 72% face. Same warm back-upper-RIGHT rim light, gentle front fill, tactile felt-and-clay miniature rendering.\nReplace lighthouse medallion with a simple painted picture of Mochi's SMALL BROWN SATCHEL, matching the flap and rounded compact pouch in second reference: warm brown pouch, honey stitched edge suggested by only a few big stitches, single round brass fastening, RED strap matching the terracotta-red bandana. Lay the short red strap diagonally across/behind the bag as a solid broad strip, NOT an open floating loop. Bag occupies the small round muted seafoam-teal painted inset. Just a few bold readable hand-painted shapes at 28px; no scene, tiny clutter, text, detached props or photographic insert. Pictorial inset feels painted into wood.\nUse individual wood grain and wear for this sibling: a barely visible low-contrast flowing grain curve on far right, softly worn lower-left edge and tiny softened nick on upper-right edge, while keeping same family shape/scale. Pale sun-bleached honey/cream board face must remain light and calm for dark-brown typography later. Do not add lettering.\nExactly one center stake, tip lowest point. No rocks, feet, rope, decorative extras. At least 8% clean margin EVERY side. Flat perfectly UNIFORM solid #F4EBD9 cream backdrop edge to edge; no gradient, vignette, background texture, ground plane, cast shadow, halo, frame or environment. One connected solid object silhouette without enclosed see-through gaps. No text, letters, numerals, abstract symbols, logos, watermark or pseudo-writing anywhere. Highest-quality polished production art.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-fba2d679-e62a-4e0e-86fb-52a5f2d3e95f.png",
+      "session": "01a1d965-fc27-7472-bf21-a1199d209111",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/sign-beacon.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/mochi.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png"
+      ],
+      "masterSha256": "a0e762afe28f2e6acabf1b3c1b9fab67d82d2512a023f3c26703ccaf9405392d",
+      "originalGeneratedSha256": "0eb25527cc3a79f007cb65e85dc528268086b371ff99c43d3736beb7432aad8a",
+      "masterSize": {
+        "width": 1536,
+        "height": 1024
+      },
+      "masterPreparation": {
+        "tool": "ImageMagick",
+        "operation": "Replace only four-corner-connected backdrop with exact #F4EBD9; fuzz 4%; opaque PNG; no resize/upscale, subject color grading, or geometry edits.",
+        "reason": "Generated cream backdrop had small pixel variations. Initial 8% background normalization was rejected because it nibbled pale rim highlights; 4% preserves those highlights and gives a uniform backdrop. Review extraction uses requested 8%.",
+        "corner_pixels": [
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)"
+        ]
+      },
+      "regenerationNote": "First generation accepted after full-size inspection.",
+      "rootSession": "01a1d965-fc27-7472-bf21-a1199d209111"
+    },
+    "sign-workbench.webp": {
+      "master": "web/assets/source/ui/sign-workbench.png",
+      "prompt": "Use case: precise-object-edit. Create the Workbench sibling of the first-reference standing Beacon sign, ONE isolated prop. Use the first image as strict family master for canvas framing (1536x1024 landscape), board size and 3:1 proportion, short sturdy central stake, nearly frontal view, pale honey/cream wood color, rounded softened edges, inset circular LEFT medallion (19% of board width), blank right 72% of face and warm back-upper-right golden light. Preserve the luxurious tactile felt-and-clay harbor-miniature quality. The object's stake tip must remain its lowest point; keep at least 8% clean margin on every side.\nPaint a DIFFERENT piece of sun-bleached driftwood within the same family: subtle low-contrast grain lines along the empty face, a small worn notch on upper-left corner and a gently irregular lower-right edge, NOT an exact copy of reference grain. Still calm and pale for dark lettering.\nReplace lighthouse emblem with a simple painted miniature HAMMER CROSSED DIAGONALLY BEHIND A SMALL LANTERN. Hammer: short honey wooden handle and soft gray iron head, diagonal lower-left to upper-right. Lantern: compact rounded dark bronze shell, one warm yellow glowing window, tilted just slightly opposite the hammer to make an easy-to-read crossed pair. Lantern handle painted solid against teal medallion, no transparent holes; no chains. Few bold hand-painted shapes, readable at 28px, flush painted miniature on muted seafoam teal inset background, not a separate 3D object or busy scene. Keep every part inside medallion. No abstract icons outside the medallion.\nPerfectly flat, UNIFORM single light cream #F4EBD9 backdrop edge to edge. No gradient, vignette, noise, cast shadow, ground plane, glow spill, props, rocks, foot supports, rope, frame or landscape. One connected sign silhouette, no enclosed see-through gaps. Absolutely no text, letters, numbers, logos, watermark or pseudo-writing. No name on board; typography added later. Highest visual quality.",
+      "originalGeneratedPath": "/Users/dadadave/.codex/generated_images/01a1d965-fc27-7472-bf21-a1199d209111/exec-34029beb-a725-4705-9e56-c5b1817e5eb8.png",
+      "session": "01a1d965-fc27-7472-bf21-a1199d209111",
+      "attempts": 1,
+      "styleReferences": [
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/ui/sign-beacon.png",
+        "/Users/dadadave/Dev/projects/familiar/web/assets/source/first-light-motion/harbor.png"
+      ],
+      "masterSha256": "2b9382c1877252acd1d8bea959e6c09b48418edf85195de4c04666758541f49f",
+      "originalGeneratedSha256": "088b339356f7544d64c3984da642d4eec5b521115479c6831cd974c9fd63f056",
+      "masterSize": {
+        "width": 1536,
+        "height": 1024
+      },
+      "masterPreparation": {
+        "tool": "ImageMagick",
+        "operation": "Replace only four-corner-connected backdrop with exact #F4EBD9; fuzz 4%; opaque PNG; no resize/upscale, subject color grading, or geometry edits.",
+        "reason": "Generated cream backdrop had small pixel variations. Initial 8% background normalization was rejected because it nibbled pale rim highlights; 4% preserves those highlights and gives a uniform backdrop. Review extraction uses requested 8%.",
+        "corner_pixels": [
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)",
+          "srgb(244,235,217)"
+        ]
+      },
+      "regenerationNote": "First generation accepted after full-size inspection.",
+      "rootSession": "01a1d965-fc27-7472-bf21-a1199d209111"
+    }
+  }
+}

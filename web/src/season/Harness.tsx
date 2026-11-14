@@ -34,13 +34,13 @@ async function seasonAct(intent:SeasonIntent) {
 const session={state:{mode:"saved",busy:false,snapshot:{binding:{nearAccountId:account},pets:[{token_id:pet}]}},seasonAct} as unknown as HarborSession;
 
 export default function SeasonHarness() {
-  const [sailed,setSailed]=useState("");
+  const [opened,setOpened]=useState(false);
   return <main className="exp-game" style={{position:"fixed",inset:0,overflow:"auto",background:"#3d5a4c"}}>
     <div className="exp-panel exp-panel-season" style={{margin:"16px auto"}}>
       <p role="note" style={{background:"#7a3020",color:"#fff5dc",padding:"8px 10px",borderRadius:8,fontSize:13}}>Development harness. Shelf and today’s tide are read live; this account’s ledger, wish and signing are mocked. Nothing is signed or sent.</p>
       <h2>“You’re back.”</h2>
-      <SeasonBram session={session} tool="rope" canSail onSailTide={t=>setSailed(`Would sail with the ${t}.`)} tideScope="harness"/>
-      {sailed&&<p role="status">{sailed}</p>}
+      <SeasonBram session={session} onOpenTide={()=>setOpened(true)} tideScope="harness"/>
+      {opened&&<p role="status">Would open today’s ask.</p>}
     </div>
   </main>;
 }

@@ -1,0 +1,102 @@
+{
+  "purpose": "Title signpost runtime artwork; trimmed alpha cut-outs with original masters preserved",
+  "encoder": "magick corner floodfill alpha erode2 blur0x1 trim Lanczos + cwebp quality88 method6 alpha100 sharp_yuv",
+  "files": [
+    {
+      "source": "assets/source/title/title-bell.png",
+      "output": "assets/title/title-bell.webp",
+      "sourceSha256": "7e765e2b346a56326b3a929065bc4654ae40175dd37d89762c42c5a63d25629b",
+      "sha256": "cf5fd6a7aedb269442695be971ac282992c6d7c722730f05937c7309ecede908",
+      "sourceBytes": 348753,
+      "bytes": 11234,
+      "resizedTo": {
+        "width": 137,
+        "height": 330
+      }
+    },
+    {
+      "source": "assets/source/title/title-paper.png",
+      "output": "assets/title/title-paper.webp",
+      "sourceSha256": "343e21d2ae9cb4611887af430d11e51ee5c229fd66b6007b6aec44e9c3070e56",
+      "sha256": "3bda97e740f7050994bae7b536eba8b2d2f8a533361f32ed452b656c1b98fb0f",
+      "sourceBytes": 1124301,
+      "bytes": 56246,
+      "resizedTo": {
+        "width": 780,
+        "height": 952
+      }
+    },
+    {
+      "source": "assets/source/title/title-plank-1.png",
+      "output": "assets/title/title-plank-1.webp",
+      "sourceSha256": "9fedf9fac286981708783a8652bb61aeb6866a7f4e6bedff81420b33f51dc5cb",
+      "sha256": "249b109cbb03c0e05c277497749c6665bb09c94bc56c640285d9bf1230d7e876",
+      "sourceBytes": 603554,
+      "bytes": 28290,
+      "resizedTo": {
+        "width": 720,
+        "height": 171
+      }
+    },
+    {
+      "source": "assets/source/title/title-plank-2.png",
+      "output": "assets/title/title-plank-2.webp",
+      "sourceSha256": "0b006e00a786198f46f1969b8dd36c40ce16ffb4f613933bbd186a853539a7ce",
+      "sha256": "51fd8ebe38893f248dac456ba5de98fa1f73b1d698b9c9eaf0ff71289ce9af96",
+      "sourceBytes": 597560,
+      "bytes": 30176,
+      "resizedTo": {
+        "width": 720,
+        "height": 164
+      }
+    },
+    {
+      "source": "assets/source/title/title-plank-3.png",
+      "output": "assets/title/title-plank-3.webp",
+      "sourceSha256": "3240378b29063a34fd8601df9f96fc631acdb4132e513291081e177f87315d9a",
+      "sha256": "5a427048e27c352c7bb1edde3a5494aa8a320bd097cadd9f854e6fbfbdb52772",
+      "sourceBytes": 590010,
+      "bytes": 27132,
+      "resizedTo": {
+        "width": 720,
+        "height": 169
+      }
+    },
+    {
+      "source": "assets/source/title/title-plank-4.png",
+      "output": "assets/title/title-plank-4.webp",
+      "sourceSha256": "99551688cb23844d8135453833e69d85629d844c94c41702011642d46d956169",
+      "sha256": "701d8c5f7aaca67159489745b88d7e9970681cb7a64d73fc460e2f89cc1a07c1",
+      "sourceBytes": 607510,
+      "bytes": 26764,
+      "resizedTo": {
+        "width": 720,
+        "height": 164
+      }
+    },
+    {
+      "source": "assets/source/title/title-post.png",
+      "output": "assets/title/title-post.webp",
+      "sourceSha256": "b1b16f79279366c02f44baf29a433ac3009165b10dc448cd053feb24db5ff0ee",
+      "sha256": "5b2cf27ab8495904697c6d38117ae218eed427fd827b164e05e63b1d355391ed",
+      "sourceBytes": 176157,
+      "bytes": 33218,
+      "resizedTo": {
+        "width": 281,
+        "height": 1240
+      }
+    },
+    {
+      "source": "assets/source/title/title-tag.png",
+      "output": "assets/title/title-tag.webp",
+      "sourceSha256": "9d6fa122f70b620d232c7ebb393ae3cbaafa98611953cf447c7d2b5e03958062",
+      "sha256": "eaea1b0547318aa395931cc9483f5d521c3aa0cb8276eac8aa083065c7e0f7a5",
+      "sourceBytes": 909848,
+      "bytes": 5210,
+      "resizedTo": {
+        "width": 260,
+        "height": 100
+      }
+    }
+  ]
+}
