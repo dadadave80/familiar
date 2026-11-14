@@ -7,7 +7,7 @@ export const SEASON_CONTRACT = `season.${SEASON_ROOT}`;
 const RPC = import.meta.env.VITE_NEAR_RPC_URL || "https://test.rpc.fastnear.com";
 
 export async function seasonView<T>(method:string, args:Record<string,unknown>={}, fetcher:typeof fetch=fetch):Promise<T> {
-  const response=await fetcher(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:"season",method:"query",
+  const response=await fetcher(RPC,{method:"POST",signal:AbortSignal.timeout(8000),headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:"season",method:"query",
     params:{request_type:"call_function",finality:"final",account_id:SEASON_CONTRACT,method_name:method,args_base64:btoa(JSON.stringify(args))}})});
   const body=await response.json() as {result?:{result?:number[]};error?:unknown};
   if(!response.ok||!body.result?.result)throw Error("Bram’s shelf could not be read just now.");
@@ -36,14 +36,14 @@ export const PREVIEW_SAMPLE:[number,number]=[1,2];
 export function seedPreview(shelf:ShelfView|null,day=deviceDay()):PreviewMarket {
   return {version:1,day:shelf?.day??day,shelf:GOODS.map(g=>{const v=shelf?.goods.find(x=>x.good===g);return {stock:v?.stock??40,heat_fp:v?.heat_fp??0};}),till:shelf?.till??300,shells:0,goods:[...PREVIEW_SAMPLE],traded:[0,0]};
 }
-export function readPreview(store:Pick<Storage,"getItem">=localStorage,day=deviceDay()):PreviewMarket|null {
-  try{const v=JSON.parse(store.getItem(PREVIEW_KEY)??"null") as PreviewMarket;
+export function readPreview(store?:Pick<Storage,"getItem">,day=deviceDay()):PreviewMarket|null {
+  try{const v=JSON.parse((store??localStorage).getItem(PREVIEW_KEY)??"null") as PreviewMarket;
     const n=(x:unknown)=>Number.isSafeInteger(x)&&(x as number)>=0;
     if(v?.version!==1||v.shelf?.length!==2||!v.shelf.every(s=>n(s.stock)&&n(s.heat_fp))||![v.till,v.shells,...v.goods,...v.traded].every(n))return null;
     const {docked,...market}=v;
     return rollPreview({...market,day:n(v.day)?v.day:day,...(n(docked)?{docked}:{})},day);}catch{return null;}
 }
-export function writePreview(value:PreviewMarket,store:Pick<Storage,"setItem">=localStorage){try{store.setItem(PREVIEW_KEY,JSON.stringify(value));}catch{/* The preview keeps running in memory. */}}
+export function writePreview(value:PreviewMarket,store?:Pick<Storage,"setItem">){try{(store??localStorage).setItem(PREVIEW_KEY,JSON.stringify(value));}catch{/* The preview keeps running in memory. */}}
 export function previewDock(current:PreviewMarket,goods:[number,number],day=deviceDay()):{market:PreviewMarket}|{block:string} {
   const m=rollPreview(current,day);
   if(m.docked===day)return {block:"Bram has already shelved a haul today."};
@@ -71,11 +71,12 @@ export const previewAccount=(m:PreviewMarket):Pick<SeasonAccount,"shells"|"goods
 
 export interface TideReturn { id:string;contentVersion:"first_light_v2";tool:"rope"|"lantern";commands:string[];cargo:string[];outcome:"returned"|"rescued";savedAt:string }
 const tideKey=(scope:string)=>`familiar.season.tide.v1:${scope}`;
-export function readTide(scope:string,store:Pick<Storage,"getItem">=localStorage):TideReturn[] {
-  try{const v=JSON.parse(store.getItem(tideKey(scope))??"[]");return Array.isArray(v)?v.filter(r=>r&&typeof r.id==="string"&&Array.isArray(r.commands)&&r.commands.every((c:unknown)=>typeof c==="string")&&(r.tool==="rope"||r.tool==="lantern")):[];}catch{return [];}
+export function readTide(scope:string,store?:Pick<Storage,"getItem">):TideReturn[] {
+  try{const v=JSON.parse((store??localStorage).getItem(tideKey(scope))??"[]");return Array.isArray(v)?v.filter(r=>r&&typeof r.id==="string"&&Array.isArray(r.commands)&&r.commands.every((c:unknown)=>typeof c==="string")&&(r.tool==="rope"||r.tool==="lantern")):[];}catch{return [];}
 }
 /** Keeps the latest ten tide returns for this harbor; the oldest drop off first. */
-export function keepTide(scope:string,entry:TideReturn,store:Pick<Storage,"getItem"|"setItem">=localStorage) {
+export function keepTide(scope:string,entry:TideReturn,store?:Pick<Storage,"getItem"|"setItem">) {
+  store=store??localStorage;
   const next=[entry,...readTide(scope,store).filter(r=>r.id!==entry.id)].slice(0,10),text=JSON.stringify(next);
   store.setItem(tideKey(scope),text);if(store.getItem(tideKey(scope))!==text)throw Error("Today’s tide return could not be saved on this device.");
 }

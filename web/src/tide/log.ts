@@ -12,9 +12,9 @@ function score(day:number,tool:Tool,commands:readonly string[]) {
   return {cardId:card.id,kept:cardStatus(card,run).map(status=>status==="kept") as [boolean,boolean,boolean],decisions:run.state.turn,outcome:run.state.outcome};
 }
 
-export function readTideLog(scope:string,store:Pick<Storage,"getItem">=localStorage):TideEntry[] {
+export function readTideLog(scope:string,store?:Pick<Storage,"getItem">):TideEntry[] {
   try{
-    const values=JSON.parse(store.getItem(tideLogKey(scope))??"[]");if(!Array.isArray(values))return [];
+    const values=JSON.parse((store??localStorage).getItem(tideLogKey(scope))??"[]");if(!Array.isArray(values))return [];
     const days=new Map<number,TideEntry>();
     for(const value of values){
       if(!value||!Number.isSafeInteger(value.day)||(value.tool!=="rope"&&value.tool!=="lantern")||!Array.isArray(value.commands)||
@@ -35,9 +35,10 @@ export function betterTide(a:Pick<TideEntry,"kept"|"decisions">,b:Pick<TideEntry
   return kept>0||kept===0&&a.decisions<b.decisions;
 }
 
-export function recordTide(scope:string,input:{day:number;tool:Tool;commands:readonly string[];late:boolean;now?:Date},store:Pick<Storage,"getItem"|"setItem">=localStorage):{entry:TideEntry;improved:boolean;previous:TideEntry|null} {
+export function recordTide(scope:string,input:{day:number;tool:Tool;commands:readonly string[];late:boolean;now?:Date},store?:Pick<Storage,"getItem"|"setItem">):{entry:TideEntry;improved:boolean;previous:TideEntry|null} {
   const scored=Number.isSafeInteger(input.day)?score(input.day,input.tool,input.commands):null;
   if(!scored)throw new RangeError("This outing cannot be logged.");
+  store=store??localStorage;
   const log=readTideLog(scope,store),previous=log.find(entry=>entry.day===input.day)??null;
   const candidate:TideEntry={day:input.day,tool:input.tool,commands:[...input.commands] as Command[],...scored,late:input.late&&(previous?.late??true),
     attempts:(previous?.attempts??0)+1,savedAt:(input.now??new Date()).toISOString()};
@@ -49,11 +50,11 @@ export function recordTide(scope:string,input:{day:number;tool:Tool;commands:rea
 }
 
 export interface TidePending { day:number;late:boolean }
-export function readTidePending(scope:string,store:Pick<Storage,"getItem">=localStorage):TidePending|null {
-  try{const value=JSON.parse(store.getItem(pendingKey(scope))??"null");return value&&Number.isSafeInteger(value.day)&&typeof value.late==="boolean"?{day:value.day,late:value.late}:null;}catch{return null;}
+export function readTidePending(scope:string,store?:Pick<Storage,"getItem">):TidePending|null {
+  try{const value=JSON.parse((store??localStorage).getItem(pendingKey(scope))??"null");return value&&Number.isSafeInteger(value.day)&&typeof value.late==="boolean"?{day:value.day,late:value.late}:null;}catch{return null;}
 }
-export function writeTidePending(scope:string,pending:TidePending|null,store:Pick<Storage,"getItem"|"setItem"|"removeItem">=localStorage):void {
-  try{if(pending===null)store.removeItem(pendingKey(scope));else store.setItem(pendingKey(scope),JSON.stringify({day:pending.day,late:pending.late}));}catch{}
+export function writeTidePending(scope:string,pending:TidePending|null,store?:Pick<Storage,"getItem"|"setItem"|"removeItem">):void {
+  try{store=store??localStorage;if(pending===null)store.removeItem(pendingKey(scope));else store.setItem(pendingKey(scope),JSON.stringify({day:pending.day,late:pending.late}));}catch{}
 }
 export function tideSummary(entries:readonly TideEntry[]):{sailed:number;kept:number;allThree:number} {
   return {sailed:entries.length,kept:entries.reduce((sum,entry)=>sum+entry.kept.filter(Boolean).length,0),allThree:entries.filter(entry=>entry.kept.every(Boolean)).length};

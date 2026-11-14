@@ -1,7 +1,31 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { SEASON_ROOT, keepTide, previewDock, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, shelfNote, shelvesBeaconCourt, writePreview, type TideReturn } from "./data";
+import { readTideLog, readTidePending, recordTide, writeTidePending } from "../tide/log";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);}};};
+
+test("blocked site data leaves tide and shelf readers empty and preserves writer failure contracts",()=>{
+  const previous=Object.getOwnPropertyDescriptor(globalThis,"localStorage"),blocked=new DOMException("Site data blocked","SecurityError");
+  Object.defineProperty(globalThis,"localStorage",{configurable:true,get(){throw blocked;}});
+  try{
+    expect(readTideLog("preview")).toEqual([]);expect(readTidePending("preview")).toBeNull();
+    expect(readPreview()).toBeNull();expect(readTide("preview")).toEqual([]);
+    expect(()=>writePreview(seedPreview(null))).not.toThrow();
+    for(const pending of [null,{day:20771,late:false}])expect(()=>writeTidePending("preview",pending)).not.toThrow();
+    expect(()=>recordTide("preview",{day:20771,tool:"rope",commands:["return"],late:false})).toThrow(blocked);
+    expect(()=>keepTide("preview",{id:"blocked",contentVersion:"first_light_v2",tool:"rope",commands:["return"],cargo:[],outcome:"returned",savedAt:"t"})).toThrow(blocked);
+  }finally{if(previous)Object.defineProperty(globalThis,"localStorage",previous);else Reflect.deleteProperty(globalThis,"localStorage");}
+});
+
+test("a stalled shelf read aborts after its eight-second budget",async()=>{
+  const timeout=AbortSignal.timeout.bind(AbortSignal),timer=spyOn(AbortSignal,"timeout").mockImplementation(ms=>{expect(ms).toBe(8000);return timeout(1);});
+  const stalled=(async(_url:unknown,init?:RequestInit)=>new Promise<Response>((_resolve,reject)=>{
+    const signal=init?.signal;if(!signal){reject(Error("Missing abort signal"));return;}
+    signal.addEventListener("abort",()=>reject(signal.reason),{once:true});
+  })) as typeof fetch;
+  try{await expect(seasonView("get_shelf",{},stalled)).rejects.toMatchObject({name:"TimeoutError"});}
+  finally{timer.mockRestore();}
+});
 
 test("a haul joins the preview satchel once a day, with another allowed after the day rolls", () => {
   const current={...seedPreview(null,20771),traded:[20,0] as [number,number],till:200};

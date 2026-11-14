@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import SeasonBram, { TodayHaul } from "./SeasonBram";
+import SeasonBoundary from "./SeasonBoundary";
 import { deviceDay, keepTide, seedPreview, type TideReturn } from "./data";
 import type { ShelfView, TodayView } from "./model";
 
@@ -13,6 +14,16 @@ const props={live:{shelf,today,account:null,wish:null,postcard:null,error:""},sa
 const full=["step:north","step:north","step:west","wait","wait","step:east","reel:lens","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"];
 const lens=["wait","step:west","wait","step:north","step:north","take:lens","step:south","step:east","return"];
 const entry=(id:string,commands:string[]):TideReturn=>({id,commands,contentVersion:"first_light_v2",tool:"rope",cargo:[],outcome:"returned",savedAt:"2026-11-14T23:59:59Z"});
+
+test("the shelf boundary preserves healthy content and gives a local reload message on failure",()=>{
+  const boundary=new SeasonBoundary({children:<p>Bram’s shelf</p>});
+  expect(renderToStaticMarkup(<>{boundary.render()}</>)).toContain("Bram’s shelf</p>");
+  boundary.state=SeasonBoundary.getDerivedStateFromError();
+  const html=renderToStaticMarkup(<p>“You’re back.”</p>)+renderToStaticMarkup(<>{boundary.render()}</>);
+  expect(html).toContain("“You’re back.”");expect(html).toContain('class="ss-problem" role="alert"');
+  expect(html).toContain("Bram’s shelf won’t open just now. Reload the page to try again.");
+});
+
 function withReturns(entries:TideReturn[],check:()=>void) {
   const previous=Object.getOwnPropertyDescriptor(globalThis,"localStorage"),items=new Map<string,string>();
   const store={getItem:(key:string)=>items.get(key)??null,setItem:(key:string,value:string)=>{items.set(key,value);}};
