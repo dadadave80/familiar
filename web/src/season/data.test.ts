@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { keepTide, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, writePreview, type TideReturn } from "./data";
+import { SEASON_ROOT, keepTide, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, writePreview, type TideReturn } from "./data";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);}};};
 
@@ -45,7 +45,7 @@ test("views read final state from season.<root> and decode the result bytes", as
   let body:Record<string,unknown>={};
   const fetcher=(async(_url:string,init:RequestInit)=>{body=JSON.parse(String(init.body));return new Response(JSON.stringify({result:{result:[...new TextEncoder().encode('{"day":1}')]}}));}) as unknown as typeof fetch;
   expect(await seasonView<{day:number}>("get_today",{account_id:null},fetcher)).toEqual({day:1});
-  expect(body).toMatchObject({method:"query",params:{request_type:"call_function",finality:"final",account_id:"season.familiar-game.testnet",method_name:"get_today"}});
+  expect(body).toMatchObject({method:"query",params:{request_type:"call_function",finality:"final",account_id:"season."+SEASON_ROOT,method_name:"get_today"}});
   const failing=(async()=>new Response(JSON.stringify({error:{}}))) as unknown as typeof fetch;
   await expect(seasonView("get_shelf",{},failing)).rejects.toThrow("could not be read");
 });
