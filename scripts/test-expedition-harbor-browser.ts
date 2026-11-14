@@ -10,6 +10,9 @@ import courtFixtures from "../contracts/common/fixtures/court.json";
 // Actual React controller/provider/panel; all account/RPC ports below are isolated synthetic fixtures.
 const id="\0expedition-harbor-fixture.tsx",dir=await mkdtemp(join(tmpdir(),"familiar-expedition-harbor-"));
 const fixturePublicKey=KeyPair.fromRandom("ed25519").getPublicKey().toString();
+// Bram's shelf reads the season contract's public views over testnet RPC; nothing else may leave the page.
+const publicView=(request:import("@playwright/test").Request)=>request.url().startsWith("https://test.rpc.fastnear.com")&&request.method()==="POST"&&JSON.parse(request.postData()??"{}")?.params?.request_type==="call_function";
+let publicViews=0;
 const captureRoutes=courtFixtures.cases.filter(row=>["beacon-rope-objective","beacon-rope-rescue"].includes(row.id)).map(row=>({id:row.id,start:row.start,commands:row.commands}));
 const entry=`
 import '/src/browser-globals.ts';
@@ -66,7 +69,7 @@ try{
  assert.equal(closed.result,"closed");assert.equal(closed.reads,closed.after);assert.equal(closed.binding,null);assert.equal(closed.pending,"EXACT_ORIGINAL_BYTES");
  await page.evaluate(()=>{const f=(window as any).__harbor;f.hold=false;f.owner={...f.owner,nearAccountId:'bob.familiar-game.testnet',playerId:'bob'};f.reopen();});await expect(page.getByText(/bob.familiar-game.testnet · NEAR testnet/)).toBeVisible();await expect(page.getByTestId("authority")).toHaveText("preview");
  const gameContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),game=await gameContext.newPage();
- game.on("pageerror",error=>errors.push(error.message));game.on("request",request=>{if(!request.url().startsWith(origin)&&!request.url().startsWith("blob:")&&!request.url().startsWith("data:"))external.push(request.url());});
+ game.on("pageerror",error=>errors.push(error.message));game.on("request",request=>{if(!request.url().startsWith(origin)&&!request.url().startsWith("blob:")&&!request.url().startsWith("data:")){if(publicView(request))publicViews++;else external.push(request.url());}});
  await game.goto(origin+"/__harbor-game");await game.bringToFront();await expect(game.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:20000});
  await game.getByRole("button",{name:"Game menu",exact:true}).click();await game.getByRole("button",{name:"Account & recovery",exact:true}).click();await expect(game.getByText(/alice.familiar-game.testnet · NEAR testnet/)).toBeVisible();
  await game.getByRole("button",{name:"Use saved harbor",exact:true}).click();await expect.poll(()=>game.evaluate(()=>(window as any).__harbor.port.state.mode)).toBe("saved");await game.getByRole("button",{name:"Close panel",exact:true}).click();
@@ -88,5 +91,5 @@ try{
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.displayLantern('moth',true);await f.port.refresh();});await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-motif','moth');
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.removeHeldLantern();await f.port.refresh();});await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-motif',/.+/);await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-finish',/.+/);assert.equal(await game.evaluate(()=>(window as any).__harbor.sends.length),1);
  const geometry=await game.evaluate(()=>({x:scrollX,y:scrollY,scroll:document.documentElement.scrollHeight,height:innerHeight}));assert.equal(geometry.x,0);assert.equal(geometry.y,0);assert(geometry.scroll<=geometry.height+1);
- await gameContext.close();assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,externalRequests:0,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
+ await gameContext.close();assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,externalRequests:0,publicRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
 }finally{await browser.close();await server.close();}
