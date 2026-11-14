@@ -7,6 +7,7 @@ html:has(.familiar-opening:not(.framed)),body:has(.familiar-opening:not(.framed)
 .familiar-opening .fo-bell:focus-visible{border-radius:8px}
 .familiar-opening .fo-paper button:focus-visible{outline-color:#2b5f4d}
 .familiar-opening .fo-primary,.familiar-opening .fo-secondary{display:flex;align-items:center;justify-content:center;gap:10px;box-sizing:border-box;border-radius:999px;cursor:pointer;text-wrap:balance}
+.familiar-opening [data-el="begin"][hidden]{display:none}
 .familiar-opening .fo-primary{min-height:52px;padding:10px 26px;border:0;background:#2b5f4d;color:#fff6e2;box-shadow:inset 0 1px 0 #5f9a83,inset 0 -3px 0 #1d4436,0 6px 14px rgba(31,68,54,.28);font:650 18px/1.2 'Fraunces Variable',serif}
 .familiar-opening .fo-primary:active{transform:translateY(1px);box-shadow:inset 0 1px 0 #5f9a83,inset 0 -1px 0 #1d4436,0 6px 14px rgba(31,68,54,.28)}
 .familiar-opening .fo-secondary{min-height:48px;padding:9px 18px;border:1.5px solid #d6c29b;background:#fffaf0;color:var(--fo-ink);font:600 17px/1.2 'Fraunces Variable',serif}

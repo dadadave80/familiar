@@ -142,13 +142,13 @@ type ClassicHarbor = { lit: boolean; card: TideCard; next: TideCard; entry: Tide
 /** A device harbor's card, driven by today's tide-run result. */
 export type RunHarbor = { lit: boolean; card: TideCard; next: TideCard; guess: number; result: DayResult | null; returnedToday: boolean; shelved: boolean };
 
-function harborRun({ lit, card, next, guess, result, returnedToday, shelved }: RunHarbor): HarborTide | null {
+function harborRun({ lit, guess, result, returnedToday, shelved }: RunHarbor): HarborTide | null {
   if (!lit) return null;
   const links: TideLink[] = [{ label: result ? "Sail again for practice" : "Sail today’s tide", action: "sail" }, { label: "Open the tide log", action: "log" }];
   if (!result) return shelved
-    ? { kind: "panel", title: `Tomorrow: ${next.name}.`, body: "Today’s haul is on Bram’s shelf.", primary: null, links }
-    : { kind: "panel", title: `Today’s tide: ${card.name}.`, body: `Twelve waves. Bram guesses ${guess}.`, primary: { label: "See today’s tide", target: "tide" }, links: [] };
-  if (shelved) return { kind: "panel", title: `Tomorrow: ${next.name}.`, body: `${resultTitle(result)} ${resultLine(result)}. Today’s haul is on Bram’s shelf.`, primary: null, links };
+    ? { kind: "panel", title: "Tomorrow’s Tide Run.", body: "Today’s haul is on Bram’s shelf.", primary: null, links }
+    : { kind: "panel", title: "Today’s Tide Run.", body: `Twelve waves. Bram guesses ${guess}.`, primary: { label: "See today’s tide", target: "tide" }, links: [] };
+  if (shelved) return { kind: "panel", title: "Tomorrow’s Tide Run.", body: `${resultTitle(result)} ${resultLine(result)}. Today’s haul is on Bram’s shelf.`, primary: null, links };
   return { kind: "panel", title: resultTitle(result), body: `${resultLine(result)}.`, primary: returnedToday ? { label: "Take it to Bram", target: "bram" } : null, links };
 }
 

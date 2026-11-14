@@ -4,6 +4,7 @@ import type { Page } from "@playwright/test";
 /** Drive the public play surface, leaving command validation and saving to the game. */
 export async function guide(page:Page,command:string){
   const game=page.locator('[data-testid="expedition-game"],[data-testid="passage-game"],[data-testid="tide-run"]').last();
+  await game.locator('[data-testid="expedition-world"][data-ready="true"],[data-testid="tide-world"][data-ready="true"]').waitFor();
   const key:Record<string,string>={"step:north":"ArrowUp","step:south":"ArrowDown","step:west":"ArrowLeft","step:east":"ArrowRight",north:"ArrowUp",south:"ArrowDown",west:"ArrowLeft",east:"ArrowRight",wait:"Space",return:"r",home:"r"};
   if(key[command]){await game.focus();await page.keyboard.press(key[command]);return;}
   if(command.startsWith("lure:")){
@@ -43,4 +44,10 @@ export async function departCourt(page:Page){
   await page.getByRole("button",{name:"Harbor chart",exact:true}).and(page.locator(":visible")).click();
   await page.locator('.exp-panel[data-surface="chart"] .harbor-routes > li').first().getByRole("button").click();
   await page.locator('.exp-panel[data-surface="sail"] .exp-primary').click();
+}
+
+/** Story departures are prepared; resuming an existing trace deliberately bypasses this. */
+export async function sailStory(page:Page){
+  await page.getByRole("button",{name:/^Prepare Chapter \d+$/}).click();
+  await page.getByRole("button",{name:"Sail with Mochi",exact:true}).click();
 }

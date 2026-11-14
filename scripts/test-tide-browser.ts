@@ -1,7 +1,9 @@
 import { guide } from "./browser-controls";
+import { BROWSER_DAY, prepareBrowser } from "./browser-fixtures";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { chromium, expect, type Page } from "@playwright/test";
 import { createServer } from "vite";
 import { TURN_LIMIT, type Command } from "../web/src/expedition/types";
@@ -16,7 +18,7 @@ import { haulLine } from "../web/src/season/model";
 
 declare global { interface Window { tidePops: number[]; restartBusySeen: boolean } }
 
-const day = 20771, card = cardForDay(day), route = solve(card.tool, card.asks, card.best);
+const day = BROWSER_DAY, card = cardForDay(day), route = solve(card.tool, card.asks, card.best);
 assert.ok(route, "today’s card has a solution");
 assert.equal(route.length, card.best, "the route uses the card’s best decision count");
 const slipRoute = Array.from({ length: TURN_LIMIT }, (_, index) => Array<Command>(index + 1).fill("wait")).find(commands => {
@@ -29,8 +31,7 @@ const saveKey = "familiar.expedition.local.v2";
 const passageKey = `${saveKey}:shore-passages.v1`;
 const logKey = "familiar.tide.log.v1:preview", pendingKey = "familiar.tide.pending.v1:preview";
 const viewport = { width: 412, height: 860 }, tag = "412x860";
-const artifacts = resolve(import.meta.dir, "../test-results/tide-browser");
-await mkdir(artifacts, { recursive: true });
+const artifacts = await mkdtemp(join(tmpdir(), "familiar-tide-browser-"));
 const shots = resolve(process.argv[2] ?? await mkdtemp(join(artifacts, "shots-")));
 await mkdir(shots, { recursive: true });
 const server = await createServer({
@@ -110,7 +111,8 @@ async function checkHarborStamp(page: Page) {
     const card = await harbor.boundingBox(), dock = await navigation.boundingBox();
     assert.ok(card && dock && card.y + card.height <= dock.y + 1, "phone harbor card stays above its dock");
   }
-  await expect(harbor.getByRole("button", { name: "Change preparation", exact: true })).toBeVisible();
+  await expect(harbor.locator(".exp-preparation")).toHaveCount(0);
+  await expect(harbor.getByRole("button", { name: "Change preparation", exact: true })).toHaveCount(0);
 }
 
 async function checkStickyPanel(page: Page, label: string) {
@@ -200,8 +202,8 @@ async function openClassic(page: Page) {
 }
 
 async function checkDaily(page: Page, origin: string) {
-  const today = Math.floor(Date.now() / 86_400_000), todayCard = cardForDay(today), tomorrow = cardForDay(today + 1);
-  const guardDay = () => assert.equal(Math.floor(Date.now() / 86_400_000), today, "UTC midnight crossed during the daily flow; rerun with the new day");
+  const today = BROWSER_DAY;
+  const guardDay = async () => assert.equal(await page.evaluate(() => Math.floor(Date.now() / 86_400_000)), today, "the browser uses the explicit fixture day");
   let final = startTide({ seed: today });
   while (final.outcome === "active") final = applyMove(final, cautiousMove(final))!.after;
   const result = dayResult(final), goods = shelfGoods(result);
@@ -220,19 +222,21 @@ async function checkDaily(page: Page, origin: string) {
   await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready", "true", { timeout: 30000 });
   const harbor = page.locator(".exp-departure"), panel = page.locator(".exp-panel");
   const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).home, saveKey);
-  await expect(harbor.getByRole("heading", { name: `Today’s tide: ${todayCard.name}.`, exact: true })).toBeVisible();
+  await expect(harbor.getByRole("heading", { name: "Today’s Tide Run.", exact: true })).toBeVisible();
   await expect(harbor.locator(".exp-primary")).toHaveCount(1);
   await expect(harbor.locator(".exp-primary")).toHaveText("See today’s tide");
   await captureLayouts(page, "daily-harbor", () => checkHarborStamp(page));
   await harbor.getByRole("button", { name: "See today’s tide", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Today’s tide", exact: true })).toBeVisible();
-  await expect(panel.getByRole("heading", { name: todayCard.name, exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Today’s Tide Run", exact: true })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Today’s Tide Run", exact: true })).toBeVisible();
+  await expect(panel.getByText("Your first finished daily outing sets that day’s score and stamps, even if the tide turns or Bram brings Mochi home. Later sails are practice. Pausing does not finish an outing.", { exact: true })).toBeVisible();
+  await expect(panel.getByText("A paused outing keeps its original day.", { exact: true })).toBeVisible();
   await expect(panel.locator(".tide-list > li")).toHaveCount(3);
   for (const stamp of STAMPS) await expect(panel.getByText(stamp.ask(result.guess), { exact: true })).toBeVisible();
   await expect(panel.locator(".exp-primary")).toHaveCount(1);
   await expect(panel.locator(".exp-primary")).toHaveText("Sail today’s tide");
   await captureLayouts(page, "daily-ask");
-  guardDay();
+  await guardDay();
   await panel.getByRole("button", { name: "Sail today’s tide", exact: true }).click();
   const run = page.getByTestId("tide-run");
   await expect(run).toHaveAttribute("data-seed", String(today));
@@ -242,7 +246,7 @@ async function checkDaily(page: Page, origin: string) {
     await guide(page,move);
   }
   await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible({ timeout: 15000 });
-  guardDay();
+  await guardDay();
   await expect(panel.getByRole("heading", { name: resultTitle(result), exact: true })).toBeVisible();
   await expect(panel.locator(".tide-home-sub")).toHaveText(resultLine(result));
   const checkStamps = async () => {
@@ -273,9 +277,8 @@ async function checkDaily(page: Page, origin: string) {
   assert.deepEqual(book.days[0], final, "the saved daily trace reproduces the engine result");
   await panel.getByRole("button", { name: "See the tide log", exact: true }).click();
   await expect(panel.locator(".tide-log-run")).toBeVisible();
-  await expect(panel.getByRole("heading", { name: todayCard.name, exact: true })).toBeVisible();
-  await expect(panel.getByText(`${dayLabel(today)} · tide run`, { exact: true })).toBeVisible();
-  for (const [name, value] of [["Banked", result.score], ["Bram’s guess", result.guess], ["Splashes", result.splashes]] as const) {
+  await expect(panel.getByRole("heading", { name: `Tide Run · ${dayLabel(today)}`, exact: true })).toBeVisible();
+  for (const [name, value] of [["Score", result.score], ["Bram’s guess", result.guess], ["Splashes", result.splashes]] as const) {
     await expect(panel.locator(".tide-facts > div").filter({ has: page.getByText(name, { exact: true }) }).locator("dd")).toHaveText(String(value));
   }
   await checkStamps();
@@ -291,24 +294,23 @@ async function checkDaily(page: Page, origin: string) {
   await expect(shelve).toBeVisible({ timeout: 15000 });
   await expect(panel.locator(".ss-run-haul")).toContainText(`From today’s tide run: ${resultLine(result)}.`);
   await captureLayouts(page, "daily-bram");
-  guardDay();
+  await guardDay();
   await shelve.click();
   await expect(panel.locator('.ss-docked[data-docked="true"]')).toContainText("Today’s haul is on Bram’s shelf.");
   await captureLayouts(page, "daily-shelved");
   await panel.getByRole("button", { name: "Close panel", exact: true }).click();
-  await expect(harbor.getByRole("heading", { name: `Tomorrow: ${tomorrow.name}.`, exact: true })).toBeVisible();
+  await expect(harbor.getByRole("heading", { name: "Tomorrow’s Tide Run.", exact: true })).toBeVisible();
   await captureLayouts(page, "daily-tomorrow", () => checkHarborStamp(page));
   assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).home, saveKey), before, "the daily run and shelving leave story progress unchanged");
-  guardDay();
+  await guardDay();
 }
 
 async function checkMidnight(page: Page, origin: string, mode: "harbor" | "wake" | "outing" | "unmarked-outing" | "override") {
   const midnight = nextDay * 86_400_000;
   const outing = mode === "outing" || mode === "unmarked-outing";
   const expectedPending = mode === "unmarked-outing" ? null : { day, late: false };
-  await page.clock.install({ time: new Date(midnight - 10_000) });
-  // Keep a slow asset load from crossing midnight before the scenario starts.
-  await page.clock.setFixedTime(new Date(midnight - 10_000));
+  // Load within the fixture day, then move near midnight once the scene is ready.
+  await page.clock.install({ time: new Date(day * 86_400_000 + 43_200_000) });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(({ saveKey, passageKey, pendingKey, blockPending }) => {
     localStorage.setItem(saveKey, JSON.stringify({
@@ -328,9 +330,10 @@ async function checkMidnight(page: Page, origin: string, mode: "harbor" | "wake"
   await page.goto(new URL(`/outing/?play${mode === "override" ? `&tide-day=${day}` : ""}`, origin).href);
   await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready", "true", { timeout: 30000 });
   await page.clock.setSystemTime(new Date(midnight - 10_000));
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   await page.clock.pauseAt(new Date(midnight - 1_000));
   const harbor = page.locator(".exp-departure"), panel = page.locator(".exp-panel");
-  await expect(harbor).toContainText(card.name);
+  await expect(harbor).toContainText("Today’s Tide Run.");
   await openClassic(page);
   await expect(panel.getByRole("heading", { name: card.name, exact: true })).toBeVisible();
   const asks = page.locator(".tide-asks");
@@ -365,7 +368,7 @@ async function checkMidnight(page: Page, origin: string, mode: "harbor" | "wake"
     const expectedDay = mode === "override" ? day : nextDay, expectedCard = cardForDay(expectedDay);
     await expect(panel.getByRole("heading", { name: expectedCard.name, exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Close panel", exact: true }).click();
-    await expect(harbor).toContainText(expectedCard.name);
+    await expect(harbor).toContainText("Today’s Tide Run.");
     await openClassic(page);
     await panel.getByRole("button", { name: "Sail today’s tide", exact: true }).click();
     assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), { day: expectedDay, late: false }, "the first Sail after midnight uses the displayed day");
@@ -377,13 +380,17 @@ try {
   const origin = server.resolvedUrls!.local[0]!;
   const browser = await chromium.launch();
   const errors: string[] = [];
+  const networks: Awaited<ReturnType<typeof prepareBrowser>>[] = [];
   try {
     const dailyPage = await browser.newPage({ viewport });
+    const dailyNetwork = await prepareBrowser(dailyPage, origin, day);
+    networks.push(dailyNetwork);
     dailyPage.on("pageerror", error => errors.push(error.message));
     try { await checkDaily(dailyPage, origin); }
-    finally { await dailyPage.close(); }
+    finally { dailyNetwork.assertClean(); await dailyPage.close(); }
     const page = await browser.newPage({ viewport });
-    await page.clock.install({ time: new Date(day * 86_400_000 + 43_200_000) });
+    const network = await prepareBrowser(page, origin, day);
+    networks.push(network);
     page.on("pageerror", error => errors.push(error.message));
     const game = page.getByTestId("expedition-game"), world = page.getByTestId("expedition-world");
     const harbor = page.locator(".exp-departure"), panel = page.locator(".exp-panel");
@@ -417,6 +424,15 @@ try {
       await expect(chartOpener).toBeFocused();
     }
     await page.setViewportSize(viewport);
+    await page.getByRole("button", { name: "Harbor chart", exact: true }).and(page.locator(":visible")).click();
+    await panel.locator(".harbor-routes > li").filter({ hasText: "Wind Gate" }).getByRole("button").click();
+    await expect(panel.getByRole("heading", { name: "What shall we bring?", exact: true })).toBeVisible();
+    await expect(panel.getByRole("radio", { name: "Wind Gate", exact: true })).toBeChecked();
+    await expect(panel.locator(".exp-wind-brief")).toHaveText("The wheel on the far bank steers the tide. Charge the left and center outlets to free the harbor’s signal vane.");
+    await panel.getByRole("radio", { name: /^Lantern/ }).check();
+    await expect(panel.getByRole("radio", { name: /^Lantern/ })).toBeChecked();
+    await panel.getByRole("radio", { name: /^Rope/ }).check();
+    await panel.getByRole("button", { name: "Close panel", exact: true }).click();
     for (const place of await page.locator(".exp-home-places button:visible").all()) {
       await place.hover();
       assert.ok(await place.evaluate(button => {
@@ -772,12 +788,15 @@ try {
     await expect(panel.locator(".tide-page-stamp .tide-stamp")).not.toHaveAttribute("data-press", "true");
     for (const mode of ["harbor", "wake", "outing", "unmarked-outing", "override"] as const) {
       const midnightPage = await browser.newPage({ viewport });
+      const midnightNetwork = await prepareBrowser(midnightPage, origin, day, { clock: false });
+      networks.push(midnightNetwork);
       midnightPage.on("pageerror", error => errors.push(error.message));
       try { await checkMidnight(midnightPage, origin, mode); }
-      finally { await midnightPage.close(); }
+      finally { midnightNetwork.assertClean(); await midnightPage.close(); }
     }
   } finally {
-    await browser.close();
+    try { for (const network of networks) network.assertClean(); }
+    finally { await browser.close(); }
     assert.deepEqual(errors, [], "uncaught browser errors");
   }
   console.info(`${tag}, 390x844, 844x390, 1280x800, 1440x900: daily harbor/ask, cautious run, engine-matched Home/haul/stamps, run log, Bram shelving/tomorrow; classic Chart court, tray/holding layouts, solved/best log, earlier-day range, both restarts, UTC midnight rollover; 44px panels/no sideways overflow passed`);

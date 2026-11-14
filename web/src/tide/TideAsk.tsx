@@ -30,12 +30,12 @@ function RunAsk({ day, card, guess, result, sailBlockedReason, onSail, onOpenLog
   const canSail = sailBlockedReason === null;
   return <section className="tide tide-ask" aria-labelledby={`${id}-title`}>
     <img className="tide-keeper" src={keeperArt} width="300" height="200" alt="" decoding="async" />
-    <h3 id={`${id}-title`}>Today’s tide</h3>
+    <h3 id={`${id}-title`}>Today’s Tide Run</h3>
     <p className="tide-day">{dayLabel(day)}</p>
     <div className="tide-card">
       <div className="tide-card-heading">
         <TideStamp id={card.id} size={112} tilt={-3} seal={!!result && allKept(result)} label={CARD_PICTURE[card.id]} />
-        <div><h4>{card.name}</h4><p className="tide-note">Twelve waves, two lanes at a time from the seventh. Each wave leaves a prize; bank it at the dock.</p></div>
+        <div><h4>Bring finds home before the tide turns.</h4><p className="tide-note">Twelve waves; two lanes at a time from the seventh. Waves can leave finds. Bring them to the center dock to bank them.</p></div>
       </div>
       <p className="tide-ask-intro">The Tidekeeper asks</p>
       <ol className="tide-list">
@@ -46,7 +46,9 @@ function RunAsk({ day, card, guess, result, sailBlockedReason, onSail, onOpenLog
         </li>)}
       </ol>
       <p className="tide-note">Bram plays it safe: he never ends a wave in the water. His guess is what that careful tide banks.</p>
-      {result && <p className="tide-result">Today’s tide: {resultLine(result)}. Another sail is practice; the first tide each day is the one that counts.</p>}
+      {result && <p className="tide-result">Today’s Tide Run: {resultLine(result)}.</p>}
+      <p className="tide-note">Your first finished daily outing sets that day’s score and stamps, even if the tide turns or Bram brings Mochi home. Later sails are practice. Pausing does not finish an outing.</p>
+      <p className="tide-note">A paused outing keeps its original day.</p>
       <button type="button" className="exp-primary" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(day); }}>{SAIL_ICON}{result ? "Sail again for practice" : "Sail today’s tide"}</button>
       {!canSail && <p className="tide-note" id={`${id}-busy`}>{sailBlockedReason}</p>}
     </div>

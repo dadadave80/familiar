@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { cardForDay } from "./cards";
+import { cardForDay, dayLabel, TIDE_POOL } from "./cards";
+import { CARD_PICTURE } from "./art";
 import { replayRun, solve } from "./asks";
 import TideHome from "./TideHome";
 import type { DayResult } from "./run-day";
@@ -85,6 +86,17 @@ test("the run Home sheet celebrates all three with one primary and a compact, re
   expect(html).toContain("Take it to Bram");
   expect(html).toContain("See the tide log");
   expect(html).not.toContain("Sail again for practice");
+});
+
+test("all device Home sheets name Tide Run and preserve the card picture without court constraints", () => {
+  for (const daily of TIDE_POOL) {
+    const html = renderToStaticMarkup(<TideHome {...runHome} card={daily}/>);
+    expect(html).toContain(`Tide Run · ${dayLabel(runResult.day)}`);
+    expect(html).toContain(`alt="${CARD_PICTURE[daily.id]}"`);
+    expect(html).not.toContain(`>${daily.name}</h2>`);
+    expect(html).not.toContain("No waiting");
+    expect(html).not.toContain("Surf home");
+  }
 });
 
 test("partial run results show slipped labels without a proud portrait or all-three seal", () => {

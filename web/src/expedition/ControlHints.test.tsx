@@ -23,3 +23,10 @@ test("desktop hints explain movement and the remaining shortcuts as text", () =>
   expect(html).not.toContain('role="application"');
   expect(html).not.toContain('aria-live');
 });
+
+test("outing guidance shares the hint reading area while native controls remain outside it", () => {
+  const html=renderToStaticMarkup(<ControlHints id="outing-help" reading={<p>Banking keeps the outing open.</p>}><button>Wait</button></ControlHints>);
+  expect(html).toContain('class="exp-input-reading" tabindex="0" role="region" aria-label="Outing guidance"');
+  expect(html).toContain('<p>Banking keeps the outing open.</p><div id="outing-help" class="exp-input-help">');
+  expect(html).toContain('</div></div><details class="exp-button-controls">');
+});

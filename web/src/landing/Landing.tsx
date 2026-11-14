@@ -18,7 +18,7 @@ export function Landing() {
         <section className="fl-hero" aria-labelledby="fl-title">
           <div className="fl-intro">
             <h1 id="fl-title">A small friend.<br />A light to<br />bring home.</h1>
-            <p>Meet Mochi. A curious little companion with a very big job. Read the tide, recover what the storm scattered, and bring a sleepy harbor back to life.</p>
+            <p>Guide Mochi as a volunteer harbor helper. Bring home the missing Beacon Lens and help the harbor find its light again.</p>
             <a className="fl-play" href="/outing/">Play Familiar</a>
             <p className="fl-entry-note">In your browser. At your pace. No sign-up.</p>
             <a className="fl-story-link" href="#tide">See how the tide turns</a>
@@ -34,8 +34,8 @@ export function Landing() {
 
         <section className="fl-tide" id="tide" aria-labelledby="fl-tide-title">
           <div className="fl-tide-heading">
-            <h2 id="fl-tide-title">Sometimes the wave<br />is the way forward.</h2>
-            <p>The Tidekeeper marks a source, then sends a wave. Cross the connected platforms and it might open the shell you needed. Stay a little longer and you might bring someone home.</p>
+            <h2 id="fl-tide-title">Read the water. Bring the light home.</h2>
+            <p>Each step or wait advances the water. A wave arrives after every third move. Read its lanes, cross the moving bridge, and carry your finds back to the center dock.</p>
           </div>
           <figure className="fl-court">
             <div className="fl-court-scene">
@@ -43,20 +43,20 @@ export function Landing() {
               <img className="fl-court-guardian" src={`${art}tidekeeper.webp`} alt="" loading="lazy" />
               <img className="fl-court-mochi" src={`${art}mochi.webp`} alt="" loading="lazy" />
             </div>
-            <figcaption>Beacon Court concept art. In the game, Mochi crosses connected platforms.</figcaption>
+            <figcaption>Beacon Court concept art.</figcaption>
           </figure>
           <dl className="fl-choices">
             <div>
-              <dt>Bring a little ingenuity.</dt>
-              <dd>Choose Rope to reel in an exposed find, or Lantern to redirect a marked source. Two uses. Your call.</dd>
+              <dt>One clear errand.</dt>
+              <dd>Bring the Beacon Lens home from the left shell. Your first outing has eight calm waves.</dd>
             </div>
             <div>
-              <dt>Make room for a detour.</dt>
-              <dd>A lens takes one pack slot. A wind-moth takes two. Decide what’s worth one more turn, then carry your finds back to the dock.</dd>
+              <dt>Keep what you bank.</dt>
+              <dd>Step onto the center dock to bank cargo. Banking keeps the outing open; finishing returns you to the harbor.</dd>
             </div>
             <div>
-              <dt>Come home with a story.</dt>
-              <dd>Install what you recover. Watch the lighthouse glow. Mochi remembers a moment from the trip you actually took.</dd>
+              <dt>Make the return matter.</dt>
+              <dd>Fit the lens into the beacon. Each repair uncovers another piece of the harbor’s story.</dd>
             </div>
           </dl>
         </section>
@@ -64,13 +64,12 @@ export function Landing() {
         <section className="fl-wind" aria-labelledby="fl-wind-title">
           <figure className="fl-wind-scene">
             <img src={`${art}wind-gate.webp`} width="1536" height="1024" alt="Wind Gate concept illustration, where stone channels route the tide through a turning wheel." loading="lazy" />
-            <figcaption>Wind Gate concept art. This outing opens after you restore the lighthouse.</figcaption>
+            <figcaption>Wind Gate concept art. Optional outings have their own rules on the Harbor chart.</figcaption>
           </figure>
           <div className="fl-wind-copy">
-            <h2 id="fl-wind-title">You know the tide.<br />Now turn it.</h2>
-            <p>Beyond the beacon, the channel sends a familiar wave somewhere new. Align the wheel, trace the exit, and charge Left and Center to recover the harbor’s Signal Vane.</p>
-            <p>Rope or Lantern. A different route. Something else to bring home.</p>
-            <a className="fl-story-link" href="/outing/">Begin with Beacon Court</a>
+            <h2 id="fl-wind-title">A harbor worth helping.</h2>
+            <p>Once the beacon shines, the Harbor chart opens other ways to help. Bell Steps, Reed Steps, and the optional courts each explain their own outing.</p>
+            <a className="fl-story-link" href="/outing/">Begin with Mochi</a>
           </div>
         </section>
 

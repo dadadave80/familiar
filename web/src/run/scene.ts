@@ -321,7 +321,7 @@ export class TideScene extends Phaser.Scene {
       if(!point)continue;
       anchors.push({...point,action,width:44,height:44});
       this.ground.lineStyle(1.5,0xf5db9c,.85).lineBetween(origin.x,origin.y,point.x,point.y);
-      this.keep(this.label(point.x,point.y,action==="wait"?"Wait":"Home",12).setDepth(23));
+      this.keep(this.label(point.x,point.y,action==="wait"?"Wait":"Finish",12).setDepth(23));
       let zone=this.actionZones.get(action);
       if(!zone){zone=this.add.zone(point.x,point.y,44,44).setInteractive({useHandCursor:true}).setDepth(24).setData("worldAction",action);this.actionZones.set(action,zone);}
       zone.setPosition(point.x,point.y).setInteractive();

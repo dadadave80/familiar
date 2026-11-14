@@ -25,8 +25,7 @@ export function sx(text: string): CSSProperties {
 }
 
 export type OpeningBeat = "live" | "boot" | "title" | "bell" | "attract" | "menu" | "travel";
-export interface OpeningStart { sound: boolean; music: number; effects: number; surface?: "tide" }
-function litHarbor(): boolean { try { return Object.keys(localStorage).some(key => key.startsWith("familiar.expedition.") && (() => { try { return JSON.parse(localStorage.getItem(key) ?? "null")?.home?.lit === true; } catch { return false; } })()); } catch { return false; } }
+export interface OpeningStart { sound: boolean; music: number; effects: number }
 interface Props {
   audio: HarborAudio;
   hasSave: boolean;
@@ -35,11 +34,10 @@ interface Props {
   /** The tide has drawn back over the game: unmount the opening. */
   onDone(): void;
   beat?: OpeningBeat;
-  attractDelay?: number;
   /** Fill the parent box instead of the viewport (storyboard frames). */
   framed?: boolean;
 }
-interface State { prompt: string; sound: boolean; scroll: "" | "tide" | "options" | "credits"; music: number; effects: number; cap1: string; cap2: string; lane: string }
+interface State { sound: boolean; scroll: "" | "tide" | "options" | "credits"; music: number; effects: number; cap1: string; cap2: string; lane: string }
 type Ease = "lin" | "io" | "out" | "in" | "back";
 interface Tween { o: Record<string, number>; k: string; to: number; d: number; e: Ease; dl: number; el: number; from?: number; done?: boolean; res(): void }
 type Plank = "continue" | "new" | "tide" | "options" | "credits";
@@ -56,7 +54,7 @@ const E: Record<Ease, (p: number) => number> = {
 };
 const COLS = ["Left", "Center", "Right"];
 const PLANK = "position:relative;height:56px;width:236px;box-sizing:border-box;padding:0 12px 0 30px;border:0;color:#fff0ce;filter:drop-shadow(0 3px 3px #2a1d1166);text-shadow:0 1px 2px #2a1d11cc;font:650 23px/1 'Fraunces Variable',serif;letter-spacing:-.02em;text-align:left;cursor:pointer;transform-origin:0 50%;opacity:0;pointer-events:none";
-const LABEL: Record<Plank, string> = { continue: "Continue", new: "New Harbor", tide: "Today’s Tide", options: "Options", credits: "Credits" };
+const LABEL: Record<Plank, string> = { continue: "Continue", new: "Begin", tide: "Today’s Tide", options: "Options", credits: "Credits" };
 
 const col = (x: number) => 126.67 + x * 253.33, row = (y: number) => 800 - y * 140;
 const GEO = {
@@ -68,9 +66,8 @@ const GEO = {
 };
 
 export default class Opening extends Component<Props, State> {
-  state: State = { prompt: "Press any key", sound: false, scroll: "", music: 4, effects: 5, cap1: "", cap2: "", lane: "" };
+  state: State = { sound: false, scroll: "", music: 4, effects: 5, cap1: "", cap2: "", lane: "" };
   root: HTMLDivElement | null = null;
-  readonly hasLitHarbor = litHarbor();
   t = 0; dt = 16; last = 0; raf = 0; seq = 0; dead = false; frozen = false; rm = false; soundOn = false; landed = false; handedOff = false;
   tweens: Tween[] = [];
   els: Record<string, HTMLElement | null> = {};
@@ -96,7 +93,6 @@ export default class Opening extends Component<Props, State> {
   componentDidMount() {
     this.dead = false; this.t = 0; this.moth = { x: 852, y: 444 };
     this.rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (matchMedia("(pointer: coarse)").matches) this.setState({ prompt: "Tap to begin" });
     window.addEventListener("keydown", this.onKey);
     this.ro = new ResizeObserver(() => { if (this.frozen) this.draw(); });
     if (this.root) this.ro.observe(this.root);
@@ -137,7 +133,6 @@ export default class Opening extends Component<Props, State> {
       if (p >= 1) { w.done = true; w.res(); }
     }
     this.tweens = this.tweens.filter(w => !w.done);
-    if (this.mode === "title" && this.t - this.idleAt > (this.props.attractDelay ?? 20) * 1000) void this.attract();
     this.draw(); this.raf = requestAnimationFrame(this.tick);
   };
   tw(o: Record<string, number>, k: string, to: number, d: number, e: Ease = "io", dl = 0): Promise<void> {
@@ -174,7 +169,8 @@ export default class Opening extends Component<Props, State> {
     this.setState(st => bus === "music" ? { ...st, music: level } : { ...st, effects: level }, () => { this.props.audio.setMix(this.state.music / 5, this.state.effects / 5); this.sfx("step"); });
   };
   onBack = () => this.closeScroll();
-  onTide = () => { if (this.frozen) return; void this.tw(this.s, "scrollP", 0, 200, "in").then(() => this.setState({ scroll: "" })); void this.travel("continue", "tide"); };
+  onTide = () => { if (this.frozen) return; void this.tw(this.s, "scrollP", 0, 200, "in").then(() => this.setState({ scroll: "" })); void this.travel(this.props.hasSave ? "continue" : "new"); };
+  onBegin = (e: SyntheticEvent) => { e.stopPropagation(); if (!this.frozen && this.mode === "title") this.openMenu(); };
   onPlankEnter = (e: SyntheticEvent<HTMLButtonElement>) => { if (!this.frozen && this.mode === "menu" && !this.state.scroll) this.select(e.currentTarget.dataset.plank as Plank); };
   onPlankClick = (e: SyntheticEvent<HTMLButtonElement>) => { e.stopPropagation(); if (this.frozen || this.mode !== "menu") return; const id = e.currentTarget.dataset.plank as Plank; this.select(id); this.choose(id); };
   onKey = (e: KeyboardEvent) => {
@@ -222,7 +218,7 @@ export default class Opening extends Component<Props, State> {
     this.items().forEach((i, j) => void this.tw(this.mp, i, 1, 460, "back", 120 + j * 50));
     if (this.sel) this.root?.querySelector<HTMLElement>(`[data-plank="${this.sel}"]`)?.focus({ preventScroll: true });
   }
-  async travel(id: Plank, surface?: "tide") {
+  async travel(id: Plank) {
     const k = ++this.seq, s = this.s, ids = this.items(); this.mode = "travel"; this.dip[id] = this.t; this.sfx("pick"); this.poses(["reach-ready", 420]);
     await this.wait(260); if (k !== this.seq) return; if (this.soundOn) this.props.audio.playMusic("departure"); this.mothTo = "board";
     ids.forEach((i, j) => void this.tw(this.mp, i, 0, 300, "in", j * 40)); this.sel = null;
@@ -232,7 +228,7 @@ export default class Opening extends Component<Props, State> {
     // The camera has reached the dock: the tide rises, holds until the game is mounted beneath it, then draws back.
     this.mode = "wipe"; s.tideA = 1; s.tide = 0; await this.tw(s, "tide", 1.06, 620, "in"); if (k !== this.seq) return;
     this.handedOff = true;
-    await this.props.onStart({ sound: this.soundOn, music: this.state.music / 5, effects: this.state.effects / 5, ...(surface ? { surface } : {}) });
+    await this.props.onStart({ sound: this.soundOn, music: this.state.music / 5, effects: this.state.effects / 5 });
     await this.wait(140); await this.tw(s, "tideA", 0, 520, "out");
     if (k === this.seq && !this.dead) this.props.onDone();
   }
@@ -307,7 +303,7 @@ export default class Opening extends Component<Props, State> {
     if (port) { PW = Math.max(170, Math.min(236, (visW - 2 * m - 198 - 8 * k) / k - 10)); const G = 198 + 8 * k + (10 + PW) * k, left = 1110.5 - G / 2; mx = left + 95; postX = left + 198 + 8 * k; cxT = 1110.5; }
     const gx = (x: number) => postX + (x - 890) * k, gy = (y: number) => 858 + (y - 858) * k;
     const clampT = (Sx: number, x: number, y: number) => [Math.min(0, Math.max(W - 1536 * Sx, x)), Math.min(0, Math.max(H - 1024 * Sx, y))] as const;
-    const Sa = s0 * (zt + s.zoomAdd!), [txa, tya] = clampT(Sa, W / 2 - (cxT + (live ? Math.sin(t / 7000) * 6 : 0)) * Sa, H - 905 * Sa);
+    const Sa = s0 * (zt + s.zoomAdd!), [txa, tya] = clampT(Sa, W / 2 - cxT * Sa, H - 905 * Sa);
     const rightLimit = Math.min(1536, (W - txa) / Sa) - m;
     // Title size and centre that fit between the bakery roof (x 470) and R, in world units.
     const fit = (R: number) => { const F = Math.min(.105 * W, .21 * H, (R - 470) * Sa / 4.3), c = (470 + R) / 2 * Sa + txa; return { F, c, bot: (short ? .06 : .08) * H + F + (fz ? .2 * F : Math.max(.2 * F, 17)) * 1.7, right: c + F * 2.15 }; };
@@ -350,7 +346,7 @@ export default class Opening extends Component<Props, State> {
     e = $("veil"); if (e) { e.style.opacity = String(s.veil); e.style.display = s.veil! > 0 ? "block" : "none"; }
     e = $("tide"); if (e) { e.style.display = s.tide! > 0 ? "block" : "none"; e.style.height = (s.tide! * H) + "px"; e.style.opacity = String(s.tideA); }
     e = $("chap"); if (e) { e.style.opacity = String(s.chapA); const rl = e.lastElementChild; if (rl && rl.children.length === 3) { (rl.children[0] as HTMLElement).style.width = (rl.children[2] as HTMLElement).style.width = port || tucked ? "1em" : "2.4em"; (rl as HTMLElement).style.fontSize = fz ? ".2em" : "max(.2em,17px)"; } }
-    e = $("prompt"); if (e) { e.style.fontSize = fz ? (port ? "3.1cqw" : "1.25cqw") : "clamp(12px,1.25cqw,18px)"; e.style.opacity = String((s.courtA! > 0 ? 0 : 1) * s.promptA!); }
+    e = $("begin"); if (e) { const available = this.mode === "title" && s.promptA! > .9; e.hidden = !available; e.inert = !available; }
     e = $("cap");
     if (e) {
       e.style.opacity = String(s.capA);
@@ -389,8 +385,8 @@ export default class Opening extends Component<Props, State> {
     const ids = this.items(), inMenu = this.mode === "menu";
     ids.forEach((id, i) => {
       const el = r.querySelector<HTMLElement>(`[data-plank="${id}"]`); if (!el) return;
-      const p = this.mp[id]!, seld = inMenu && this.sel === id, dt2 = t - (this.dip[id] ?? -1e9), dip = dt2 < 900 && live ? 3.2 * Math.exp(-dt2 / 260) * Math.cos(dt2 / 90) : 0, sway = live ? Math.sin(st / 1000 * 1.3 + i * 1.7) * .7 : 0;
-      el.style.transform = "rotate(" + ((1 - p) * -22 + p * ([-1.6, 1.2, -.8, 1.5, -1.1][i % 5]! + sway) + (seld ? 1.6 : 0) + dip) + "deg) scaleX(" + Math.max(.001, p) + ")";
+      const p = this.mp[id]!, seld = inMenu && this.sel === id, dt2 = t - (this.dip[id] ?? -1e9), dip = dt2 < 900 && live ? 3.2 * Math.exp(-dt2 / 260) * Math.cos(dt2 / 90) : 0;
+      el.style.transform = "rotate(" + ((1 - p) * -22 + p * [-1.6, 1.2, -.8, 1.5, -1.1][i % 5]! + (seld ? 1.6 : 0) + dip) + "deg) scaleX(" + Math.max(.001, p) + ")";
       el.style.width = PW + "px"; el.style.fontSize = tight ? Math.max(17, Math.min(21, PW / 10.6)) + "px" : "23px"; el.style.paddingRight = port ? "8px" : "12px"; el.style.opacity = String(Math.min(1, p * 1.6)); el.style.pointerEvents = p > .9 && inMenu && !this.frozen ? "auto" : "none";
       el.style.filter = seld ? "drop-shadow(0 0 1.5px #ffe1a1) drop-shadow(0 0 7px #ffd58acc) brightness(1.06)" : "drop-shadow(0 3px 3px #2a1d1166)"; el.style.color = seld ? "#fff5d8" : "#fff0ce"; el.style.zIndex = seld ? "2" : "1";
     });
@@ -486,8 +482,8 @@ export default class Opening extends Component<Props, State> {
                 <div style={sx("display:flex;justify-content:space-between;padding:0 34px;height:10px")}><span style={sx("width:2px;background:#c9ad79")} /><span style={sx("width:2px;background:#c9ad79")} /></div>
                 <div className="fo-paper" style={{ ...sx("padding:24px 22px 22px;filter:drop-shadow(0 8px 12px #352c2440);color:#263e32;font-weight:500;line-height:1.4;display:flex;flex-direction:column;gap:10px"), background: `url('${TITLE}title-paper.webp') center/100% 100% no-repeat` }}>
                   {st.scroll === "tide" && <>
-                    <p style={{ margin: 0 }}>One ask a day from the Tidekeeper, on a fresh Beacon Court.</p>
-                    {this.hasLitHarbor ? <button className="fo-primary" onClick={this.onTide}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg><span>Continue to today’s ask</span></button> : <p style={{ margin: 0 }}>The asks begin once the beacon is lit.</p>}
+                    <p style={{ margin: 0 }}>Daily outings begin once the beacon is lit. Enter the harbor to see this harbor’s outing and rules.</p>
+                    <button className="fo-primary" onClick={this.onTide}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg><span>Enter the harbor</span></button>
                   </>}
                   {st.scroll === "options" && <>
                     <button className="fo-secondary" onClick={this.onSoundRow} aria-pressed={st.sound}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m11 5-6 4H2v6h3l6 4V5Z"/>{st.sound ? <path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/> : <path d="m16 9 6 6m0-6-6 6"/>}</svg><span>{st.sound ? "Sound on" : "Sound off"}</span></button>
@@ -546,7 +542,7 @@ export default class Opening extends Component<Props, State> {
             <div style={sx("font:620 clamp(21px,2.5cqw,34px)/1.12 'Fraunces Variable',serif;letter-spacing:-.025em;text-wrap:balance")}>{st.cap1}</div>
             <div style={sx("margin-top:.45em;font:560 clamp(14px,1.3cqw,18px)/1.35 'Figtree Variable',sans-serif;text-wrap:pretty")}>{st.cap2}</div>
           </div>
-          <div data-el="prompt" className="fo-prompt" style={sx("position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 3.5%);transform:translateX(-50%);font:700 clamp(12px,1.25cqw,18px)/1 'Figtree Variable',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#fff1d1;opacity:0;white-space:nowrap;pointer-events:none")}>{st.prompt}</div>
+          <button data-el="begin" className="fo-primary" onPointerDown={this.stop} onClick={this.onBegin} style={sx("position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 3.5%);transform:translateX(-50%);min-height:56px;min-width:120px")}>{this.props.hasSave ? "Continue" : "Begin"}</button>
         </div>
       </div>
     );

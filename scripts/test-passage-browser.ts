@@ -1,4 +1,5 @@
 import { guide, worldAction, buttonControls } from "./browser-controls";
+import { prepareBrowser } from "./browser-fixtures";
 import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -18,7 +19,7 @@ try {
       const phone=engine===webkit;
       const record=process.argv.includes("--record")&&!phone;
       const page=await browser.newPage({...(record?{recordVideo:{dir:output,size:{width:1280,height:800}}}:{}),viewport:phone?{width:390,height:844}:{width:1280,height:800},hasTouch:phone,reducedMotion:phone?"reduce":"no-preference"});
-      await page.route("**/api/**",r=>r.abort());
+      const network=await prepareBrowser(page,origin);
       const errors:string[]=[];
       page.on("console",msg=>{if(msg.type()==="error"&&msg.text().includes("Failed to process file"))errors.push(msg.text());});
       await page.addInitScript(key=>{
@@ -58,7 +59,7 @@ try {
         await expect(game).toHaveAttribute("data-stage","delivered");
         if(job==="reed")await expect(game).toHaveAttribute("data-watched","true");
         await page.getByTestId("passage-finish").click();
-        await expect(page.locator(".exp-departure h1")).toHaveText(/^Today’s tide:/);
+        await expect(page.locator('[data-action="story"]')).toHaveText("Prepare Chapter 3");
         const title=(await page.locator(".exp-departure h1").textContent())!;
         await expect(page.getByTestId("expedition-feedback")).toContainText(job==="bell"?"Bram’s supplies are stacked at Bell Steps.":"Mochi’s skiff is tied up at the quay.");
         await page.reload();
@@ -186,6 +187,7 @@ try {
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),original,"companion and discovery never rewrite the H1 save");
       assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)!).heardBell,passageKey),true);
       assert.deepEqual(errors,[],"all court and harbor textures decode");
+      network.assertClean();
       if(record){const video=page.video()!;await page.close();await video.saveAs(join(output,"both-crossings.webm"));}
       console.info(engine.name(),"Bell and Reed deliveries, discovery, bell routes, touch/keyboard, interrupted runs, companion and independent save passed");
     }finally{await browser.close();}

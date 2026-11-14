@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { VALUE, applyMove, replayTide, startTide, tideShape, type StoryPrize, type TideTransition } from "./engine";
+import { STORY_SHELL, VALUE, applyMove, replayTide, startTide, tideShape, type StoryPrize, type TideTransition } from "./engine";
 import { bramsGuess, cautiousMove, cautiousTide } from "./bot";
 import { CHAPTERS, chapterFor, consequence, storyStart } from "./story";
 import { closeTide, dayResult, dayResults, emptyBook, readBook, shelfHaul, todayResult, writeBook, type DayResult } from "./save";
@@ -38,12 +38,39 @@ test("every line said during a tide is about something that happened", () => {
   const said = (["lens", "vane", "moth"] as const).flatMap(prize => careful(prize).turns.map(consequence));
   expect(said.every(line => !line.includes("undefined"))).toBe(true);
   expect(said.some(line => line.includes("The left shell opens. The lens is inside."))).toBe(true);
-  expect(said.some(line => line.includes("Mochi cradles the moth."))).toBe(true);
-  expect(said.some(line => line.includes("The lens is home."))).toBe(true);
+  expect(said.some(line => line.includes("Mochi cradles the wind-moth."))).toBe(true);
+  expect(said.some(line => line.includes("Lens safe. Finish and return to fit it into the beacon."))).toBe(true);
   expect(said).toContain("Banked three pieces of sea glass: +9.");
   expect(said.some(line => line.includes("The wave takes the sea glass and the reed back."))).toBe(true);
   const first = applyMove(startTide({ seed: 20771 }), "wait")!;
   expect(consequence(first)).toBe("");
+});
+
+test("chapter briefings name the errand and preserve its established tide", () => {
+  expect(CHAPTERS.lens.before).toBe("The storm carried the Beacon Lens into the left shell. Bring it back so we can light the beacon.");
+  expect(CHAPTERS.vane.before).toBe("The beacon is lit. Bram needs the Signal Vane to read the wind. Bring it home from the right shell.");
+  expect(CHAPTERS.lens.goal).toBe("Bring the Beacon Lens home from the left shell.");
+  expect(CHAPTERS.vane.goal).toBe("Bring the Signal Vane home from the right shell.");
+  expect(CHAPTERS.moth.goal).toBe("Bring the wind-moth home from the right shell. It needs two pack slots.");
+  expect(Object.values(CHAPTERS).map(chapter => chapter.seed)).toEqual([5, 4, 15]);
+  expect(CHAPTERS.vane.after).toContain("Reeds from Wren’s garden. Glass from her windows. That’s not flotsam. The crab is bringing her house back.");
+});
+
+test("consequences describe settled possession instead of an obsolete same-move pickup", () => {
+  const state = startTide(storyStart("lens")), at = STORY_SHELL.lens;
+  const pickup = { kind: "pickup", item: "lens", at } as const;
+  const splash = { kind: "splash", from: at, to: { x: 0, y: 3 }, lost: "lens", hearts: 2 } as const;
+  const active: TideTransition = { before: state, after: { ...state, items: [{ ...at, kind: "lens" }] }, events: [pickup, splash] };
+  expect(consequence(active)).not.toContain("Mochi carries");
+  expect(consequence(active)).toContain("goes back to its shell");
+  const ended: TideTransition = { before: state, after: { ...state, outcome: "turned" }, events: [pickup, { kind: "end", reason: "turned", lost: ["lens"] }] };
+  expect(consequence(ended)).not.toContain("Mochi carries");
+  expect(consequence(ended)).toContain("The tide turns and takes what was still in the pack.");
+  const carried: TideTransition = { before: state, after: { ...state, pack: ["lens"] }, events: [pickup] };
+  expect(consequence(carried)).toBe("Mochi carries the Beacon Lens. Bring it to the center dock to bank it.");
+  const banked: TideTransition = { before: state, after: { ...state, banked: ["lens"] }, events: [pickup, { kind: "bank", items: ["lens"], gained: 0 }] };
+  expect(consequence(banked)).toBe("Lens safe. Finish and return to fit it into the beacon.");
+  expect(consequence({ ...ended, events: [pickup, splash, { kind: "end", reason: "rescued", lost: [] }] })).not.toContain("goes back to its shell");
 });
 
 function memory() {
@@ -85,6 +112,29 @@ test("a tide book survives a reload and keeps each day's first tide", () => {
   expect(dayResult(again).stamps).toEqual({ home: false, guess: false, dry: true });
   expect(todayResult(book, 20772)).toBeNull();
 
+});
+
+test("a rescued or voluntary zero-score first result survives better practice and reload", () => {
+  const seed = 20771;
+  let rescued = startTide({ seed });
+  while (rescued.outcome === "active") {
+    const move = rescued.position.y === 0 ? "north" : "wait";
+    rescued = applyMove(rescued, move)!.after;
+  }
+  expect(rescued.outcome).toBe("rescued");
+  expect(rescued.score).toBe(0);
+  const voluntary = applyMove(startTide({ seed }), "home")!.after;
+  const better = cautiousTide(seed);
+  expect(better.score).toBeGreaterThan(0);
+  for (const first of [rescued, voluntary]) {
+    const storage = memory(), key = "tide";
+    writeBook(storage, key, closeTide({ active: first, days: [] }, first));
+    const restored = readBook(storage, key);
+    const practiced = closeTide({ ...restored, active: better }, better);
+    writeBook(storage, key, practiced);
+    expect(readBook(storage, key).days).toEqual([first]);
+    expect(todayResult(readBook(storage, key), seed)).toEqual(dayResult(first));
+  }
 });
 
 test("day results put the newest day first without changing the book", () => {

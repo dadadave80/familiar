@@ -31,7 +31,7 @@ async function entry() {
     let screen:React.ReactNode=null;
     if(play){
       const [{default:Game},{HarborSessionBoundary,HarborAccountPanel}]=play.mods;
-      screen=<HarborSessionBoundary>{session=><Game session={session} accountPanel={<HarborAccountPanel/>} audio={audio} initialSound={play.start.sound} initialMix={[play.start.music,play.start.effects]} initialSurface={play.start.surface}/>}</HarborSessionBoundary>;
+      screen=<HarborSessionBoundary>{session=><Game session={session} accountPanel={<HarborAccountPanel/>} audio={audio} initialSound={play.start.sound} initialMix={[play.start.music,play.start.effects]}/>}</HarborSessionBoundary>;
     }
     return <>
       {screen}

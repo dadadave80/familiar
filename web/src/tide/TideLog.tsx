@@ -47,7 +47,7 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
     : null, [page]);
   const move = (by: number) => setSelected(Math.max(0, Math.min(last, index + by)));
 
-  const title = page?.kind === "story" ? page.title : page?.card.name;
+  const title = page?.kind === "story" ? page.title : page?.kind === "run" ? `Tide Run · ${dayLabel(page.day)}` : page?.card.name;
   const pageKey = page?.kind === "story" ? `story:${page.id}` : page?.kind === "run" ? `run:${page.day}` : `tide:${selectedDay}`;
   return <section ref={logRef} className="tide tide-log">
     <header className="tide-log-header">
@@ -62,7 +62,7 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
       <p className="tide-note">{collected} of 14 collected{sealed > 0 ? `, ${sealed} with the brass seal` : ""}</p>
       <div className="tide-stamp-sheet">
         {stamps.map(({ card, entry, result, allThree }) => entry || result
-          ? <button key={card.id} type="button" aria-label={entry ? `${card.name} stamp, ${entry.kept.filter(Boolean).length} of 3 asks kept. Open its page.` : `${card.name} stamp, ${keptCount(result!)} of 3 kept. Open its page.`} onClick={() => setSelected(pageForCard(pages, card.id))}>
+          ? <button key={card.id} type="button" aria-label={entry ? `${card.name} stamp, ${entry.kept.filter(Boolean).length} of 3 asks kept. Open its page.` : `Tide Run stamp, ${keptCount(result!)} of 3 kept. Open its page.`} onClick={() => setSelected(pageForCard(pages, card.id))}>
             <TideStamp id={card.id} size={56} seal={allThree} />
           </button>
           : <span key={card.id} className="tide-stamp-empty"><span className="tide-sr">Not collected yet</span></span>)}
@@ -77,7 +77,7 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
       <button type="button" aria-disabled={index === last} onClick={() => move(1)}>Later page</button>
     </div>
     <h4>{title}</h4>
-    <p className="tide-sub">{page.kind === "story" ? page.subtitle : page.kind === "run" ? `${dayLabel(page.day)} · tide run` : `${dayLabel(page.day)}${page.entry.late ? " · sailed late" : ""}`}</p>
+    {page.kind !== "run" && <p className="tide-sub">{page.kind === "story" ? page.subtitle : `${dayLabel(page.day)}${page.entry.late ? " · sailed late" : ""}`}</p>}
     {page.kind === "run" ? <RunPage key={pageKey} page={page}/> : <div className={`tide-log-chart${page.kind === "tide" ? " tide-log-chart-stamped" : ""}`} style={{ "--tide-paper": `url(${logPageArt})` } as CSSProperties}>
       {frames ? <TideChart key={pageKey} frames={frames} area={page.kind === "story" ? page.area : "beacon"} reduced={reduced} label={`Chart of Mochi’s route: ${title}, ${frames.length - 1} ${frames.length === 2 ? "decision" : "decisions"}.`} />
         : <p>This page’s route could not be redrawn on this device.</p>}
@@ -112,7 +112,7 @@ function RunPage({ page }: { page: Extract<LogPage, { kind: "run" }> }): JSX.Ele
       <div><HaulRow result={result}/><p className="tide-note">Reed and glass go to Bram’s shelf. Pearls stay with Mochi.</p></div>
     </div>
     <dl className="tide-facts">
-      <div><dt>Banked</dt><dd>{result.score}</dd></div>
+      <div><dt>Score</dt><dd>{result.score}</dd></div>
       <div><dt>Bram’s guess</dt><dd>{result.guess}</dd></div>
       <div><dt>Splashes</dt><dd>{result.splashes}</dd></div>
     </dl>

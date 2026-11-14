@@ -13,12 +13,11 @@ import {previewDock,seedPreview} from "../web/src/season/data";
 import {VALUE,applyMove,legalMoves,startTide,type Move,type TideState} from "../web/src/run/engine";
 import {cautiousMove} from "../web/src/run/bot";
 import {dayResult} from "../web/src/run/save";
+import {BROWSER_DAY,prepareBrowser} from "./browser-fixtures";
 
 // Actual React controller/provider/panel; all account/RPC ports below are isolated synthetic fixtures.
 const id="\0expedition-harbor-fixture.tsx",dir=await mkdtemp(join(tmpdir(),"familiar-expedition-harbor-"));
 const fixturePublicKey=KeyPair.fromRandom("ed25519").getPublicKey().toString();
-// Bram's shelf reads the season contract's public views over testnet RPC; nothing else may leave the page.
-const publicView=(request:import("@playwright/test").Request)=>request.url().startsWith("https://test.rpc.fastnear.com")&&request.method()==="POST"&&JSON.parse(request.postData()??"{}")?.params?.request_type==="call_function";
 let publicViews=0;
 const captureRoutes=courtFixtures.cases.filter(row=>["beacon-rope-objective","beacon-rope-rescue"].includes(row.id)).map(row=>({id:row.id,start:row.start,commands:row.commands}));
 async function checkHarborLayout(page:Page,width:number,height:number){
@@ -51,7 +50,8 @@ async function checkHarborLayout(page:Page,width:number,height:number){
  assert(geometry.card.x>=0&&geometry.card.right<=width+.5&&geometry.card.bottom<=height+.5,`${tag}: harbor card stays inside the viewport`);
  assert(!geometry.heading.overflow&&geometry.heading.x>=geometry.card.x&&geometry.heading.right<=geometry.card.right&&geometry.heading.y>=geometry.card.y&&geometry.heading.bottom<=geometry.card.bottom,`${tag}: longest harbor heading stays inside the card without overflowing`);
  for(const stamp of geometry.stamp)assert(!overlaps(stamp,geometry.heading),`${tag}: stamp stays clear of the harbor heading`);
- await expect(page.locator(".exp-departure-heading .exp-preparation")).toHaveCount(1);
+ const saved=await page.evaluate(()=>(window as any).__harbor?.port?.state.mode==="saved");
+ await expect(page.locator(".exp-departure-heading .exp-preparation")).toHaveCount(saved?1:0);
  await expect(page.locator(".exp-departure").getByRole("button",{name:"Open the tide log",exact:true})).toHaveCount(0);
  for(const action of geometry.actions)assert(action.nowrap==="nowrap"&&!action.overflow,`${tag}: harbor button text never wraps or overflows`);
  if(width>=900||height<=500)for(const action of geometry.actions)assert(Math.abs(action.y-geometry.actions[0]!.y)<3,`${tag}: harbor actions share one row`);
@@ -69,18 +69,17 @@ async function checkReturnLayouts(browser:import("@playwright/test").Browser,ori
  assert.equal(resultTitle(dayResult(early)),"1 of 3 kept.");assert.equal(rescued.outcome,"rescued");assert.equal(resultTitle(dayResult(rescued)),"Nothing kept this time.");
  const shelvedDay=day-3,shelvedTide=sail(shelvedDay,state=>cautiousMove(state,VALUE));
  const scenarios:{name:string;day:number;moves:readonly Move[]|null;title:string;buttons:number;shelved:boolean}[]=[
-  {name:"before",day,moves:null,title:`Today’s tide: ${cardForDay(day).name}.`,buttons:1,shelved:false},
+  {name:"before",day,moves:null,title:"Today’s Tide Run.",buttons:1,shelved:false},
   {name:"all-three",day,moves:cautious.moves,title:"All three kept.",buttons:2,shelved:false},
   {name:"home-early",day,moves:early.moves,title:"1 of 3 kept.",buttons:1,shelved:false},
   {name:"rescued",day,moves:rescued.moves,title:"Nothing kept this time.",buttons:1,shelved:false},
-  {name:"shelved",day:shelvedDay,moves:shelvedTide.moves,title:`Tomorrow: ${cardForDay(shelvedDay+1).name}.`,buttons:1,shelved:true}];
+  {name:"shelved",day:shelvedDay,moves:shelvedTide.moves,title:"Tomorrow’s Tide Run.",buttons:1,shelved:true}];
  for(const scenario of scenarios){
   const shelf=previewDock(seedPreview(null,scenario.day),[1,0],scenario.day);assert("market" in shelf);
   const context=await browser.newContext({viewport:{width:412,height:860},reducedMotion:"reduce"}),page=await context.newPage();
   try{
    const errors:string[]=[];page.on("pageerror",error=>errors.push(error.message));
-   await page.route("**/*",route=>route.request().url().startsWith(origin)?route.continue():route.abort());
-   await page.clock.install({time:new Date(scenario.day*86_400_000+43_200_000)});await page.clock.setFixedTime(new Date(scenario.day*86_400_000+43_200_000));
+   const network=await prepareBrowser(page,origin,scenario.day);
    await page.addInitScript(({day,moves,market})=>{
     localStorage.setItem("familiar.expedition.local.v2",JSON.stringify({version:2,home:{banked:["lens","vane","moth"],lit:true,signaled:true,lantern:null},active:null,last:null}));
     if(moves)localStorage.setItem("familiar.expedition.local.v2:tide-run.v1",JSON.stringify({version:1,active:{seed:day,moves:moves.slice(0,-1)},days:[]}));
@@ -100,7 +99,7 @@ async function checkReturnLayouts(browser:import("@playwright/test").Browser,ori
    await expect(page.locator(".tide-departure-stamp")).toBeVisible();if(scenario.moves)await expect(page.getByTestId("expedition-feedback"),scenario.name).not.toHaveText("");
    await expect(page.locator(".exp-departure-buttons>button"),scenario.name).toHaveCount(scenario.buttons);
    for(const [width,height] of [[412,860],[390,844],[844,390],[900,800],[1280,800],[1440,900]])await checkHarborLayout(page,width!,height!);
-   assert.equal(await page.evaluate(()=>(window as any).__harbor.sends.length),0,"layout checks send no account action");assert.deepEqual(errors,[],scenario.name);
+   assert.equal(await page.evaluate(()=>(window as any).__harbor.sends.length),0,"layout checks send no account action");assert.deepEqual(errors,[],scenario.name);network.assertClean();publicViews+=network.rpc.length;
   }finally{await context.close();}
  }
 }
@@ -137,7 +136,7 @@ const server=await createServer({configFile:false,root:resolve(import.meta.dir,"
 await server.listen();const origin=server.resolvedUrls!.local[0]!.replace(/\/$/,""),browser=await chromium.launch({headless:true});
 try{
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(),external:string[]=[],errors:string[]=[];
- page.on("request",request=>{if(!request.url().startsWith(origin)&&!request.url().startsWith("blob:")&&!request.url().startsWith("data:"))external.push(request.url());});page.on("pageerror",error=>{errors.push(error.message);console.error("Synthetic browser error:",error.message);});
+ const network=await prepareBrowser(page,origin,BROWSER_DAY);page.on("pageerror",error=>{errors.push(error.message);console.error("Synthetic browser error:",error.message);});
  await page.goto(origin+"/__harbor");await expect(page.getByTestId("authority")).toHaveText("preview");await expect(page.getByText(/alice.familiar-game.testnet · NEAR testnet/)).toBeVisible();
  assert.equal(await page.evaluate(()=>(window as any).__harbor.sends.length),0);
  await page.getByRole("button",{name:"Use saved harbor",exact:true}).click();await expect(page.getByTestId("authority")).toHaveText("saved");await expect(page.getByTestId("motifs")).toHaveText("crest");await expect(page.getByTestId("owned")).toContainText("lantern:");
@@ -148,18 +147,18 @@ try{
  assert.equal(await page.evaluate(()=>(window as any).__harbor.sends.length),1,"one explicit in-world confirmation");
  await page.getByRole("button",{name:"Keep fixture memory",exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__harbor.port.state.returns.length)).toBe(1);await page.getByText("Return memories",{exact:true}).click();const downloadEvent=page.waitForEvent("download");await page.getByRole("button",{name:"Download return memories",exact:true}).click();const download=await downloadEvent,exported=await Bun.file((await download.path())!).json();
  assert.equal(exported.records.length,1);assert(!JSON.stringify(exported).includes("PRIVATE_IDENTITY_MARKER"));assert(!JSON.stringify(exported).includes("signedTransaction"));
- const second=await page.context().newPage();await second.goto(origin+"/__harbor");await expect(second.getByText(/alice.familiar-game.testnet · NEAR testnet/)).toBeVisible();
+ const second=await page.context().newPage(),secondNetwork=await prepareBrowser(second,origin,BROWSER_DAY);await second.goto(origin+"/__harbor");await expect(second.getByText(/alice.familiar-game.testnet · NEAR testnet/)).toBeVisible();
  const captured=await Promise.all([page.evaluate(()=>(window as any).__harbor.captureRoute('beacon-rope-objective')),second.evaluate(()=>(window as any).__harbor.captureRoute('beacon-rope-rescue'))]);
  assert.notEqual(captured[0].id,captured[1].id);
  for(const tab of [page,second]){const records=await tab.evaluate(()=>JSON.parse((window as any).__harbor.port.exportReturns()).records);assert.equal(records.length,3);assert(records.some((r:any)=>r.cargo.includes('moth')));assert(records.some((r:any)=>r.cargo.length===1&&r.cargo[0]==='lens'));}
- await second.close();
+ secondNetwork.assertClean();await second.close();
  await page.evaluate(()=>{const f=(window as any).__harbor;f.hold=true;f.oldPort=f.port;localStorage.setItem('fixture-original-pending','EXACT_ORIGINAL_BYTES');});await page.getByRole("button",{name:"Refresh fixture",exact:true}).click();await expect.poll(()=>page.evaluate(()=>!!(window as any).__harbor.release)).toBe(true);
  await page.evaluate(()=>(window as any).__harbor.close());await expect(page.getByText("Controller closed",{exact:true})).toBeVisible();await page.evaluate(()=>(window as any).__harbor.release());
  const closed=await page.evaluate(async()=>{const f=(window as any).__harbor,reads=f.reads,result=await f.oldPort.review({kind:'commission'}).then(()=>"unexpected-success",()=>"closed");return {result,reads,after:f.reads,binding:f.oldPort.state.binding,pending:localStorage.getItem('fixture-original-pending')};});
  assert.equal(closed.result,"closed");assert.equal(closed.reads,closed.after);assert.equal(closed.binding,null);assert.equal(closed.pending,"EXACT_ORIGINAL_BYTES");
  await page.evaluate(()=>{const f=(window as any).__harbor;f.hold=false;f.owner={...f.owner,nearAccountId:'bob.familiar-game.testnet',playerId:'bob'};f.reopen();});await expect(page.getByText(/bob.familiar-game.testnet · NEAR testnet/)).toBeVisible();await expect(page.getByTestId("authority")).toHaveText("preview");
  const gameContext=await browser.newContext({viewport:{width:390,height:844},reducedMotion:"reduce"}),game=await gameContext.newPage();
- game.on("pageerror",error=>errors.push(error.message));game.on("request",request=>{if(!request.url().startsWith(origin)&&!request.url().startsWith("blob:")&&!request.url().startsWith("data:")){if(publicView(request))publicViews++;else external.push(request.url());}});
+ const gameNetwork=await prepareBrowser(game,origin,BROWSER_DAY);game.on("pageerror",error=>errors.push(error.message));
  await game.goto(origin+"/__harbor-game");await game.bringToFront();await expect(game.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:20000});
  await game.getByRole("button",{name:"Game menu",exact:true}).click();await game.getByRole("button",{name:"Account & recovery",exact:true}).click();await expect(game.getByText(/alice.familiar-game.testnet · NEAR testnet/)).toBeVisible();
  await game.getByRole("button",{name:"Use saved harbor",exact:true}).click();await expect.poll(()=>game.evaluate(()=>(window as any).__harbor.port.state.mode)).toBe("saved");await game.getByRole("button",{name:"Close panel",exact:true}).click();
@@ -193,5 +192,5 @@ try{
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.displayLantern('moth',true);await f.port.refresh();});await expect(game.getByTestId('expedition-world')).toHaveAttribute('data-lantern-motif','moth');
  await game.evaluate(async()=>{const f=(window as any).__harbor;f.removeHeldLantern();await f.port.refresh();});await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-motif',/.+/);await expect(game.getByTestId('expedition-world')).not.toHaveAttribute('data-lantern-finish',/.+/);assert.equal(await game.evaluate(()=>(window as any).__harbor.sends.length),1);
  const geometry=await game.evaluate(()=>({x:scrollX,y:scrollY,scroll:document.documentElement.scrollHeight,height:innerHeight}));assert.equal(geometry.x,0);assert.equal(geometry.y,0);assert(geometry.scroll<=geometry.height+1);
- await gameContext.close();await checkReturnLayouts(browser,origin);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,harborLayouts:"fresh, before today’s tide, all three kept, one kept, rescued, longest Tomorrow; six viewports",externalRequests:0,publicRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
+ network.assertClean();gameNetwork.assertClean();publicViews+=network.rpc.length+gameNetwork.rpc.length;await gameContext.close();await checkReturnLayouts(browser,origin);assert.deepEqual(external,[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({status:"passed",actualReactController:true,actualGameAndPhaser:true,freshDeviceCanonicalMotifAndItem:true,canonicalAppearance:"Crest/original to Moth/polish; hidden after current holding disappears; no achievement inheritance",rememberedExplicitSelectionReload:true,explicitBramReview:true,busyReviewDismissalFenced:true,workingMemoryDownload:true,twoTabDistinctReturns:"both retained through actual Web Locks",lateOwnerFenced:true,harborLayouts:"fresh, before today’s tide, all three kept, one kept, rescued, longest Tomorrow; six viewports",externalRequests:0,mockedRpcViews:publicViews,chainActions:0,captures:dir,limits:"Synthetic account/RPC ports only; no physical-device, provider-recovery or human-playtest claim."},null,2));
 }finally{await browser.close();await server.close();}

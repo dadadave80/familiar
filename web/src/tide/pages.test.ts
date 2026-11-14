@@ -464,14 +464,14 @@ describe("tide-run harbor card", () => {
 
   test("introduces today's tide and Bram's guess", () => {
     expect(harborTide({ ...base, result: null })).toEqual({
-      kind: "panel", title: "Today’s tide: Surf home.", body: "Twelve waves. Bram guesses 6.",
+      kind: "panel", title: "Today’s Tide Run.", body: "Twelve waves. Bram guesses 6.",
       primary: { label: "See today’s tide", target: "tide" }, links: [],
     });
   });
 
   test("a shelved day with a missing result still shows tomorrow", () => {
     expect(harborTide({ ...base, shelved: true, result: null })).toEqual({
-      kind: "panel", title: "Tomorrow: Bram’s bridge.", body: "Today’s haul is on Bram’s shelf.", primary: null,
+      kind: "panel", title: "Tomorrow’s Tide Run.", body: "Today’s haul is on Bram’s shelf.", primary: null,
       links: [{ label: "Sail today’s tide", action: "sail" }, { label: "Open the tide log", action: "log" }],
     });
   });
@@ -485,7 +485,7 @@ describe("tide-run harbor card", () => {
 
   test("a shelved result shows tomorrow with the day's score", () => {
     for (const returnedToday of [false, true]) expect(harborTide({ ...base, returnedToday, shelved: true, result: result() })).toEqual({
-      kind: "panel", title: "Tomorrow: Bram’s bridge.",
+      kind: "panel", title: "Tomorrow’s Tide Run.",
       body: "All three kept. Banked 6 · Bram guessed 6. Today’s haul is on Bram’s shelf.", primary: null, links: practice,
     });
   });
