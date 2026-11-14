@@ -2,7 +2,7 @@
 
 ![Familiar: a little adventure with Mochi. A felt-miniature harbor at sunset: Mochi, an orange kitten in a red bandana, leaps between spiral stepping stones past a teal wave and a glowing wind-moth, while the stone-crab Tidekeeper watches and Bram the badger waves from the quay below the lighthouse.](docs/readme-banner.jpg)
 
-A cozy turn-based Phaser puzzle adventure with Mochi and a coastal harbor to restore. The introduction at `/` leads to `/outing/`. Recover the Beacon Lens, route the tide through Wind Gate, help at Bell/Reed Steps, and follow Mochi's later shore-bell discovery.
+A cozy turn-based Phaser puzzle adventure with Mochi and a coastal harbor to restore. The introduction at `/` leads to `/outing/`. Recover the Beacon Lens, route the tide through Wind Gate, help at Bell/Reed Steps, and follow Mochi's later shore-bell discovery. Once the beacon is lit, the Tidekeeper sets a new ask every day on Beacon Court: three asks, one tool, sail as often as you like. Bram's tide log keeps a redrawn page for each day you sail, and Bram shelves what Mochi brings home, to trade for Shells toward Mochi's wish.
 
 ## Run
 
@@ -41,6 +41,8 @@ Live stack: root `familiar-game.testnet`, items `items.familiar-game.testnet`. `
 ## Source
 
 - `web/src/expedition/`: rules, Phaser presentation, Mochi, sound and harbor.
+- `web/src/tide/`: the Tidekeeper's daily asks, their solver and Bram's tide log.
+- `web/src/season/`: Bram's shelf, till and Mochi's wish over the testnet `season` contract.
 - `web/src/account/`, `web/src/tidebound/`: recoverable identity, original transactions and item provenance.
 - `web/src/compatibility/`: frozen historical return validation.
 - `contracts/`, `services/relayer/`: Rust testnet contracts and account HTTP service.
