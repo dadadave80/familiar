@@ -253,7 +253,7 @@ export class ExpeditionScene extends Phaser.Scene {
     }
     this.hooks.geometry(targets);
     const portrait=this.w<=900&&this.h>this.w;
-    const dock=this.point({x:1,y:0});if(!(portrait&&this.h<500&&court.position.x===1&&court.position.y===0))this.text(dock.x,dock.y+(this.h<500?-tile.height*.45:tile.height*.72),"DOCK",Math.min(14,this.w/28));
+    const dock=this.point({x:1,y:0});if(!(portrait&&this.h<500&&court.position.x===1&&court.position.y===0))this.text(dock.x,dock.y+(this.h<500?-tile.height*.45:portrait?tile.height*.42:tile.height*.72),"DOCK",Math.min(14,this.w/28));
     const keeperHeight=Math.min(this.h<500?f.top-(portrait?78:15):230,this.h*.26,portrait?this.w*(this.h<650?.38:.45):this.w*.52,portrait?f.top-(this.h<650?15:80):Infinity);this.keeper.setPosition(this.h<500&&!portrait?f.cx+Math.min(60,f.width*.18):portrait&&this.h<650?this.w*.72:f.cx,f.top-8).setDisplaySize(keeperHeight*1.32,keeperHeight);
     for(const item of ["lens","moth","vane"] as const){
       const position=COURTS[court.area].finds[item];if(!position)continue;
