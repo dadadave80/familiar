@@ -18,6 +18,8 @@ Bell Steps and Reed Steps connect the restored harbor to supply and skiff crossi
 
 The introduction remains the homepage. Play Familiar opens `/outing/`, which starts on a title screen inside the game; Continue or New Harbor hands off to the spatial game and never erases a save. Today’s Tide explains the Tidekeeper’s daily ask and, once the beacon is lit, continues straight to it. Retired town, motion-preview, recovery-demo and classic-game entry points no longer offer separate games. Historical rules and signing/ownership code remain where required to verify old earned returns and original operations; their presence does not expose an old playable edition.
 
+Bram’s shelf joins the same daily loop: bring a find home from the Tidekeeper’s ask, shelve its haul for glass or reed, then trade for Shells to fill Mochi’s wish. Bram shelves Beacon Court hauls every other day; a find kept on this device can wait until tomorrow. Signed out, shelving and trades are a labelled device preview; wishes need a saved harbor.
+
 ## Operating Context
 First Light fills the desktop viewport and fits mobile portrait/landscape. Keep the whole page from scrolling; useful contained menus may scroll. The current court connects three columns of platforms across two banks. Each decision advances the tide; the marked source predicts the next wave, which moves the bridge and exposes discoveries. Retrieved cargo must reach the dock. Wind Gate adds a wheel that changes source-to-exit routing. Testnet only; public RPC, no indexer, no paid infrastructure. Hundreds of players and tens concurrently are a design target, not measured capacity.
 

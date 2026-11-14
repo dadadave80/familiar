@@ -16,9 +16,12 @@ export async function seasonView<T>(method:string, args:Record<string,unknown>={
 
 // ---------- device preview ----------
 
-export interface PreviewMarket { version:1;day:number;shelf:{stock:number;heat_fp:number}[];till:number;shells:number;goods:[number,number];traded:[number,number] }
+export interface PreviewMarket { version:1;day:number;docked?:number;shelf:{stock:number;heat_fp:number}[];till:number;shells:number;goods:[number,number];traded:[number,number] }
 /** The device's day, on the contract's boundary (floor of UTC time / 24 h). */
 export const deviceDay=(now=Date.now())=>Math.floor(now/86_400_000);
+// contracts/season/src/lib.rs:88, court_of: odd days replay first_light_v2 (Beacon Court).
+export const shelvesBeaconCourt=(day:number):boolean=>day%2===1;
+export const shelfNote=({cargo,day}:{cargo:readonly string[];day:number}):string=>cargo.length?` Bram can shelve it ${shelvesBeaconCourt(day)?"today":"tomorrow"}.`:"";
 const TILL_CAP=300,TILL_REFILL=60,HEAT_HALVINGS_CAP=64;
 /** The contract's lazy day effects: heat halves per day, the till refills toward its cap, daily limits reset. */
 export function rollPreview(m:PreviewMarket,day=deviceDay()):PreviewMarket {
@@ -37,9 +40,15 @@ export function readPreview(store:Pick<Storage,"getItem">=localStorage,day=devic
   try{const v=JSON.parse(store.getItem(PREVIEW_KEY)??"null") as PreviewMarket;
     const n=(x:unknown)=>Number.isSafeInteger(x)&&(x as number)>=0;
     if(v?.version!==1||v.shelf?.length!==2||!v.shelf.every(s=>n(s.stock)&&n(s.heat_fp))||![v.till,v.shells,...v.goods,...v.traded].every(n))return null;
-    return rollPreview({...v,day:n(v.day)?v.day:day},day);}catch{return null;}
+    const {docked,...market}=v;
+    return rollPreview({...market,day:n(v.day)?v.day:day,...(n(docked)?{docked}:{})},day);}catch{return null;}
 }
 export function writePreview(value:PreviewMarket,store:Pick<Storage,"setItem">=localStorage){try{store.setItem(PREVIEW_KEY,JSON.stringify(value));}catch{/* The preview keeps running in memory. */}}
+export function previewDock(current:PreviewMarket,goods:[number,number],day=deviceDay()):{market:PreviewMarket}|{block:string} {
+  const m=rollPreview(current,day);
+  if(m.docked===day)return {block:"Bram has already shelved a haul today."};
+  return {market:{...m,goods:[m.goods[0]+goods[0],m.goods[1]+goods[1]],docked:day}};
+}
 export const previewView=(m:PreviewMarket,good:Good):Pick<GoodView,"good"|"stock"|"heat_fp"|"target"|"base"|"buy_price"|"sell_price">=>{
   const i=GOODS.indexOf(good),s=m.shelf[i]!;
   return {good,stock:s.stock,heat_fp:s.heat_fp,target:40,base:good==="glass"?8:4,buy_price:quoteBuy(good,s,1)?.units[0]??0,sell_price:quoteSell(good,s,1).units[0]!};

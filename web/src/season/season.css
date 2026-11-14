@@ -54,6 +54,7 @@
 .exp-panel .ss-tool label,.exp-panel .ss-choice label{min-height:44px;padding:4px 6px}
 .ss-tool>button{width:100%}
 .ss-returns{display:grid;gap:8px}
+.ss-haul{margin:0 0 14px}.ss-haul>p{margin:0}
 .ss-wish-head{display:flex;gap:12px;align-items:center}
 .ss-wish-head p{margin:0}
 .ss-choice{display:flex;gap:4px 14px;flex-wrap:wrap}

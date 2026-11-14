@@ -1,7 +1,34 @@
 import { expect, test } from "bun:test";
-import { SEASON_ROOT, keepTide, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, writePreview, type TideReturn } from "./data";
+import { SEASON_ROOT, keepTide, previewDock, previewTrade, readPreview, readTide, rollPreview, seasonView, seedPreview, shelfNote, shelvesBeaconCourt, writePreview, type TideReturn } from "./data";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);}};};
+
+test("a haul joins the preview satchel once a day, with another allowed after the day rolls", () => {
+  const current={...seedPreview(null,20771),traded:[20,0] as [number,number],till:200};
+  const docked=previewDock(current,[1,1],20771);if("block"in docked)throw Error(docked.block);
+  expect(docked.market).toMatchObject({goods:[2,3],docked:20771});
+  expect(current.goods).toEqual([1,2]);expect(current).not.toHaveProperty("docked");
+  expect(previewDock(docked.market,[1,0],20771)).toEqual({block:"Bram has already shelved a haul today."});
+  const next=previewDock(docked.market,[0,1],20772);if("block"in next)throw Error(next.block);
+  expect(next.market).toMatchObject({day:20772,goods:[2,4],docked:20772,traded:[0,0],till:260});
+});
+
+test("preview saves accept a valid docking day, discard invalid ones and retain older saves", () => {
+  const store=memory(),market=seedPreview(null,20771);
+  writePreview(market,store);expect(readPreview(store,20771)).toEqual(market);
+  for(const docked of [0,20771]){writePreview({...market,docked},store);expect(readPreview(store,20771)?.docked).toBe(docked);}
+  for(const docked of [-1,1.5,Number.MAX_SAFE_INTEGER+1,"20771",null]){
+    store.setItem("familiar.season.preview.v1",JSON.stringify({...market,docked}));
+    expect(readPreview(store,20771)).toEqual(market);
+  }
+});
+
+test("the shelf note follows the contract's alternating Beacon Court days and stays quiet for empty cargo", () => {
+  expect(shelvesBeaconCourt(20771)).toBe(true);expect(shelvesBeaconCourt(20772)).toBe(false);
+  expect(shelfNote({cargo:[],day:20771})).toBe("");expect(shelfNote({cargo:[],day:20772})).toBe("");
+  expect(shelfNote({cargo:["lens"],day:20771})).toBe(" Bram can shelve it today.");
+  expect(shelfNote({cargo:["moth"],day:20772})).toBe(" Bram can shelve it tomorrow.");
+});
 
 test("the device preview prices like the contract and refuses what the contract refuses", () => {
   const m=seedPreview(null);

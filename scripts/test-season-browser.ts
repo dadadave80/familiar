@@ -5,11 +5,11 @@ import { join, resolve } from "node:path";
 import { chromium, expect, type Page } from "@playwright/test";
 import { createServer } from "vite";
 
-// Season 2 panels with VITE_SEASON2_ENABLED on, against the live season.<root> views (public RPC).
+// Bram's shelf panels, against the live season.<root> views (public RPC).
 // Signed out uses the real game; signed in uses the dev-only harness, whose signing is mocked.
 const shots=resolve(process.argv[2]??await mkdtemp(join(tmpdir(),"season-shots-")));await mkdir(shots,{recursive:true});
 const server=await createServer({root:resolve(import.meta.dir,"../web"),envDir:false,envPrefix:[],cacheDir:await mkdtemp(join(tmpdir(),"familiar-season-")),logLevel:"error",
-  define:{"import.meta.env.VITE_SEASON2_ENABLED":JSON.stringify("true")},server:{host:"127.0.0.1",port:0,hmr:false,watch:null}});
+  server:{host:"127.0.0.1",port:0,hmr:false,watch:null}});
 async function checkTargets(page:Page,label:string) {
   const small=await page.locator(".ss button:visible").evaluateAll(els=>els.filter(e=>{const r=e.getBoundingClientRect();return r.height<44||r.width<44;}).map(e=>e.textContent));
   assert.deepEqual(small,[],`${label}: buttons under 44px`);
@@ -36,57 +36,60 @@ try{
       await expect(page.locator(".ss-holdings")).toContainText("Shells");
       await page.screenshot({path:join(shots,`preview-sold-${tag}.png`)});
       const tabs=page.getByRole("tab");await tabs.first().focus();await page.keyboard.press("ArrowRight");
-      await expect(page.getByRole("tab",{name:"Today’s tide"})).toHaveAttribute("aria-selected","true");
-      await expect(page.locator(".ss-court")).toBeVisible();
-      await checkTargets(page,`${tag} tide`);
-      await page.screenshot({path:join(shots,`preview-tide-${tag}.png`)});
-      const v2Day=(await page.locator(".ss-court").textContent())==="Beacon Court";
-      // The season sandbox's v2 rope route (lens + moth); it docks only on a Beacon Court day.
+      await expect(page.getByRole("tab",{name:"Mochi’s wish"})).toHaveAttribute("aria-selected","true");
+      await expect(tabs).toHaveCount(2);
+      await expect(page.getByRole("tab",{name:"Today’s tide"})).toHaveCount(0);
+      await expect(page.locator(".ss-haul")).toContainText("Today’s haul");
+      await checkTargets(page,`${tag} haul`);
+      await page.screenshot({path:join(shots,`preview-haul-${tag}.png`)});
+      const v2Day=await page.getByRole("button",{name:"See today’s ask",exact:true}).isVisible();
+      // Sailing is checked by test-tide-browser; this suite starts with a kept sandbox route.
       const route=["step:north","step:north","step:west","wait","wait","step:east","reel:lens","step:east","step:west","step:east","take:moth","step:west","step:east","step:south","step:west","step:south","return"];
-      await page.evaluate(commands=>localStorage.setItem("familiar.season.tide.v1:preview",JSON.stringify([{id:"route",contentVersion:"first_light_v2",tool:"rope",commands,cargo:["lens","moth"],outcome:"returned",savedAt:"test"}])),route);
-      await page.getByRole("tab",{name:"Shelf & till"}).click();await page.getByRole("tab",{name:"Today’s tide"}).click();
+      await page.evaluate(commands=>localStorage.setItem("familiar.season.tide.v1:preview",JSON.stringify([{id:"route",contentVersion:"first_light_v2",tool:"rope",commands,cargo:["lens","moth"],outcome:"returned",savedAt:new Date().toISOString()}])),route);
+      const before=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview")}));
+      await page.reload();
+      await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
+      await page.locator(".exp-place-bram").click();
       if(v2Day){
-        await expect(page.locator(".ss-returns")).toContainText("Rope outing · 1 glass and 1 reed bundle");
-        await expect(page.getByRole("button",{name:"Dock this haul"})).toHaveAttribute("aria-disabled","true");
-        await page.evaluate(()=>localStorage.removeItem("familiar.season.tide.v1:preview"));
-        const before=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview")}));
-        await page.getByRole("button",{name:"Sail today’s tide"}).click();
-        await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","court");
-        const save=await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!));
-        assert.equal(save.active.season,true);assert.deepEqual(save.active.state.banked,[]);assert.equal(save.active.state.area,"beacon");
-        await page.screenshot({path:join(shots,`preview-tide-sailing-${tag}.png`)});
-        for(const command of route){
-          await page.locator(`[data-command="${command}"]`).click();
-          await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-busy","false",{timeout:15000});
-        }
-        await expect(page.getByTestId("expedition-game")).toHaveAttribute("data-mode","harbor",{timeout:15000});
-        await expect(page.getByTestId("expedition-feedback")).toContainText("Dock today’s haul at Bram’s shelf");
-        const after=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")!).home,returns:localStorage.getItem("familiar.expedition.returns.v2:preview"),tide:JSON.parse(localStorage.getItem("familiar.season.tide.v1:preview")??"[]")}));
-        if(before.home)assert.deepEqual(after.home,before.home,"First Light home unchanged by a tide outing");else assert.deepEqual(after.home.banked,[],"tide cargo is not banked");
+        await expect(page.locator(".ss-haul")).toContainText("Rope · ");
+        const shelve=page.getByRole("button",{name:"Shelve 1 glass and 1 reed bundle",exact:true});
+        await expect(shelve).toHaveAttribute("aria-disabled","false");
+        await shelve.click();
+        await expect(page.locator(".ss-status")).toContainText("Shelved on this device: 1 glass and 1 reed bundle. Not recorded.");
+        await expect.poll(()=>page.evaluate(()=>!!document.activeElement?.closest(".ss")),{message:"focus stays in the panel after shelving removes its button"}).toBe(true);
+        await expect(page.locator(".ss-holdings")).toContainText("Sample haul of 1 glass and 2 reed bundles for the preview");
+        assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem("familiar.season.preview.v1")!).goods),[2,2]);
+        await expect(page.locator(".ss-haul")).toContainText("Bram has already shelved a haul today.");
+        await expect(shelve).toHaveCount(0);
+        await page.screenshot({path:join(shots,`preview-shelved-${tag}.png`)});
+        await page.getByRole("button",{name:"Start the preview again"}).click();
+        await expect(page.locator(".ss-haul")).toContainText("Bram has already shelved a haul today.");
+        await page.reload();
+        await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
+        await page.locator(".exp-place-bram").click();
+        await expect(page.locator(".ss-haul")).toContainText("Bram has already shelved a haul today.");
+        const after=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview"),tide:JSON.parse(localStorage.getItem("familiar.season.tide.v1:preview")??"[]")}));
+        assert.deepEqual(after.home,before.home,"First Light home unchanged by shelving");
         assert.equal(after.returns,before.returns,"First Light return memories unchanged");
         assert.equal(after.tide.length,1);assert.deepEqual(after.tide[0].commands,route);assert.deepEqual(after.tide[0].cargo,["lens","moth"]);
-        if(await page.locator(".exp-panel").isVisible())await page.getByRole("button",{name:"Close panel",exact:true}).click();
-        await page.locator(".exp-place-bram").click();await page.getByRole("tab",{name:"Today’s tide"}).click();
-        await expect(page.locator(".ss-returns")).toContainText("Rope outing · 1 glass and 1 reed bundle");
-        await page.screenshot({path:join(shots,`preview-tide-ready-${tag}.png`)});
-        await page.evaluate(()=>{localStorage.removeItem("familiar.expedition.local.v2");});
-        await page.goto(new URL("/outing/?play",origin).href);
-        await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true",{timeout:30000});
-        await page.locator(".exp-place-bram").click();await page.getByRole("tab",{name:"Today’s tide"}).click();
       }else{
-        await expect(page.locator(".ss-panel")).toContainText("would not dock today");
-        await expect(page.getByRole("button",{name:"Sail today’s tide"})).toHaveCount(0);
+        await expect(page.locator(".ss-haul")).toContainText("Keep today’s find; he can shelve it tomorrow.");
+        await expect(page.getByRole("button",{name:/^Shelve /})).toHaveCount(0);
       }
+      await page.getByRole("tab",{name:"Shelf & till"}).focus();
       await page.keyboard.press("ArrowRight");
       await expect(page.getByRole("tab",{name:"Mochi’s wish"})).toHaveAttribute("aria-selected","true");
       await expect(page.locator(".ss-panel")).toContainText("Sign in from the menu");
       await page.screenshot({path:join(shots,`preview-wish-${tag}.png`)});
 
+      await page.evaluate(()=>localStorage.removeItem("familiar.season.tide.v1:preview"));
       await page.goto(new URL("/outing/?season-harness",origin).href);
       await expect(page.getByRole("note")).toContainText("signing are mocked");
       await expect(page.getByRole("button",{name:"Open my ledger page"})).toBeVisible({timeout:15000});
+      if(v2Day){await page.getByRole("button",{name:"See today’s ask",exact:true}).click();await expect(page.getByText("Would open today’s ask.")).toBeVisible();}
       await checkTargets(page,`${tag} harness`);
       await page.screenshot({path:join(shots,`harness-ledger-${tag}.png`)});
+      await page.evaluate(commands=>localStorage.setItem("familiar.season.tide.v1:harness",JSON.stringify([{id:"route",contentVersion:"first_light_v2",tool:"rope",commands,cargo:["lens","moth"],outcome:"returned",savedAt:new Date().toISOString()}])),route);
       await page.getByRole("button",{name:"Open my ledger page"}).click();
       await expect(page.locator(".ss-status")).toHaveAttribute("data-state","pending");
       await expect(page.locator(".ss-status")).not.toContainText("Recorded");
@@ -109,13 +112,12 @@ try{
       await expect.poll(focusInside,{message:"focus stays in the panel after the wish is taken back"}).toBe(true);
       await page.screenshot({path:join(shots,`harness-postcard-${tag}.png`),fullPage:true});
       if(v2Day){
-        await page.getByRole("tab",{name:"Today’s tide"}).click();
-        await page.getByRole("button",{name:"Dock this haul"}).first().click();
-        await expect(page.locator(".ss-status")).toContainText("Docked 1 glass and 1 reed bundle: 100% of the best haul",{timeout:10000});
+        await page.getByRole("button",{name:"Shelve 1 glass and 1 reed bundle",exact:true}).first().click();
+        await expect(page.locator(".ss-status")).toContainText("Shelved 1 glass and 1 reed bundle: 100% of the best haul",{timeout:10000});
         await page.screenshot({path:join(shots,`harness-docked-${tag}.png`)});
       }
       await page.close();
-      console.info(`${tag}: preview shelf/sell/tide/wish and harness ledger/refusal/sale/wish/postcard passed`);
+      console.info(`${tag}: preview shelf/sell/haul/wish and harness ledger/refusal/sale/wish/postcard passed`);
     }
   }finally{await browser.close();}
   console.info(`Screenshots: ${shots}`);

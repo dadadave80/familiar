@@ -26,7 +26,6 @@ await mkdir(shots, { recursive: true });
 const server = await createServer({
   root: resolve(import.meta.dir, "../web"), envDir: false, envPrefix: [],
   cacheDir: await mkdtemp(join(tmpdir(), "familiar-tide-")), logLevel: "error",
-  define: { "import.meta.env.VITE_SEASON2_ENABLED": JSON.stringify("true") },
   server: { host: "127.0.0.1", port: 0, hmr: false, watch: null },
 });
 
