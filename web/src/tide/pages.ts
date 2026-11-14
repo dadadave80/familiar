@@ -1,8 +1,8 @@
-import { CONTENT_VERSION, type BankedItem } from "../expedition/types";
+import { CONTENT_VERSION, type BankedItem, type Tool } from "../expedition/types";
 import type { ReturnRecord } from "../expedition/return-record";
 import { askStatus, keptCount, type Run, type TideCard } from "./asks";
 import { askLine, cardForDay, TIDE_POOL } from "./cards";
-import { betterTide, type TideEntry } from "./log";
+import { betterTide, type TideEntry, type TidePending } from "./log";
 import type { TideDayView } from "./TideAsk";
 import type { LogPage } from "./TideLog";
 
@@ -123,6 +123,10 @@ export function askFlips(card: TideCard, before: Run, after: Run): string {
     const status = askStatus(ask, after);
     return status === "open" ? [] : [`${status === "kept" ? "Ask kept" : "One ask slipped"}: ${askLine(ask, after.state.tool)}`];
   }).join(" ");
+}
+
+export function restartTide(pending: TidePending | null, today: number, tool: Tool): { tool: Tool; day: number } {
+  return { tool, day: pending?.day ?? today };
 }
 
 export function devTideDay(search: string): number | null {

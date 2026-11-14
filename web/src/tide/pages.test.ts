@@ -4,7 +4,7 @@ import { replayRun, solve, startRun, stepRun, type Run } from "./asks";
 import { cardForDay, TIDE_POOL } from "./cards";
 import type { TideEntry } from "./log";
 import {
-  askFlips, devTideDay, earlierDays, harborTide, logPages, outingNotice, pageForCard, pageForDay,
+  askFlips, devTideDay, earlierDays, harborTide, logPages, outingNotice, pageForCard, pageForDay, restartTide,
   stampSheet, storyPages, storyTitle, tideObjective, tidePages, tideResult, todayView, type StoryRecord,
 } from "./pages";
 
@@ -259,6 +259,23 @@ describe("harbor tide", () => {
       primary: { label: "Open the tide log", target: "log" },
       links: [{ label: "Sail today’s tide again", action: "sail" }],
     });
+  });
+});
+
+describe("restart tide", () => {
+  test("keeps the pending day and the outing’s tool across rollover", () => {
+    for (const late of [false, true]) {
+      const pending = Object.freeze({ day: today, late });
+      expect(restartTide(pending, today + 1, "rope")).toEqual({ tool: "rope", day: today });
+      expect(pending).toEqual({ day: today, late });
+    }
+    expect(restartTide({ day: today + 1, late: true }, today + 2, "rope")).toEqual({ tool: "rope", day: today + 1 });
+    expect(restartTide({ day: today, late: false }, today, "lantern")).toEqual({ tool: "lantern", day: today });
+  });
+
+  test("uses today and keeps the outing’s tool when no marker remains", () => {
+    expect(restartTide(null, today, "lantern")).toEqual({ tool: "lantern", day: today });
+    expect(restartTide(null, today + 1, "rope")).toEqual({ tool: "rope", day: today + 1 });
   });
 });
 
