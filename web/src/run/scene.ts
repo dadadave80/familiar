@@ -9,6 +9,7 @@ const IMAGES: Readonly<Record<string, string>> = {
   court: `${ART}tide-court.webp`, island: `${ART}stone-island.webp`, bridge: `${ART}wooden-bridge.webp`, mochi: `${ART}mochi-poses.webp`,
   keeper: `${ART}tidekeeper.webp`, shell: `${ART}shell.webp`, wave: `${ART}wave.webp`, lens: `${ART}lens.webp`, moth: `${ART}moth.webp`,
   reed: "/assets/season/reed.webp", glass: "/assets/season/glass.webp",
+  pearl: "/assets/run/pearl.webp", vane: "/assets/run/vane.webp",
 };
 const FONT = "Figtree Variable, sans-serif";
 const LANES = [0, 1, 2] as const;
@@ -77,7 +78,6 @@ export class TideScene extends Phaser.Scene {
     if (missing) { this.stopped = true; this.hooks.fault(`The ${missing} artwork could not be decoded. Your saved moves are safe. Retry the scene.`); return; }
     const atlas = this.textures.get("tide-mochi"), source = atlas.getSourceImage() as HTMLImageElement;
     for (let i = 0; i < 16; i++) atlas.add(i, 0, (i % 4) * source.width / 4, Math.floor(i / 4) * source.height / 4, source.width / 4, source.height / 4);
-    this.drawnTextures();
     this.backdrop = this.add.image(0, 0, "tide-court").setOrigin(.5).setDepth(-20);
     this.ground = this.add.graphics().setDepth(0);
     this.bridgeArt = this.add.image(0, 0, "tide-bridge").setDepth(.5);
@@ -99,32 +99,13 @@ export class TideScene extends Phaser.Scene {
     this.layout(); this.hooks.ready();
   }
 
-  /** The Signal Vane and the pearl have no painted art yet: both are drawn. */
-  private drawnTextures() {
-    const vane = this.add.graphics();
-    vane.lineStyle(6, 0x4d4031).lineBetween(31, 29, 31, 54).lineBetween(9, 29, 51, 29);
-    vane.lineStyle(3, 0xe3b36b).lineBetween(30, 29, 30, 53).lineBetween(9, 28, 50, 28);
-    vane.fillStyle(0x4d4031).fillTriangle(2, 9, 24, 23, 22, 31).fillTriangle(2, 42, 22, 31, 24, 23).fillTriangle(43, 15, 63, 28, 43, 37);
-    vane.fillStyle(0x68877a).fillTriangle(5, 13, 21, 23, 20, 28).fillTriangle(5, 39, 20, 30, 22, 26);
-    vane.fillStyle(0xf3c476).fillTriangle(45, 18, 60, 28, 45, 34);
-    vane.fillStyle(0x534635).fillCircle(31, 28, 7).fillStyle(0xffda8a).fillCircle(30, 27, 4);
-    vane.fillStyle(0x4d4031).fillRoundedRect(25, 51, 12, 6, 2);
-    vane.generateTexture("tide-vane", 64, 64); vane.destroy();
-    const pearl = this.add.graphics();
-    pearl.fillStyle(0x2c4a47, .25).fillEllipse(32, 58, 44, 9);
-    pearl.fillStyle(0xb9a48f).fillCircle(32, 31, 27).fillStyle(0xf1e3d2).fillCircle(31, 30, 25);
-    pearl.fillStyle(0xfdf6ec).fillCircle(27, 25, 18).fillStyle(0xf3bfbb, .6).fillEllipse(40, 42, 20, 11);
-    pearl.fillStyle(0xffffff, .95).fillEllipse(22, 19, 12, 8);
-    pearl.generateTexture("tide-pearl", 64, 64); pearl.destroy();
-  }
-
   /** Presentation coordinates are responsive. Logical cells and accepted state never resize. */
   private field() {
     const portrait = this.w <= 900 && this.h > this.w;
     if (portrait && this.h < 500) { const top = 144, bottom = this.h - 166, width = this.w * .82; return { cx: this.w / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 }; }
     if (this.h <= 500) { const available = this.w - 280, width = Math.max(240, Math.min(available * .91, 760)), top = 98, bottom = this.h - 34; return { cx: available / 2, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 }; }
     const top = portrait ? (this.h < 650 ? 151 : Math.max(200, this.h * .29)) : Math.max(190, this.h * .31);
-    const bottom = portrait ? this.h - 240 : this.h - 72;
+    const bottom = portrait ? this.h - 276 : this.h - 72;
     const width = Math.min(portrait ? this.w * .84 : this.w * .50, 760);
     return { cx: portrait ? this.w * .5 : this.w * .45, width, top, bottom, dy: (bottom - top) / 4, dx: width / 3 };
   }
@@ -205,7 +186,7 @@ export class TideScene extends Phaser.Scene {
     const crossing = this.point({ x: tide.bridge, y: 2 }), span = f.dy * 1.65 * 1.36;
     this.bridgeArt.setPosition(crossing.x, crossing.y).setDisplaySize(span / 3, span).setAngle(0).setAlpha(1);
     const dock = this.point(DOCK);
-    if (!(portrait && this.h < 500 && same(tide.position, DOCK))) this.keep(this.label(dock.x, dock.y + (this.h < 500 ? -tile.height * .45 : tile.height * .72), "DOCK", Math.min(14, this.w / 28)));
+    if (!(portrait && this.h < 500 && same(tide.position, DOCK))) this.keep(this.label(dock.x, dock.y + (this.h < 500 ? -tile.height * .45 : tile.height * .72), "DOCK", Math.max(13, Math.min(14, this.w / 28))));
     const keeperHeight = Math.min(this.h < 500 ? f.top - (portrait ? 78 : 15) : 230, this.h * .26, portrait ? this.w * (this.h < 650 ? .38 : .45) : this.w * .52, portrait ? f.top - (this.h < 650 ? 15 : 80) : Infinity);
     this.keeper.setPosition(this.h < 500 && !portrait ? f.cx + Math.min(60, f.width * .18) : portrait && this.h < 650 ? this.w * .72 : f.cx, f.top - 8).setDisplaySize(keeperHeight * 1.32, keeperHeight);
 
@@ -241,11 +222,25 @@ export class TideScene extends Phaser.Scene {
     const left = countdown(tide), width = tile.width * .78, top = f.top - 30, bottom = f.bottom - f.dy * .5;
     for (const lane of lanes) {
       const x = this.point({ x: lane, y: 2 }).x;
-      this.lanes.fillStyle(0xc35235, left === 1 ? .4 : .24).fillRoundedRect(x - width / 2, top, width, bottom - top, 12);
-      this.lanes.lineStyle(3, 0xf8be78, .95).strokeRoundedRect(x - width / 2, top, width, bottom - top, 12);
-      for (let y = f.top + 20; y < bottom - 8; y += 50) this.lanes.lineBetween(x - 9, y - 7, x, y).lineBetween(x, y, x + 9, y - 7);
-      // The channel is the one row nothing stands on, so the count sits there.
-      this.marks.push(this.label(x, this.point({ x: lane, y: 2 }).y, String(left), Math.min(44, Math.max(26, f.dy * .5)), left === 1 ? "#a93a26" : "#314d42").setPadding(16, 2, 16, 2));
+      const imminent = left === 1, rim = imminent ? 0x9a4733 : 0x52766a;
+      this.lanes.fillStyle(imminent ? 0xc66b49 : 0xd9b974, imminent ? .22 : .12).fillRoundedRect(x - width / 2, top, width, bottom - top, width / 2);
+      this.lanes.lineStyle(2, 0xffe6b6, .85).strokeRoundedRect(x - width / 2, top, width, bottom - top, width / 2);
+      this.lanes.lineStyle(2, rim, .8);
+      for (let y = f.top + 25; y < bottom - 8; y += 50) {
+        for (const edge of [-1, 1]) {
+          const rail = x + edge * (width / 2 - 8);
+          this.lanes.lineBetween(rail - 3, y - 4, rail, y).lineBetween(rail, y, rail + 3, y - 4);
+        }
+      }
+      // The channel holds the count so neither prizes nor Mochi sit beneath it.
+      const y = this.point({ x: lane, y: 2 }).y, radius = Math.max(22, Math.min(30, f.dy * .3));
+      const badge = this.add.graphics().setDepth(12);
+      badge.fillStyle(0x342719, .2).fillCircle(x, y + 3, radius + 2);
+      badge.fillStyle(0xe6c48c).fillCircle(x, y, radius + 2);
+      badge.fillStyle(imminent ? 0x96432f : 0xfbf3e2).fillCircle(x, y, radius);
+      badge.lineStyle(1, imminent ? 0xe5b88a : 0xc3a675, .9).strokeCircle(x, y, radius - 3);
+      for (let pip = 0; pip < 3; pip++) badge.fillStyle(imminent ? 0xffe6bd : 0x2b5f4d, pip < left ? 1 : .22).fillCircle(x + (pip - 1) * 8, y + radius * .59, 2);
+      this.marks.push(badge, this.add.text(x, y - 4, String(left), { fontFamily: "Fraunces Variable, serif", fontSize: `${radius * 1.1}px`, fontStyle: "bold", color: imminent ? "#fff5de" : "#263e32" }).setOrigin(.5).setDepth(12.1));
     }
     for (const drop of tide.next.drops) {
       // A story prize is never swept, and a shell holds one thing: nothing will be left beside it.
@@ -261,8 +256,14 @@ export class TideScene extends Phaser.Scene {
       const to = stepDestination(tide, move) ?? tide.position, wet = applyMove(tide, move)!.events.some(event => event.kind === "splash");
       if (move === "wait" && !wet) continue;
       const at = this.point(to);
-      this.hints.lineStyle(3, wet ? 0x8e3527 : 0xffe1a1, .95).strokeEllipse(at.x, at.y + tile.width * .025, tile.width * 1.03, tile.width * .36);
-      if (wet) this.hints.lineBetween(at.x - 7, at.y - 7, at.x + 7, at.y + 7).lineBetween(at.x + 7, at.y - 7, at.x - 7, at.y + 7);
+      const y = at.y + tile.width * .025, width = tile.width * 1.03, height = tile.width * .36;
+      this.hints.lineStyle(6, 0x304e40, .65).strokeEllipse(at.x, y, width, height);
+      this.hints.lineStyle(3, wet ? 0xf3ad82 : 0xffefc7, 1).strokeEllipse(at.x, y, width, height);
+      if (wet) {
+        const x = at.x + tile.width * .36;
+        this.hints.fillStyle(0x96432f).fillCircle(x, y + height * .3, 10);
+        this.hints.lineStyle(2, 0xfff1d4).lineBetween(x - 3, y + height * .3 - 3, x + 3, y + height * .3 + 3).lineBetween(x + 3, y + height * .3 - 3, x - 3, y + height * .3 + 3);
+      }
     }
   }
 

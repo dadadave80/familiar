@@ -21,7 +21,12 @@ interface Props {
 }
 
 const STEPS = ["north", "west", "east", "south"] as const;
-const ARROWS = { north: "↑", west: "←", east: "→", south: "↓" };
+const ARROWS = { north: "m5 15 7-7 7 7", west: "m15 5-7 7 7 7", east: "m9 5 7 7-7 7", south: "m5 9 7 7 7-7" };
+const WAVE = "M3 8c3-4 5 4 9 0s6 4 9 0M3 15c3-4 5 4 9 0s6 4 9 0";
+const HEART = "M12 20 4 12C-2 6 7 0 12 6c5-6 14 0 8 6l-8 8Z";
+const BAG = "M6 8h12l2 12H4L6 8Zm3 0V5a3 3 0 0 1 6 0v3";
+const HOME = "m3 11 9-8 9 8M6 9v12h12V9m-9 12v-7h6v7";
+const icon = (path: string) => <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={path}/></svg>;
 const LANES = ["left", "center", "right"];
 const ROWS = ["quay", "near landing", "channel", "far landing", "far shore"];
 const KEYS: Partial<Record<string, Move>> = { arrowup: "north", w: "north", arrowdown: "south", s: "south", arrowleft: "west", a: "west", arrowright: "east", d: "east", " ": "wait", r: "home" };
@@ -133,6 +138,7 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
   const title = state.outcome === "rescued" ? "Bram wades out for Mochi." : state.outcome === "turned" ? "The tide turns." : "Home for the day.";
   const stamps = finished && !state.story ? [["Came home with something", finished.stamps.home], [`Matched Bram’s guess of ${finished.guess}`, finished.stamps.guess], ["Dry paws", finished.stamps.dry]] as const : [];
   const lockControls = !ready || paused || busy;
+  const feedback = <div className="exp-feedback passage-feedback" data-testid="tide-feedback" role="status" aria-live="polite">{notice}</div>;
 
   return <main className="exp-game passage-game tide-run" data-mode="court" data-testid="tide-run" data-story={state.story} data-seed={state.seed} data-beat={state.beat} data-wave={state.wave}
       data-outcome={state.outcome} data-busy={busy} data-score={state.score} data-hearts={state.hearts}>
@@ -146,47 +152,52 @@ export default function TideRunGame({ initial, reduced, sound: soundOn, audio, b
         <button className="passage-leave" data-testid="tide-leave" onClick={leave} disabled={blocked || busy}>Harbor</button>
       </div></header>
     <section className="exp-hud tide-hud" aria-label="Tide status">
-      <strong>Wave {Math.min(seen.wave + 1, waves)}/{waves}</strong>
-      <span className="tide-hearts" role="img" aria-label={`${seen.hearts} of ${HEARTS} hearts`}>{"♥".repeat(seen.hearts)}<i>{"♥".repeat(HEARTS - seen.hearts)}</i></span>
-      <span>Pack {used}/{PACK_SLOTS}</span>
-      <span>Banked <b data-testid="tide-score">{seen.score}</b></span>
+      <img className="tide-portrait" src={seen.hearts < HEARTS ? "/assets/ui/mochi-portrait-splashed.webp" : "/assets/ui/mochi-portrait.webp"} width="48" height="48" alt=""/>
+      <div className="tide-vitals"><strong>Wave {Math.min(seen.wave + 1, waves)}/{waves}</strong>
+        <span className="tide-hearts" role="img" aria-label={`${seen.hearts} of ${HEARTS} hearts`}>{Array.from({ length: HEARTS }, (_, i) => <span key={i} className={i < seen.hearts ? "tide-heart-full" : "tide-heart-empty"}>{icon(HEART)}</span>)}</span>
+      </div>
+      <span className="tide-tally">{icon(BAG)}<span>Pack <b>{used}/{PACK_SLOTS}</b></span></span>
+      <span className="tide-tally">{icon(HOME)}<span>Banked <b data-testid="tide-score">{seen.score}</b></span></span>
     </section>
     {fault ? <section className="exp-fault" role="alert"><p>{fault}</p><button onClick={() => { setFault(""); setSceneKey(key => key + 1); }}>Reopen the tide</button></section>
       : !ready && !over ? <section className="exp-paused" role="status">Opening the tide…</section> : null}
     {blocked ? <p className="exp-paused" role="status">This tide is paused while another view holds the harbor.</p> : away && !guide ? <p className="exp-paused">Mochi is waiting. Return to this window to continue.</p> : null}
     {over ? <section className="exp-departure passage-finish tide-finish" aria-label="The tide is over">
-      <div><h2>{title}</h2>
+      <div><img className="tide-finish-portrait" src={state.outcome === "rescued" ? "/assets/ui/mochi-portrait-splashed.webp" : "/assets/ui/mochi-portrait-proud.webp"} width="80" height="80" alt=""/><h2>{title}</h2>
         {state.story ? <p>{prizeHome ? `The ${itemName(state.story)} is home. Banked ${state.score} besides.` : `The ${itemName(state.story)} is still in its shell. The same tide comes again.`}</p>
           : <p>Banked {state.score}. Bram guessed {finished?.guess}.</p>}
-        {stamps.length > 0 && <ul className="tide-stamps">{stamps.map(([label, earned]) => <li key={label} data-earned={earned}>{label}</li>)}</ul>}
+        {stamps.length > 0 && <ul className="tide-stamps">{stamps.map(([label, earned], index) => <li key={label} data-earned={earned}><span className="tide-stamp-mark"><img src={`/assets/ui/${["ask-lens", "ask-all-marks", "ask-dry"][index]}.webp`} width="56" height="56" alt=""/>{icon(earned ? "m5 12 4 4L19 6" : "M20 12a8 8 0 1 1-16 0 8 8 0 1 1 16 0")}</span><span>{label}</span></li>)}</ul>}
+        {feedback}
         {finishError && <p role="alert">This tide could not be saved. Try it again when this browser can save.</p>}
       </div>
       <div className="tide-finish-actions">
-        <button className="exp-primary" data-testid="tide-finish" disabled={blocked} onClick={() => finish(false)}>Back to the harbor</button>
+        <button className="exp-primary" data-testid="tide-finish" disabled={blocked} onClick={() => finish(false)}>{icon(HOME)}Back to the harbor</button>
         {!prizeHome && <button data-testid="tide-again" disabled={blocked} onClick={() => finish(true)}>{state.story ? "Try this tide again" : "Sail it again for practice"}</button>}
       </div>
     </section> : <section className="exp-command-tray passage-tray" aria-label="Guide Mochi">
+      <div className="tide-tray-reading">
       <div className="exp-objective-row"><p className="exp-objective">{objective}</p><button ref={guideButton} className="exp-inspect-button" data-testid="tide-guide" disabled={lockControls} onClick={() => setGuide(true)}>How it works</button></div>
-      <p className="exp-forecast" data-testid="tide-forecast" aria-live="polite">{state.outcome === "active" ? forecast(seen.outcome === "active" ? seen : state) : ""}</p>
+      <p className={`exp-forecast${countdown(seen) === 1 ? " tide-forecast-soon" : ""}`} data-testid="tide-forecast" aria-live="polite">{icon(WAVE)}<span>{state.outcome === "active" ? forecast(seen.outcome === "active" ? seen : state) : ""}</span></p>
       <span className="exp-sr-only">Mochi is at {where(seen.position)}. The bridge is at the {LANES[seen.bridge]} lane.</span>
+      {feedback}
+      </div>
       <div className="exp-current-controls"><div className="exp-directions" aria-label="Movement">
-        {STEPS.map(move => <button key={move} className={`exp-${move}`} data-move={move} aria-label={`Move ${move}`} disabled={lockControls || !legal.includes(move)} onClick={() => take(move)}>{ARROWS[move]}</button>)}
+        {STEPS.map(move => <button key={move} className={`exp-${move}`} data-move={move} aria-label={`Move ${move}`} disabled={lockControls || !legal.includes(move)} onClick={() => take(move)}>{icon(ARROWS[move])}</button>)}
         <button className="exp-wait" data-move="wait" aria-label="Wait one move" disabled={lockControls} onClick={() => take("wait")}>Wait</button>
       </div><div className="exp-context-actions">
         {legal.includes("home") && state.moves.length > 0 && <button data-move="home" aria-keyshortcuts="R" disabled={lockControls} onClick={() => take("home")}>Call it a day</button>}
       </div></div>
     </section>}
-    <div className="exp-feedback passage-feedback" data-testid="tide-feedback" role="status" aria-live="polite">{notice}</div>
     {guide && <dialog ref={dialog} className="exp-panel passage-panel" aria-labelledby="tide-guide-title" onCancel={event => { event.preventDefault(); setGuide(false); }}>
-      <button className="exp-close" autoFocus aria-label="Close panel" onClick={() => setGuide(false)}>×</button>
+      <button className="exp-close" autoFocus aria-label="Close panel" onClick={() => setGuide(false)}>{icon("m6 6 12 12M18 6 6 18")}</button>
       <h2 id="tide-guide-title">How the tide works</h2>
       <ul className="tide-guide">
-        <li>Every step or wait is one move. A wave lands after every third move, down the tinted lanes. The number on a lane is the moves left.</li>
-        <li>Be out of those lanes, or on the quay, when it lands. A splash costs a heart and the last thing Mochi picked up, and washes her one platform toward home.</li>
-        <li>The wave takes loose prizes in its lanes, then leaves the one that shimmers.</li>
-        <li>A reed is worth 1, sea glass 3, a pearl 6. The pack holds {PACK_SLOTS}. Step on the dock to bank it.</li>
-        <li>The bridge moves to the wave’s lane. The channel can only be crossed there.</li>
-        <li>This tide is {waves} waves.{roughFrom < waves ? ` From wave ${roughFrom + 1}, each wave takes two lanes.` : ""} What is still in the pack when it ends is lost.</li>
+        <li>{icon(WAVE)}<span>Every step or wait is one move. A wave lands after every third move, down the tinted lanes. The number on a lane is the moves left.</span></li>
+        <li>{icon(HEART)}<span>Be out of those lanes, or on the quay, when it lands. A splash costs a heart and the last thing Mochi picked up, and washes her one platform toward home.</span></li>
+        <li>{icon("m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z")}<span>The wave takes loose prizes in its lanes, then leaves the one that shimmers.</span></li>
+        <li>{icon(BAG)}<span>A reed is worth 1, sea glass 3, a pearl 6. The pack holds {PACK_SLOTS}. Step on the dock to bank it.</span></li>
+        <li>{icon("M3 18V6m18 12V6M3 8c4 6 14 6 18 0M3 18h18M7 12v6m5-5v5m5-6v6")}<span>The bridge moves to the wave’s lane. The channel can only be crossed there.</span></li>
+        <li>{icon("M20 12a8 8 0 1 1-16 0 8 8 0 1 1 16 0M12 7v5l3 2")}<span>This tide is {waves} waves.{roughFrom < waves ? ` From wave ${roughFrom + 1}, each wave takes two lanes.` : ""} What is still in the pack when it ends is lost.</span></li>
       </ul>
       <p className="tide-guide-keys">Arrow keys or WASD move, Space waits, R calls it a day on the dock.</p>
     </dialog>}

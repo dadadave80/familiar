@@ -1,0 +1,29 @@
+{
+  "created": "2026-11-14",
+  "purpose": "Familiar tide-run pearl and brass Signal Vane prize sprites",
+  "generator": {
+    "tool": "Codex CLI codex-cli 0.169.0 (`codex exec`, image generation tool)",
+    "model": "gpt-6-astra",
+    "session": "01a1d9e7-6ab4-7400-9ef0-bd2f2a6b59f5",
+    "transparent_background": true
+  },
+  "styleReferences": [
+    "web/public/assets/season/glass.webp",
+    "web/public/assets/season/reed.webp"
+  ],
+  "referenceUse": "References visually inspected and described in the prompts; no reference file uploaded. Pocket Harbor concept viewed only, never copied or modified.",
+  "delivery": "Original transparent PNG masters preserved byte-for-byte; trimmed and fitted into 192px WebP derivatives with original alpha. See manifest.json and scripts/optimize-run-assets.ts.",
+  "prompts": "web/assets/source/run/prompts.json",
+  "files": {
+    "pearl.webp": {
+      "master": "web/assets/source/run/pearl.png",
+      "promptKey": "pearl",
+      "generatedFile": "exec-38e02d31-94a2-4883-91bf-537c97af66c2.png"
+    },
+    "vane.webp": {
+      "master": "web/assets/source/run/vane.png",
+      "promptKey": "vane",
+      "generatedFile": "exec-653e41da-a764-474e-a48b-08f38797a17e.png"
+    }
+  }
+}
