@@ -65,3 +65,4 @@
 @media (prefers-reduced-motion:reduce){.ss-postcard{transform:none}}
 @media(max-width:480px){.ss-prices{gap:12px}.ss-facts div{grid-template-columns:1fr;gap:2px}.ss-good{grid-template-columns:44px 1fr;gap:10px;padding:10px}.ss-good>img{width:44px;height:44px}.exp-game .ss-tabs button{font-size:13px;padding:6px 4px}}
 .ss-field{font-size:13px;font-weight:700;color:var(--ss-soft);margin-top:4px}
+.exp-game .ss button[aria-disabled=true]{cursor:default;opacity:.5;box-shadow:none}.exp-game .ss button[aria-disabled=true]:hover{background:#eddbad}.exp-game .ss .exp-primary[aria-disabled=true]:hover{background:#3c6555}.ss-status:focus{outline:none}.ss-status:focus-visible{outline:3px solid #37634b;outline-offset:2px}

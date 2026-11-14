@@ -47,7 +47,7 @@ try{
       await page.getByRole("tab",{name:"Shelf & till"}).click();await page.getByRole("tab",{name:"Today’s tide"}).click();
       if(v2Day){
         await expect(page.locator(".ss-returns")).toContainText("Rope outing · 1 glass and 1 reed bundle");
-        await expect(page.getByRole("button",{name:"Dock this haul"})).toBeDisabled();
+        await expect(page.getByRole("button",{name:"Dock this haul"})).toHaveAttribute("aria-disabled","true");
         await page.evaluate(()=>localStorage.removeItem("familiar.season.tide.v1:preview"));
         const before=await page.evaluate(()=>({home:JSON.parse(localStorage.getItem("familiar.expedition.local.v2")??"null")?.home??null,returns:localStorage.getItem("familiar.expedition.returns.v2:preview")}));
         await page.getByRole("button",{name:"Sail today’s tide"}).click();
@@ -90,6 +90,8 @@ try{
       await expect(page.locator(".ss-status")).toHaveAttribute("data-state","pending");
       await expect(page.locator(".ss-status")).not.toContainText("Recorded");
       await expect(page.locator(".ss-status")).toContainText("Recorded",{timeout:10000});
+      const focusInside=()=>page.evaluate(()=>!!document.activeElement?.closest(".ss"));
+      await expect.poll(focusInside,{message:"focus stays in the panel after the ledger offer goes away"}).toBe(true);
       await page.locator(".ss-good").first().getByRole("button",{name:"Buy 1"}).click();
       await expect(page.locator(".ss-status")).toContainText("price moved",{timeout:10000});
       await page.screenshot({path:join(shots,`harness-refused-${tag}.png`)});
@@ -103,6 +105,7 @@ try{
       await page.screenshot({path:join(shots,`harness-wish-${tag}.png`),fullPage:true});
       await page.getByRole("button",{name:"Take the wish back"}).click();
       await expect(page.locator(".ss-postcard")).toContainText("CANCELLED_BY_OWNER",{timeout:10000});
+      await expect.poll(focusInside,{message:"focus stays in the panel after the wish is taken back"}).toBe(true);
       await page.screenshot({path:join(shots,`harness-postcard-${tag}.png`),fullPage:true});
       if(v2Day){
         await page.getByRole("tab",{name:"Today’s tide"}).click();
