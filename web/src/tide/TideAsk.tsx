@@ -2,6 +2,8 @@ import { useId, type JSX } from "react";
 import type { TideCard } from "./asks";
 import { askLine, dayLabel, TOOL_NOTE } from "./cards";
 import type { TideEntry } from "./log";
+import { CARD_PICTURE, keeperArt, sealArt } from "./art";
+import TideStamp from "./TideStamp";
 import "./tide.css";
 
 export interface TideDayView { day: number; card: TideCard; entry: TideEntry | null }
@@ -14,15 +16,18 @@ export default function TideAsk({ today, earlier, canSail, onSail, onOpenLog }: 
   const { card, entry } = today;
   const kept = entry?.kept.filter(Boolean).length ?? 0;
   return <section className="tide" aria-labelledby={`${id}-title`}>
+    <img className="tide-keeper" src={keeperArt} width="300" height="200" alt="" decoding="async" />
     <h3 id={`${id}-title`}>Today’s tide</h3>
     <p className="tide-day">{dayLabel(today.day)}</p>
     <div className="tide-card">
-      <h4>{card.name}</h4>
-      <p className="tide-note">{TOOL_NOTE[card.tool]}</p>
+      <div className="tide-card-heading">
+        <TideStamp id={card.id} size={112} tilt={-3} seal={kept === 3} label={CARD_PICTURE[card.id]} />
+        <div><h4>{card.name}</h4><p className="tide-note">{TOOL_NOTE[card.tool]}</p></div>
+      </div>
       <p className="tide-kicker">The Tidekeeper asks</p>
       <ol className="tide-list">
         {card.asks.map((ask, i) => <li key={i} data-kept={entry ? String(entry.kept[i]) : undefined}>
-          <span className="tide-ask-mark" aria-hidden="true">{entry ? <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={entry.kept[i] ? "M2 6L5 9L10 3" : "M3 6H9"} /></svg> : i + 1}</span>
+          <span className="tide-ask-mark" aria-hidden="true">{entry ? <img src={sealArt(entry.kept[i] ? "kept" : "slipped")} width="24" height="24" alt="" decoding="async" /> : i + 1}</span>
           <span>{askLine(ask, card.tool)}{entry && <span className="tide-sr"> ({entry.kept[i] ? "kept" : "slipped"})</span>}</span>
         </li>)}
       </ol>
@@ -38,12 +43,15 @@ export default function TideAsk({ today, earlier, canSail, onSail, onOpenLog }: 
     <details className="tide-earlier">
       <summary>Earlier tides</summary>
       {earlier.length ? <ul>{earlier.map(({ day, card: past, entry: saved }) => <li key={day}>
+        <TideStamp id={past.id} size={56} tilt={-2} seal={saved?.kept.every(Boolean)} />
+        <div>
         <p className="tide-day">{dayLabel(day)}</p>
         <h4>{past.name}</h4>
         <p className="tide-note">{saved ? `${saved.kept.filter(Boolean).length} of 3 kept` : "Not sailed"}</p>
         <div className="tide-actions">
           <button type="button" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(day); }}>{saved ? "Sail again" : "Sail late"}</button>
           {saved && <button type="button" className="exp-text-button" onClick={() => onOpenLog(day)}>See the page</button>}
+        </div>
         </div>
       </li>)}</ul> : <p className="tide-note">No earlier tides this week.</p>}
     </details>

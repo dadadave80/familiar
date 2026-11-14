@@ -1,8 +1,8 @@
 import { CONTENT_VERSION, type BankedItem } from "../expedition/types";
 import type { ReturnRecord } from "../expedition/return-record";
 import { askStatus, keptCount, type Run, type TideCard } from "./asks";
-import { askLine, cardForDay } from "./cards";
-import type { TideEntry } from "./log";
+import { askLine, cardForDay, TIDE_POOL } from "./cards";
+import { betterTide, type TideEntry } from "./log";
 import type { TideDayView } from "./TideAsk";
 import type { LogPage } from "./TideLog";
 
@@ -42,6 +42,29 @@ export function logPages(records: readonly StoryRecord[], entries: readonly Tide
 export function pageForDay(pages: readonly LogPage[], day?: number): number {
   const index = day === undefined ? -1 : pages.findIndex(page => page.kind === "tide" && page.day === day);
   return index < 0 ? Math.max(0, pages.length - 1) : index;
+}
+
+function bestReturn(entries: readonly TideEntry[], cardId: string): TideEntry | null {
+  let best: TideEntry | null = null;
+  for (const entry of entries) {
+    if (entry.cardId !== cardId || entry.outcome !== "returned") continue;
+    if (!best || betterTide(entry, best) || !betterTide(best, entry) && entry.day < best.day) best = entry;
+  }
+  return best;
+}
+
+export interface StampSlot { card: TideCard; entry: TideEntry | null; allThree: boolean }
+
+export function stampSheet(entries: readonly TideEntry[]): StampSlot[] {
+  return TIDE_POOL.map(card => {
+    const entry = bestReturn(entries, card.id);
+    return { card, entry, allThree: entry?.kept.every(Boolean) ?? false };
+  });
+}
+
+export function pageForCard(pages: readonly LogPage[], cardId: string): number {
+  const best = bestReturn(pages.flatMap(page => page.kind === "tide" ? [page.entry] : []), cardId);
+  return best ? pages.findIndex(page => page.kind === "tide" && page.entry === best) : -1;
 }
 
 export function todayView(today: number, entries: readonly TideEntry[]): TideDayView {

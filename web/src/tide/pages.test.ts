@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { CONTENT_VERSION } from "../expedition/types";
 import { replayRun, solve, startRun, stepRun, type Run } from "./asks";
-import { cardForDay } from "./cards";
+import { cardForDay, TIDE_POOL } from "./cards";
 import type { TideEntry } from "./log";
 import {
-  askFlips, devTideDay, earlierDays, harborTide, logPages, outingNotice, pageForDay,
-  storyPages, storyTitle, tideObjective, tidePages, tideResult, todayView, type StoryRecord,
+  askFlips, devTideDay, earlierDays, harborTide, logPages, outingNotice, pageForCard, pageForDay,
+  stampSheet, storyPages, storyTitle, tideObjective, tidePages, tideResult, todayView, type StoryRecord,
 } from "./pages";
 
 const today = 20771;
@@ -115,6 +115,57 @@ describe("tide history", () => {
     expect(earlier.map(view => view.card)).toEqual(earlier.map(view => cardForDay(view.day)));
     expect(earlierDays(today, entries, 2)).toEqual(earlier.slice(0, 2));
     expect(earlierDays(today, entries, 0)).toEqual([]);
+  });
+});
+
+describe("stamp sheet", () => {
+  test("keeps all fourteen slots in pool order, hiding cards without returned outings", () => {
+    const collected = entry(today, { kept: [false, false, false] });
+    const rescued = entry(today + 1, { outcome: "rescued" });
+    const entries = Object.freeze([rescued, collected]);
+    const sheet = stampSheet(entries);
+    expect(sheet.map(slot => slot.card)).toEqual([...TIDE_POOL]);
+    expect(sheet).toHaveLength(14);
+    expect(sheet.find(slot => slot.card.id === collected.cardId)).toEqual({ card, entry: collected, allThree: false });
+    expect(sheet.filter(slot => slot.entry !== null)).toHaveLength(1);
+    expect(sheet.find(slot => slot.card.id === rescued.cardId)?.entry).toBeNull();
+    expect(stampSheet([]).every(slot => slot.entry === null && !slot.allThree)).toBe(true);
+    expect(entries).toEqual([rescued, collected]);
+  });
+
+  test("collects the best returned run across repeated fourteen-day cycles", () => {
+    const partial = entry(today, { kept: [true, false, true], decisions: 3 });
+    const complete = entry(today + 14, { decisions: 12 });
+    const quicker = entry(today + 28, { decisions: 10 });
+    const rescued = entry(today + 42, { outcome: "rescued", decisions: 1 });
+    expect(cardForDay(partial.day)).toBe(cardForDay(quicker.day));
+    const slot = stampSheet([rescued, quicker, partial, complete]).find(slot => slot.card.id === card.id)!;
+    expect(slot.entry).toBe(quicker);
+    expect(slot.allThree).toBe(true);
+  });
+
+  test("breaks exact score ties by earlier day regardless of input order", () => {
+    const earlier = entry(today, { decisions: 11, kept: [true, false, true] });
+    const later = entry(today + 14, { decisions: 11, kept: [false, true, true] });
+    for (const entries of [[later, earlier], [earlier, later]]) {
+      const slot = stampSheet(entries).find(slot => slot.card.id === card.id)!;
+      expect(slot.entry).toBe(earlier);
+      expect(slot.allThree).toBe(false);
+    }
+  });
+
+  test("finds a card’s best returned page among story pages and repeated days", () => {
+    const partial = entry(today, { kept: [true, false, true], decisions: 3 });
+    const best = entry(today + 14, { decisions: 10 });
+    const tiedLater = entry(today + 28, { decisions: 10 });
+    const rescued = entry(today + 42, { outcome: "rescued", decisions: 1 });
+    const pages = [...storyPages([story("first")]), ...tidePages([partial, best, tiedLater, rescued])];
+    expect(pageForCard(pages, card.id)).toBe(2);
+    const reversed = [...pages].reverse();
+    expect(pageForCard(reversed, card.id)).toBe(2);
+    expect(pageForCard(pages, cardForDay(today + 1).id)).toBe(-1);
+    expect(pageForCard(tidePages([rescued]), card.id)).toBe(-1);
+    expect(pageForCard([], card.id)).toBe(-1);
   });
 });
 

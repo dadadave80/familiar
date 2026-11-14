@@ -58,7 +58,6 @@ export default function TideChart({ frames, area, reduced, label }: {
 
   return <figure className="tide-chart">
     <svg role="img" aria-label={label} viewBox="0 0 300 340">
-      <rect width="300" height="340" fill="#fbf3dc" />
       <path d="M24 12L25 328M29 12L30 328" stroke="#c9ad7c" strokeWidth=".7" opacity=".4" />
       <path d="M0 153Q35 145 70 154T140 153T210 154T300 151L300 199Q265 205 230 197T160 199T90 197T0 201Z" fill="#b6d5c5" opacity=".6" />
       <path d="M36 173Q62 165 87 173T138 173M183 185Q208 177 236 185T284 185" fill="none" stroke="#5fa79a" strokeWidth="1" opacity=".5" />
