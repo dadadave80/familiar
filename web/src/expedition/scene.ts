@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { applyCommand, waveExit, walkable, findPosition } from "./engine";
 import { COURTS } from "./rooms";
-import { commandAt } from "./input";
+import { commandAt, swipeCommand } from "./input";
 import { PASSAGE_LANDINGS, type PassageJob, type PassageState } from "./passage";
 import { MOCHI_GROUND, MOCHI_POSES, walkingPose, type MochiPoseName } from "../motion/mochi";
 import { companionIdle, type Attention } from "./companion";
@@ -10,12 +10,15 @@ import type { Column, Command, CourtEvent, CourtState, CourtTransition, Find, Po
 const ART = "/assets/expedition/runtime/";
 const ASSETS = { harbor:"harbor", mochi:"mochi-poses", keeper:"tidekeeper", shell:"shell", lens:"lens", moth:"moth", wave:"wave", bram:"bram" } as const;
 export type HomePlace = "sail" | "beacon" | "bram" | "workbench" | "satchel" | "account" | "mochi";
+export type WorldAction="wait"|"return"|"turn:vane"|"lantern"|"ride"|"listen"|"ring";
+export interface ActionAnchor {action:WorldAction;x:number;y:number;width:number;height:number}
 export type PassageView=Pick<PassageState,"job"|"stage"|"watched"|"mothHome"|"bellRigged"|"heardBell"|"archOpen">&{rode?:boolean;listened?:boolean;rang?:boolean;pullSpent?:boolean};
 export interface HarborView { lit:boolean; signaled:boolean; moth:boolean; lantern:boolean; socket:"porch"|"dock";motif:"crest"|"moth";polished:boolean;relic:"lens"|"vane"|null;resting?:boolean;services?:readonly PassageJob[];watchedReeds?:boolean;heardBell?:boolean;greeting?:number }
-export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;previewWave?:{source:Column;exit:Column};passage?:PassageView|null }
+export interface WorldSnapshot { court:CourtState|null; home:HarborView; reducedMotion:boolean;previewCommand:Command|null;previewWave?:{source:Column;exit:Column};passage?:PassageView|null;worldActions?:readonly WorldAction[] }
 export interface WorldHooks {
   command:(command:Command)=>void;
   target:(position:Position)=>void;
+  action:(action:WorldAction)=>void;
   inspect:(position:Position)=>void;
   hover:(position:Position|null)=>void;
   home:(place:HomePlace)=>void;
@@ -23,7 +26,7 @@ export interface WorldHooks {
   fault:(message:string)=>void;
   beat:(event:CourtEvent, index:number)=>void;
   settled:(id:number)=>void;
-  geometry:(tiles:readonly {position:Position;x:number;y:number;width:number;height:number}[])=>void;
+  geometry:(tiles:readonly {position:Position;x:number;y:number;width:number;height:number}[],actions?:readonly ActionAnchor[])=>void;
 }
 
 export class ExpeditionScene extends Phaser.Scene {
@@ -55,8 +58,10 @@ export class ExpeditionScene extends Phaser.Scene {
   private labels:Phaser.GameObjects.Text[]=[];
   private cargo:Phaser.GameObjects.Image[]=[];
   private surfaces:Phaser.GameObjects.Image[]=[];
-  private hitAreas:Phaser.GameObjects.Zone[]=[];
-  private presses=new Map<number,{target:string;x:number;y:number;dragged:boolean}>();
+  private hitAreas=new Map<string,Phaser.GameObjects.Zone>();
+  private presses=new Map<number,{target:Phaser.GameObjects.GameObject|null;x:number;y:number;excursion:number;touch:boolean;edge:boolean}>();
+  private contacts=new Set<number>();
+  private multipleContacts=false;
   private epoch=0;
   private lastPresentation=0;
   private playing=false;
@@ -65,6 +70,9 @@ export class ExpeditionScene extends Phaser.Scene {
   private idleElapsed=0;
   private idleScale={x:1,y:1};
   private presentationSize:{w:number;h:number}|null=null;
+  private readingTop:number|null=null;
+  private layoutRequested=false;
+  private geometryFrame:number|null=null;
   private get w(){return this.presentationSize?.w??this.scale.width;}
   private get h(){return this.presentationSize?.h??this.scale.height;}
 
@@ -115,34 +123,50 @@ export class ExpeditionScene extends Phaser.Scene {
     this.signalVane=this.add.image(0,0,"exp-vane").setOrigin(31/64,54/64).setDepth(7).setVisible(false);
     this.actorShadow=this.add.ellipse(0,0,50,13,0x342719,.25).setDepth(7);
     this.actor=this.add.sprite(0,0,"exp-mochi",12).setOrigin(.5,MOCHI_GROUND).setDepth(10);
-    this.actor.setInteractive({useHandCursor:true}).on("pointerdown",(pointer:Phaser.Input.Pointer)=>{
-      if(!this.visual&&!this.gated&&this.onCanvas(pointer))this.presses.set(pointer.id,{target:"mochi",x:pointer.x,y:pointer.y,dragged:false});
-    }).on("pointerup",(pointer:Phaser.Input.Pointer)=>{
-      const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);
-      if(!this.visual&&!this.gated&&!pointer.wasCanceled&&press?.target==="mochi"&&!press.dragged&&
-        Math.hypot(pointer.x-press.x,pointer.y-press.y)<=12&&(pointer.wasTouch||pointer.leftButtonReleased()))this.hooks.home("mochi");
-    });
+    this.actor.setInteractive({useHandCursor:true}).setData("homeTarget","mochi");
     this.scale.on("resize",()=>{
+      this.presses.clear();
       if(this.playing&&this.presentationSize){const zoom=Math.min(this.scale.width/this.presentationSize.w,this.scale.height/this.presentationSize.h);this.cameras.main.setZoom(zoom).centerOn(this.presentationSize.w/2,this.presentationSize.h/2);}
       else{this.cameras.main.setZoom(1).setScroll(0,0);this.layout();}
     });
-    this.events.once("shutdown",()=>{this.stopped=true;this.epoch++;});
     this.visual=this.snapshot.court;this.shownPassage=this.snapshot.passage??null;
     this.input.mouse?.disableContextMenu();
-    this.input.on("pointermove",(pointer:Phaser.Input.Pointer)=>{const press=this.presses.get(pointer.id);if(press&&Math.hypot(pointer.x-press.x,pointer.y-press.y)>12)press.dragged=true;});
-    const release=(pointer:Phaser.Input.Pointer)=>this.presses.delete(pointer.id);
-    this.input.on("pointerup",release);this.input.on("pointerupoutside",release);
+    this.input.addPointer(1);
+    this.input.on("pointerdown",(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[])=>this.press(pointer,over));
+    this.input.on("pointerdownoutside",(pointer:Phaser.Input.Pointer)=>this.press(pointer,[]));
+    this.input.on("pointermove",(pointer:Phaser.Input.Pointer)=>{
+      const press=this.presses.get(pointer.id),point=this.clientPoint(pointer);
+      if(press)press.excursion=Math.max(press.excursion,Math.hypot(point.x-press.x,point.y-press.y));
+    });
+    this.input.on("pointerup",(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[])=>this.release(pointer,over));
+    this.input.on("pointerupoutside",(pointer:Phaser.Input.Pointer)=>{this.presses.delete(pointer.id);this.contacts.delete(pointer.id);if(!this.contacts.size)this.multipleContacts=false;this.afterRelease();});
+    const cancel=()=>{this.presses.clear();this.contacts.clear();this.multipleContacts=false;};
+    const touchContacts=(event:TouchEvent)=>{if(event.touches.length>1||event.type==="touchcancel"){cancel();this.multipleContacts=event.touches.length>0;}else if(!event.touches.length){this.multipleContacts=false;this.contacts.clear();}};
+    // Run after Phaser's touch listener; prevent its compatibility mouse click from repeating a hold or tap.
+    const preventMouse=(event:TouchEvent)=>{if(event.cancelable)event.preventDefault();};
+    this.game.canvas.addEventListener("touchstart",preventMouse,{passive:false});
+    window.addEventListener("blur",cancel);document.addEventListener("visibilitychange",cancel);this.game.canvas.addEventListener("pointercancel",cancel);
+    window.addEventListener("touchstart",touchContacts,true);window.addEventListener("touchend",touchContacts,true);window.addEventListener("touchcancel",touchContacts,true);
+    let cleaned=false;
+    const cleanup=()=>{
+      if(cleaned)return;cleaned=true;
+      this.stopped=true;this.epoch++;cancel();this.contacts.clear();if(this.geometryFrame!==null)cancelAnimationFrame(this.geometryFrame);
+      this.game.canvas.removeEventListener("touchstart",preventMouse);
+      window.removeEventListener("blur",cancel);document.removeEventListener("visibilitychange",cancel);this.game.canvas.removeEventListener("pointercancel",cancel);
+      window.removeEventListener("touchstart",touchContacts,true);window.removeEventListener("touchend",touchContacts,true);window.removeEventListener("touchcancel",touchContacts,true);
+    };
+    this.events.once("shutdown",cleanup);this.events.once("destroy",cleanup);
     this.layout();this.hooks.ready();
   }
 
   /** Presentation coordinates are responsive. Logical cells and accepted state never resize. */
   private field(){
     const portrait=this.w<=900&&this.h>this.w;
-    if(portrait&&this.h<500){const top=144,bottom=this.h-166,width=this.w*.82;return{cx:this.w/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
+    if(portrait&&this.h<500){const top=144,bottom=Math.min(this.h-150,this.readingTop===null?Infinity:this.readingTop-24),width=this.w*.72;return{cx:this.w/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
     if(this.h<=500){const available=this.w-280,width=Math.max(240,Math.min(available*.91,760)),top=98,bottom=this.h-34;return{cx:available/2,width,top,bottom,dy:(bottom-top)/4,dx:width/3};}
     const top=portrait?(this.h<650?151:Math.max(200,this.h*.29)):this.h<500?122:Math.max(190,this.h*.31);
-    const bottom=portrait?this.h-264:this.h-72;
-    const width=Math.min(portrait?this.w*.84:this.h<500?this.w*.45:this.w*.50,760);
+    const bottom=portrait?Math.min(this.h-170,this.readingTop===null?Infinity:this.readingTop-48):this.h-72;
+    const width=Math.min(portrait?this.w*.72:this.h<500?this.w*.45:this.w*.50,760);
     return {cx:portrait?this.w*.5:this.h<500?this.w*.40:this.w*.45,width,top,bottom,dy:(bottom-top)/4,dx:width/3};
   }
   point(position:Position){const f=this.field();return{x:f.cx+(position.x-1)*f.dx,y:f.bottom-position.y*f.dy};}
@@ -209,10 +233,21 @@ export class ExpeditionScene extends Phaser.Scene {
       }
     }
   }
-  setGated(gated:boolean){this.gated=gated;if(gated)this.presses.clear();if(!this.actor)return;this.input.enabled=!gated;this.time.paused=gated;if(gated)this.tweens.pauseAll();else this.tweens.resumeAll();}
+  refreshLayout(){
+    const parent=this.game.canvas.parentElement;
+    if(parent&&(this.scale.width!==parent.clientWidth||this.scale.height!==parent.clientHeight)){this.scale.setParentSize(parent.clientWidth,parent.clientHeight);return;}
+    if(this.scale.getParentBounds()){this.scale.refresh();return;}
+    if(this.playing||this.presses.size){this.layoutRequested=true;return;}
+    this.layoutRequested=false;this.layout();
+  }
+  private afterRelease(){
+    if(!this.layoutRequested||this.presses.size||this.geometryFrame!==null)return;
+    this.geometryFrame=requestAnimationFrame(()=>{this.geometryFrame=null;if(!this.stopped)this.refreshLayout();});
+  }
+  setGated(gated:boolean){this.gated=gated;if(gated){this.presses.clear();this.contacts.clear();this.multipleContacts=false;}if(!this.actor)return;this.input.enabled=!gated;this.time.paused=gated;if(gated)this.tweens.pauseAll();else this.tweens.resumeAll();}
   private clearParts(){
     for(const label of this.labels)label.destroy();this.labels=[];
-    for(const zone of this.hitAreas)zone.destroy();this.hitAreas=[];
+    for(const zone of this.hitAreas.values())zone.disableInteractive();
     for(const find of this.finds.values())find.destroy();this.finds.clear();
     for(const shell of this.shells.values())shell.destroy();this.shells.clear();
     for(const item of this.cargo)item.destroy();this.cargo=[];
@@ -221,6 +256,11 @@ export class ExpeditionScene extends Phaser.Scene {
   private layout(){
     if(!this.actor||this.stopped)return;
     this.presses.clear();
+    if(!this.playing){
+      this.layoutRequested=false;
+      const reading=this.game.canvas.closest(".exp-game")?.querySelector<HTMLElement>(".exp-command-tray");
+      this.readingTop=reading?.getClientRects().length?reading.getBoundingClientRect().top-this.game.canvas.getBoundingClientRect().top:null;
+    }
     this.skiff.clear().setVisible(false);this.shoreBell.clear().setAngle(0);
     this.clearParts();this.ground.clear();this.shoreMarks.clear();this.homeProps.clear();this.bridgeArt.setAlpha(1);this.wheel.clear();this.forecast.clear();this.forecastLabel.setVisible(false);this.neighbors.clear();this.beam.clear().setAlpha(1);
     const court=this.visual;
@@ -228,7 +268,7 @@ export class ExpeditionScene extends Phaser.Scene {
     this.backdrop.setPosition(this.w/2,this.h/2);this.fit(this.backdrop,this.w,this.h);
     this.keeper.setVisible(!!court);this.bram.setVisible(!court);this.bridgeArt.setVisible(!!court);
     this.signalVane.setVisible(!court&&this.snapshot.home.signaled);
-    if(!court){this.hooks.geometry([]);this.harbor();this.resetIdle();return;}
+    if(!court){this.actor.setData("worldAction",null);this.hooks.geometry([]);this.harbor();this.resetIdle();return;}
     const f=this.field(),tile=this.tileSize();
     // Fixed short walks connect each bank. Only the long middle crossing changes with a surge.
     for(const y of [0,3])for(const x of [0,1,2] as const){const from=this.point({x,y}),to=this.point({x,y:y+1}),length=f.dy*1.35;const link=this.add.image(from.x,(from.y+to.y)/2,"exp-bridge").setDisplaySize(length/3,length).setDepth(.4);this.surfaces.push(link);}
@@ -239,19 +279,16 @@ export class ExpeditionScene extends Phaser.Scene {
       else if(available)this.drawBridge(p.x,p.y,tile.width*.58,f.dy*1.65);
       else {this.ground.lineStyle(2,0xa8c8bd,.4);this.ground.strokeEllipse(p.x,p.y+6,tile.width*.6,tile.height*.45);}
       const hitHeight=Math.max(44,Math.min(tile.height+15,f.dy-2));
-      const zone=this.add.zone(p.x,p.y,Math.max(44,tile.width),hitHeight).setInteractive({useHandCursor:true}).setDepth(16);
-      const target=`${x},${y}`;
-      zone.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{if(!this.gated&&this.onCanvas(pointer))this.presses.set(pointer.id,{target,x:pointer.x,y:pointer.y,dragged:false});});
-      zone.on("pointerup",(pointer:Phaser.Input.Pointer)=>{
-        const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);
-        if(this.gated||pointer.wasCanceled||!press||press.target!==target||press.dragged||Math.hypot(pointer.x-press.x,pointer.y-press.y)>12)return;
-        if(pointer.rightButtonReleased()||pointer.getDuration()>450)this.hooks.inspect(position);
-        else if(pointer.wasTouch||pointer.leftButtonReleased())this.hooks.target(position);
-      });this.hitAreas.push(zone);
-      zone.on("pointerover",()=>{if(!this.gated&&!this.playing)this.hooks.hover(position);});zone.on("pointerout",()=>this.hooks.hover(null));
+      const key=`cell:${x},${y}`;
+      let zone=this.hitAreas.get(key);
+      if(!zone){
+        zone=this.add.zone(p.x,p.y,Math.max(44,tile.width),hitHeight).setInteractive({useHandCursor:true}).setDepth(16).setData("cellTarget",position);this.hitAreas.set(key,zone);
+        zone.on("pointerover",()=>{if(!this.gated&&!this.playing)this.hooks.hover(position);});zone.on("pointerout",()=>this.hooks.hover(null));
+      }
+      zone.setPosition(p.x,p.y).setSize(Math.max(44,tile.width),hitHeight).setInteractive();
+      if(court.position.x===position.x&&court.position.y===position.y&&this.snapshot.worldActions?.includes("wait")&&!/^(take:|reel:)/.test(commandAt(court,position)??""))zone.disableInteractive();
       targets.push({position,x:p.x,y:p.y,width:Math.max(44,tile.width),height:hitHeight});
     }
-    this.hooks.geometry(targets);
     const portrait=this.w<=900&&this.h>this.w;
     const dock=this.point({x:1,y:0});if(!(portrait&&this.h<500&&court.position.x===1&&court.position.y===0))this.text(dock.x,dock.y+(this.h<500?-tile.height*.45:portrait?tile.height*.42:tile.height*.72),"DOCK",Math.min(14,this.w/28));
     const keeperHeight=Math.min(this.h<500?f.top-(portrait?78:15):230,this.h*.26,portrait?this.w*(this.h<650?.38:.45):this.w*.52,portrait?f.top-(this.h<650?15:80):Infinity);this.keeper.setPosition(this.h<500&&!portrait?f.cx+Math.min(60,f.width*.18):portrait&&this.h<650?this.w*.72:f.cx,f.top-8).setDisplaySize(keeperHeight*1.32,keeperHeight);
@@ -281,12 +318,90 @@ export class ExpeditionScene extends Phaser.Scene {
     if(court.area==="wind")this.windGate(court);
     if(this.shownPassage)this.passageCourt(court,this.shownPassage);
     const p=this.point(court.position);
-    this.actor.setPosition(p.x,p.y).setDisplaySize(this.actorSize(),this.actorSize()).setFlipX(false);
+    this.actor.setPosition(p.x,p.y).setDisplaySize(this.actorSize(),this.actorSize()).setFlipX(false).setData("worldAction",this.snapshot.worldActions?.includes("wait")?"wait":null);
     this.actorShadow.setPosition(p.x,p.y+2).setSize(this.actorSize()*.55,Math.max(4,this.actorSize()*.10));
     const mothNearby=court.position.y>=3&&findPosition(court,"moth")!==null&&!this.shownPassage?.mothHome;
     const watching=this.shownPassage?.watched&&mothNearby&&court.position.x===1&&court.position.y===4;
     this.pose(watching?"relieved":court.locked!==null?"brace":mothNearby?"look-right":"curious");
     this.drawCargo(court);this.paintHints(court);this.resetIdle();
+    this.hooks.geometry(targets,this.actionTargets(court,targets));
+  }
+  private clientPoint(pointer:Phaser.Input.Pointer){
+    const event=pointer.event;
+    if("changedTouches" in event){
+      const touch=Array.from(event.changedTouches).find(t=>t.identifier===pointer.identifier);
+      if(touch)return{x:touch.clientX,y:touch.clientY};
+    }
+    return {x:(event as MouseEvent).clientX,y:(event as MouseEvent).clientY};
+  }
+  private press(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[]){
+    this.contacts.add(pointer.id);
+    if(this.contacts.size>1){this.multipleContacts=true;this.presses.clear();}
+    if(this.gated||this.stopped||this.multipleContacts||!this.onCanvas(pointer))return;
+    const event=pointer.event,point=this.clientPoint(pointer),rect=this.game.canvas.getBoundingClientRect();
+    const touch=pointer.wasTouch||("pointerType" in event&&event.pointerType==="pen");
+    if(!touch&&!pointer.leftButtonDown()&&!pointer.rightButtonDown())return;
+    const target=over.find(object=>object.getData("cellTarget")||object.getData("worldAction")||!this.visual&&object.getData("homeTarget"))??null;
+    this.presses.set(pointer.id,{target,x:point.x,y:point.y,excursion:0,touch,edge:point.x-rect.left<24||rect.right-point.x<24});
+  }
+  private release(pointer:Phaser.Input.Pointer,over:Phaser.GameObjects.GameObject[]){
+    const press=this.presses.get(pointer.id);this.presses.delete(pointer.id);this.contacts.delete(pointer.id);this.afterRelease();
+    const multiple=this.multipleContacts;if(!this.contacts.size)this.multipleContacts=false;
+    const point=this.clientPoint(pointer),canvas=this.game.canvas,rect=canvas.getBoundingClientRect();
+    if(!press||this.gated||this.stopped||multiple||pointer.wasCanceled||!this.onCanvas(pointer)||document.hidden||
+      point.x<rect.left||point.x>rect.right||point.y<rect.top||point.y>rect.bottom||document.elementFromPoint(point.x,point.y)!==canvas)return;
+    const excursion=Math.max(press.excursion,Math.hypot(point.x-press.x,point.y-press.y));
+    if(press.touch&&this.visual?.outcome==="active"&&!press.edge){
+      const command=swipeCommand(point.x-press.x,point.y-press.y);
+      if(command){this.hooks.command(command);return;}
+    }
+    if(excursion>12||!press.target||!over.includes(press.target))return;
+    const cell=press.target.getData("cellTarget") as Position|undefined;
+    const action=press.target.getData("worldAction") as WorldAction|undefined;
+    if(pointer.rightButtonReleased()||pointer.getDuration()>450){
+      const position=cell??this.visual?.position;
+      if(position)this.hooks.inspect(position);
+    }else if(press.touch||pointer.leftButtonReleased()){
+      if(action)this.hooks.action(action);
+      else if(cell)this.hooks.target(cell);
+      else if(!this.visual&&press.target.getData("homeTarget")==="mochi")this.hooks.home("mochi");
+    }
+  }
+  private actionTargets(court:CourtState,tiles:Parameters<WorldHooks["geometry"]>[0]):ActionAnchor[]{
+    const actions=this.snapshot.worldActions??[],anchors:ActionAnchor[]=[],f=this.field(),tile=this.tileSize();
+    const labels:Record<WorldAction,string>={wait:"Wait",return:"Home","turn:vane":"Turn",lantern:"Lure",ride:"Ride",listen:"Listen",ring:"Ring"};
+    const canvas=this.game.canvas.getBoundingClientRect();
+    const blocked=Array.from(this.game.canvas.closest(".exp-game")?.querySelectorAll<HTMLElement>(".exp-command-tray,.exp-hud,.exp-mast,.exp-feedback")??[])
+      .filter(element=>element.getClientRects().length&&getComputedStyle(element).visibility!=="hidden")
+      .map(element=>{const rect=element.getBoundingClientRect();return{x:rect.left-canvas.left+rect.width/2,y:rect.top-canvas.top+rect.height/2,width:rect.width,height:rect.height};});
+    const overlaps=(a:{x:number;y:number;width:number;height:number},b:typeof a)=>Math.abs(a.x-b.x)<(a.width+b.width)/2+2&&Math.abs(a.y-b.y)<(a.height+b.height)/2+2;
+    const cells=tiles.filter(target=>{const command=commandAt(court,target.position),self=target.position.x===court.position.x&&target.position.y===court.position.y;return command&&(!self||/^(take:|reel:)/.test(command));});
+    for(const action of actions){
+      let origin=this.point(court.position);
+      if(action==="return")origin=this.point({x:1,y:0});
+      else if(action==="turn:vane")origin={x:this.wheel.x,y:this.wheel.y};
+      else if(action==="lantern")origin={x:this.keeper.x,y:this.keeper.y};
+      else if(action==="ride")origin={x:this.skiff.x,y:this.skiff.y};
+      else if(action==="listen")origin={x:this.shoreBell.x,y:this.shoreBell.y};
+      else if(action==="ring"){const p=this.point({x:1,y:3});origin={x:p.x-tile.width*.24,y:p.y-8};}
+      const preferred=action==="wait"?{x:origin.x,y:origin.y+20}:origin;
+      const candidates=[preferred];
+      for(let y=Math.max(88,f.top-20);y<this.h-24;y+=22)for(let x=24;x<this.w-24;x+=22)candidates.push({x,y});
+      candidates.sort((a,b)=>Math.hypot(a.x-preferred.x,a.y-preferred.y)-Math.hypot(b.x-preferred.x,b.y-preferred.y));
+      const point=candidates.find(point=>{
+        const box={...point,width:44,height:44};
+        return point.x>=24&&point.x<=this.w-24&&point.y>=24&&point.y<=this.h-24&&!cells.some(cell=>!(action==="wait"&&cell.position.x===court.position.x&&cell.position.y===court.position.y)&&overlaps(box,cell))&&!anchors.some(anchor=>overlaps(box,anchor))&&!blocked.some(region=>overlaps(box,region));
+      });
+      if(!point)continue;
+      const anchor={...point,action,width:44,height:44};anchors.push(anchor);
+      this.shoreMarks.lineStyle(1.5,0xf5db9c,.85).lineBetween(origin.x,origin.y,point.x,point.y);
+      this.text(point.x,point.y,labels[action],12).setDepth(23);
+      const key=`action:${action}`;
+      let zone=this.hitAreas.get(key);
+      if(!zone){zone=this.add.zone(point.x,point.y,44,44).setInteractive({useHandCursor:true}).setDepth(24).setData("worldAction",action);this.hitAreas.set(key,zone);}
+      zone.setPosition(point.x,point.y).setInteractive();
+    }
+    return anchors;
   }
   private drawBridge(x:number,y:number,w:number,h:number){
     // Native3:1 bridge stays undistorted; transparent ends overlap the two landing stones.

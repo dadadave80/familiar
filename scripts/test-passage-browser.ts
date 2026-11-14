@@ -1,3 +1,4 @@
+import { guide, worldAction, buttonControls } from "./browser-controls";
 import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -29,19 +30,22 @@ try {
       await expect(page.getByRole("heading",{name:"Wind Gate",exact:true})).toBeVisible();
       await page.getByRole("button",{name:"Close panel",exact:true}).click();
       for(const job of ["bell","reed"] as const){
-        await page.getByRole("button",{name:"Choose a crossing",exact:true}).click();
-        await page.getByRole("button",{name:job==="bell"?/Bell Steps · Send supplies/:/Reed Steps · Bring the skiff home/}).click();
+        await page.getByRole("button",{name:"Harbor chart",exact:true}).click();
+        await page.getByRole("button",{name:job==="bell"?"Send Bram’s supplies":"Follow Mochi to Reed",exact:true}).click();
         const game=page.getByTestId("passage-game");
         const beforeSound=await game.getAttribute("data-turn");
         await page.getByRole("button",{name:"Enable game audio",exact:true}).click();
         await expect(page.getByRole("button",{name:"Mute game audio",exact:true})).toBeVisible();
         await page.getByRole("button",{name:"Mute game audio",exact:true}).click();
         assert.equal(await game.getAttribute("data-turn"),beforeSound,"sound control spends no turn");
+        await game.focus();await page.keyboard.press("i");
+        await expect(page.getByRole("dialog")).toBeVisible();await page.keyboard.press("Escape");
+        await expect(game).toBeFocused();
         const steps=job==="bell"?["north","west","ride","south","south","east","return"]:["north","north","west","east","east","west","north","wait","east","wait","south","ride","south","west","return"];
         for(const [index,step] of steps.entries()){
           const command=["north","west","south","east"].includes(step)?`step:${step}`:step;
-          const button=page.locator(`[data-command="${command}"]`);
-          if(phone)await button.tap();else await button.click();
+          if(index===0)await page.keyboard.press("ArrowUp");
+          else if(phone && !command.startsWith("step:"))await worldAction(page,command,true);else await guide(page,command);
           await expect(game).toHaveAttribute("data-turn",String(index+1));
           await expect(game).toHaveAttribute("data-busy","false");
           if(index===2){
@@ -54,8 +58,9 @@ try {
         await expect(game).toHaveAttribute("data-stage","delivered");
         if(job==="reed")await expect(game).toHaveAttribute("data-watched","true");
         await page.getByTestId("passage-finish").click();
-        const title=job==="bell"?"Supplies at Bell Steps.":"The Tidekeeper has an ask.";
-        await expect(page.getByRole("heading",{name:title})).toBeVisible();
+        await expect(page.locator(".exp-departure h1")).toHaveText(/^Today’s tide:/);
+        const title=(await page.locator(".exp-departure h1").textContent())!;
+        await expect(page.getByTestId("expedition-feedback")).toContainText(job==="bell"?"Bram’s supplies are stacked at Bell Steps.":"Mochi’s skiff is tied up at the quay.");
         await page.reload();
         await expect(page.getByRole("heading",{name:title})).toBeVisible();
         await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-ready","true");
@@ -63,7 +68,7 @@ try {
       }
       const passageKey=key+":shore-passages.v1";
       const beforeRest=await page.evaluate(k=>localStorage.getItem(k),passageKey);
-      await page.locator(".exp-harbor-links").getByRole("button",{name:"Harbor chart",exact:true}).click();
+      await page.getByRole("button",{name:"Harbor chart",exact:true}).click();
       await expect(page.getByRole("heading",{name:"A harbor connected.",exact:true})).toBeVisible();
       await expect(page.getByRole("heading",{name:"Bell Steps",exact:true})).toBeVisible();
       await expect(page.getByText("Bram’s crates are stacked on the far work platform.",{exact:true})).toBeVisible();
@@ -76,7 +81,8 @@ try {
       assert.equal(await page.evaluate(k=>localStorage.getItem(k),passageKey),beforeRest);
       await page.getByRole("button",{name:"Back to the harbor",exact:true}).click();
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),original);
-      const actor={x:(phone?390:1280)*.49,y:phone?480:588};
+      await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+      const actor={x:(phone?390:1280)*.49,y:phone?302:620};
       if(!phone){
         await page.mouse.click(actor.x,actor.y,{button:"right"});
         await expect(page.getByRole("heading",{name:"A moment together."})).toHaveCount(0);
@@ -98,8 +104,7 @@ try {
       async function move(step:string){
         const command=["north","west","south","east"].includes(step)?`step:${step}`:step;
         const turn=Number(await game.getAttribute("data-turn"));
-        const button=page.locator(`[data-command="${command}"]`);
-        if(phone)await button.tap();else await button.click();
+        if(phone && !command.startsWith("step:"))await worldAction(page,command,true);else await guide(page,command);
         await expect(game).toHaveAttribute("data-turn",String(turn+1));
         await expect(game).toHaveAttribute("data-busy","false");
       }
@@ -111,7 +116,7 @@ try {
       assert.equal(await page.evaluate(k=>localStorage.getItem(k),passageKey),beforeInspect);
       await page.getByRole("button",{name:"Close panel",exact:true}).click();
       if(phone)await move("listen");else{
-        await page.keyboard.press("e");
+        await game.focus();await page.keyboard.press("e");
         await expect(game).toHaveAttribute("data-turn","7");
         await expect(game).toHaveAttribute("data-busy","false");
       }
@@ -142,7 +147,7 @@ try {
         await expect(page.locator(".exp-inspect-reading")).toContainText("Bridge left. Mochi stays dry.");
         await expect(game).toHaveAttribute("data-turn","2");
         await page.getByRole("button",{name:"Close panel",exact:true}).click();
-        await page.locator('[data-command="ring"]').focus();
+        await buttonControls(page);await page.locator('[data-command="ring"]').focus();
         await expect(page.getByTestId("expedition-world")).toHaveAttribute("data-preview-exit","0");
         await expect(game).toHaveAttribute("data-turn","2");
         if(!phone&&job==="bell")await page.screenshot({path:join(output,"chromium-bell-preview.png")});
@@ -157,9 +162,9 @@ try {
           await page.getByRole("button",{name:"Mute game audio",exact:true}).tap();
           await expect(game).toHaveAttribute("data-turn","2");
         }
+        await buttonControls(page,false);
         if(phone){
-          const tile=JSON.parse((await page.getByTestId("expedition-world").getAttribute("data-tiles"))!).find((t:any)=>t.position.x===1&&t.position.y===3);
-          await page.touchscreen.tap(tile.x,tile.y);
+          await worldAction(page,"ring",true);
           await expect(game).toHaveAttribute("data-turn","3");
           await expect(game).toHaveAttribute("data-busy","false");
         }else await move("ring");

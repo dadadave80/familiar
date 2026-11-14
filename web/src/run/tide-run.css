@@ -141,3 +141,41 @@
   .tide-run .exp-directions .exp-wait { grid-column: 1; grid-row: 2; }
   .tide-run .exp-context-actions { grid-column: 2 / -1; grid-row: 2; gap: 4px; }
 }
+
+
+/* Direct play keeps only guidance visible; the full pad opens on request. */
+.tide-run .passage-tray{gap:8px;overflow:visible}
+.tide-run .tide-controls{position:relative;flex:none}
+.tide-run .tide-controls .exp-control-hints{display:block}
+.tide-run .exp-button-controls>summary{justify-content:flex-start;width:max-content}
+.tide-run .tide-guide-control{position:absolute;bottom:0;right:0;min-height:44px;min-width:44px;margin:0;white-space:nowrap}
+.tide-run .exp-button-controls-body .exp-current-controls{display:flex;flex-direction:column;gap:8px}
+.tide-run .exp-button-controls-body .exp-directions{display:flex;justify-content:space-between;width:100%;gap:4px}
+.tide-run .exp-button-controls-body .exp-directions button{width:44px;height:44px;min-height:44px;flex:none}
+.tide-run .exp-button-controls-body .exp-context-actions{display:flex;flex-direction:column;align-items:stretch;min-height:0}
+.tide-run .exp-button-controls-body .exp-context-actions button{min-height:44px}
+.tide-run .tide-tray-reading{scrollbar-color:#8b734c var(--exp-card);scroll-padding:6px}
+@media(max-width:899px) and (orientation:portrait){
+  .tide-run .passage-tray{max-height:200px;padding:8px 10px;gap:5px}
+  .tide-run .exp-forecast{padding:5px 0;margin-bottom:5px!important;font-size:13px;line-height:1.35}
+  .tide-run .exp-objective{font-size:14px}
+  .tide-run .tide-asks{gap:3px}
+}
+@media(max-width:599px) and (max-height:600px) and (orientation:portrait){
+  .tide-run .exp-brand small{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .tide-run h1.exp-place{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);padding:0}
+  .tide-run .tide-hud{top:68px;padding:6px 8px;gap:8px}
+  .tide-run .tide-portrait{width:30px;height:30px}
+  .tide-run .tide-vitals strong{font-size:14px}
+  .tide-run .tide-vitals{gap:3px}
+  .tide-run .tide-hearts svg{width:12px;height:12px}
+  .tide-run .tide-tally{padding-left:7px;gap:5px;font-size:12px}
+  .tide-run .tide-tally>svg{display:none}
+  .tide-run .tide-tally b{font-size:16px}
+  .tide-run .passage-tray{max-height:176px}
+}
+@media(orientation:landscape) and (max-height:500px){
+  .tide-run .passage-tray{overflow:visible;gap:5px}
+  .tide-run .tide-controls .exp-input-context{font-size:12px}
+  .tide-run .exp-button-controls-body{max-height:calc(100dvh - 160px)}
+}

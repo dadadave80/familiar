@@ -55,3 +55,17 @@ test("a story prize brought home keeps the return card without offering a retry"
     expect(html).not.toContain('data-testid="tide-again"');
   }
 });
+
+test("the tide run teaches direct play and keeps a closed native button alternative", () => {
+  const { html } = render(startTide({ seed: 20771 }));
+  expect(html).toContain("WASD or arrow keys to move");
+  expect(html).toContain("Space waits");
+  expect(html).toContain("R ends the tide at the dock");
+  expect(html).toContain("I explains the tide");
+  expect(html).not.toContain("E interacts");
+  expect(html).not.toContain("tap a find to collect it");
+  expect(html).toContain('<summary>Button controls</summary>');
+  expect(html).toContain('aria-describedby="tide-input-hints"');
+  expect(html).not.toContain('<details class="exp-button-controls" open');
+  expect(html).toContain('data-testid="tide-guide"');
+});

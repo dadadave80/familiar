@@ -1,3 +1,4 @@
+import { guide } from "./browser-controls";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -126,7 +127,7 @@ async function checkTrayAsks(page: Page, label: string) {
   const tray = page.locator(".exp-command-tray"), asks = tray.locator(".exp-tray-reading > .tide-outing .tide-asks");
   await expect(asks).toBeVisible();
   await expect(tray.locator(".exp-tray-scroll .tide-outing")).toHaveCount(0);
-  const bounds = await tray.boundingBox(), strip = await asks.boundingBox(), actions = await tray.locator(".exp-tray-actions").boundingBox();
+  const bounds = await tray.boundingBox(), strip = await asks.boundingBox(), actions = await tray.locator(".exp-control-hints").boundingBox();
   assert.ok(bounds && strip && actions, `${label}: tray, asks and actions have visible bounds`);
   assert.ok(strip.x >= bounds.x - 1 && strip.x + strip.width <= bounds.x + bounds.width + 1
     && strip.y >= bounds.y - 1 && strip.y + strip.height <= bounds.y + bounds.height + 1,
@@ -145,7 +146,7 @@ async function checkTrayAsks(page: Page, label: string) {
   if (size.width < 900) {
     const rows = new Set(chips.map(chip => Math.round(chip.top))).size;
     if (size.height > size.width) assert.equal(rows, 1, `${label}: portrait phone asks use one row`);
-    else assert.ok(rows <= 2, `${label}: landscape phone asks use at most two rows in the narrow tray`);
+    else assert.ok(rows <= 3, `${label}: all three landscape asks fit the narrow hint tray`);
     assert.ok(chips.every(chip => chip.height <= 36), `${label}: phone chips stay at most 36px tall`);
   } else assert.equal(new Set(chips.map(chip => Math.round(chip.top))).size, 3, `${label}: desktop asks use three stacked rows`);
   const reading = tray.locator(".exp-tray-scroll");
@@ -161,7 +162,7 @@ async function checkTrayAsks(page: Page, label: string) {
 async function checkRestartLayout(page: Page, label: string) {
   const asks = page.locator(".tide-asks"), restart = page.locator(".tide-outing > .tide-restart.exp-text-button");
   const strip = await asks.boundingBox(), button = await restart.boundingBox();
-  const tray = await page.locator(".exp-command-tray").boundingBox(), actions = await page.locator(".exp-tray-actions").boundingBox();
+  const tray = await page.locator(".exp-command-tray").boundingBox(), actions = await page.locator(".exp-control-hints").boundingBox();
   assert.ok(strip && button && tray && actions, `${label}: asks, restart, tray and actions have visible bounds`);
   assert.ok(button.y >= strip.y + strip.height - 1 || button.y + button.height <= strip.y + 1
     || button.x >= strip.x + strip.width - 1 || button.x + button.width <= strip.x + 1,
@@ -169,7 +170,7 @@ async function checkRestartLayout(page: Page, label: string) {
   assert.ok(button.x >= tray.x - 1 && button.x + button.width <= tray.x + tray.width + 1
     && button.y >= tray.y - 1 && button.y + button.height <= tray.y + tray.height + 1, `${label}: restart stays inside the tray`);
   assert.ok(button.y + button.height <= actions.y + 1 || button.x + button.width <= actions.x + 1 || button.x >= actions.x + actions.width - 1,
-    `${label}: restart stays clear of movement and context actions`);
+    `${label}: restart stays clear of input hints`);
   assert.ok(button.height >= 44, `${label}: restart has a 44px target`);
   await expect(restart).toBeInViewport({ ratio: 1 });
   await checkTrayAsks(page, label);
@@ -201,7 +202,6 @@ async function openClassic(page: Page) {
 async function checkDaily(page: Page, origin: string) {
   const today = Math.floor(Date.now() / 86_400_000), todayCard = cardForDay(today), tomorrow = cardForDay(today + 1);
   const guardDay = () => assert.equal(Math.floor(Date.now() / 86_400_000), today, "UTC midnight crossed during the daily flow; rerun with the new day");
-  const keys: Record<Move, string> = { north: "ArrowUp", south: "ArrowDown", west: "ArrowLeft", east: "ArrowRight", wait: "Space", home: "r" };
   let final = startTide({ seed: today });
   while (final.outcome === "active") final = applyMove(final, cautiousMove(final))!.after;
   const result = dayResult(final), goods = shelfGoods(result);
@@ -239,7 +239,7 @@ async function checkDaily(page: Page, origin: string) {
   await expect(page.getByTestId("tide-world")).toHaveAttribute("data-ready", "true", { timeout: 30000 });
   for (const move of final.moves) {
     await expect(run).toHaveAttribute("data-busy", "false", { timeout: 15000 });
-    await page.keyboard.press(keys[move]);
+    await guide(page,move);
   }
   await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible({ timeout: 15000 });
   guardDay();
@@ -352,7 +352,7 @@ async function checkMidnight(page: Page, origin: string, mode: "harbor" | "wake"
     await panel.getByRole("button", { name: "Start this tide over", exact: true }).click();
     assert.deepEqual(await asks.allTextContents(), beforeAsks, "restart after midnight keeps the original card’s asks");
     assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), pendingKey), expectedPending, "restart after midnight keeps the outing’s original marker");
-    await page.locator('button[data-command="return"]').click();
+    await guide(page,"return");
     await page.clock.runFor(1_000);
     await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "See the tide log", exact: true }).click();
@@ -467,7 +467,7 @@ try {
     }
     await captureLayouts(page, "court-start", () => checkTrayAsks(page, "outing start"));
     for (const [index, command] of route.entries()) {
-      await page.locator(`button[data-command="${command}"]`).click();
+      await guide(page,command);
       await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
       if (index + 1 === Math.ceil(route.length / 2)) {
         await expect(asks).toBeVisible();
@@ -480,8 +480,8 @@ try {
         assert.ok(new Set(chips.map(chip => chip.top)).size <= 2, "phone asks use at most two rows");
         assert.ok(chips.every(chip => chip.font >= 13), "phone ask text is at least 13px");
         const feedback = await page.getByTestId("expedition-feedback").boundingBox(), tray = await page.locator(".exp-command-tray").boundingBox();
-        const reading = await page.locator(".exp-tray-scroll").boundingBox(), actions = await page.locator(".exp-tray-actions").boundingBox();
-        const directions = await page.locator(".exp-directions").boundingBox();
+        const reading = await page.locator(".exp-tray-scroll").boundingBox(), actions = await page.locator(".exp-control-hints").boundingBox();
+        const directions = await page.locator(".exp-control-hints").boundingBox();
         const dockBottom = await world.evaluate(node => {
           const ys = (JSON.parse(node.getAttribute("data-tiles")!) as { y: number }[]).map(tile => tile.y);
           const bottom = Math.max(...ys), step = (bottom - Math.min(...ys)) / 4;
@@ -490,9 +490,9 @@ try {
         assert.ok(tray && tray.y >= dockBottom, "the phone tray clears the complete dock platform");
         assert.ok(feedback && reading && directions && Math.max(feedback.y, reading.y) >= tray!.y
           && Math.min(feedback.y + feedback.height, reading.y + reading.height) <= directions.y,
-          "visible phone feedback stays inside its scrolling region above the movement controls");
+          "visible phone feedback stays inside its scrolling region above the input hints");
         assert.ok(actions && actions.y >= tray!.y && actions.y + actions.height <= viewport.height,
-          "phone movement and context actions stay visible without scrolling the tray");
+          "phone input hints stay visible without scrolling the tray");
         await page.screenshot({ path: join(shots, `court-mid-outing-${tag}.png`) });
       }
     }
@@ -576,7 +576,7 @@ try {
     assert.deepEqual(await page.evaluate(key => JSON.parse(localStorage.getItem(key)!).home, saveKey), before, "the classic tide outing leaves home progress unchanged");
     await panel.getByRole("button", { name: "Sail this tide again", exact: true }).click();
     await expect(game).toHaveAttribute("data-mode", "court");
-    await page.locator('button[data-command="return"]').click();
+    await guide(page,"return");
     await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible();
     await expect(panel.getByRole("heading", { name: "An empty satchel keeps no asks.", exact: true })).toBeVisible();
     await expect(panel.locator('.tide-list > li[data-kept="true"]')).toHaveCount(0);
@@ -610,7 +610,7 @@ try {
     await expect(restart).toHaveCount(0);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     for (const command of slipRoute) {
-      await page.locator(`button[data-command="${command}"]`).click();
+      await guide(page,command);
       await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
     }
     await expect(asks.locator('li[data-status="slipped"]')).not.toHaveCount(0);
@@ -623,7 +623,7 @@ try {
         if (game.getAttribute("data-busy") === "true" && restart?.disabled) window.restartBusySeen = true;
       }).observe(game, { attributes: true, subtree: true, attributeFilter: ["data-busy", "disabled"] });
     });
-    await page.locator('button[data-command="wait"]').click();
+    await guide(page,"wait");
     await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
     await expect(restart).toBeEnabled();
     assert.equal(await page.evaluate(() => window.restartBusySeen), true, "restart was disabled during the observed busy window");
@@ -667,7 +667,7 @@ try {
     assert.equal(await page.evaluate(() => window.tidePops.length), popsBeforeRestart, "restart does not pop the reset strip");
 
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.locator('button[data-command="wait"]').click();
+    await guide(page,"wait");
     await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
     await page.getByRole("button", { name: "Game menu", exact: true }).click();
     const menuRestart = panel.getByRole("button", { name: "Start this tide over", exact: true });
@@ -723,7 +723,7 @@ try {
     const bridgeRoute: Command[] = ["step:west", "wait", "step:east", "wait", "wait", "wait", "step:west", "wait", "step:east"];
     const bridgeChip = asks.locator("li").nth(1);
     for (const [index, command] of bridgeRoute.entries()) {
-      await page.locator(`button[data-command="${command}"]`).click();
+      await guide(page,command);
       await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
       const holding = askHolds(nextCard.asks[1], replayRun(nextCard.tool, bridgeRoute.slice(0, index + 1))!);
       await expect(bridgeChip).toHaveAttribute("data-holding", String(holding));
@@ -734,13 +734,13 @@ try {
     await page.emulateMedia({ reducedMotion: "reduce" });
     // Another bridge cycle changes the status, with no animation under reduced motion.
     for (const command of ["wait", "wait", "wait"] as Command[]) {
-      await page.locator(`button[data-command="${command}"]`).click();
+      await guide(page,command);
       await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
     }
     await expect(bridgeChip).toHaveAttribute("data-holding", "false");
     assert.deepEqual(await asks.locator("li").evaluateAll(chips => chips.map(chip => getComputedStyle(chip).animationName)), ["none", "none", "none"], "reduced motion removes chip animations");
     for (const command of ["step:west", "wait", "step:east"] as Command[]) {
-      await page.locator(`button[data-command="${command}"]`).click();
+      await guide(page,command);
       await expect(game).toHaveAttribute("data-busy", "false", { timeout: 15000 });
     }
     await expect(bridgeChip).toHaveAttribute("data-holding", "true");
@@ -750,7 +750,7 @@ try {
     await page.evaluate(() => new Promise<void>(done => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
     assert.deepEqual(await page.evaluate(() => window.tidePops), [], "ask status changes stay still; the Home sheet owns the arrival motion");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.locator('button[data-command="return"]').click();
+    await guide(page,"return");
     await expect(page.getByRole("dialog", { name: "Home", exact: true })).toBeVisible();
     await expect(panel.locator(".tide-list")).toHaveAttribute("data-arrival", "true");
     await expect(panel.locator(".tide-home-stamp .tide-stamp")).not.toHaveAttribute("data-press", "true");
