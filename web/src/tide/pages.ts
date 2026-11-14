@@ -5,6 +5,7 @@ import { askLine, cardForDay, TIDE_POOL } from "./cards";
 import { betterTide, type TideEntry, type TidePending } from "./log";
 import type { TideDayView } from "./TideAsk";
 import type { LogPage } from "./TideLog";
+import { resultLine, resultTitle, type DayResult } from "./run-day";
 
 export type StoryRecord = Pick<ReturnRecord, "id" | "contentVersion" | "outcome" | "cargo" | "area" | "tool" | "banked" | "commands">;
 
@@ -35,11 +36,19 @@ export function tidePages(entries: readonly TideEntry[]): Extract<LogPage, { kin
   }));
 }
 
-export function logPages(records: readonly StoryRecord[], entries: readonly TideEntry[]): LogPage[] {
-  return [...storyPages(records), ...tidePages(entries)];
+export function runPages(results: readonly DayResult[]): Extract<LogPage, { kind: "run" }>[] {
+  return [...results].sort((a, b) => a.day - b.day).map(result => ({ kind: "run", day: result.day, card: cardForDay(result.day), result }));
+}
+
+/** Story pages first, then one page per day: a three-ask page before a tide-run page on the same day. */
+export function logPages(records: readonly StoryRecord[], entries: readonly TideEntry[], results: readonly DayResult[] = []): LogPage[] {
+  const days = [...tidePages(entries), ...runPages(results)].sort((a, b) => a.day - b.day || (a.kind === b.kind ? 0 : a.kind === "tide" ? -1 : 1));
+  return [...storyPages(records), ...days];
 }
 
 export function pageForDay(pages: readonly LogPage[], day?: number): number {
+  const run = day === undefined ? -1 : pages.findIndex(page => page.kind === "run" && page.day === day);
+  if (run >= 0) return run;
   const index = day === undefined ? -1 : pages.findIndex(page => page.kind === "tide" && page.day === day);
   return index < 0 ? Math.max(0, pages.length - 1) : index;
 }
@@ -117,7 +126,22 @@ export type TideLink = { label: string; action: "tide" | "log" | "sail" | "bram"
 export type HarborTide =
   { kind: "panel"; title: string; body: string; primary: { label: string; target: "tide" | "log" | "sail" | "bram" } | null; links: TideLink[] };
 
-export function harborTide(input: { lit: boolean; card: TideCard; next: TideCard; entry: TideEntry | null; returnedToday: boolean; shelved: boolean }): HarborTide | null {
+type ClassicHarbor = { lit: boolean; card: TideCard; next: TideCard; entry: TideEntry | null; returnedToday: boolean; shelved: boolean };
+/** A device harbor's card, driven by today's tide-run result. */
+export type RunHarbor = { lit: boolean; card: TideCard; next: TideCard; guess: number; result: DayResult | null; returnedToday: boolean; shelved: boolean };
+
+function harborRun({ lit, card, next, guess, result, returnedToday, shelved }: RunHarbor): HarborTide | null {
+  if (!lit) return null;
+  const links: TideLink[] = [{ label: result ? "Sail again for practice" : "Sail today’s tide", action: "sail" }, { label: "Open the tide log", action: "log" }];
+  if (!result) return shelved
+    ? { kind: "panel", title: `Tomorrow: ${next.name}.`, body: "Today’s haul is on Bram’s shelf.", primary: null, links }
+    : { kind: "panel", title: `Today’s tide: ${card.name}.`, body: `Twelve waves. Bram guesses ${guess}.`, primary: { label: "See today’s tide", target: "tide" }, links: [] };
+  if (shelved) return { kind: "panel", title: `Tomorrow: ${next.name}.`, body: `${resultTitle(result)} ${resultLine(result)}. Today’s haul is on Bram’s shelf.`, primary: null, links };
+  return { kind: "panel", title: resultTitle(result), body: `${resultLine(result)}.`, primary: returnedToday ? { label: "Take it to Bram", target: "bram" } : null, links };
+}
+
+export function harborTide(input: ClassicHarbor | RunHarbor): HarborTide | null {
+  if ("result" in input) return harborRun(input);
   const { lit, card, next, entry, returnedToday, shelved } = input;
   if (!lit) return null;
   if (!entry) return {

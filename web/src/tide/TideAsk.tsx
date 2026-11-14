@@ -5,14 +5,56 @@ import type { TideEntry } from "./log";
 import { CARD_PICTURE, keeperArt, sealArt } from "./art";
 import TideStamp from "./TideStamp";
 import AskIcon from "./AskIcon";
+import { STAMPS, allKept, resultLine, type DayResult } from "./run-day";
 import "./tide.css";
 
 export interface TideDayView { day: number; card: TideCard; entry: TideEntry | null }
-
-export default function TideAsk({ today, earlier, sailBlockedReason, onSail, onOpenLog }: {
+type ClassicProps = {
   today: TideDayView; earlier: readonly TideDayView[]; sailBlockedReason: string | null;
   onSail: (day: number) => void; onOpenLog: (day?: number) => void;
-}): JSX.Element {
+};
+/** Today's tide on a device harbor: the day's card, Bram's guess and the tide run's three stamps. */
+export type RunAskProps = {
+  day: number; card: TideCard; guess: number; result: DayResult | null; sailBlockedReason: string | null;
+  onSail: (day: number) => void; onOpenLog: (day?: number) => void;
+};
+
+const SAIL_ICON = <svg viewBox="0 0 24 24" width={20} height={20} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h16l-3 6H7l-3-6Zm8-11v11M12 4l7 7h-7"/></svg>;
+
+export default function TideAsk(props: ClassicProps | RunAskProps): JSX.Element {
+  return "guess" in props ? <RunAsk {...props}/> : <ClassicAsk {...props}/>;
+}
+
+function RunAsk({ day, card, guess, result, sailBlockedReason, onSail, onOpenLog }: RunAskProps): JSX.Element {
+  const id = useId();
+  const canSail = sailBlockedReason === null;
+  return <section className="tide tide-ask" aria-labelledby={`${id}-title`}>
+    <img className="tide-keeper" src={keeperArt} width="300" height="200" alt="" decoding="async" />
+    <h3 id={`${id}-title`}>Today’s tide</h3>
+    <p className="tide-day">{dayLabel(day)}</p>
+    <div className="tide-card">
+      <div className="tide-card-heading">
+        <TideStamp id={card.id} size={112} tilt={-3} seal={!!result && allKept(result)} label={CARD_PICTURE[card.id]} />
+        <div><h4>{card.name}</h4><p className="tide-note">Twelve waves, two lanes at a time from the seventh. Each wave leaves a prize; bank it at the dock.</p></div>
+      </div>
+      <p className="tide-ask-intro">The Tidekeeper asks</p>
+      <ol className="tide-list">
+        {STAMPS.map(stamp => <li key={stamp.key} data-kept={result ? String(result.stamps[stamp.key]) : undefined}>
+          <span className="tide-ask-icon" aria-hidden="true"><img src={stamp.icon} width={32} height={32} alt="" decoding="async"/></span>
+          {result && <span className="tide-ask-mark" aria-hidden="true"><img src={sealArt(result.stamps[stamp.key] ? "kept" : "slipped")} width="24" height="24" alt="" decoding="async" /></span>}
+          <span>{stamp.ask(guess)}{result && <span className="tide-sr"> ({result.stamps[stamp.key] ? "kept" : "slipped"})</span>}</span>
+        </li>)}
+      </ol>
+      <p className="tide-note">Bram plays it safe: he never ends a wave in the water. His guess is what that careful tide banks.</p>
+      {result && <p className="tide-result">Today’s tide: {resultLine(result)}. Another sail is practice; the first tide each day is the one that counts.</p>}
+      <button type="button" className="exp-primary" aria-disabled={!canSail} aria-describedby={!canSail ? `${id}-busy` : undefined} onClick={() => { if (canSail) onSail(day); }}>{SAIL_ICON}{result ? "Sail again for practice" : "Sail today’s tide"}</button>
+      {!canSail && <p className="tide-note" id={`${id}-busy`}>{sailBlockedReason}</p>}
+    </div>
+    <button type="button" className="exp-text-button tide-open-log" onClick={() => onOpenLog(day)}>Open the tide log</button>
+  </section>;
+}
+
+function ClassicAsk({ today, earlier, sailBlockedReason, onSail, onOpenLog }: ClassicProps): JSX.Element {
   const id = useId();
   const canSail = sailBlockedReason === null;
   const { card, entry } = today;

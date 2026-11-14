@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { HarborSession, SeasonIntent } from "../expedition/harbor-port";
 import { dayLabel } from "../tide/cards";
+import { haulCount, resultLine, shelfGoods, type DayResult } from "../tide/run-day";
 import { GOODS, type Good } from "./pricing";
 import {
   GOOD_INDEX, PURSE_MAX, WISH_QTY_MAX, claimable, goodName, haulLine, postcardLines, quoteBuy, quoteLine, quoteSell, reasonLine, scoreLine,
@@ -55,9 +56,10 @@ function SeasonIcon({kind}:{kind:keyof typeof iconPaths}) {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={iconPaths[kind]}/></svg>;
 }
 
-export interface SeasonBramProps { session?:HarborSession;onOpenTide:()=>void;tideScope:string }
+/** `run` is today's tide-run result on a device harbor (null before today's tide). Leave it undefined where the three-ask court is the daily. */
+export interface SeasonBramProps { session?:HarborSession;onOpenTide:()=>void;tideScope:string;run?:DayResult|null }
 
-export default function SeasonBram({session,onOpenTide,tideScope}:SeasonBramProps) {
+export default function SeasonBram({session,onOpenTide,tideScope,run}:SeasonBramProps) {
   const saved=session?.state.mode==="saved"&&!!session.state.snapshot&&!!session.seasonAct;
   const accountId=saved?session!.state.snapshot!.binding.nearAccountId:null,pet=saved?session!.state.snapshot!.pets[0]?.token_id??null:null;
   const {live,loading,refresh}=useSeason(accountId,pet);
@@ -111,7 +113,7 @@ export default function SeasonBram({session,onOpenTide,tideScope}:SeasonBramProp
     </div>}
     <section className="ss-returns ss-haul" aria-label="Today’s haul">
       <h4>Today’s haul</h4>
-      <TodayHaul live={live} saved={saved} registered={registered} busy={busy} preview={preview} scope={tideScope} primary={tab==="shelf"||!saved||!pet} onOpenTide={onOpenTide} onPreview={onPreview} onPreviewBlock={onPreviewBlock} act={act}/>
+      <TodayHaul live={live} saved={saved} registered={registered} busy={busy} preview={preview} scope={tideScope} run={run} primary={tab==="shelf"||!saved||!pet} onOpenTide={onOpenTide} onPreview={onPreview} onPreviewBlock={onPreviewBlock} act={act}/>
     </section>
     {holdings&&<p className="ss-holdings"><img src={`${ART}purse.webp`} alt="" width="28" height="28"/><span><b>{holdings.shells}</b> Shells</span><span><b>{holdings.goods[0]}</b> glass</span><span><b>{holdings.goods[1]}</b> reed</span>{!saved&&<small>Sample haul of {haulLine(PREVIEW_SAMPLE)} for the preview</small>}</p>}
     <div className="ss-tabs" role="tablist" aria-label="Bram’s shelf" onKeyDown={keyTabs}>
@@ -188,8 +190,9 @@ export function Shelf({live,saved,registered,busy,preview,onPreview,onPreviewBlo
   </>;
 }
 
-export function TodayHaul({live,saved,registered,busy,preview,scope,primary=true,onOpenTide,onPreview,onPreviewBlock,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;scope:string;primary?:boolean;onOpenTide:()=>void;
+export function TodayHaul({live,saved,registered,busy,preview,scope,run,primary=true,onOpenTide,onPreview,onPreviewBlock,act}:{live:Live;saved:boolean;registered:boolean;busy:boolean;preview:PreviewMarket|null;scope:string;run?:DayResult|null;primary?:boolean;onOpenTide:()=>void;
   onPreview:(m:PreviewMarket,text:string,unsavedText?:string)=>void;onPreviewBlock:(words:string)=>void;act:Act}) {
+  if(run!==undefined&&!saved)return <RunHaul run={run} busy={busy} preview={preview} shelf={live.shelf} primary={primary} onOpenTide={onOpenTide} onPreview={onPreview} onPreviewBlock={onPreviewBlock}/>;
   const today=live.today;
   if(!today)return <p>Reading Bram’s ledger…</p>;
   const minted=saved?today.minted_today:null;
@@ -211,6 +214,24 @@ export function TodayHaul({live,saved,registered,busy,preview,scope,primary=true
       <span className="ss-info">{r.tool==="rope"?"Rope":"Lantern"} · {dayLabel(deviceDay(Date.parse(r.savedAt)))}</span>
     </div>)}
   </>;
+}
+
+/** A device harbor's daily haul is the tide run's: reed and glass up to three each, shelved on this device. Pearls stay with Mochi. */
+function RunHaul({run,busy,preview,shelf,primary,onOpenTide,onPreview,onPreviewBlock}:{run:DayResult|null;busy:boolean;preview:PreviewMarket|null;shelf:ShelfView|null;primary:boolean;onOpenTide:()=>void;
+  onPreview:(m:PreviewMarket,text:string,unsavedText?:string)=>void;onPreviewBlock:(words:string)=>void}) {
+  if(preview?.docked===deviceDay())return <p className="ss-docked" data-docked="true">Today’s haul is on Bram’s shelf. He takes one a day; bring another find tomorrow.</p>;
+  if(!run)return <><p>Sail today’s tide and bring something home. Bram shelves reed and glass, up to three of each a day.</p><button className="ss-link" onClick={onOpenTide}>See today’s tide</button></>;
+  const goods=shelfGoods(run),pearls=haulCount(run).pearl,keep=pearls?`Mochi keeps the ${pearls===1?"pearl":`${pearls} pearls`}.`:"";
+  if(!goods[0]&&!goods[1])return <p>Today’s tide brought no reed or glass.{keep&&` ${keep}`}</p>;
+  return <div className="ss-act ss-haul-offer">
+    <span className="ss-haul-art" aria-hidden="true">{GOODS.filter((_,g)=>goods[g]!>0).map(good=><span key={good}><img src={`${ART}${good}.webp`} alt="" width="56" height="56"/>×{goods[GOOD_INDEX[good]]}</span>)}</span>
+    <p>From today’s tide run: {resultLine(run)}.</p>
+    <Press className={primary?"ss-primary":undefined} off={busy} onPress={()=>{
+      const result=previewDock(preview??seedPreview(shelf),goods);
+      if("block"in result)onPreviewBlock(result.block);else onPreview(result.market,`Shelved on this device: ${haulLine(goods)}. Not recorded.`,`Shelved for this visit: ${haulLine(goods)}. Not recorded.`);
+    }}><SeasonIcon kind="shelf"/>Shelve {haulLine(goods)}</Press>
+    {keep&&<span className="ss-info">{keep}</span>}
+  </div>;
 }
 
 export function WishTab({live,saved,registered,hasPet,busy,act}:{live:Live;saved:boolean;registered:boolean;hasPet:boolean;busy:boolean;act:Act}) {

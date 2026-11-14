@@ -9,11 +9,14 @@ import { pageForCard, stampSheet } from "./pages";
 import TideChart from "./TideChart";
 import TideStamp from "./TideStamp";
 import AskIcon from "./AskIcon";
+import { allKept, type DayResult } from "./run-day";
+import { HaulRow, StampList } from "./RunStamps";
 import "./tide.css";
 
 export type LogPage =
   | { kind: "story"; id: string; title: string; subtitle: string; area: Area; tool: Tool; banked: readonly BankedItem[]; commands: readonly string[] }
-  | { kind: "tide"; day: number; card: TideCard; entry: TideEntry };
+  | { kind: "tide"; day: number; card: TideCard; entry: TideEntry }
+  | { kind: "run"; day: number; card: TideCard; result: DayResult };
 
 export default function TideLog({ pages, initialPage, reduced, sailBlockedReason, summary, onSail }: {
   pages: readonly LogPage[]; initialPage?: number; reduced: boolean; sailBlockedReason: string | null;
@@ -37,12 +40,12 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
   const sealed = stamps.filter(slot => slot.allThree).length;
   const frames = useMemo(() => page ? page.kind === "story"
     ? chartFrames({ area: page.area, tool: page.tool, banked: page.banked }, page.commands)
-    : chartFrames({ area: "beacon", tool: page.entry.tool, banked: [] }, page.entry.commands)
+    : page.kind === "tide" ? chartFrames({ area: "beacon", tool: page.entry.tool, banked: [] }, page.entry.commands) : null
     : null, [page]);
   const move = (by: number) => setSelected(Math.max(0, Math.min(last, index + by)));
 
   const title = page?.kind === "story" ? page.title : page?.card.name;
-  const pageKey = page?.kind === "story" ? `story:${page.id}` : `tide:${selectedDay}`;
+  const pageKey = page?.kind === "story" ? `story:${page.id}` : page?.kind === "run" ? `run:${page.day}` : `tide:${selectedDay}`;
   return <section ref={logRef} className="tide tide-log">
     <header className="tide-log-header">
       <img src={logCoverArt} width={92} height={92} alt="" decoding="async" />
@@ -71,14 +74,14 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
       <button type="button" aria-disabled={index === last} onClick={() => move(1)}>Later page</button>
     </div>
     <h4>{title}</h4>
-    <p className="tide-sub">{page.kind === "story" ? page.subtitle : `${dayLabel(page.day)}${page.entry.late ? " · sailed late" : ""}`}</p>
-    <div className={`tide-log-chart${page.kind === "tide" ? " tide-log-chart-stamped" : ""}`} style={{ "--tide-paper": `url(${logPageArt})` } as CSSProperties}>
+    <p className="tide-sub">{page.kind === "story" ? page.subtitle : page.kind === "run" ? `${dayLabel(page.day)} · tide run` : `${dayLabel(page.day)}${page.entry.late ? " · sailed late" : ""}`}</p>
+    {page.kind === "run" ? <RunPage key={pageKey} page={page}/> : <div className={`tide-log-chart${page.kind === "tide" ? " tide-log-chart-stamped" : ""}`} style={{ "--tide-paper": `url(${logPageArt})` } as CSSProperties}>
       {frames ? <TideChart key={pageKey} frames={frames} area={page.kind === "story" ? page.area : "beacon"} reduced={reduced} label={`Chart of Mochi’s route: ${title}, ${frames.length - 1} ${frames.length === 2 ? "decision" : "decisions"}.`} />
         : <p>This page’s route could not be redrawn on this device.</p>}
       {page.kind === "tide" && <span className="tide-page-stamp">
         <TideStamp key={pageKey} id={page.card.id} size={84} tilt={5} seal={page.entry.kept.every(Boolean)} label={CARD_PICTURE[page.card.id]} />
       </span>}
-    </div>
+    </div>}
     {page.kind === "tide" && <>
       <ol key={pageKey} className="tide-list">{page.card.asks.map((ask, i) => <li key={i} data-kept={String(page.entry.kept[i])}>
         <AskIcon ask={ask} tool={page.card.tool} size={28}/>
@@ -96,4 +99,20 @@ export default function TideLog({ pages, initialPage, reduced, sailBlockedReason
     </>}
     </>}
   </section>;
+}
+
+function RunPage({ page }: { page: Extract<LogPage, { kind: "run" }> }): JSX.Element {
+  const { card, result } = page;
+  return <>
+    <div className="tide-log-chart tide-log-run" style={{ "--tide-paper": `url(${logPageArt})` } as CSSProperties}>
+      <TideStamp id={card.id} size={84} tilt={5} seal={allKept(result)} label={CARD_PICTURE[card.id]} />
+      <div><HaulRow result={result}/><p className="tide-note">Reed and glass go to Bram’s shelf. Pearls stay with Mochi.</p></div>
+    </div>
+    <dl className="tide-facts">
+      <div><dt>Banked</dt><dd>{result.score}</dd></div>
+      <div><dt>Bram’s guess</dt><dd>{result.guess}</dd></div>
+      <div><dt>Splashes</dt><dd>{result.splashes}</dd></div>
+    </dl>
+    <StampList result={result}/>
+  </>;
 }

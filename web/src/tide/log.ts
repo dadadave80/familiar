@@ -1,6 +1,7 @@
 import type { Command, Tool } from "../expedition/types";
 import { cardStatus, replayRun } from "./asks";
 import { cardForDay } from "./cards";
+import { runSummary, type DayResult } from "./run-day";
 
 export interface TideEntry { day:number;cardId:string;tool:Tool;commands:Command[];kept:[boolean,boolean,boolean];decisions:number;outcome:"returned"|"rescued";late:boolean;attempts:number;savedAt:string }
 export const tideLogKey=(scope:string)=>`familiar.tide.log.v1:${scope}`;
@@ -56,6 +57,7 @@ export function readTidePending(scope:string,store?:Pick<Storage,"getItem">):Tid
 export function writeTidePending(scope:string,pending:TidePending|null,store?:Pick<Storage,"getItem"|"setItem"|"removeItem">):void {
   try{store=store??localStorage;if(pending===null)store.removeItem(pendingKey(scope));else store.setItem(pendingKey(scope),JSON.stringify({day:pending.day,late:pending.late}));}catch{}
 }
-export function tideSummary(entries:readonly TideEntry[]):{sailed:number;kept:number;allThree:number} {
-  return {sailed:entries.length,kept:entries.reduce((sum,entry)=>sum+entry.kept.filter(Boolean).length,0),allThree:entries.filter(entry=>entry.kept.every(Boolean)).length};
+export function tideSummary(entries:readonly TideEntry[],results:readonly DayResult[]=[]):{sailed:number;kept:number;allThree:number} {
+  const runs=runSummary(results);
+  return {sailed:entries.length+runs.sailed,kept:entries.reduce((sum,entry)=>sum+entry.kept.filter(Boolean).length,0)+runs.kept,allThree:entries.filter(entry=>entry.kept.every(Boolean)).length+runs.allThree};
 }
