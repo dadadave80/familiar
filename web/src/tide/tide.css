@@ -33,7 +33,7 @@
 .tide .tide-list [data-kept=false]{color:var(--ss-soft)}
 .tide .tide-earlier{border-top:1px solid var(--ss-line);margin-top:22px;padding-top:6px}
 .tide summary,.tide-chart summary{min-height:44px;padding:11px 0;cursor:pointer;font-weight:650;color:#2c4335}
-.tide button,.tide-chart button{min-width:44px;min-height:44px}
+.tide button,.tide-chart button{min-width:44px;min-height:44px;white-space:nowrap}
 .tide .tide-earlier>ul{list-style:none;margin:0;padding:0}
 .tide .tide-earlier>ul>li{display:flex;align-items:flex-start;gap:16px;padding:18px 4px;border-top:1px solid var(--ss-line)}
 .tide .tide-earlier>ul>li>div{min-width:0;flex:1}
@@ -66,6 +66,18 @@
 .tide-log-chart-stamped .tide-chart>svg{padding-top:78px}
 .tide-log-chart .tide-chart-controls{grid-area:2/1;margin-top:12px}
 .tide-page-stamp{position:absolute;top:-8px;right:3px;z-index:1}
+.tide .tide-haul{display:flex;align-items:center;gap:12px;margin:0 0 12px;font-size:14px;line-height:24px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tide-haul>span[aria-hidden]{display:inline-flex;align-items:center;gap:4px;flex:none}
+.tide .tide-haul img{display:block;width:24px;height:24px;object-fit:contain;flex:none}
+.tide .tide-log-run{display:flex;align-items:center;gap:18px;margin:16px 0;padding:20px 18px}
+.tide-log-run::before{content:"";position:absolute;inset:0;background:var(--tide-paper) center/100% 100% no-repeat;filter:drop-shadow(0 3px 8px #4a352030);pointer-events:none}
+.tide-log-run>*{position:relative}
+.tide-log-run>div{min-width:0}
+.tide .tide-log-run .tide-haul{gap:10px;margin-bottom:8px}
+.tide .tide-log-run .tide-note{margin:0}
+.tide .tide-log-run+.tide-facts{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tide .tide-log-run+.tide-facts div{display:block}
+.tide .tide-log-run+.tide-facts dd{margin-top:4px}
 .tide-home-stamp .tide-stamp[data-press]{animation:tide-stamp-arrive 360ms cubic-bezier(.16,1,.3,1)}
 @keyframes tide-stamp-arrive{from{transform:rotate(calc(var(--tilt) - 9deg)) scale(1.35)}to{transform:rotate(var(--tilt)) scale(1)}}
 .tide-home .tide-list[data-arrival] .tide-ask-mark{animation:tide-ask-press 260ms cubic-bezier(.16,1,.3,1) var(--ask-delay) backwards}
@@ -132,6 +144,7 @@
 .tide-home .tide-home-portrait{display:block;flex:0 0 72px;width:72px;height:72px;object-fit:contain;border-radius:50%}
 .exp-game .tide-home h2{font-size:clamp(34px,4vw,40px);line-height:1.1;text-wrap:balance;margin:0}
 .tide-home .tide-home-sub{font-size:16px;color:var(--ss-soft);font-variant-numeric:tabular-nums}
+.tide-home .tide-haul{justify-content:center}
 .tide-home .tide-home-note{font-size:14px;color:var(--ss-soft);max-width:45ch;margin:0 auto 22px}
 .exp-game .tide-home .tide-home-result>.exp-primary,.exp-game .tide-home .tide-home-result>.exp-secondary{display:flex;align-items:center;justify-content:center;width:100%;gap:10px;margin-top:12px}
 .tide-home[data-reduced] .tide-list[data-arrival] .tide-ask-mark{animation:none}
@@ -144,6 +157,8 @@
   .tide-home .tide-home-stamp{margin:0 0 12px}
   .tide-home .tide-list{font-size:13px;line-height:1.35;gap:8px;margin-bottom:0}
   .tide-home .tide-home-result{display:grid;gap:8px}
+  .tide-home .tide-home-result:has(>.tide-haul){gap:6px}
+  .tide-home .tide-haul{margin:0}
   .tide-home .tide-home-heading{position:static;gap:10px;margin:0;padding:0 36px 0 0}
   .exp-game .tide-home h2{font-size:clamp(24px,3.2vw,28px);line-height:1.08}
   .tide-home .tide-home-sub,.tide-home .tide-home-note,.tide-home .tide-note{font-size:13px;line-height:1.35;margin:0}

@@ -3,6 +3,7 @@ import { TURN_LIMIT } from "../expedition/types";
 import { replayRun, solve, startRun, stepRun } from "./asks";
 import { cardForDay, tideDay, TIDE_POOL } from "./cards";
 import { betterTide, readTideLog, readTidePending, recordTide, tideLogKey, tideSummary, writeTidePending } from "./log";
+import type { DayResult } from "./run-day";
 
 const memory=()=>{const m=new Map<string,string>();return {getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>{m.set(k,v);},removeItem:(k:string)=>{m.delete(k);}};};
 const day=20771,card=cardForDay(day),route=solve(card.tool,card.asks)!;
@@ -118,4 +119,13 @@ test("score comparison and summary count asks and complete cards",()=>{
   expect(betterTide({...all,decisions:8},all)).toBe(true);expect(betterTide({...all,decisions:10},all)).toBe(false);
   const store=memory(),entry=recordTide("p",input(),store).entry;
   expect(tideSummary([entry,{...entry,...one}])).toEqual({sailed:2,kept:4,allThree:1});expect(tideSummary([])).toEqual({sailed:0,kept:0,allThree:0});
+});
+
+test("summary adds run-day stamps to legacy asks without changing legacy totals", () => {
+  const entry = recordTide("p", input(), memory()).entry;
+  const result: DayResult = { day, score: 6, guess: 6, banked: ["reed"], stamps: { home: true, guess: true, dry: true }, splashes: 0 };
+  const partial = { ...result, day: day + 1, stamps: { home: true, guess: false, dry: false } };
+  expect(tideSummary([], [result, partial])).toEqual({ sailed: 2, kept: 4, allThree: 1 });
+  expect(tideSummary([entry], [result, partial])).toEqual({ sailed: 3, kept: 7, allThree: 2 });
+  expect(tideSummary([entry], [])).toEqual(tideSummary([entry]));
 });
