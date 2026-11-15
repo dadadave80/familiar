@@ -2,36 +2,113 @@
 
 ![Familiar: a little adventure with Mochi. A felt-miniature harbor at sunset: Mochi, an orange kitten in a red bandana, leaps between spiral stepping stones past a teal wave and a glowing wind-moth, while the stone-crab Tidekeeper watches and Bram the badger waves from the quay below the lighthouse.](docs/readme-banner.jpg)
 
-**Play it:** https://familiar-two.vercel.app (no account needed). Built at NEAR HACKATHON, November 2026; every commit is inside the hackathon window (first commit 2026-11-05).
+**[Play Familiar in your browser](https://familiar-two.vercel.app).** No wallet, no account, no download.
 
-Familiar is a cozy turn-based puzzle game for phones and desktop browsers. You guide Mochi, a kitten, across the tide to bring the harbor's Beacon Lens home and relight the beacon. Onchain games usually ask for a wallet before they offer a game. Familiar plays first, and signing in later makes Mochi her own keyless NEAR testnet account.
+Familiar is a cozy tide-puzzle game where the companion you guide is her own blockchain account. You help Mochi, a kitten, cross a rising tide to bring home the lens of Wren’s beacon. The three-chapter story plays with no sign-in. Sign in with an email, and your saved harbor’s Mochi is a NEAR testnet account with no access keys.
 
-## Try it
+The idea is a virtual pet you do not rent from a database. Mochi has her own address, papers that name you as her owner, and a purse the shop keeps in her name. One command checks those claims against the live chain.
 
-1. Open https://familiar-two.vercel.app on a phone or in a narrow browser window. You see the introduction.
-2. Start the game and choose **Help Mochi**. You see the first chapter's goal: "Bring the Beacon Lens home from the left shell."
-3. Swipe, or tap a glowing stone, to move. Each step moves the water, and a wave lands after every third move.
-4. Step onto the lens, carry it to the center dock, choose **Finish and return**, then fit the lens. The beacon lights.
-5. In a clone, run `make judge`. It reads live testnet state over public RPC with no keys and checks the claims under [NEAR in Familiar](#near-in-familiar).
+Built solo at NEAR HACKATHON, November 2026, for the Games With Real Economies track.
 
-## Details
+## Why Familiar is different
 
-A cozy turn-based Phaser puzzle adventure: guide Mochi as a volunteer harbor helper and restore the light. The introduction at `/` leads to `/outing/`. Three device story chapters recover the Beacon Lens, Signal Vane and wind-moth. Chapter 1 has eight calm waves; the later chapters have twelve. Each step or wait spends one move; a wave lands after every third move. Mochi collects finds by stepping onto them and banks cargo on arrival at the center dock.
+The games track judges the game loop, not the token, with a bonus when players never notice the chain. Familiar is built to that standard, and each point names its check:
 
-The harbor prioritizes an open outing or unfinished filing, then a recovered repair, then the next story chapter. Once the beacon is lit, **Today’s tide · optional** opens daily preparation alongside the remaining story. The first finished daily outing sets that day’s score and stamps, including a zero-score, rescued or tide-turned outing; later sails are practice. Pausing leaves the outing open on its original day. Story outings use no daily result. The Home sheet and Log keep daily results; Bram shelves eligible reed and glass. Bell/Reed Steps, the later shore-bell discovery and optional courts remain on the Chart under their existing discovery requirements. Saved harbors keep the Tidekeeper’s three-ask court; each selected activity teaches its own rules and tools.
+- **The game comes first**: The story runs in a browser tab and saves on your device. Check it in [the live game](https://familiar-two.vercel.app).
+- **Your companion is an account**: Each pet is a NEAR sub-account with no access keys, running code pinned by hash. A non-fungible token (NFT) on the root contract names her owner. Check it with `make judge`.
+- **The contract is the referee**: The contract replays the Tidekeeper’s court step by step. It accepts only a route that brings Mochi home, and it grants 12 Shells once per account. Check it with `make break`.
+- **The shop prices itself**: Bram’s shelf prices come from an integer formula inside the season contract, with no off-chain quote worker. Check the deployed code and current prices with `make judge`.
+- **Mochi shops for herself**: A wish is a standing order with a purse of up to 24 Shells held for the pet. The contract confirms on the root that you own her before it takes the purse.
+- **Nothing cashes out**: Shells are bound. No deposit buys them and nothing redeems them, so the economy rewards play.
+- **The limits are stated**: Admin keys, key custody and what replay cannot prove are listed under [What runs on NEAR](#what-runs-on-near).
 
-**Carried** means in Mochi’s pack; **banked safe** means secured for this outing. Banking does not finish it. **Finish and return** ends it without spending a move, then files the return; **filed in the harbor** means that save succeeded. A filed lens or vane still needs deliberate **installation**. Story prizes add no score. A failed filing keeps the finished outing available for retry, including when the prize write succeeded but closing the outing failed.
+## Try the game
 
-## Run
+These steps take you from the first move to the on-chain checks. Each step says what you do and what you see:
+
+1. Open [the live game](https://familiar-two.vercel.app) on a phone or in a narrow browser window. You see the introduction.
+2. Start the game and choose **Help Mochi**. You see the first goal: “Bring the Beacon Lens home from the left shell.”
+3. Swipe, or tap a glowing stone, to move. The water shifts with each move, and a wave arrives after every third move.
+4. Step onto the lens, bring it to the center dock, choose **Finish and return**, then fit the lens. The beacon lights.
+5. Clone the repository, run `bun install --frozen-lockfile`, then run `make judge`. You see each claim checked against live testnet state, ending with `All checks passed.`
+6. Run `make break` with Rust installed. You see the contracts and signer refuse a doctored court, a second Shell grant and out-of-scope signing.
+
+## How the game plays
+
+Familiar is a turn-based puzzle about reading the water. These rules cover the tide run:
+
+- **Moves and waves**: Each step or wait spends one move. A wave arrives after every third move. Chapter 1 has eight calm waves, and later chapters have twelve.
+- **Finds and cargo**: Mochi collects a find by stepping onto it. Cargo is banked when she arrives at the center dock.
+- **Three chapters**: You recover the Beacon Lens, the Signal Vane and the wind-moth. Story prizes add no score.
+- **Today’s tide**: Once the beacon is lit, an optional daily outing opens beside the remaining story. Your first finished outing sets that day’s score and stamps. Later sails are practice.
+- **The cast**: Mochi the kitten, Bram the badger who keeps the shelf, the stone-crab Tidekeeper, and Wren, keeper of the light.
+
+The game uses four words with exact meanings:
+
+- **Carried**: The find is in Mochi’s pack.
+- **Banked safe**: The cargo is secured for this outing. Banking does not finish the outing.
+- **Filed in the harbor**: **Finish and return** ended the outing without spending a move, and the save succeeded.
+- **Installed**: You fitted a filed lens or vane. Installation is a deliberate step.
+
+The harbor offers an open outing or unfinished filing first, then a recovered repair, then the next chapter. A failed filing keeps the finished outing available for retry. A paused outing stays open on its original day. Saved harbors keep the Tidekeeper’s three-ask court, and the Chart holds the Bell and Reed Steps and optional courts.
+
+## What runs on NEAR
+
+The live stack is three testnet contracts: root `familiar-game.testnet`, items `items.familiar-game.testnet` and season `season.familiar-game.testnet`. `make judge` reads current chain state over a public remote procedure call (RPC) endpoint with no keys. `make break` runs the source rules.
+
+| Claim | What is true on testnet | Check | Limit |
+| --- | --- | --- | --- |
+| Mochi is a real account | Every pet the root lists (`nft_tokens`) is a sub-account with no access keys, running global code pinned by hash (`get_config.pet_code_hash`). Its NFT papers on the root name the owner | `make judge` | Root, items and season keep admin keys, so the whole stack is not immutable |
+| The court is refereed | In source, `tidebound_claim` replays the submitted steps and accepts only a court that brings Mochi home. 12 Shells are granted once per account. On chain, the test player’s accepted claims and Shells match that | `make break` (rule), `make judge` (state) | Replay proves the steps are legal, not that a person played them. One pet passed between accounts can earn each its own Shells |
+| Bram’s shelf prices itself | The season account runs the reviewed build. It keeps Bram’s till and shelf, prices every unit on chain and holds one purse per pet for Mochi’s wish | `make judge` (code hash, till and shelf), `make break` (refusals) | `make judge` reads state only and claims no trade |
+| Your key | Your account key is held by your Privy wallet. Familiar’s signer prepares only named harbor actions | `make judge` lists the key’s permission. Custody and the method limit come from source (`privy-adapter.ts`, `sign.ts`), checked by `make break` | The key is full-access. The signer enforces the method limit, not the chain |
+
+### How Bram prices the shelf
+
+Bram’s prices are integer math in `contracts/season/src/pricing.rs`, mirrored exactly by `web/src/season/pricing.ts`:
+
+```text
+price   = base × clamp((target / max(stock, 1))^0.7, 0.5, 3.0) × (1 + 0.15 × heat)
+buyback = 0.8 × price
+```
+
+A thin shelf raises a price to at most three times its base, and an overfull shelf lowers it to half. Recent trading adds heat, which halves at each day boundary. Bram’s till refills by 60 Shells a day up to 300, and that refill is the only source of season Shells. Goods come from the opening shelf and the daily court, which the contract replays before it mints glass or reed.
+
+Each trade names a `max_price` or `min_price`, so a trade never fills at a worse price than you named. Each account trades up to 20 units of a good per day. On 2026-11-14, `make judge` reported the till at 289 Shells, glass at 41 units priced 8 and reed at 42 units priced 4.
+
+### Limits you should know
+
+Familiar states what its chain claims do not cover:
+
+- **Admin keys remain**: Root, items and season each keep a full-access admin key.
+- **Deployed root differs from HEAD**: The deployed root code differs from the build recorded in `docs/FAMILIAR-GAMEPLAY.json`. Source tests describe HEAD.
+- **The tide run is local**: The tide run saves on your device. No contract referees it.
+- **The economy is finite and bound**: The H1 rules allow one protected craft credit, one salvage, one personal 12-Shell commission and one optional 12-Shell finish per token. Shells have no cash redemption.
+- **The sealed note is optional**: Mochi’s note sends an end-to-end encrypted request to NEAR AI. It stays off unless `VITE_SEALED_NOTE_ENABLED` and the server key are set.
+- **Testnet only**: Nothing in Familiar runs on mainnet or spends real funds.
+
+## Run Familiar locally
+
+You need [Bun](https://bun.sh) 1.4 to run the game, and no account for the device harbor:
 
 ```sh
 bun install --frozen-lockfile
 make dev
 ```
 
-No account is needed for the device preview. On touch screens, swipe once to move or tap a glowing neighboring platform. Tap **Wait** beside Mochi to wait and **Finish** at the Tide Run dock to finish the outing. On desktop, use WASD/arrows, Space to wait, R to finish at the dock and I for the free guide while the game has focus. Tide Run collects finds and banks cargo when Mochi steps onto them; the three-ask courts also use E for nearby objects and retain their Home action. Mouse targeting still works; optional **Button controls** expose the same actions. Sound is opt-in; reduced motion keeps the same outcomes. Device saves stay on that browser and never silently merge into a signed-in harbor.
+`make dev` starts the Vite server and prints the local address. The controls match the live game:
 
-## Commands
+- **Touch**: Swipe once to move, or tap a glowing neighboring platform. Tap **Wait** beside Mochi to wait, and **Finish** at the dock to finish the outing.
+- **Keyboard**: Use WASD or the arrow keys to move, Space to wait, R to finish at the dock and I for the free guide.
+- **Courts**: The three-ask courts also use E for nearby objects and keep their Home action.
+- **Buttons and mouse**: Mouse targeting works, and **Button controls** expose the same actions as buttons.
+- **Comfort**: Sound is opt-in. Reduced motion keeps the same outcomes.
+
+Device saves stay on that browser. They never merge silently into a signed-in harbor.
+
+## Commands that check the project
+
+Each `make` target wraps a `bun run` or `cargo` command, and the underlying commands still work:
 
 | Command | Purpose |
 | --- | --- |
@@ -39,40 +116,53 @@ No account is needed for the device preview. On touch screens, swipe once to mov
 | `make typecheck` | TypeScript check |
 | `make build` | TypeScript check and Vite build |
 | `make check` | Tests and build |
-| `make browser` | Chromium/WebKit route and save checks |
-| `make evidence` | Offline recorded signature/receipt checks |
-| `make judge` | Live, read-only testnet checks of the claims below; public RPC, no keys |
+| `make browser` | Chromium and WebKit route and save checks |
+| `make evidence` | Offline checks of recorded signatures and receipts |
+| `make judge` | Live, read-only testnet checks of the claims above, over public RPC with no keys |
 | `make break` | Contract and signer refusals: doctored court, Shells twice, out-of-scope signing |
 
-Make is a shortcut layer; the underlying `bun run` commands still work. Browser checks require `bunx playwright install chromium webkit`. Full outing checks use `bun scripts/test-expedition-browser.ts --only=390` and `bun scripts/test-passage-browser.ts`. Real-Wasm sandbox checks require `bun run build:contracts`, then `bun run test:tidebound-sandbox` or `bun run test:sandbox`; default Rust tests leave these integrations ignored.
+Browser checks require `bunx playwright install chromium webkit`. Full outing checks use `bun scripts/test-expedition-browser.ts --only=390` and `bun scripts/test-passage-browser.ts`. Real-Wasm sandbox checks require `bun run build:contracts`, then `bun run test:tidebound-sandbox` or `bun run test:sandbox`. Default Rust tests leave these integrations ignored.
 
-## NEAR in Familiar
+## What was built during the hackathon
 
-Live stack: root `familiar-game.testnet`, items `items.familiar-game.testnet`. `make judge` reads current chain state over public RPC with no keys; `make break` runs the source rules. The deployed root code differs from the HEAD build recorded in `docs/FAMILIAR-GAMEPLAY.json`, so source tests describe HEAD, not necessarily the deployed bytes.
+No code in this repository predates the hackathon window:
 
-| Claim | What is true on testnet | Check | Limit |
-| --- | --- | --- | --- |
-| Mochi is a real account | Every pet the root lists (`nft_tokens`) is a sub-account with no access keys, running global code pinned by hash (`get_config.pet_code_hash`); its NFT papers on the root name the owner | `make judge` | Root and Items still have admin keys, so the whole stack is not immutable |
-| The court is refereed | In source, `tidebound_claim` replays the submitted steps and accepts only a court that brings Mochi home, and 12 Shells are granted once per account; on chain, the test player's accepted claims and Shells match that | `make break` (rule), `make judge` (state) | Replay proves the steps are legal, not that a person played them; one pet passed between accounts can earn each its own Shells |
-| Your key | Your account key is held by your Privy wallet; Familiar's signer prepares only named harbor actions | `make judge` lists the key's permission; custody and the method limit come from source (`privy-adapter.ts`, `sign.ts`), checked by `make break` | The key is full-access; the method limit is enforced by the signer, not by the chain |
+- **History**: The first commit is dated 2026-11-05, so the [commit history](https://github.com/dadadave80/familiar/commits/main) shows the whole build.
+- **Libraries**: Phaser 3, React 19, Vite 8, TypeScript, Bun, Hono, near-api-js, borsh, Privy React Auth, the NEAR AI inference SDK, FastAuth packages, near-sdk for the Rust contracts and Playwright for browser checks. Fonts are Figtree and Fraunces from Fontsource.
+- **AI assistance**: AI coding agents (Claude Code and Codex) wrote code under the author’s direction and review. [AGENTS.md](AGENTS.md) holds the rules they follow.
+- **Artwork**: Masters, generator inputs and provenance records live in `web/assets/source/` and `web/public/assets/`. The [regeneration guide](web/assets/source/README.md) names the generated pieces.
+- **License**: Code is MIT licensed in [LICENSE](LICENSE). Artwork provenance and dependency and font licenses remain with their assets.
 
-## Source
+## Where the code lives
+
+The stack is React, Vite and Phaser in the browser, Bun and TypeScript for services, and Rust for contracts:
 
 - `web/src/expedition/`: rules, Phaser presentation, Mochi, sound and harbor.
-- `web/src/run/`: the tide run (`tide_run_v1`): rules, Bram's guess, the story chapters and the device tide book.
-- `web/src/tide/`: Today's tide, the Home sheet, Bram's tide log and the Tidekeeper's three-ask court with its solver.
-- `web/src/season/`: Bram's shelf, till and Mochi's wish over the testnet `season` contract.
+- `web/src/run/`: the tide run (`tide_run_v1`), with its rules, Bram’s guess, the story chapters and the device tide book.
+- `web/src/tide/`: Today’s tide, the Home sheet, Bram’s tide log and the Tidekeeper’s three-ask court with its solver.
+- `web/src/season/`: Bram’s shelf, till and Mochi’s wish over the testnet `season` contract.
 - `web/src/account/`, `web/src/tidebound/`: recoverable identity, original transactions and item provenance.
 - `web/src/compatibility/`: frozen historical return validation.
-- `contracts/`, `services/relayer/`: Rust testnet contracts and account HTTP service.
-- `web/assets/source/`: art masters and generator inputs; [regeneration guide](web/assets/source/README.md).
+- `contracts/`, `services/relayer/`: Rust testnet contracts and the account HTTP service.
+- `web/assets/source/`: art masters and generator inputs.
 
-The stack remains React/Vite/Phaser, Bun/TypeScript and Rust. The finite H1 economy preserves one protected craft credit, one salvage, one personal 12-Shell commission and one optional 12-Shell finish per token. Bound Shells have no cash redemption. Transfer does not transfer maker achievement; unknown outcomes preserve the original request.
+Transfer does not transfer the maker’s achievement, and unknown transaction outcomes preserve the original request.
 
-## Status and evidence
+## Status, evidence and open gaps
 
-[JUDGES.md](JUDGES.md) lists current reproducible claims. [PROGRESS.md](PROGRESS.md) records the latest verified changes. [Architecture](docs/ARCHITECTURE.md), [threat model](docs/THREAT-MODEL.md) and [archived reports](docs/ARCHIVED-REPORTS.md) explain the boundaries. Only two report JSONs remain: recorded gameplay evidence for regressions and original deployment evidence for isolation guards.
+These documents hold the evidence behind this README:
 
-The GitHub workflow checks PRs to `main` and pushes to `main`. Merge through a PR after the required “Tests, build and evidence” check passes; protected `main` rejects direct and force pushes. Vercel’s Git integration builds production from `main`; PR branches get a device-only preview without account functions. Production builds reuse the existing encrypted account-service environment. `bun run build:release` writes a Build Output API artifact: production includes the Node 24 account endpoints; other environments build a device-only preview. It never signs or sends a game transaction. `bun run package:tidebound-review <existing-reviewed-release>` prepares a local artifact without publishing. Credentials and recovery journals stay in ignored private configuration; ordinary exploration requires no blockchain transaction.
+- [JUDGES.md](JUDGES.md) lists the current reproducible claims.
+- [PROGRESS.md](PROGRESS.md) records the latest verified changes.
+- [Architecture](docs/ARCHITECTURE.md), the [threat model](docs/THREAT-MODEL.md) and the [archived reports](docs/ARCHIVED-REPORTS.md) explain the boundaries.
 
-Code is MIT licensed; artwork provenance and dependency/font licenses remain with their assets. The existing large Phaser bundle warning persists. Physical-phone audio/performance, full earned-state recovery across two physical devices and independent human enjoyment remain unverified.
+The GitHub workflow checks pull requests to `main` and pushes to `main`. Protected `main` rejects direct and force pushes, and merges wait for the “Tests, build and evidence” check. Vercel’s Git integration builds production from `main`. Pull request branches get a device-only preview without account functions.
+
+`bun run build:release` writes a Build Output API artifact and never signs or sends a game transaction. Production includes the Node 24 account endpoints, and other environments build a device-only preview. Credentials and recovery journals stay in ignored private configuration. Ordinary exploration requires no blockchain transaction.
+
+These gaps remain open:
+
+- Audio and performance on a physical phone are unverified.
+- Full earned-state recovery across two physical devices is unverified.
+- Independent human enjoyment is unverified.
+- The large Phaser bundle warning persists.
