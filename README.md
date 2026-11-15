@@ -128,6 +128,8 @@ Browser checks require `bunx playwright install chromium webkit`. Full outing ch
 No code in this repository predates the hackathon window:
 
 - **History**: The first commit is dated 2026-11-05, so the [commit history](https://github.com/dadadave80/familiar/commits/main) shows the whole build.
+- **Submission tag**: The [`hackathon-submission` tag](https://github.com/dadadave80/familiar/tree/hackathon-submission) marks `main` as it stood at the deadline, 2026-11-14 23:59 UTC.
+- **Later changes**: The [comparison from that tag to `main`](https://github.com/dadadave80/familiar/compare/hackathon-submission...main) shows every change made after the deadline.
 - **Libraries**: Phaser 3, React 19, Vite 8, TypeScript, Bun, Hono, near-api-js, borsh, Privy React Auth, the NEAR AI inference SDK, FastAuth packages, near-sdk for the Rust contracts and Playwright for browser checks. Fonts are Figtree and Fraunces from Fontsource.
 - **AI assistance**: AI coding agents (Claude Code and Codex) wrote code under the author’s direction and review. [AGENTS.md](AGENTS.md) holds the rules they follow.
 - **Artwork**: Masters, generator inputs and provenance records live in `web/assets/source/` and `web/public/assets/`. The [regeneration guide](web/assets/source/README.md) names the generated pieces.
