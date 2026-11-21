@@ -1,0 +1,609 @@
+{
+  "purpose": "Keep Wren’s Light opening; seven authored portrait and landscape pairs with responsive desktop delivery",
+  "encoder": "ImageMagick Lanczos proportional resize + metadata strip; cwebp quality87 method6 sharp_yuv",
+  "budget": {
+    "portrait": {
+      "width": 780,
+      "height": 1688,
+      "maxBytes": 1250000,
+      "firstMaxBytes": 200000
+    },
+    "landscape": {
+      "width": 1728,
+      "height": 1080,
+      "maxBytes": 1800000,
+      "firstMaxBytes": 300000
+    },
+    "landscapeRetina": {
+      "width": 2880,
+      "height": 1800,
+      "maxBytes": 3200000,
+      "firstMaxBytes": 500000
+    },
+    "inlinePostersMaxBytes": 10000,
+    "note": "Portrait is unchanged at 2x the 390x844 phone. Landscape candidates are 1728 and 2880 pixels wide; the latter is resampled from the approved 2304px master, not newly generated detail. Each delivery tier has its own budget; rotating or resizing may fetch more than one tier. Native outputs and source masters remain unchanged."
+  },
+  "totalBytes": 4975080,
+  "bytesByOrientation": {
+    "portrait": 1035864,
+    "landscape": 3939216
+  },
+  "bytesByDelivery": {
+    "portrait": 1035864,
+    "landscape": 1399252,
+    "landscapeRetina": 2539964
+  },
+  "inlinePosters": {
+    "module": "web/src/opening/wrens-light/opening-placeholder.ts",
+    "moduleBytes": 6573,
+    "files": [
+      {
+        "orientation": "portrait",
+        "source": "web/assets/source/opening/mochi-quay.png",
+        "sourceSha256": "00e75b1464b4bbbecc40b6e1064121a8df3df74f8a1ddbce8a8cd237e883f760",
+        "sha256": "b9bb0d687802766b7ad6098dc719649db154d39b40c2b0d97f6f2d30804018c3",
+        "bytes": 1274,
+        "dataUriBytes": 1723,
+        "width": 60,
+        "height": 130
+      },
+      {
+        "orientation": "landscape",
+        "source": "web/assets/source/opening/mochi-quay-landscape.png",
+        "sourceSha256": "356ae00ca91d9147ce02bd294879939a2744ec615069079bd70200e300ed97c5",
+        "sha256": "cd996d96a1e2c86af398a654e56d2e17ff271a8d0b37ef12956077c4c28a5345",
+        "bytes": 1316,
+        "dataUriBytes": 1779,
+        "width": 96,
+        "height": 60
+      },
+      {
+        "orientation": "portrait",
+        "source": "web/assets/source/opening/storm.png",
+        "sourceSha256": "06571cc51e50d426045cec796742535395ae96f610bc6545f91071517be378f4",
+        "sha256": "d226fef0cc4b6ecb009f3958bee8a52bbdb3ecc7c94be25569b46a1f28fd80c0",
+        "bytes": 1170,
+        "dataUriBytes": 1583,
+        "width": 60,
+        "height": 130
+      },
+      {
+        "orientation": "landscape",
+        "source": "web/assets/source/opening/storm-landscape.png",
+        "sourceSha256": "6bb8efb394000432004c255da16fc613fcf12a6734e6b0d4f7dd78e5eee5dbcf",
+        "sha256": "eb59c7255d55fc711ef58b97cdcf0bb8ec3cd9f900db762c134a178663d9d288",
+        "bytes": 896,
+        "dataUriBytes": 1219,
+        "width": 96,
+        "height": 60
+      }
+    ]
+  },
+  "files": [
+    {
+      "source": "web/assets/source/opening/beacon-dark.png",
+      "output": "web/public/assets/opening/beacon-dark.webp",
+      "orientation": "portrait",
+      "tier": "portrait",
+      "sourceSha256": "bb5dc1091803367023bfb1be2ca0278a3846056511402c05240a66817e92b301",
+      "sha256": "dd0f4527d0cfb3ad9becbb6eadbfdffd3a625d3db2b795afcf8691d1cc14cf53",
+      "sourceBytes": 2942147,
+      "bytes": 147218,
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "outputSize": {
+        "width": 780,
+        "height": 1688
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark.png",
+        "sha256": "8fb9f2798bb795343fa9dd4e987dc7adee0f7a8cb6841720009a0ccd46672aa4",
+        "width": 852,
+        "height": 1846,
+        "bytes": 2098382
+      }
+    },
+    {
+      "source": "web/assets/source/opening/beacon-dark-landscape.png",
+      "output": "web/public/assets/opening/beacon-dark-landscape.webp",
+      "orientation": "landscape",
+      "tier": "landscape",
+      "sourceSha256": "b79e1c684d6e78325020e1df607b69b514532e548b4529a9fd6f1e1063596f3d",
+      "sha256": "379b5ed44e3f47f954aa131a7b383f2a31f3a0624ba99c7321bc419b327500dd",
+      "sourceBytes": 3088467,
+      "bytes": 161958,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 1728,
+        "height": 1080
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark-landscape.png",
+        "sha256": "ab91a3b7a407ed6881bfd468b7c28cf2b777de62bb932ee2c7272bb726bd1d67",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2021773
+      }
+    },
+    {
+      "source": "web/assets/source/opening/beacon-dark-landscape.png",
+      "output": "web/public/assets/opening/beacon-dark-landscape-2880.webp",
+      "orientation": "landscape",
+      "tier": "landscapeRetina",
+      "sourceSha256": "b79e1c684d6e78325020e1df607b69b514532e548b4529a9fd6f1e1063596f3d",
+      "sha256": "cfbe66c75b6780ed6470ec111c4bd5b0b2ea4e46f3ba0b708bc7a3dfaa13671d",
+      "sourceBytes": 3088467,
+      "bytes": 304218,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 2880,
+        "height": 1800
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark-landscape.png",
+        "sha256": "ab91a3b7a407ed6881bfd468b7c28cf2b777de62bb932ee2c7272bb726bd1d67",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2021773
+      }
+    },
+    {
+      "source": "web/assets/source/opening/boats-home.png",
+      "output": "web/public/assets/opening/boats-home.webp",
+      "orientation": "portrait",
+      "tier": "portrait",
+      "sourceSha256": "8b403856f058f5dd25d9b515b758ead9f2640f106dd41f17ea41dd08e4423841",
+      "sha256": "d0c13ea762a83492adfbf211dca8349c2083bb6702c3b802a7bc89c5451c65af",
+      "sourceBytes": 2773635,
+      "bytes": 130534,
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "outputSize": {
+        "width": 780,
+        "height": 1688
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home.png",
+        "sha256": "54be661bcc9416331b23b9ad033911d3e254857c0aa1e8c1e3c1cd62fd199b07",
+        "width": 852,
+        "height": 1846,
+        "bytes": 1965376
+      }
+    },
+    {
+      "source": "web/assets/source/opening/boats-home-landscape.png",
+      "output": "web/public/assets/opening/boats-home-landscape.webp",
+      "orientation": "landscape",
+      "tier": "landscape",
+      "sourceSha256": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba",
+      "sha256": "c81403d5f5b130041b1b9e048da48a94a149a531a88810cbebee237ddeb59f4d",
+      "sourceBytes": 2966497,
+      "bytes": 150112,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 1728,
+        "height": 1080
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home-landscape.png",
+        "sha256": "bdcb5b80a1fb6bec81c60e189d5c5f31d3fc7c2d01eb23d192aaa76a4f008f67",
+        "width": 1586,
+        "height": 992,
+        "bytes": 1943481
+      }
+    },
+    {
+      "source": "web/assets/source/opening/boats-home-landscape.png",
+      "output": "web/public/assets/opening/boats-home-landscape-2880.webp",
+      "orientation": "landscape",
+      "tier": "landscapeRetina",
+      "sourceSha256": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba",
+      "sha256": "01d1e240165bfbf7b10084937eeaaed06679b582f4ffcd166f9169d0f55fe0d0",
+      "sourceBytes": 2966497,
+      "bytes": 269048,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 2880,
+        "height": 1800
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home-landscape.png",
+        "sha256": "bdcb5b80a1fb6bec81c60e189d5c5f31d3fc7c2d01eb23d192aaa76a4f008f67",
+        "width": 1586,
+        "height": 992,
+        "bytes": 1943481
+      }
+    },
+    {
+      "source": "web/assets/source/opening/harbor-dawn.png",
+      "output": "web/public/assets/opening/harbor-dawn.webp",
+      "orientation": "portrait",
+      "tier": "portrait",
+      "sourceSha256": "7de5a0da3cefd24afbc4ad0fe70825e5050ee0547c5ad2f162e27a367b310b6b",
+      "sha256": "b4914ee3b07db3573da6bfbd36762d6e805fad8d7e6c59f2a4af48cc47557fd4",
+      "sourceBytes": 2856906,
+      "bytes": 136722,
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "outputSize": {
+        "width": 780,
+        "height": 1688
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn.png",
+        "sha256": "44f4487a44c1fe7a1b46a539ccfc53d3d73427cba59cceb0a32d27dedd1683f6",
+        "width": 852,
+        "height": 1846,
+        "bytes": 2064594
+      }
+    },
+    {
+      "source": "web/assets/source/opening/harbor-dawn-landscape.png",
+      "output": "web/public/assets/opening/harbor-dawn-landscape.webp",
+      "orientation": "landscape",
+      "tier": "landscape",
+      "sourceSha256": "4bdac4da6e9b308b1d1d82a003fbf9c4a13a376515243042ee9e94cd5829587a",
+      "sha256": "32d003f5f1ca55c06d1b15e5700383a0b526eaba458123cee8182e491bbba1a5",
+      "sourceBytes": 3122260,
+      "bytes": 167334,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 1728,
+        "height": 1080
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn-landscape.png",
+        "sha256": "173a90806f2a29171979c0ed5bd4c2b5cada5f2c0e7690027c96658bc39d69d9",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2057307
+      }
+    },
+    {
+      "source": "web/assets/source/opening/harbor-dawn-landscape.png",
+      "output": "web/public/assets/opening/harbor-dawn-landscape-2880.webp",
+      "orientation": "landscape",
+      "tier": "landscapeRetina",
+      "sourceSha256": "4bdac4da6e9b308b1d1d82a003fbf9c4a13a376515243042ee9e94cd5829587a",
+      "sha256": "2bd741c8d006ee2a3ea3035cd575d969197af02b64f2e97c8f8f44768796b3b8",
+      "sourceBytes": 3122260,
+      "bytes": 308574,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 2880,
+        "height": 1800
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn-landscape.png",
+        "sha256": "173a90806f2a29171979c0ed5bd4c2b5cada5f2c0e7690027c96658bc39d69d9",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2057307
+      }
+    },
+    {
+      "source": "web/assets/source/opening/mochi-quay.png",
+      "output": "web/public/assets/opening/mochi-quay.webp",
+      "orientation": "portrait",
+      "tier": "portrait",
+      "sourceSha256": "00e75b1464b4bbbecc40b6e1064121a8df3df74f8a1ddbce8a8cd237e883f760",
+      "sha256": "32a6b19c24e609013b9bc3f8de4789edecef9bfe5597bcf0ddf48ba9466d3b15",
+      "sourceBytes": 3395868,
+      "bytes": 199102,
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "outputSize": {
+        "width": 780,
+        "height": 1688
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay.png",
+        "sha256": "50279475395149dd3838cc9f92da387c1e1cece19912347a8fdd4e5f2364efde",
+        "width": 852,
+        "height": 1846,
+        "bytes": 2401491
+      }
+    },
+    {
+      "source": "web/assets/source/opening/mochi-quay-landscape.png",
+      "output": "web/public/assets/opening/mochi-quay-landscape.webp",
+      "orientation": "landscape",
+      "tier": "landscape",
+      "sourceSha256": "356ae00ca91d9147ce02bd294879939a2744ec615069079bd70200e300ed97c5",
+      "sha256": "a2605b9648d82e407ac7290e1312deabcda2d8b026750a4c98b15f60474ab076",
+      "sourceBytes": 4314063,
+      "bytes": 333838,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 1728,
+        "height": 1080
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay-landscape.png",
+        "sha256": "9cb9de8e64629b9972568b52c278fe835574f7dac5909ff09bf6f9afbdf0b265",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2716810
+      }
+    },
+    {
+      "source": "web/assets/source/opening/mochi-quay-landscape.png",
+      "output": "web/public/assets/opening/mochi-quay-landscape-2880.webp",
+      "orientation": "landscape",
+      "tier": "landscapeRetina",
+      "sourceSha256": "356ae00ca91d9147ce02bd294879939a2744ec615069079bd70200e300ed97c5",
+      "sha256": "6f0e79667653888d3a3e70fc753016510e14116dcafc0850201dd99ac75d8475",
+      "sourceBytes": 4314063,
+      "bytes": 569410,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 2880,
+        "height": 1800
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay-landscape.png",
+        "sha256": "9cb9de8e64629b9972568b52c278fe835574f7dac5909ff09bf6f9afbdf0b265",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2716810
+      }
+    },
+    {
+      "source": "web/assets/source/opening/rowing-out.png",
+      "output": "web/public/assets/opening/rowing-out.webp",
+      "orientation": "portrait",
+      "tier": "portrait",
+      "sourceSha256": "04d2190648c0edca9a6295c79e0bbba9fd6219511915977c34759ba5eefebb7c",
+      "sha256": "e8478515bc423a3af6fa6a9d1e0ca853a34aafa1ffb6789734d6f5f058519264",
+      "sourceBytes": 3296206,
+      "bytes": 131104,
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "outputSize": {
+        "width": 780,
+        "height": 1688
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/rowing-out.png",
+        "sha256": "3611b40e0d104abbf00cf2027a741a57d699ec4bf02a89af2cf5487dd944899d",
+        "width": 852,
+        "height": 1846,
+        "bytes": 2228364
+      }
+    },
+    {
+      "source": "web/assets/source/opening/rowing-out-landscape.png",
+      "output": "web/public/assets/opening/rowing-out-landscape.webp",
+      "orientation": "landscape",
+      "tier": "landscape",
+      "sourceSha256": "1f7d8c0ac00612b44712f348b688b2f68543e088b39d61d13f7a75c370432697",
+      "sha256": "cf232506715a68d389d65506c0eeaf9bd8bf65e91de79be52e3bcf599544c42e",
+      "sourceBytes": 3627804,
+      "bytes": 161668,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 1728,
+        "height": 1080
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/rowing-out-landscape.png",
+        "sha256": "6000bef6bd636225e7b3daba1f83b2ea32b0042bf61e04c7137f1be4e63893ee",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2200077
+      }
+    },
+    {
+      "source": "web/assets/source/opening/rowing-out-landscape.png",
+      "output": "web/public/assets/opening/rowing-out-landscape-2880.webp",
+      "orientation": "landscape",
+      "tier": "landscapeRetina",
+      "sourceSha256": "1f7d8c0ac00612b44712f348b688b2f68543e088b39d61d13f7a75c370432697",
+      "sha256": "813f9c5fe58576973ea8150448bbfa1fa34f2a4d8e82e40f46fff468f90da755",
+      "sourceBytes": 3627804,
+      "bytes": 315080,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 2880,
+        "height": 1800
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/rowing-out-landscape.png",
+        "sha256": "6000bef6bd636225e7b3daba1f83b2ea32b0042bf61e04c7137f1be4e63893ee",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2200077
+      }
+    },
+    {
+      "source": "web/assets/source/opening/storm.png",
+      "output": "web/public/assets/opening/storm.webp",
+      "orientation": "portrait",
+      "tier": "portrait",
+      "sourceSha256": "06571cc51e50d426045cec796742535395ae96f610bc6545f91071517be378f4",
+      "sha256": "6a3171d5a6f1af933a8de7ddf92c2cf0cf995b0d0284d88cefcbf97401b53a47",
+      "sourceBytes": 3171366,
+      "bytes": 172552,
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "outputSize": {
+        "width": 780,
+        "height": 1688
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/storm.png",
+        "sha256": "f2dcf51a97984e0740b521eb5321721f73db3acac82d5ea76544944cdf1ae58a",
+        "width": 798,
+        "height": 1972,
+        "bytes": 2284393
+      }
+    },
+    {
+      "source": "web/assets/source/opening/storm-landscape.png",
+      "output": "web/public/assets/opening/storm-landscape.webp",
+      "orientation": "landscape",
+      "tier": "landscape",
+      "sourceSha256": "6bb8efb394000432004c255da16fc613fcf12a6734e6b0d4f7dd78e5eee5dbcf",
+      "sha256": "b2450eef469ca64f7b1a1e5e8b22899e401c568dedd3a99d22e685cc167c5e08",
+      "sourceBytes": 3194173,
+      "bytes": 184376,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 1728,
+        "height": 1080
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/storm-landscape.png",
+        "sha256": "3b2f6c82a2de66acb578e3e8c1a8518f91fc16a3222a85af175aeeafa817676f",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2092094
+      }
+    },
+    {
+      "source": "web/assets/source/opening/storm-landscape.png",
+      "output": "web/public/assets/opening/storm-landscape-2880.webp",
+      "orientation": "landscape",
+      "tier": "landscapeRetina",
+      "sourceSha256": "6bb8efb394000432004c255da16fc613fcf12a6734e6b0d4f7dd78e5eee5dbcf",
+      "sha256": "7b93373c60e26108a13720300b9a6ac252aacfb7c3109c85040397577ea01c33",
+      "sourceBytes": 3194173,
+      "bytes": 330610,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 2880,
+        "height": 1800
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/storm-landscape.png",
+        "sha256": "3b2f6c82a2de66acb578e3e8c1a8518f91fc16a3222a85af175aeeafa817676f",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2092094
+      }
+    },
+    {
+      "source": "web/assets/source/opening/wrens-lantern.png",
+      "output": "web/public/assets/opening/wrens-lantern.webp",
+      "orientation": "portrait",
+      "tier": "portrait",
+      "sourceSha256": "197ffa858d1304933fe19b0fab6607823c2f50a2ebabfba0d34a3104d23a1e64",
+      "sha256": "5d5348460e9da41196a8e4e161b0548ce84207a5da164fc689fc3d6a7ea8c171",
+      "sourceBytes": 2989937,
+      "bytes": 118632,
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "outputSize": {
+        "width": 780,
+        "height": 1688
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/wrens-lantern.png",
+        "sha256": "97ee244768bfea1b89771ef6e35ab84562c2a5ac83b09b51cfaaf63eb60fcd00",
+        "width": 853,
+        "height": 1844,
+        "bytes": 2003568
+      }
+    },
+    {
+      "source": "web/assets/source/opening/wrens-lantern-landscape.png",
+      "output": "web/public/assets/opening/wrens-lantern-landscape.webp",
+      "orientation": "landscape",
+      "tier": "landscape",
+      "sourceSha256": "012402a6315d00f19d745c2bfed6218270ac777282f7e38a7ed6bcfb1197a952",
+      "sha256": "1fc1020eb3a14e452a287f9cb1882b9294351a5db3470db6cf34ded8cb955b7a",
+      "sourceBytes": 3955526,
+      "bytes": 239966,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 1728,
+        "height": 1080
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/wrens-lantern-landscape.png",
+        "sha256": "418620a1baccbd3d5ba8e7c8bc62dfcb871b4ff653dff23dedfeee25d572f9b3",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2326770
+      }
+    },
+    {
+      "source": "web/assets/source/opening/wrens-lantern-landscape.png",
+      "output": "web/public/assets/opening/wrens-lantern-landscape-2880.webp",
+      "orientation": "landscape",
+      "tier": "landscapeRetina",
+      "sourceSha256": "012402a6315d00f19d745c2bfed6218270ac777282f7e38a7ed6bcfb1197a952",
+      "sha256": "5dea3130cf83e6e44b4bb069538ae5b4ab58723ec9f0bf48c62639a2779b1625",
+      "sourceBytes": 3955526,
+      "bytes": 443024,
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "outputSize": {
+        "width": 2880,
+        "height": 1800
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/wrens-lantern-landscape.png",
+        "sha256": "418620a1baccbd3d5ba8e7c8bc62dfcb871b4ff653dff23dedfeee25d572f9b3",
+        "width": 1586,
+        "height": 992,
+        "bytes": 2326770
+      }
+    }
+  ]
+}

@@ -1,0 +1,1195 @@
+{
+  "purpose": "Authored opening scenes for Familiar",
+  "delivery": "Native generator outputs and full-resolution masters remain separately preserved and hashed. Delivery WebPs use proportional Lanczos resizing to portrait780x1688 and landscape1728x1080 or landscape2880x1800, encoded at quality87, method6, sharp_yuv. The 2880px candidate resamples the approved 2304px master and adds no native detail; preserved landscape generator outputs are approximately 1586px wide. No crops or repaints. Tiny first- and final-scene WebP posters (quality55) are inlined in code for immediate paint. All text is rendered in code.",
+  "inlinePosters": [
+    {
+      "orientation": "portrait",
+      "source": "web/assets/source/opening/mochi-quay.png",
+      "sourceSha256": "00e75b1464b4bbbecc40b6e1064121a8df3df74f8a1ddbce8a8cd237e883f760",
+      "sha256": "b9bb0d687802766b7ad6098dc719649db154d39b40c2b0d97f6f2d30804018c3",
+      "bytes": 1274,
+      "dataUriBytes": 1723,
+      "width": 60,
+      "height": 130
+    },
+    {
+      "orientation": "landscape",
+      "source": "web/assets/source/opening/mochi-quay-landscape.png",
+      "sourceSha256": "356ae00ca91d9147ce02bd294879939a2744ec615069079bd70200e300ed97c5",
+      "sha256": "cd996d96a1e2c86af398a654e56d2e17ff271a8d0b37ef12956077c4c28a5345",
+      "bytes": 1316,
+      "dataUriBytes": 1779,
+      "width": 96,
+      "height": 60
+    },
+    {
+      "orientation": "portrait",
+      "source": "web/assets/source/opening/storm.png",
+      "sourceSha256": "06571cc51e50d426045cec796742535395ae96f610bc6545f91071517be378f4",
+      "sha256": "d226fef0cc4b6ecb009f3958bee8a52bbdb3ecc7c94be25569b46a1f28fd80c0",
+      "bytes": 1170,
+      "dataUriBytes": 1583,
+      "width": 60,
+      "height": 130
+    },
+    {
+      "orientation": "landscape",
+      "source": "web/assets/source/opening/storm-landscape.png",
+      "sourceSha256": "6bb8efb394000432004c255da16fc613fcf12a6734e6b0d4f7dd78e5eee5dbcf",
+      "sha256": "eb59c7255d55fc711ef58b97cdcf0bb8ec3cd9f900db762c134a178663d9d288",
+      "bytes": 896,
+      "dataUriBytes": 1219,
+      "width": 96,
+      "height": 60
+    }
+  ],
+  "files": {
+    "beacon-dark.webp": {
+      "master": "web/assets/source/opening/beacon-dark.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: lighting-weather. Edit only the light in supplied approved Familiar storm plate. Keep EXACT1170x2532 canvas aspect390:844, camera, geometry and every object pixel-position; no zoom, no crop, no recomposition. Extinguish ONLY upper lighthouse lantern room and amber beam and corresponding amber sea reflection. Keep warm cottage windows and little tower stair windows. Glass is dark cool blue transparent glass, not black hole. Keep red cap, balcony, clouds, rain, waves, cottage, tiny foliage, stone quay and foreground all precisely registered. Entire lighthouse top-right stays in same coordinates. Absolutely no additional damage, people, Wren, cats, cause for failure, text, UI, symbols or gradients. Faithful high-quality localized lighting edit for matched dissolve.",
+      "styleReferences": [
+        "web/assets/source/opening/storm.png"
+      ],
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "8fb9f2798bb795343fa9dd4e987dc7adee0f7a8cb6841720009a0ccd46672aa4"
+      },
+      "sourceSha256": "bb5dc1091803367023bfb1be2ca0278a3846056511402c05240a66817e92b301",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/storm.png": "06571cc51e50d426045cec796742535395ae96f610bc6545f91071517be378f4"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 780,
+          "height": 1688
+        },
+        "sha256": "dd0f4527d0cfb3ad9becbb6eadbfdffd3a625d3db2b795afcf8691d1cc14cf53",
+        "bytes": 147218
+      }
+    },
+    "beacon-dark-landscape.webp": {
+      "master": "web/assets/source/opening/beacon-dark-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: lighting-weather. Localized light cleanup only, preserve exact16:10 canvas and ALL object geometry/pixel positions of supplied dark-beacon landscape. The UPPER BEACON IS OFF. REMOVE the large broad bright GOLDEN VERTICAL REFLECTION STRIP beneath the lighthouse on the RIGHT, both on SEA below island and on wet foreground stone below/right rail. This gold strip is residual light from failed upper beacon and must disappear. Replace those golden pixels with cool petrol teal/blue sea and dim taupe wet paving continuous with neighbors. Keep cottage-window golden reflections in middle x700-1000logical. Lighthouse SMALL stair windows may remain tiny warm lights, but their small dim reflections cannot form a wide bright stripe or spotlight on paving. Upper lantern room dark cool glass, absolutely no glow/beam. Preserve lighthouse cap/tower/island, cottages, rain/clouds, waves, clean left caption area and every post/rope location unchanged. No damage/characters/text/UI/gradients. The only change is removing physically incorrect broad right gold reflections; faithful miniature night mood.",
+      "initialPrompt": "Use case: lighting-weather. Edit supplied approved landscape storm plate at exact same16:10/2304x1440. Preserve EXACT camera, scale, geometry, clouds, rain, sea wave shapes, all houses, trees, full lighthouse red cap/balcony/tower/island and foreground railings/paving. Change ONLY lighthouse upper lantern-room illumination: turn it off, remove leftward amber beam and its sea reflection. Keep all cottage and tower stair window warm lights intact. Lantern room remains recognizable dark cool glass, not black hole or boarded up. Keep every object registered for a matched dissolve. No text/UI/logos/borders/gradients, no characters or damage.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/beacon-dark-landscape-lighting.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm-landscape.png"
+      ],
+      "attempts": 3,
+      "refinement": "Cleared desktop reading field by re-deriving dark plate from approved storm, then removed residual beacon-derived amber sea/stone reflection.",
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "ab91a3b7a407ed6881bfd468b7c28cf2b777de62bb932ee2c7272bb726bd1d67"
+      },
+      "sourceSha256": "b79e1c684d6e78325020e1df607b69b514532e548b4529a9fd6f1e1063596f3d",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/beacon-dark-landscape-lighting.png": "b14e2e09b5a79f3d0447fa290efeb0f991785d74b676102624baa8d1f6295ad4"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 1728,
+          "height": 1080
+        },
+        "sha256": "379b5ed44e3f47f954aa131a7b383f2a31f3a0624ba99c7321bc419b327500dd",
+        "bytes": 161958
+      }
+    },
+    "beacon-dark-landscape-2880.webp": {
+      "master": "web/assets/source/opening/beacon-dark-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: lighting-weather. Localized light cleanup only, preserve exact16:10 canvas and ALL object geometry/pixel positions of supplied dark-beacon landscape. The UPPER BEACON IS OFF. REMOVE the large broad bright GOLDEN VERTICAL REFLECTION STRIP beneath the lighthouse on the RIGHT, both on SEA below island and on wet foreground stone below/right rail. This gold strip is residual light from failed upper beacon and must disappear. Replace those golden pixels with cool petrol teal/blue sea and dim taupe wet paving continuous with neighbors. Keep cottage-window golden reflections in middle x700-1000logical. Lighthouse SMALL stair windows may remain tiny warm lights, but their small dim reflections cannot form a wide bright stripe or spotlight on paving. Upper lantern room dark cool glass, absolutely no glow/beam. Preserve lighthouse cap/tower/island, cottages, rain/clouds, waves, clean left caption area and every post/rope location unchanged. No damage/characters/text/UI/gradients. The only change is removing physically incorrect broad right gold reflections; faithful miniature night mood.",
+      "initialPrompt": "Use case: lighting-weather. Edit supplied approved landscape storm plate at exact same16:10/2304x1440. Preserve EXACT camera, scale, geometry, clouds, rain, sea wave shapes, all houses, trees, full lighthouse red cap/balcony/tower/island and foreground railings/paving. Change ONLY lighthouse upper lantern-room illumination: turn it off, remove leftward amber beam and its sea reflection. Keep all cottage and tower stair window warm lights intact. Lantern room remains recognizable dark cool glass, not black hole or boarded up. Keep every object registered for a matched dissolve. No text/UI/logos/borders/gradients, no characters or damage.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/beacon-dark-landscape-lighting.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm-landscape.png"
+      ],
+      "attempts": 3,
+      "refinement": "Cleared desktop reading field by re-deriving dark plate from approved storm, then removed residual beacon-derived amber sea/stone reflection.",
+      "native": {
+        "path": "web/assets/source/opening/generated/beacon-dark-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "ab91a3b7a407ed6881bfd468b7c28cf2b777de62bb932ee2c7272bb726bd1d67"
+      },
+      "sourceSha256": "b79e1c684d6e78325020e1df607b69b514532e548b4529a9fd6f1e1063596f3d",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/beacon-dark-landscape-lighting.png": "b14e2e09b5a79f3d0447fa290efeb0f991785d74b676102624baa8d1f6295ad4"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos upsample from approved master; no new native detail; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 2880,
+          "height": 1800
+        },
+        "sha256": "cfbe66c75b6780ed6470ec111c4bd5b0b2ea4e46f3ba0b708bc7a3dfaa13671d",
+        "bytes": 304218
+      }
+    },
+    "boats-home.webp": {
+      "master": "web/assets/source/opening/boats-home.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: precise-object-edit. Edit ONLY three fishing boat placements in supplied approved Familiar portrait. Keep EXACT1170x2532 canvas390:844 aspect, all lighthouse, cottages, clouds, rocks, foliage, shoreline, posts and paving pixel positions, colors, beautiful tactile material. All THREE complete boats must stay visible. Scale the group of three boats to90percent current size and shift that whole group left by30 logical CSS pixels (90pixels on1170 canvas), without changing y center or boat designs. Rightmost stern/bow must be LEFT of logical x326 (978pixels on1170canvas), left boat entirely beyond x62, all hulls remain betweeny385-520. Maintain distinct separated hulls with coherent wakes and lantern reflections. Fill vacated sea naturally. The full dark beacon and lovely calm foreground remain unchanged. No Wren/rowboat/new characters, no text/interface/border/baked gradient.",
+      "initialPrompt": "Use case: lighting-weather. Recompose reference1 approved Familiar storm portrait as same precise1170x2532 aspect390:844 camera and architecture, using reference2 for three fishing boat identities and reference3 as canonical house style. Storm eases into blue-violet predawn, small rose opening on horizon. Lighthouse remains DARK. Preserve full red cap, dark lantern room, balcony at logicalx248-344/y175-305, same tower/base and cottages as reference1. THREE distinct working fishing boats return safely toward quay, all three COMPLETE hulls plus masts/bows/sterns within logicalx62-326/y385-520. No hull cropped or behind another hull, stagger depth in gentle sheltered teal water, coherent warm timber hulls and modest cabin lanterns. Narrow boat sizes fit visibly. No Wren or rowboat, no evidence of her return or abandonment. Reference2 supplies boat designs only, DO NOT copy its framing. Keep headerx20-190/y14-75 quiet low detail. All posts/rope above y550; lower y600-844 calm low-contrast damp sandstone with no foliage/posts/bright joints. Lovely restrained relief, tactile miniature rounded clay architecture, warm windows, dusky lilac shadows. No text/UI/logos/borders/baked gradients. Exact portrait aspect390:844.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/boats-home-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm.png",
+        "web/assets/source/opening/generated/boats-home-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "attempts": 2,
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "54be661bcc9416331b23b9ad033911d3e254857c0aa1e8c1e3c1cd62fd199b07"
+      },
+      "sourceSha256": "8b403856f058f5dd25d9b515b758ead9f2640f106dd41f17ea41dd08e4423841",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/boats-home-layout.png": "9c5cb7df9aa367c3447a4df86fdefc0b8cfdd9f88286a13a31543eb119745206"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 780,
+          "height": 1688
+        },
+        "sha256": "d0c13ea762a83492adfbf211dca8349c2083bb6702c3b802a7bc89c5451c65af",
+        "bytes": 130534
+      }
+    },
+    "boats-home-landscape.webp": {
+      "master": "web/assets/source/opening/boats-home-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders.",
+      "initialPrompt": "Use case: compositing. Create ONE landscape16:10 2304x1440 Familiar boats-home scene. Image1 governs three boat designs/narrative and lilac predawn colors. Image2 is exact approved landscape storm geography/camera. Preserve image2 single coherent harbor: FULL red capped lighthouse on island at right; small cream/terracotta cottages in middle distance center-right; wide sheltered water toward left; broad calm stone foreground. Lighthouse upper room remains DARK. Storm has eased, violet-blue predawn with restrained rose horizon; THREE complete small fishing boats returning toward quay with modest warm lamps, staggered, distinct readable coherent timber hulls, all hulls/masts/bows/sterns in right half logicalx800-1280 y430-620. No Wren, rowboat, abandonment, new people or celebration. Keep top-left dark quiet sky for wordmark. Foreground railing and posts must be at y480-530 MAXIMUM, not through caption field; broad uninterrupted calm low-contrast stone x50-570 y540-850. Quiet control area at lower left. Natural continuous environment across entire canvas, never repeated background or inset portrait, seams or blurred filler. Rich handcrafted miniatures same tactile materials. No text/logos/interface/borders/baked vignette or gradients.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/boats-home-landscape-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/boats-home.png",
+        "web/assets/source/opening/generated/storm-landscape-layout.png"
+      ],
+      "attempts": 2,
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "bdcb5b80a1fb6bec81c60e189d5c5f31d3fc7c2d01eb23d192aaa76a4f008f67"
+      },
+      "sourceSha256": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/boats-home-landscape-layout.png": "7d8a93874a87227984d1d63c4d03dad9df0d212d18a1376bf4dfd8820ad00ea8"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 1728,
+          "height": 1080
+        },
+        "sha256": "c81403d5f5b130041b1b9e048da48a94a149a531a88810cbebee237ddeb59f4d",
+        "bytes": 150112
+      }
+    },
+    "boats-home-landscape-2880.webp": {
+      "master": "web/assets/source/opening/boats-home-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders.",
+      "initialPrompt": "Use case: compositing. Create ONE landscape16:10 2304x1440 Familiar boats-home scene. Image1 governs three boat designs/narrative and lilac predawn colors. Image2 is exact approved landscape storm geography/camera. Preserve image2 single coherent harbor: FULL red capped lighthouse on island at right; small cream/terracotta cottages in middle distance center-right; wide sheltered water toward left; broad calm stone foreground. Lighthouse upper room remains DARK. Storm has eased, violet-blue predawn with restrained rose horizon; THREE complete small fishing boats returning toward quay with modest warm lamps, staggered, distinct readable coherent timber hulls, all hulls/masts/bows/sterns in right half logicalx800-1280 y430-620. No Wren, rowboat, abandonment, new people or celebration. Keep top-left dark quiet sky for wordmark. Foreground railing and posts must be at y480-530 MAXIMUM, not through caption field; broad uninterrupted calm low-contrast stone x50-570 y540-850. Quiet control area at lower left. Natural continuous environment across entire canvas, never repeated background or inset portrait, seams or blurred filler. Rich handcrafted miniatures same tactile materials. No text/logos/interface/borders/baked vignette or gradients.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/boats-home-landscape-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/boats-home.png",
+        "web/assets/source/opening/generated/storm-landscape-layout.png"
+      ],
+      "attempts": 2,
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "bdcb5b80a1fb6bec81c60e189d5c5f31d3fc7c2d01eb23d192aaa76a4f008f67"
+      },
+      "sourceSha256": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/boats-home-landscape-layout.png": "7d8a93874a87227984d1d63c4d03dad9df0d212d18a1376bf4dfd8820ad00ea8"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos upsample from approved master; no new native detail; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 2880,
+          "height": 1800
+        },
+        "sha256": "01d1e240165bfbf7b10084937eeaaed06679b582f4ffcd166f9169d0f55fe0d0",
+        "bytes": 269048
+      }
+    },
+    "harbor-dawn.webp": {
+      "master": "web/assets/source/opening/harbor-dawn.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: lighting-weather. Edit supplied approved boats-home portrait into next morning, at EXACT same camera and390:844 aspect1170x2532. Preserve every architecture position, lighthouse scale, perspective, clay sandstone and miniature material. Change blue-violet predawn to luminous gentle PEACH DAWN, lilac cloud undersides, soft blue-green sea, restrained warm reflections; joyful quiet morning not bright noon. Lighthouse upper lantern room remains unmistakably DARK/unlit, whole red cap, balcony, tower unchanged. All THREE fishing boats have berthed outside frame: remove them cleanly and continue natural water; do not leave rowboat, no Wren or new characters. One delicate chimney wisp and opened cottage shutter suggest waking. Turn off cottage night lights. Keep header low-detail and quiet. All foreground posts/rope stay ABOVE logical y550; x26-364 y600-744 quiet softly shaded taupe paving without bright seams, flowers, posts, high contrast reflections, and y760-824 quiet. Preserve warm colors everywhere else, do not darken painting. Authentic premium clay/felt/wood/brass house art, no plastic gloss or flat illustration. No text/UI/borders/lettering/baked caption gradients.",
+      "styleReferences": [
+        "web/assets/source/opening/boats-home.png"
+      ],
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "44f4487a44c1fe7a1b46a539ccfc53d3d73427cba59cceb0a32d27dedd1683f6"
+      },
+      "sourceSha256": "7de5a0da3cefd24afbc4ad0fe70825e5050ee0547c5ad2f162e27a367b310b6b",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/boats-home.png": "8b403856f058f5dd25d9b515b758ead9f2640f106dd41f17ea41dd08e4423841"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 780,
+          "height": 1688
+        },
+        "sha256": "b4914ee3b07db3573da6bfbd36762d6e805fad8d7e6c59f2a4af48cc47557fd4",
+        "bytes": 136722
+      }
+    },
+    "harbor-dawn-landscape.webp": {
+      "master": "web/assets/source/opening/harbor-dawn-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: lighting-weather. Edit supplied approved Familiar boats-home landscape at EXACT identical16:10/2304x1440 canvas/camera/perspective/object positions. This is NEXT MORNING. Remove all three fishing boats entirely and fill natural sheltered blue-green water; they berthed outside view, no rowboat or people. Replace blue-violet night/predawn light with luminous soft peach dawn, lilac clouds, muted teal water and warm clay sandstone. Keep full lighthouse cap, lantern room, balcony, tower, island exact position/scale; upper glass stays DARK/unlit, no amber beam. Turn off night lamps/windows; tiny chimney wisp suggests waking. IMPORTANT keep left reading region clear as in supplied image: NO posts/rope/flowers in left half; soft calm water/stone at x50-570 y540-850, low contrast paving with no bright seams. Right rail may remain. Quiet low-detail top-left sky for native wordmark. Preserve beautiful tactile tiny handmade clay/wood/foliage surfaces, sophisticated morning color, no whole-scene darkening. One coherent full-bleed authored painting, no duplicate layers or blurred filler. No new narrative objects, Wren, cats, text/UI/logos/borders/baked vignette.",
+      "styleReferences": [
+        "web/assets/source/opening/boats-home-landscape.png"
+      ],
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "173a90806f2a29171979c0ed5bd4c2b5cada5f2c0e7690027c96658bc39d69d9"
+      },
+      "sourceSha256": "4bdac4da6e9b308b1d1d82a003fbf9c4a13a376515243042ee9e94cd5829587a",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/boats-home-landscape.png": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 1728,
+          "height": 1080
+        },
+        "sha256": "32d003f5f1ca55c06d1b15e5700383a0b526eaba458123cee8182e491bbba1a5",
+        "bytes": 167334
+      }
+    },
+    "harbor-dawn-landscape-2880.webp": {
+      "master": "web/assets/source/opening/harbor-dawn-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: lighting-weather. Edit supplied approved Familiar boats-home landscape at EXACT identical16:10/2304x1440 canvas/camera/perspective/object positions. This is NEXT MORNING. Remove all three fishing boats entirely and fill natural sheltered blue-green water; they berthed outside view, no rowboat or people. Replace blue-violet night/predawn light with luminous soft peach dawn, lilac clouds, muted teal water and warm clay sandstone. Keep full lighthouse cap, lantern room, balcony, tower, island exact position/scale; upper glass stays DARK/unlit, no amber beam. Turn off night lamps/windows; tiny chimney wisp suggests waking. IMPORTANT keep left reading region clear as in supplied image: NO posts/rope/flowers in left half; soft calm water/stone at x50-570 y540-850, low contrast paving with no bright seams. Right rail may remain. Quiet low-detail top-left sky for native wordmark. Preserve beautiful tactile tiny handmade clay/wood/foliage surfaces, sophisticated morning color, no whole-scene darkening. One coherent full-bleed authored painting, no duplicate layers or blurred filler. No new narrative objects, Wren, cats, text/UI/logos/borders/baked vignette.",
+      "styleReferences": [
+        "web/assets/source/opening/boats-home-landscape.png"
+      ],
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "173a90806f2a29171979c0ed5bd4c2b5cada5f2c0e7690027c96658bc39d69d9"
+      },
+      "sourceSha256": "4bdac4da6e9b308b1d1d82a003fbf9c4a13a376515243042ee9e94cd5829587a",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/boats-home-landscape.png": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos upsample from approved master; no new native detail; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 2880,
+          "height": 1800
+        },
+        "sha256": "2bd741c8d006ee2a3ea3035cd575d969197af02b64f2e97c8f8f44768796b3b8",
+        "bytes": 308574
+      }
+    },
+    "mochi-quay.webp": {
+      "master": "web/assets/source/opening/mochi-quay.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: identity-preserve / illustration-story. Recompose reference image 1, the canonical Familiar Mochi arrival scene, into a true tall 390:844 portrait composition, intended output1170x2532. Reference image2 is the house harbor materials and geography. Preserve ONE Mochi exactly: orange felt tabby, three forehead stripes, cream muzzle and paws, two dark whiskers per cheek, brown eyes, red scarf and stitched brown satchel. Same curious capable three-quarter head tilt and standing pose, unchanged character proportions. At logical390x844, place her complete silhouette including tail within x95-264/y290-540, feet at y540 and eyeline around y365. She is a nearby companion; leave clear low-detail open space to her left for a later Bram entrance. Lighthouse is behind her on the right: entire red cap, dark glass lantern room and wooden balcony must stay within x262-344/y155-285 with ≥24px right clearance; tower and base within x250-358/y260-425. Unlit beacon, no beam. Soft peach dawn, lilac cloud undersides, blue-green harbor, tactile sandstone, miniature trees, cottage terracotta and brass. Keep x20-190/y14-75 quiet subdued dawn sky or dark low-detail foliage behind future native wordmark. All quay posts and ropes above y555. Reserve x26-364/y600-744 and y760-824 for quiet low-contrast gently shaded stone, with no flowers, strong bright joints, posts or rope crossing this region. No baked caption gradients. Full tall authored painting, no letterbox, no stretched or cropped inset. No new accessories, no redesign, no second cat or enlarged background face, no Wren, no added Bram, no new plot evidence, text, logos, interface or borders. This is a provisional FILM staging target, not a claim to match an unavailable live prologue.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/mochi-quay-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "sourceSha256": "00e75b1464b4bbbecc40b6e1064121a8df3df74f8a1ddbce8a8cd237e883f760",
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "50279475395149dd3838cc9f92da387c1e1cece19912347a8fdd4e5f2364efde"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 780,
+          "height": 1688
+        },
+        "sha256": "32a6b19c24e609013b9bc3f8de4789edecef9bfe5597bcf0ddf48ba9466d3b15",
+        "bytes": 199102
+      },
+      "registration": "Film target only. No captured live Slice B prologue exists in accessible worktrees; cross-scene match remains unverified.",
+      "styleReferenceHashes": {
+        "web/assets/source/first-light-motion/harbor.png": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920",
+        "web/assets/source/opening/generated/mochi-quay-reference.png": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/opening/generated/mochi-quay-reference.png",
+          "sha256": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+        },
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        }
+      ]
+    },
+    "mochi-quay-landscape.webp": {
+      "master": "web/assets/source/opening/mochi-quay-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: identity-preserve / illustration-story. Create one beautiful premium handcrafted Familiar landscape film plate, exactly 16:10 composition, intended 2304x1440. Image 1 is the canonical Mochi arrival character and dawn scene: preserve Mochi's orange felt tabby identity, three forehead stripes, cream muzzle and paws, two dark whiskers per cheek, brown eyes, red scarf, and stitched brown satchel, her curious capable expression and current standing pose. Image 2 is the house harbor material and geography reference. Compose a single spatially coherent landscape view of this harbor at warm peach and lilac dawn. Place ONE complete Mochi in the right half, full silhouette at logical x875-1140/y330-665 on a 1440x900 canvas; feet around y665, eyeline around y425, nearby companion scale. Place the complete dark beacon including red cap, lantern room, wooden balcony, tower and base behind her toward logical x1170-1340/y145-510, at least 70 pixels from right edge. The beacon remains unlit. Naturally extend actual water, sky and wet sandstone toward the left with continuous miniature perspective; left x50-570/y540-850 is quiet softly shaded low-detail stone for future native captions and buttons. Top-left x30-260/y20-95 quiet dark foliage or subdued dawn sky for a future wordmark. Keep posts and rope out of the reading column. Preserve Familiar rounded cream sandstone, terracotta roof, imperfect clay masonry, felt textures, brass, wood, subtle miniature greenery. Warm luminous morning everywhere except naturally shaded left stone. No gradients painted for captions. No second Mochi, no enlarged background face, no portrait panel, no seam, no mirroring, no blurred filler, no Wren, no Bram added, no new accessories or narrative elements, no text or interface anywhere.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/mochi-quay-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "sourceSha256": "356ae00ca91d9147ce02bd294879939a2744ec615069079bd70200e300ed97c5",
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "9cb9de8e64629b9972568b52c278fe835574f7dac5909ff09bf6f9afbdf0b265"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 1728,
+          "height": 1080
+        },
+        "sha256": "a2605b9648d82e407ac7290e1312deabcda2d8b026750a4c98b15f60474ab076",
+        "bytes": 333838
+      },
+      "registration": "Film target only, no live prologue registration reference available.",
+      "styleReferenceHashes": {
+        "web/assets/source/first-light-motion/harbor.png": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920",
+        "web/assets/source/opening/generated/mochi-quay-reference.png": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/opening/generated/mochi-quay-reference.png",
+          "sha256": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+        },
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        }
+      ]
+    },
+    "mochi-quay-landscape-2880.webp": {
+      "master": "web/assets/source/opening/mochi-quay-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: identity-preserve / illustration-story. Create one beautiful premium handcrafted Familiar landscape film plate, exactly 16:10 composition, intended 2304x1440. Image 1 is the canonical Mochi arrival character and dawn scene: preserve Mochi's orange felt tabby identity, three forehead stripes, cream muzzle and paws, two dark whiskers per cheek, brown eyes, red scarf, and stitched brown satchel, her curious capable expression and current standing pose. Image 2 is the house harbor material and geography reference. Compose a single spatially coherent landscape view of this harbor at warm peach and lilac dawn. Place ONE complete Mochi in the right half, full silhouette at logical x875-1140/y330-665 on a 1440x900 canvas; feet around y665, eyeline around y425, nearby companion scale. Place the complete dark beacon including red cap, lantern room, wooden balcony, tower and base behind her toward logical x1170-1340/y145-510, at least 70 pixels from right edge. The beacon remains unlit. Naturally extend actual water, sky and wet sandstone toward the left with continuous miniature perspective; left x50-570/y540-850 is quiet softly shaded low-detail stone for future native captions and buttons. Top-left x30-260/y20-95 quiet dark foliage or subdued dawn sky for a future wordmark. Keep posts and rope out of the reading column. Preserve Familiar rounded cream sandstone, terracotta roof, imperfect clay masonry, felt textures, brass, wood, subtle miniature greenery. Warm luminous morning everywhere except naturally shaded left stone. No gradients painted for captions. No second Mochi, no enlarged background face, no portrait panel, no seam, no mirroring, no blurred filler, no Wren, no Bram added, no new accessories or narrative elements, no text or interface anywhere.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/mochi-quay-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "sourceSha256": "356ae00ca91d9147ce02bd294879939a2744ec615069079bd70200e300ed97c5",
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/mochi-quay-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "9cb9de8e64629b9972568b52c278fe835574f7dac5909ff09bf6f9afbdf0b265"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos upsample from approved master; no new native detail; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 2880,
+          "height": 1800
+        },
+        "sha256": "6f0e79667653888d3a3e70fc753016510e14116dcafc0850201dd99ac75d8475",
+        "bytes": 569410
+      },
+      "registration": "Film target only, no live prologue registration reference available.",
+      "styleReferenceHashes": {
+        "web/assets/source/first-light-motion/harbor.png": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920",
+        "web/assets/source/opening/generated/mochi-quay-reference.png": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/opening/generated/mochi-quay-reference.png",
+          "sha256": "17f4f3694f84b9d915b410901ac4018bcacad557e0229f1024db87e93cbf0e66"
+        },
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        }
+      ]
+    },
+    "rowing-out.webp": {
+      "master": "web/assets/source/opening/rowing-out.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: compositing. Recompose image 1, Wren rowing out, into a finished premium handcrafted Familiar game illustration. EXACT 390:844 width:height ratio (0.462085:1), intended delivery1170×2532. Image 2 establishes clay/felt/timber house material language. Preserve the anonymous adult keeper seen only from BEHIND in the modest moss-green felt hood/cape, TWO anatomical hands, TWO continuous wooden oars passing through proper oarlocks with TWO COMPLETE blades, coherent clinker walnut hull and one warm brass lantern secured at the bow. No face. Strong beautiful miniature craft, tiny wet wood grain and worn brass, soft imperfect clay forms, never glossy plastic or realistic human drama. Boat points toward the upper-center bay. Place ENTIRE rowboat, keeper, lantern, both oars and splash assembly inside logical x54–336/y300–505; each blade has at least40px horizontal edge clearance. Warm lantern focal point near x215/y320; caped back near x195/y375. Three very distant small working fishing boats with restrained amber cabin lights sit near the horizon at y245, all hulls readable. A small piece of harbor wall upper left around y255–350 establishes leaving shore. Rain and muted slate-violet clouds, softly rolling deep petrol-teal water, tender courage and practical care. x20–190/y14–75 quiet low-detail dark sky for the native wordmark; lower third y575–844 quiet water with low-contrast texture and no bright reflection or foam behind x26–364/y600–744 captions or y760–824 controls. The boat must remain above this lower text area. Full bleed, single coherent camera, no inset, no border, no text/logos/UI/letters/numbers, no extra oars or limbs, no wreckage, no lightning, no animal, no cause of failure, no implication of Wren's fate. Requested model gpt-6-astra.",
+      "attempts": 1,
+      "transparentBackground": false,
+      "generatedSource": "web/assets/source/opening/generated/rowing-out.png",
+      "styleReferences": [
+        "web/assets/source/first-light-motion/harbor.png",
+        "web/assets/source/opening/generated/rowing-out-reference.png"
+      ],
+      "visualReview": "Anonymous rear view; two hands, two complete oars and coherent hull, quiet dark caption water.",
+      "generatedSize": {
+        "width": 852,
+        "height": 1846
+      },
+      "generatedSha256": "3611b40e0d104abbf00cf2027a741a57d699ec4bf02a89af2cf5487dd944899d",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "sourceSha256": "04d2190648c0edca9a6295c79e0bbba9fd6219511915977c34759ba5eefebb7c",
+      "sourceBytes": 3296206,
+      "normalization": {
+        "operation": "Isotropic Lanczos resize to cover delivery canvas, centered edge crop; no stretching or repainting",
+        "target": {
+          "width": 1170,
+          "height": 2532
+        },
+        "upscaled": true,
+        "note": "Built-in generator did not expose resolution control; native generated bytes are preserved separately. Near-matching aspect means at most a few delivery pixels trimmed from edges."
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        },
+        {
+          "path": "web/assets/source/opening/generated/rowing-out-reference.png",
+          "sha256": "20d3c7e97ecb8efb419348e795e27872b75b8dcd8bf5f736413f73a2c04f3f94"
+        }
+      ],
+      "native": {
+        "path": "web/assets/source/opening/generated/rowing-out.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "3611b40e0d104abbf00cf2027a741a57d699ec4bf02a89af2cf5487dd944899d"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 780,
+          "height": 1688
+        },
+        "sha256": "e8478515bc423a3af6fa6a9d1e0ca853a34aafa1ffb6789734d6f5f058519264",
+        "bytes": 131104
+      }
+    },
+    "rowing-out-landscape.webp": {
+      "master": "web/assets/source/opening/rowing-out-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: compositing. Create one authored LANDSCAPE adaptation of image1, Wren rowing out, EXACT width:height 16:10, intended2304×1440 pixels for1440×900. Image2 is house material reference. Keep anonymous ADULT Wren solely from the BACK, moss-green felt cape hood concealing face, two anatomical hands, one coherent walnut clinker-built rowboat with two oarlocks, TWO continuous shafts and TWO complete wooden blades, one warm brass lantern at bow. Compose the whole boat/keeper/lantern/oars assembly in the RIGHT half, logically x760–1320/y330–650; every blade clear of every viewport edge by at least70px. The boat points away toward three distant working fishing boats near horizon y275, small warm cabin lamps. A fragment of cream sandstone harbor wall may occupy far upper-left. Rich handcrafted stop-motion miniature materials: felt weave, damp walnut grain, softly imperfect clay stone, muted purple slate storm sky, deep petrol teal softly sculpted waves with restrained bright crests. Preserve quiet courage, not peril. The LEFT lower half x50–570/y540–850 is naturally calm dark teal water with subtle texture and no foam/rope/bright reflections behind native captions and controls. Continuous perspective across entire landscape, no fake filler, no duplicate subject, no repeated background, no seam, no inset panel, no blur strip, no vignette. Quiet upper-left and upper-right sky for future controls. No face, animals, text, UI, letters, logos, borders, lightning, wreckage or implication about Wren's fate. Requested model gpt-6-astra.",
+      "attempts": 1,
+      "transparentBackground": false,
+      "generatedSource": "web/assets/source/opening/generated/rowing-out-landscape.png",
+      "styleReferences": [
+        "web/assets/source/first-light-motion/harbor.png",
+        "web/assets/source/opening/generated/rowing-out.png"
+      ],
+      "visualReview": "Single coherent landscape; full oars and boat at right, quiet lower-left water.",
+      "generatedSize": {
+        "width": 1586,
+        "height": 992
+      },
+      "generatedSha256": "6000bef6bd636225e7b3daba1f83b2ea32b0042bf61e04c7137f1be4e63893ee",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "sourceSha256": "1f7d8c0ac00612b44712f348b688b2f68543e088b39d61d13f7a75c370432697",
+      "sourceBytes": 3627804,
+      "normalization": {
+        "operation": "Isotropic Lanczos resize to cover delivery canvas, centered edge crop; no stretching or repainting",
+        "target": {
+          "width": 2304,
+          "height": 1440
+        },
+        "upscaled": true,
+        "note": "Built-in generator did not expose resolution control; native generated bytes are preserved separately. Near-matching aspect means at most a few delivery pixels trimmed from edges."
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        },
+        {
+          "path": "web/assets/source/opening/generated/rowing-out.png",
+          "sha256": "3611b40e0d104abbf00cf2027a741a57d699ec4bf02a89af2cf5487dd944899d"
+        }
+      ],
+      "native": {
+        "path": "web/assets/source/opening/generated/rowing-out-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "6000bef6bd636225e7b3daba1f83b2ea32b0042bf61e04c7137f1be4e63893ee"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 1728,
+          "height": 1080
+        },
+        "sha256": "cf232506715a68d389d65506c0eeaf9bd8bf65e91de79be52e3bcf599544c42e",
+        "bytes": 161668
+      }
+    },
+    "rowing-out-landscape-2880.webp": {
+      "master": "web/assets/source/opening/rowing-out-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: compositing. Create one authored LANDSCAPE adaptation of image1, Wren rowing out, EXACT width:height 16:10, intended2304×1440 pixels for1440×900. Image2 is house material reference. Keep anonymous ADULT Wren solely from the BACK, moss-green felt cape hood concealing face, two anatomical hands, one coherent walnut clinker-built rowboat with two oarlocks, TWO continuous shafts and TWO complete wooden blades, one warm brass lantern at bow. Compose the whole boat/keeper/lantern/oars assembly in the RIGHT half, logically x760–1320/y330–650; every blade clear of every viewport edge by at least70px. The boat points away toward three distant working fishing boats near horizon y275, small warm cabin lamps. A fragment of cream sandstone harbor wall may occupy far upper-left. Rich handcrafted stop-motion miniature materials: felt weave, damp walnut grain, softly imperfect clay stone, muted purple slate storm sky, deep petrol teal softly sculpted waves with restrained bright crests. Preserve quiet courage, not peril. The LEFT lower half x50–570/y540–850 is naturally calm dark teal water with subtle texture and no foam/rope/bright reflections behind native captions and controls. Continuous perspective across entire landscape, no fake filler, no duplicate subject, no repeated background, no seam, no inset panel, no blur strip, no vignette. Quiet upper-left and upper-right sky for future controls. No face, animals, text, UI, letters, logos, borders, lightning, wreckage or implication about Wren's fate. Requested model gpt-6-astra.",
+      "attempts": 1,
+      "transparentBackground": false,
+      "generatedSource": "web/assets/source/opening/generated/rowing-out-landscape.png",
+      "styleReferences": [
+        "web/assets/source/first-light-motion/harbor.png",
+        "web/assets/source/opening/generated/rowing-out.png"
+      ],
+      "visualReview": "Single coherent landscape; full oars and boat at right, quiet lower-left water.",
+      "generatedSize": {
+        "width": 1586,
+        "height": 992
+      },
+      "generatedSha256": "6000bef6bd636225e7b3daba1f83b2ea32b0042bf61e04c7137f1be4e63893ee",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "sourceSha256": "1f7d8c0ac00612b44712f348b688b2f68543e088b39d61d13f7a75c370432697",
+      "sourceBytes": 3627804,
+      "normalization": {
+        "operation": "Isotropic Lanczos resize to cover delivery canvas, centered edge crop; no stretching or repainting",
+        "target": {
+          "width": 2304,
+          "height": 1440
+        },
+        "upscaled": true,
+        "note": "Built-in generator did not expose resolution control; native generated bytes are preserved separately. Near-matching aspect means at most a few delivery pixels trimmed from edges."
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        },
+        {
+          "path": "web/assets/source/opening/generated/rowing-out.png",
+          "sha256": "3611b40e0d104abbf00cf2027a741a57d699ec4bf02a89af2cf5487dd944899d"
+        }
+      ],
+      "native": {
+        "path": "web/assets/source/opening/generated/rowing-out-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "6000bef6bd636225e7b3daba1f83b2ea32b0042bf61e04c7137f1be4e63893ee"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos upsample from approved master; no new native detail; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 2880,
+          "height": 1800
+        },
+        "sha256": "813f9c5fe58576973ea8150448bbfa1fa34f2a4d8e82e40f46fff468f90da755",
+        "bytes": 315080
+      }
+    },
+    "storm.webp": {
+      "master": "web/assets/source/opening/storm.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: stylized-concept. Recompose reference 1 (existing storm) with materials and harbor architecture locked to reference 2 (canonical house harbor) into a premium handcrafted cozy game painting. EXACT very tall 390:844 portrait aspect, output 1170x2532 pixels. This is a new camera composition, not a crop of a 2:3 image. Tiny clay sandstone cottages, terracotta roofs, tactile rounded imperfect masonry, miniature timber, twisted rope, soft clustered foliage. Night rain crosses petrol-teal water under muted slate-violet clouds. FULL red capped lighthouse, complete lantern room AND balcony entirely inside logical x248-344 y175-305, tower/base inside x234-360 y290-445. Use these logical coordinates on 390x844 canvas, multiply by3 for output. Keep >=24 logical pixels to right of balcony. Restrained amber beacon beam crosses sea leftward. Warm cottage windows imply shelter. Quiet dark sky at x20-190 y14-75 behind future native wordmark. All foreground posts/rope above y550. Lower third (y600-844) natural low-detail damp softly shaded sandstone quay, subtle broad reflections, absolutely no large flowers/posts/ropes or high-contrast paving seams here. Reserve calm caption area x26-364 y600-744 and controls y760-824. Sophisticated stop-motion materials, intimate lovely miniature light, no shiny plastic, no photographic storm spectacle. No characters, cats, damage, lightning, text, logos, UI, borders, or baked gradients. Preserve charming warm shelter amid rain and full architecture; beautiful production art.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/storm-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "attempts": 1,
+      "normalization": {
+        "operation": "Crop surplus upper sky and lower foreground (798x1727+0+200), then resize to1170x2532. Subpixel aspect rounding only; no subject cropping.",
+        "upscaled": true
+      },
+      "native": {
+        "path": "web/assets/source/opening/generated/storm.png",
+        "width": 798,
+        "height": 1972,
+        "sha256": "f2dcf51a97984e0740b521eb5321721f73db3acac82d5ea76544944cdf1ae58a"
+      },
+      "sourceSha256": "06571cc51e50d426045cec796742535395ae96f610bc6545f91071517be378f4",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/storm-reference.png": "0ad423df4331fe6eb71121bda74f21e724984c30f56cd2d4171e30bed907e566",
+        "web/assets/source/first-light-motion/harbor.png": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 780,
+          "height": 1688
+        },
+        "sha256": "6a3171d5a6f1af933a8de7ddf92c2cf0cf995b0d0284d88cefcbf97401b53a47",
+        "bytes": 172552
+      }
+    },
+    "storm-landscape.webp": {
+      "master": "web/assets/source/opening/storm-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders.",
+      "initialPrompt": "Use case: stylized-concept. Create ONE spatially coherent landscape composition16:10,2304x1440, adapting supplied APPROVED Familiar storm portrait and house harbor reference. Exact same storm narrative, handmade clay sandstone, rounded cream cottages/terracotta roofs, tactile wood/brass/foliage. Complete lighthouse RED CAP, glowing upper lantern room, balcony, tower and island in right half logical x1000-1310 y150-580 on1440x900 canvas. Warm restrained amber beam reaches left across petrol-teal sea. Cottage, tiny quay, quiet practical lights to left of lighthouse in mid-distance. Large atmospheric slate violet storm cloud sky, rain, sheltered harbor; gentle courage not disaster. Foreground natural continuous broad damp sandstone quay. Calm low-detail darker area logical x50-570/y540-850 for native captions; no detailed flowers, bright stone seams or poles here. All railings/posts above y520. Keep top-left x35-230/y20-90 quiet dark sky; top-right clear for Skip. Full bleed environment reaches every edge. NO duplicate background layer, no inset portrait, seam, mirrored scene, blurred filler, vignette, people, cats, text/UI/baked gradients. Beautiful premium handcrafted miniature stop-motion world; preserve all architecture identity and refined warm/cool lighting.",
+      "refinementPrompts": [
+        "Use case: precise-object-edit. Recompose supplied landscape Familiar storm painting at EXACT16:10 aspect2304x1440. Preserve this exquisite handmade clay sandstone, warm shelter, purple rainy sky and lantern glow. Preserve the complete lighthouse location and scale in right half. IMPORTANT IMPROVEMENT: relocate the large foreground cottage, its tree and all left-side architecture up and away into the middle distance so all cottages fit within logical x650-1030/y240-480 on1440x900 canvas. Left x0-600 now looks out across open soft rainy sky, quiet teal sheltered water, and uncluttered low-contrast damp quay. Quay railings/posts ALL above logical y500; broad continuous paving from y520 to900, with no flower clusters, tall posts or bright seams in x40-600. Left reading column x50-570/y540-850 must be utterly calm soft shaded stone. Top-left x20-230/y14-90 quiet dark sky. No recognizable foreground cottage competing behind caption. Full coherent perspective throughout, naturally receding harbor village beside beacon to right. ONE image not panels, no repeated or mirrored subjects or filler strips, no blur gradient or vignette. Keep full red cap/lantern/balcony/tower/island, beam leftward, warm windows. No people/cats/text/UI/borders. Highest quality cinematic world. Reposition architecture, never just darken it.",
+        "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders."
+      ],
+      "styleReferences": [
+        "web/assets/source/opening/generated/storm-landscape-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "attempts": 3,
+      "native": {
+        "path": "web/assets/source/opening/generated/storm-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "3b2f6c82a2de66acb578e3e8c1a8518f91fc16a3222a85af175aeeafa817676f"
+      },
+      "sourceSha256": "6bb8efb394000432004c255da16fc613fcf12a6734e6b0d4f7dd78e5eee5dbcf",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/storm-landscape-layout.png": "bd614e24c45067fed06c5ae49c8a4b01994c8dc4652ae5b6371c22e38f50b1ca"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 1728,
+          "height": 1080
+        },
+        "sha256": "b2450eef469ca64f7b1a1e5e8b22899e401c568dedd3a99d22e685cc167c5e08",
+        "bytes": 184376
+      }
+    },
+    "storm-landscape-2880.webp": {
+      "master": "web/assets/source/opening/storm-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders.",
+      "initialPrompt": "Use case: stylized-concept. Create ONE spatially coherent landscape composition16:10,2304x1440, adapting supplied APPROVED Familiar storm portrait and house harbor reference. Exact same storm narrative, handmade clay sandstone, rounded cream cottages/terracotta roofs, tactile wood/brass/foliage. Complete lighthouse RED CAP, glowing upper lantern room, balcony, tower and island in right half logical x1000-1310 y150-580 on1440x900 canvas. Warm restrained amber beam reaches left across petrol-teal sea. Cottage, tiny quay, quiet practical lights to left of lighthouse in mid-distance. Large atmospheric slate violet storm cloud sky, rain, sheltered harbor; gentle courage not disaster. Foreground natural continuous broad damp sandstone quay. Calm low-detail darker area logical x50-570/y540-850 for native captions; no detailed flowers, bright stone seams or poles here. All railings/posts above y520. Keep top-left x35-230/y20-90 quiet dark sky; top-right clear for Skip. Full bleed environment reaches every edge. NO duplicate background layer, no inset portrait, seam, mirrored scene, blurred filler, vignette, people, cats, text/UI/baked gradients. Beautiful premium handcrafted miniature stop-motion world; preserve all architecture identity and refined warm/cool lighting.",
+      "refinementPrompts": [
+        "Use case: precise-object-edit. Recompose supplied landscape Familiar storm painting at EXACT16:10 aspect2304x1440. Preserve this exquisite handmade clay sandstone, warm shelter, purple rainy sky and lantern glow. Preserve the complete lighthouse location and scale in right half. IMPORTANT IMPROVEMENT: relocate the large foreground cottage, its tree and all left-side architecture up and away into the middle distance so all cottages fit within logical x650-1030/y240-480 on1440x900 canvas. Left x0-600 now looks out across open soft rainy sky, quiet teal sheltered water, and uncluttered low-contrast damp quay. Quay railings/posts ALL above logical y500; broad continuous paving from y520 to900, with no flower clusters, tall posts or bright seams in x40-600. Left reading column x50-570/y540-850 must be utterly calm soft shaded stone. Top-left x20-230/y14-90 quiet dark sky. No recognizable foreground cottage competing behind caption. Full coherent perspective throughout, naturally receding harbor village beside beacon to right. ONE image not panels, no repeated or mirrored subjects or filler strips, no blur gradient or vignette. Keep full red cap/lantern/balcony/tower/island, beam leftward, warm windows. No people/cats/text/UI/borders. Highest quality cinematic world. Reposition architecture, never just darken it.",
+        "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders."
+      ],
+      "styleReferences": [
+        "web/assets/source/opening/generated/storm-landscape-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "attempts": 3,
+      "native": {
+        "path": "web/assets/source/opening/generated/storm-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "3b2f6c82a2de66acb578e3e8c1a8518f91fc16a3222a85af175aeeafa817676f"
+      },
+      "sourceSha256": "6bb8efb394000432004c255da16fc613fcf12a6734e6b0d4f7dd78e5eee5dbcf",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/storm-landscape-layout.png": "bd614e24c45067fed06c5ae49c8a4b01994c8dc4652ae5b6371c22e38f50b1ca"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false,
+      "delivery": {
+        "operation": "Proportional Lanczos upsample from approved master; no new native detail; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 2880,
+          "height": 1800
+        },
+        "sha256": "7b93373c60e26108a13720300b9a6ac252aacfb7c3109c85040397577ea01c33",
+        "bytes": 330610
+      }
+    },
+    "wrens-lantern.webp": {
+      "master": "web/assets/source/opening/wrens-lantern.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: precise-object-edit. This is the approved Wren's lantern miniature painting. Deliver a revised composition with an EXACT 390:844 width:height aspect ratio (approximately 0.462085:1), at 1170×2532 pixels if supported. It must be slightly WIDER relative to its height than the supplied 798×1972 image. Extend the actual harbor scene coherently at both sides; do not stretch the lantern or crop the top or bottom. Preserve the supplied lovely brass, rain, boat, intimate amber light and handcrafted clay/timber house style. Place the complete lantern at logical x130–260, y220–425 in 390×844 coordinates. Quiet top-left sky for native wordmark. Improve bottom caption field: from y600 to744 keep only softly shaded stone with very subtle joints; remove the foreground flowers. Reduce golden reflection detail beneath y550. Oar remains naturally resting inside the rowboat, never moved into caption field. No text, graphics, logos, borders, inset, duplicate or baked gradients. The aspect ratio is the essential edit. Requested model gpt-6-astra.",
+      "initialPrompt": "Use case: compositing. Recompose image 1, Wren's lantern, into a premium handcrafted Familiar game illustration at exactly 1170x2532, TRUE 390:844 narrow portrait aspect. Image 2 is the house material reference only. Preserve image 1's beautiful hammered warm brass lantern, coherent clinker-built walnut rowboat seat, one resting oar, rope coil, rain and tactile miniature setting. The lantern glows on the SEAT OF THE ROWBOAT beside the quay. The complete lantern silhouette, from curved handle to brass base, must lie within logical x110-285/y205-435 on the 390x844 layout. Complete boat gunwales may frame it at y330-530. Camera is an intimate three-quarter view with strong tactile brass, dark damp timber grain and lovely reflected amber glow, but no plastic shine. Small softly focused cream clay cottages with terracotta roofs and amber windows occupy upper-left middle distance, muted slate-violet rainy sky above, dark petrol teal water behind. Quiet low-detail DARK sky at x20-190/y14-75 for future wordmark; nothing drawn there. All bright ropes, planks, reflections and boat edge accents end ABOVE y550. Bottom third is quiet dim low-contrast damp stone quay and soft water shadow, with subtle believable perspective and very little joint contrast, especially x26-364/y600-744 and y760-824 where native captions and controls will go. Keep warm amber focal light and cool teal/lilac air, generous breathing room and premium stop-motion miniature craftsmanship. Full bleed single coherent painting, no poster framing, borders, inset panel, duplicate lantern, person, animal, text, logo, UI, letters, numbers, baked vignette or caption gradient. Requested model: gpt-6-astra.",
+      "refinement": "Widened composition to requested aspect; removed flowers and reduced foreground reflections.",
+      "attempts": 2,
+      "transparentBackground": false,
+      "generatedSource": "web/assets/source/opening/generated/wrens-lantern.png",
+      "styleReferences": [
+        "web/assets/source/first-light-motion/harbor.png",
+        "web/assets/source/opening/generated/wrens-lantern-initial.png"
+      ],
+      "visualReview": "Complete brass lantern on boat seat; quiet header and dim stone caption field.",
+      "generatedSize": {
+        "width": 853,
+        "height": 1844
+      },
+      "generatedSha256": "97ee244768bfea1b89771ef6e35ab84562c2a5ac83b09b51cfaaf63eb60fcd00",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "sourceSha256": "197ffa858d1304933fe19b0fab6607823c2f50a2ebabfba0d34a3104d23a1e64",
+      "sourceBytes": 2989937,
+      "normalization": {
+        "operation": "Isotropic Lanczos resize to cover delivery canvas, centered edge crop; no stretching or repainting",
+        "target": {
+          "width": 1170,
+          "height": 2532
+        },
+        "upscaled": true,
+        "note": "Built-in generator did not expose resolution control; native generated bytes are preserved separately. Near-matching aspect means at most a few delivery pixels trimmed from edges."
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        },
+        {
+          "path": "web/assets/source/opening/generated/wrens-lantern-initial.png",
+          "sha256": "3456b2ad18ca8ae4a6063e0ee48e35fea8477bb1b3c331cb29e9484c989187fe"
+        }
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/first-light-motion/harbor.png",
+        "web/assets/source/opening/generated/wrens-lantern-reference.png"
+      ],
+      "native": {
+        "path": "web/assets/source/opening/generated/wrens-lantern.png",
+        "width": 853,
+        "height": 1844,
+        "sha256": "97ee244768bfea1b89771ef6e35ab84562c2a5ac83b09b51cfaaf63eb60fcd00"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 780,
+          "height": 1688
+        },
+        "sha256": "5d5348460e9da41196a8e4e161b0548ce84207a5da164fc689fc3d6a7ea8c171",
+        "bytes": 118632
+      }
+    },
+    "wrens-lantern-landscape.webp": {
+      "master": "web/assets/source/opening/wrens-lantern-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: compositing. Create the single coherent LANDSCAPE adaptation of the approved Wren's lantern painting, EXACT width:height 16:10, intended delivery 2304×1440 for 1440×900 logical layout. Image 1 is the approved lantern scene; image 2 is house materials only. Preserve brass lantern design, timber boat, restrained rain, violet night sky, cream clay cottages with terracotta roofs and amber windows, petrol-teal water. Compose the complete lantern in the RIGHT half, logical x1010–1200/y235–530, standing securely on the broad rowboat seat. Boat and oar coherent in right half. Cottages sit in upper middle distance behind the boat. Left half extends actual quiet harbor water and softly shaded damp stone quay with continuous perspective; x50–570/y540–850 must be calm low-contrast environmental space for native captions and controls, with no ropes/posts/bright joints/flowers there. Top-left and top-right sky quiet. One gorgeous authored miniature environment, emotionally intimate practical amber glow, rounded brass and clay and soft worn wood, full-bleed. No duplicate lantern, repeated background, mirrored architecture, giant blurred subject, panel seam, inset, picture border, characters, text, logos, UI or baked caption gradient. Requested model gpt-6-astra.",
+      "attempts": 1,
+      "transparentBackground": false,
+      "generatedSource": "web/assets/source/opening/generated/wrens-lantern-landscape.png",
+      "styleReferences": [
+        "web/assets/source/first-light-motion/harbor.png",
+        "web/assets/source/opening/generated/wrens-lantern.png"
+      ],
+      "visualReview": "Single coherent landscape harbor; complete lantern at right, quiet left water and stone.",
+      "generatedSize": {
+        "width": 1586,
+        "height": 992
+      },
+      "generatedSha256": "418620a1baccbd3d5ba8e7c8bc62dfcb871b4ff653dff23dedfeee25d572f9b3",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "sourceSha256": "012402a6315d00f19d745c2bfed6218270ac777282f7e38a7ed6bcfb1197a952",
+      "sourceBytes": 3955526,
+      "normalization": {
+        "operation": "Isotropic Lanczos resize to cover delivery canvas, centered edge crop; no stretching or repainting",
+        "target": {
+          "width": 2304,
+          "height": 1440
+        },
+        "upscaled": true,
+        "note": "Built-in generator did not expose resolution control; native generated bytes are preserved separately. Near-matching aspect means at most a few delivery pixels trimmed from edges."
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        },
+        {
+          "path": "web/assets/source/opening/generated/wrens-lantern.png",
+          "sha256": "97ee244768bfea1b89771ef6e35ab84562c2a5ac83b09b51cfaaf63eb60fcd00"
+        }
+      ],
+      "native": {
+        "path": "web/assets/source/opening/generated/wrens-lantern-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "418620a1baccbd3d5ba8e7c8bc62dfcb871b4ff653dff23dedfeee25d572f9b3"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos downsample; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 1728,
+          "height": 1080
+        },
+        "sha256": "1fc1020eb3a14e452a287f9cb1882b9294351a5db3470db6cf34ded8cb955b7a",
+        "bytes": 239966
+      }
+    },
+    "wrens-lantern-landscape-2880.webp": {
+      "master": "web/assets/source/opening/wrens-lantern-landscape.png",
+      "created": "2026-11-14",
+      "generator": {
+        "tool": "image_gen.imagegen",
+        "requestedModel": "gpt-6-astra",
+        "model": "Underlying image model not exposed by tool",
+        "modelVerified": false,
+        "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+      },
+      "prompt": "Use case: compositing. Create the single coherent LANDSCAPE adaptation of the approved Wren's lantern painting, EXACT width:height 16:10, intended delivery 2304×1440 for 1440×900 logical layout. Image 1 is the approved lantern scene; image 2 is house materials only. Preserve brass lantern design, timber boat, restrained rain, violet night sky, cream clay cottages with terracotta roofs and amber windows, petrol-teal water. Compose the complete lantern in the RIGHT half, logical x1010–1200/y235–530, standing securely on the broad rowboat seat. Boat and oar coherent in right half. Cottages sit in upper middle distance behind the boat. Left half extends actual quiet harbor water and softly shaded damp stone quay with continuous perspective; x50–570/y540–850 must be calm low-contrast environmental space for native captions and controls, with no ropes/posts/bright joints/flowers there. Top-left and top-right sky quiet. One gorgeous authored miniature environment, emotionally intimate practical amber glow, rounded brass and clay and soft worn wood, full-bleed. No duplicate lantern, repeated background, mirrored architecture, giant blurred subject, panel seam, inset, picture border, characters, text, logos, UI or baked caption gradient. Requested model gpt-6-astra.",
+      "attempts": 1,
+      "transparentBackground": false,
+      "generatedSource": "web/assets/source/opening/generated/wrens-lantern-landscape.png",
+      "styleReferences": [
+        "web/assets/source/first-light-motion/harbor.png",
+        "web/assets/source/opening/generated/wrens-lantern.png"
+      ],
+      "visualReview": "Single coherent landscape harbor; complete lantern at right, quiet left water and stone.",
+      "generatedSize": {
+        "width": 1586,
+        "height": 992
+      },
+      "generatedSha256": "418620a1baccbd3d5ba8e7c8bc62dfcb871b4ff653dff23dedfeee25d572f9b3",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "sourceSha256": "012402a6315d00f19d745c2bfed6218270ac777282f7e38a7ed6bcfb1197a952",
+      "sourceBytes": 3955526,
+      "normalization": {
+        "operation": "Isotropic Lanczos resize to cover delivery canvas, centered edge crop; no stretching or repainting",
+        "target": {
+          "width": 2304,
+          "height": 1440
+        },
+        "upscaled": true,
+        "note": "Built-in generator did not expose resolution control; native generated bytes are preserved separately. Near-matching aspect means at most a few delivery pixels trimmed from edges."
+      },
+      "referenceHashes": [
+        {
+          "path": "web/assets/source/first-light-motion/harbor.png",
+          "sha256": "2325df200d988554c83d93c37f65219cd5b8ffe8cd1c09089ad03fea783e0920"
+        },
+        {
+          "path": "web/assets/source/opening/generated/wrens-lantern.png",
+          "sha256": "97ee244768bfea1b89771ef6e35ab84562c2a5ac83b09b51cfaaf63eb60fcd00"
+        }
+      ],
+      "native": {
+        "path": "web/assets/source/opening/generated/wrens-lantern-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "418620a1baccbd3d5ba8e7c8bc62dfcb871b4ff653dff23dedfeee25d572f9b3"
+      },
+      "delivery": {
+        "operation": "Proportional Lanczos upsample from approved master; no new native detail; no crop or repaint",
+        "quality": 87,
+        "outputSize": {
+          "width": 2880,
+          "height": 1800
+        },
+        "sha256": "5dea3130cf83e6e44b4bb069538ae5b4ab58723ec9f0bf48c62639a2779b1625",
+        "bytes": 443024
+      }
+    }
+  }
+}

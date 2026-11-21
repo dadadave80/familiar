@@ -1,0 +1,131 @@
+{
+  "created": "2026-11-14",
+  "generator": {
+    "tool": "image_gen.imagegen",
+    "requestedModel": "gpt-6-astra",
+    "model": "Underlying image model not exposed by tool",
+    "modelVerified": false,
+    "imageModelDisclosure": "Requested model is recorded without claiming the built-in tool verified its backend identifier."
+  },
+  "files": {
+    "boats-home.png": {
+      "prompt": "Use case: precise-object-edit. Edit ONLY three fishing boat placements in supplied approved Familiar portrait. Keep EXACT1170x2532 canvas390:844 aspect, all lighthouse, cottages, clouds, rocks, foliage, shoreline, posts and paving pixel positions, colors, beautiful tactile material. All THREE complete boats must stay visible. Scale the group of three boats to90percent current size and shift that whole group left by30 logical CSS pixels (90pixels on1170 canvas), without changing y center or boat designs. Rightmost stern/bow must be LEFT of logical x326 (978pixels on1170canvas), left boat entirely beyond x62, all hulls remain betweeny385-520. Maintain distinct separated hulls with coherent wakes and lantern reflections. Fill vacated sea naturally. The full dark beacon and lovely calm foreground remain unchanged. No Wren/rowboat/new characters, no text/interface/border/baked gradient.",
+      "initialPrompt": "Use case: lighting-weather. Recompose reference1 approved Familiar storm portrait as same precise1170x2532 aspect390:844 camera and architecture, using reference2 for three fishing boat identities and reference3 as canonical house style. Storm eases into blue-violet predawn, small rose opening on horizon. Lighthouse remains DARK. Preserve full red cap, dark lantern room, balcony at logicalx248-344/y175-305, same tower/base and cottages as reference1. THREE distinct working fishing boats return safely toward quay, all three COMPLETE hulls plus masts/bows/sterns within logicalx62-326/y385-520. No hull cropped or behind another hull, stagger depth in gentle sheltered teal water, coherent warm timber hulls and modest cabin lanterns. Narrow boat sizes fit visibly. No Wren or rowboat, no evidence of her return or abandonment. Reference2 supplies boat designs only, DO NOT copy its framing. Keep headerx20-190/y14-75 quiet low detail. All posts/rope above y550; lower y600-844 calm low-contrast damp sandstone with no foliage/posts/bright joints. Lovely restrained relief, tactile miniature rounded clay architecture, warm windows, dusky lilac shadows. No text/UI/logos/borders/baked gradients. Exact portrait aspect390:844.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/boats-home-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/storm.png",
+        "web/assets/source/opening/generated/boats-home-reference.png",
+        "web/assets/source/first-light-motion/harbor.png"
+      ],
+      "attempts": 2,
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "54be661bcc9416331b23b9ad033911d3e254857c0aa1e8c1e3c1cd62fd199b07"
+      },
+      "sourceSha256": "8b403856f058f5dd25d9b515b758ead9f2640f106dd41f17ea41dd08e4423841",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/boats-home-layout.png": "9c5cb7df9aa367c3447a4df86fdefc0b8cfdd9f88286a13a31543eb119745206"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    },
+    "harbor-dawn.png": {
+      "prompt": "Use case: lighting-weather. Edit supplied approved boats-home portrait into next morning, at EXACT same camera and390:844 aspect1170x2532. Preserve every architecture position, lighthouse scale, perspective, clay sandstone and miniature material. Change blue-violet predawn to luminous gentle PEACH DAWN, lilac cloud undersides, soft blue-green sea, restrained warm reflections; joyful quiet morning not bright noon. Lighthouse upper lantern room remains unmistakably DARK/unlit, whole red cap, balcony, tower unchanged. All THREE fishing boats have berthed outside frame: remove them cleanly and continue natural water; do not leave rowboat, no Wren or new characters. One delicate chimney wisp and opened cottage shutter suggest waking. Turn off cottage night lights. Keep header low-detail and quiet. All foreground posts/rope stay ABOVE logical y550; x26-364 y600-744 quiet softly shaded taupe paving without bright seams, flowers, posts, high contrast reflections, and y760-824 quiet. Preserve warm colors everywhere else, do not darken painting. Authentic premium clay/felt/wood/brass house art, no plastic gloss or flat illustration. No text/UI/borders/lettering/baked caption gradients.",
+      "styleReferences": [
+        "web/assets/source/opening/boats-home.png"
+      ],
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn.png",
+        "width": 852,
+        "height": 1846,
+        "sha256": "44f4487a44c1fe7a1b46a539ccfc53d3d73427cba59cceb0a32d27dedd1683f6"
+      },
+      "sourceSha256": "7de5a0da3cefd24afbc4ad0fe70825e5050ee0547c5ad2f162e27a367b310b6b",
+      "sourceSize": {
+        "width": 1170,
+        "height": 2532
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/boats-home.png": "8b403856f058f5dd25d9b515b758ead9f2640f106dd41f17ea41dd08e4423841"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    },
+    "boats-home-landscape.png": {
+      "prompt": "Use case: precise-object-edit. Make ONE localized compositional cleanup to supplied Familiar landscape painting. Keep EXACT16:10/2304x1440 framing, complete lighthouse and cottages, sky, water, narrative lights and all boat positions if present. REMOVE the foreground wooden posts and connecting rope ONLY from the LEFT half of the painting (logical x0-680 on1440x900). Keep a natural low stone quay edge instead, with soft perspective and unobtrusive low contrast. Remove the bright vertical post silhouettes and scalloped rope that cross the future caption at y540-700. Continue calm water behind them and smooth damp stone before them. The right foreground rail may remain from x760 onward, naturally ending at one right-side post. In left x50-570/y540-850 there must be NO foreground poles, ropes, flowers or bright paving seams: just low contrast water and softly shaded stone. No graphic masks or vignette; physically paint the actual environment. All lighthouse, houses, trees, mountains, clouds and boats retain identical positions/scale. No added objects/text/UI/logos/borders.",
+      "initialPrompt": "Use case: compositing. Create ONE landscape16:10 2304x1440 Familiar boats-home scene. Image1 governs three boat designs/narrative and lilac predawn colors. Image2 is exact approved landscape storm geography/camera. Preserve image2 single coherent harbor: FULL red capped lighthouse on island at right; small cream/terracotta cottages in middle distance center-right; wide sheltered water toward left; broad calm stone foreground. Lighthouse upper room remains DARK. Storm has eased, violet-blue predawn with restrained rose horizon; THREE complete small fishing boats returning toward quay with modest warm lamps, staggered, distinct readable coherent timber hulls, all hulls/masts/bows/sterns in right half logicalx800-1280 y430-620. No Wren, rowboat, abandonment, new people or celebration. Keep top-left dark quiet sky for wordmark. Foreground railing and posts must be at y480-530 MAXIMUM, not through caption field; broad uninterrupted calm low-contrast stone x50-570 y540-850. Quiet control area at lower left. Natural continuous environment across entire canvas, never repeated background or inset portrait, seams or blurred filler. Rich handcrafted miniatures same tactile materials. No text/logos/interface/borders/baked vignette or gradients.",
+      "styleReferences": [
+        "web/assets/source/opening/generated/boats-home-landscape-layout.png"
+      ],
+      "initialStyleReferences": [
+        "web/assets/source/opening/boats-home.png",
+        "web/assets/source/opening/generated/storm-landscape-layout.png"
+      ],
+      "attempts": 2,
+      "native": {
+        "path": "web/assets/source/opening/generated/boats-home-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "bdcb5b80a1fb6bec81c60e189d5c5f31d3fc7c2d01eb23d192aaa76a4f008f67"
+      },
+      "sourceSha256": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/generated/boats-home-landscape-layout.png": "7d8a93874a87227984d1d63c4d03dad9df0d212d18a1376bf4dfd8820ad00ea8"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    },
+    "harbor-dawn-landscape.png": {
+      "prompt": "Use case: lighting-weather. Edit supplied approved Familiar boats-home landscape at EXACT identical16:10/2304x1440 canvas/camera/perspective/object positions. This is NEXT MORNING. Remove all three fishing boats entirely and fill natural sheltered blue-green water; they berthed outside view, no rowboat or people. Replace blue-violet night/predawn light with luminous soft peach dawn, lilac clouds, muted teal water and warm clay sandstone. Keep full lighthouse cap, lantern room, balcony, tower, island exact position/scale; upper glass stays DARK/unlit, no amber beam. Turn off night lamps/windows; tiny chimney wisp suggests waking. IMPORTANT keep left reading region clear as in supplied image: NO posts/rope/flowers in left half; soft calm water/stone at x50-570 y540-850, low contrast paving with no bright seams. Right rail may remain. Quiet low-detail top-left sky for native wordmark. Preserve beautiful tactile tiny handmade clay/wood/foliage surfaces, sophisticated morning color, no whole-scene darkening. One coherent full-bleed authored painting, no duplicate layers or blurred filler. No new narrative objects, Wren, cats, text/UI/logos/borders/baked vignette.",
+      "styleReferences": [
+        "web/assets/source/opening/boats-home-landscape.png"
+      ],
+      "attempts": 1,
+      "native": {
+        "path": "web/assets/source/opening/generated/harbor-dawn-landscape.png",
+        "width": 1586,
+        "height": 992,
+        "sha256": "173a90806f2a29171979c0ed5bd4c2b5cada5f2c0e7690027c96658bc39d69d9"
+      },
+      "sourceSha256": "4bdac4da6e9b308b1d1d82a003fbf9c4a13a376515243042ee9e94cd5829587a",
+      "sourceSize": {
+        "width": 2304,
+        "height": 1440
+      },
+      "normalization": {
+        "operation": "Proportional Lanczos resize to cover exact delivery canvas; centered subpixel-equivalent edge trim, no stretching or subject cropping.",
+        "upscaled": true
+      },
+      "styleReferenceHashes": {
+        "web/assets/source/opening/boats-home-landscape.png": "7cdf050b05cf4fcf31bd7e3e8fc641a38c238769628002e8e08cdd45d537acba"
+      },
+      "modelRequested": "gpt-6-astra",
+      "modelVerified": false
+    }
+  }
+}

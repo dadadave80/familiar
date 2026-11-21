@@ -6,6 +6,11 @@ import "@fontsource-variable/figtree";
 import type { HarborAudio, TitleSound } from "../expedition/audio";
 import { MOCHI_POSES, type MochiPoseName } from "../motion/mochi";
 import "./opening.css";
+import WrensLightPreview from "./wrens-light/Preview";
+import { preloadWrensLight } from "./wrens-light/opening-preload";
+
+const wrensLightPreview = Boolean(import.meta.env?.DEV && typeof window !== "undefined" && new URLSearchParams(window.location.search).has("wrens-light"));
+if (wrensLightPreview) preloadWrensLight();
 
 const ART = "/assets/expedition/runtime/";
 const TITLE = "/assets/title/";
@@ -66,6 +71,8 @@ const GEO = {
 };
 
 export default class Opening extends Component<Props, State> {
+  // Temporary preview wiring; integration will replace the old opening separately.
+  readonly wrensLightPreview = wrensLightPreview;
   state: State = { sound: false, scroll: "", music: 4, effects: 5, cap1: "", cap2: "", lane: "" };
   root: HTMLDivElement | null = null;
   t = 0; dt = 16; last = 0; raf = 0; seq = 0; dead = false; frozen = false; rm = false; soundOn = false; landed = false; handedOff = false;
@@ -91,6 +98,7 @@ export default class Opening extends Component<Props, State> {
   items(): Plank[] { return [this.props.hasSave ? "continue" : "new", "tide", "options", "credits"]; }
 
   componentDidMount() {
+    if (this.wrensLightPreview) return;
     this.dead = false; this.t = 0; this.moth = { x: 852, y: 444 };
     this.rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.addEventListener("keydown", this.onKey);
@@ -437,6 +445,7 @@ export default class Opening extends Component<Props, State> {
   }
 
   render() {
+    if (this.wrensLightPreview) return <WrensLightPreview onStart={this.props.onStart} onDone={this.props.onDone} />;
     const st = this.state, ids = this.items();
     const pegs = (bus: "music" | "effects") => [1, 2, 3, 4, 5].map(n => (
       <button key={n} className="fo-peg" data-bus={bus} data-n={n} onClick={this.onPeg} aria-label={(bus === "music" ? "Music" : "Effects") + " level " + n} aria-pressed={n <= st[bus]} style={sx("width:44px;height:44px;flex-shrink:0;padding:0;border:0;background:transparent;cursor:pointer;display:grid;place-items:center")}>
